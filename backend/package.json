@@ -1,0 +1,35 @@
+{
+  "name": "sellone",
+  "version": "1.0.0",
+  "description": "Sistema de vendas SellOne com MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node complete-server.js",
+    "dev": "nodemon complete-server.js",
+    "test": "jest",
+    "build": "echo 'Build completed'"
+  },
+  "keywords": [
+    "vendas",
+    "mongodb",
+    "api",
+    "sellone"
+  ],
+  "author": "Edvar",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.19.0",
+    "mongoose": "^8.18.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
+  }
+}
