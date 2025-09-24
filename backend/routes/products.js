@@ -10,7 +10,7 @@ const router = express.Router();
 // @access  Private (Admin/Vendedor)
 router.post('/', [auth, authorize('admin', 'vendedor')], [
   body('name').trim().isLength({ min: 2 }).withMessage('Nome do produto é obrigatório'),
-  body('price').isNumeric().isFloat({ min: 0 }).withMessage('Preço deve ser um número positivo'),
+  body('price').isNumeric().withMessage('Preço deve ser um número'),
   body('category').trim().notEmpty().withMessage('Categoria é obrigatória'),
   body('stock.current').optional().isNumeric().withMessage('Estoque atual deve ser um número')
 ], async (req, res) => {
@@ -27,7 +27,17 @@ router.post('/', [auth, authorize('admin', 'vendedor')], [
       });
     }
 
-    const product = new Product(req.body);
+    // Adicionar createdBy baseado no usuário autenticado
+    const productData = {
+      ...req.body,
+      createdBy: req.user ? {
+        _id: req.user.id,
+        name: req.user.name,
+        email: req.user.email
+      } : undefined
+    };
+
+    const product = new Product(productData);
     await product.save();
 
     console.log('Produto criado com sucesso:', product._id);
@@ -188,10 +198,12 @@ router.put('/:id', [auth, authorize('admin', 'vendedor')], [
 });
 
 // @route   DELETE /api/products/:id
-// @desc    Desativar produto
+// @desc    Deletar produto permanentemente
 // @access  Private (Admin)
 router.delete('/:id', [auth, authorize('admin')], async (req, res) => {
   try {
+    console.log('Tentando deletar produto:', req.params.id);
+    
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({
@@ -200,16 +212,18 @@ router.delete('/:id', [auth, authorize('admin')], async (req, res) => {
       });
     }
 
-    product.isActive = false;
-    await product.save();
+    // DELETAR PERMANENTEMENTE do banco de dados
+    await Product.findByIdAndDelete(req.params.id);
 
+    console.log('Produto deletado permanentemente:', req.params.id);
+    
     res.json({
       success: true,
-      message: 'Produto desativado com sucesso'
+      message: 'Produto deletado permanentemente'
     });
 
   } catch (error) {
-    console.error('Erro ao desativar produto:', error);
+    console.error('Erro ao deletar produto:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'

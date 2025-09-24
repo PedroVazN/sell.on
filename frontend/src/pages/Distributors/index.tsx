@@ -57,7 +57,7 @@ export const Distributors: React.FC = () => {
   };
 
   const handleDeleteDistributor = async (distributor: Distributor) => {
-    if (window.confirm(`Tem certeza que deseja excluir o distribuidor ${distributor.apelido || distributor.name || 'N/A'}?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir o distribuidor ${distributor.apelido || 'N/A'}?`)) {
       try {
         await apiService.deleteDistributor(distributor._id);
         loadDistributors();
@@ -203,10 +203,10 @@ export const Distributors: React.FC = () => {
                 <TableRow key={distributor._id}>
                   <TableCell>
                     <div>
-                      <strong>{distributor.apelido || distributor.name || 'N/A'}</strong>
+                      <strong>{distributor.apelido || 'N/A'}</strong>
                     </div>
                   </TableCell>
-                  <TableCell>{distributor.razaoSocial || distributor.name || 'N/A'}</TableCell>
+                  <TableCell>{distributor.razaoSocial || 'N/A'}</TableCell>
                   <TableCell>{distributor.idDistribuidor || 'N/A'}</TableCell>
                   <TableCell>
                     <div>

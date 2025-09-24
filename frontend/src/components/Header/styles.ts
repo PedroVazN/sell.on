@@ -187,20 +187,20 @@ export const NotificationBadge = styled.span`
   text-align: center;
 `;
 
-export const UserButton = styled.button`
+export const UserButton = styled.button<{ $isOpen?: boolean }>`
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  background: ${props => props.$isOpen ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.8)'};
+  border: 1px solid ${props => props.$isOpen ? 'rgba(59, 130, 246, 0.5)' : 'rgba(71, 85, 105, 0.3)'};
   border-radius: 12px;
   padding: 12px 20px;
   color: rgba(226, 232, 240, 0.8);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
-  overflow: hidden;
+  overflow: visible;
   
   &::before {
     content: '';
@@ -243,19 +243,18 @@ export const UserButton = styled.button`
 
 export const UserMenu = styled.div`
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
-  background: rgba(15, 15, 35, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
   box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 10px 25px rgba(0, 0, 0, 0.5),
+    0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 8px;
-  min-width: 180px;
-  z-index: 1000;
-  margin-top: 8px;
-  backdrop-filter: blur(20px);
+  min-width: 200px;
+  z-index: 9999;
+  backdrop-filter: blur(10px);
   animation: slideDown 0.2s ease-out;
   
   @keyframes slideDown {
@@ -277,17 +276,18 @@ export const UserMenuItem = styled.button`
   width: 100%;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: #e2e8f0;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9rem;
   font-weight: 500;
+  text-align: left;
   
   &:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: #fca5a5;
-    transform: translateX(4px);
+    background: #ef4444;
+    color: white;
+    transform: translateX(2px);
   }
 `;

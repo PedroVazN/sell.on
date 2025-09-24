@@ -610,7 +610,7 @@ export const Proposals: React.FC = () => {
                     <option value="">Selecione o distribuidor</option>
                     {distributors.map(distributor => (
                       <option key={distributor._id} value={distributor._id}>
-                        {distributor.apelido || distributor.name || 'N/A'} - {distributor.razaoSocial || distributor.name || 'N/A'}
+                        {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'}
                       </option>
                     ))}
                   </Select>

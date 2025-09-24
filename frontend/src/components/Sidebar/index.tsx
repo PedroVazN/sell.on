@@ -16,7 +16,8 @@ import {
   FileSpreadsheet,
   DollarSign,
   UserPlus,
-  User
+  User,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -34,14 +35,23 @@ interface MenuItemProps {
   label: string;
   path: string;
   isActive?: boolean;
+  onClick?: () => void;
 }
 
-const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActive }) => {
+const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActive, onClick }) => {
   const navigate = useNavigate();
+  
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(path);
+    }
+  };
   
   return (
     <MenuItem 
-      onClick={() => navigate(path)} 
+      onClick={handleClick} 
       $isActive={isActive}
     >
       <MenuIcon>{icon}</MenuIcon>
@@ -52,7 +62,7 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActiv
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, logout } = useAuth();
 
   const menuItems = [
     {
@@ -100,6 +110,7 @@ export const Sidebar: React.FC = () => {
       title: 'PERFIL',
       items: [
         { icon: <User size={20} />, label: 'Meu Perfil', path: '/profile', permission: 'profile' },
+        { icon: <LogOut size={20} />, label: 'Sair', path: '', onClick: logout },
       ]
     }
   ];
@@ -121,6 +132,7 @@ export const Sidebar: React.FC = () => {
               label={item.label}
               path={item.path}
               isActive={location.pathname === item.path}
+              onClick={item.onClick}
             />
           ))}
         </MenuSection>
