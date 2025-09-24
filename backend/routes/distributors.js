@@ -9,17 +9,19 @@ router.get('/', auth, async (req, res) => {
     const { page = 1, limit = 10, search, origem, isActive } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = { $or: [
-      { 'createdBy._id': req.user.id },
-      { createdBy: req.user.id }
-    ]};
+    console.log('=== DEBUG DISTRIBUTORS ===');
+    console.log('User ID:', req.user.id);
+    console.log('User:', req.user);
+
+    // Query mais flexível - buscar todos os distribuidores primeiro
+    let query = {};
     
-    if (search) {
+    // Se não há search, mostrar todos os distribuidores ativos
+    if (!search) {
+      query.isActive = true;
+    } else {
       query.$and = [
-        { $or: [
-          { 'createdBy._id': req.user.id },
-          { createdBy: req.user.id }
-        ]},
+        { isActive: true },
         { $or: [
           { apelido: { $regex: search, $options: 'i' } },
           { razaoSocial: { $regex: search, $options: 'i' } },
@@ -38,6 +40,8 @@ router.get('/', auth, async (req, res) => {
       query.isActive = isActive === 'true';
     }
 
+    console.log('Query:', JSON.stringify(query, null, 2));
+
     const distributors = await Distributor.find(query)
       .populate('createdBy', 'name email')
       .sort({ apelido: 1 })
@@ -46,7 +50,11 @@ router.get('/', auth, async (req, res) => {
 
     const total = await Distributor.countDocuments(query);
 
+    console.log('Distributors found:', distributors.length);
+    console.log('Total:', total);
+
     res.json({
+      success: true,
       data: distributors,
       pagination: {
         current: parseInt(page),
@@ -57,7 +65,11 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar distribuidores:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
   }
 });
 

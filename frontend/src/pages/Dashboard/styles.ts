@@ -400,34 +400,113 @@ export const GoalPercentage = styled.div`
 `;
 
 export const PerformanceMetrics = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: ${({ theme }) => theme.spacing.xl};
   margin-top: ${({ theme }) => theme.spacing.xxl};
-  padding: ${({ theme }) => theme.spacing.lg};
-  background: ${({ theme }) => theme.colors.background.card};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+  animation: slideIn 0.8s ease-out 0.6s both;
 `;
 
 export const MetricItem = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.xl};
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: ${({ theme }) => theme.borderRadius.xl};
+  backdrop-filter: blur(20px);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3B82F6, #10B981, #F59E0B);
+    border-radius: ${({ theme }) => theme.borderRadius.xl} ${({ theme }) => theme.borderRadius.xl} 0 0;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
 `;
 
 export const MetricItemLabel = styled.div`
-  font-size: 0.75rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  text-align: center;
+  font-size: 0.875rem;
+  color: #A3A3A3;
+  text-align: left;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
 `;
 
 export const MetricItemValue = styled.div<{ $negative?: boolean }>`
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: ${({ $negative, theme }) => 
-    $negative ? theme.colors.error : theme.colors.text.primary};
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: ${({ $negative }) => $negative ? '#EF4444' : '#10B981'};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+`;
+
+export const MetricItemIcon = styled.div<{ $color: string }>`
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: ${({ $color }) => $color}20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: ${({ $color }) => $color}40;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+`;
+
+export const MetricItemDescription = styled.div`
+  color: #6B7280;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+`;
+
+export const MetricItemTrend = styled.div<{ $positive?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  color: ${({ $positive }) => $positive ? '#10B981' : '#EF4444'};
+  font-size: 0.75rem;
+  font-weight: 600;
 `;
 
 export const LoadingContainer = styled.div`

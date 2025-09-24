@@ -74,9 +74,16 @@ router.get('/', auth, async (req, res) => {
       const distributorId = item.distributor._id.toString();
       
       if (!acc[distributorId]) {
+        const groupId = `group_${distributorId}`;
+        console.log('Criando grupo com ID:', groupId, 'para distribuidor:', distributorId);
+        
         acc[distributorId] = {
+          _id: groupId, // ID único para o grupo
           distributor: item.distributor,
-          products: []
+          products: [],
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          createdBy: item.createdBy
         };
       }
       
@@ -103,6 +110,15 @@ router.get('/', auth, async (req, res) => {
     console.log('Dados agrupados enviados para o frontend:', JSON.stringify(paginatedData, null, 2));
     console.log('Total de grupos:', total);
     console.log('Dados paginados:', paginatedData.length);
+    
+    // Debug: verificar IDs dos grupos
+    paginatedData.forEach((group, index) => {
+      console.log(`Grupo ${index}:`, {
+        id: group._id,
+        distributor: group.distributor?.apelido,
+        productsCount: group.products?.length || 0
+      });
+    });
 
     const response = {
       success: true,
@@ -323,45 +339,56 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     console.log('Tentando deletar item:', req.params.id, 'para usuário:', req.user.id);
     
-    // Primeiro, verificar se o item existe
-    const existingItem = await PriceList.findOne({
-      _id: req.params.id,
-      createdBy: req.user.id
-    });
-    
-    if (!existingItem) {
-      console.log('Item não encontrado ou não pertence ao usuário');
-      return res.status(404).json({ error: 'Item não encontrado' });
-    }
-    
-    console.log('Item encontrado, procedendo com a exclusão:', existingItem);
-    
-    const priceItem = await PriceList.findOneAndDelete({
-      _id: req.params.id,
-      createdBy: req.user.id
-    });
+    // Verificar se é um ID de grupo (começa com "group_")
+    if (req.params.id.startsWith('group_')) {
+      const distributorId = req.params.id.replace('group_', '');
+      console.log('Deletando grupo para distribuidor:', distributorId);
+      
+      // Deletar todos os itens deste distribuidor para este usuário
+      const result = await PriceList.deleteMany({
+        distributor: distributorId,
+        createdBy: req.user.id
+      });
+      
+      console.log('Itens deletados:', result.deletedCount);
+      
+      res.json({ 
+        success: true,
+        message: `Lista de preços do distribuidor deletada com sucesso (${result.deletedCount} itens)`,
+        deletedItems: result.deletedCount
+      });
+    } else {
+      // Deletar item individual
+      const existingItem = await PriceList.findOne({
+        _id: req.params.id,
+        createdBy: req.user.id
+      });
+      
+      if (!existingItem) {
+        console.log('Item não encontrado ou não pertence ao usuário');
+        return res.status(404).json({ error: 'Item não encontrado' });
+      }
+      
+      console.log('Item encontrado, procedendo com a exclusão:', existingItem);
+      
+      const priceItem = await PriceList.findOneAndDelete({
+        _id: req.params.id,
+        createdBy: req.user.id
+      });
 
-    if (!priceItem) {
-      console.log('Falha na exclusão - item não foi deletado');
-      return res.status(500).json({ error: 'Falha ao deletar item' });
-    }
+      if (!priceItem) {
+        console.log('Falha na exclusão - item não foi deletado');
+        return res.status(500).json({ error: 'Falha ao deletar item' });
+      }
 
-    console.log('Item deletado com sucesso do banco de dados:', priceItem._id);
-    
-    // Verificar se o item foi realmente deletado
-    const verifyDeletion = await PriceList.findOne({ _id: req.params.id });
-    console.log('Verificação pós-exclusão - item ainda existe?', !!verifyDeletion);
-    
-    // Verificar quantos itens restam no banco para este usuário
-    const remainingItems = await PriceList.countDocuments({ createdBy: req.user.id });
-    console.log('Total de itens restantes para o usuário:', remainingItems);
-    
-    res.json({ 
-      success: true,
-      message: 'Item da lista de preços deletado com sucesso',
-      deletedItem: priceItem._id,
-      remainingItems: remainingItems
-    });
+      console.log('Item deletado com sucesso do banco de dados:', priceItem._id);
+      
+      res.json({ 
+        success: true,
+        message: 'Item da lista de preços deletado com sucesso',
+        deletedItem: priceItem._id
+      });
+    }
   } catch (error) {
     console.error('Erro ao deletar item da lista de preços:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });

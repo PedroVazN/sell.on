@@ -215,16 +215,14 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
 
 const getStatusColor = (status: string): string => {
   switch (status) {
-    case 'draft':
-      return '#6B7280';
-    case 'sent':
-      return '#3B82F6';
-    case 'accepted':
-      return '#10B981';
-    case 'rejected':
-      return '#EF4444';
-    case 'expired':
+    case 'negociacao':
       return '#F59E0B';
+    case 'venda_fechada':
+      return '#059669';
+    case 'venda_perdida':
+      return '#DC2626';
+    case 'expirada':
+      return '#6B7280';
     default:
       return '#6B7280';
   }

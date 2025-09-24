@@ -383,7 +383,7 @@ export const EditProposal: React.FC = () => {
         total,
         paymentCondition: formData.paymentCondition,
         observations: formData.observations,
-        status: proposal?.status || 'sent',
+        status: proposal?.status || 'negociacao',
         validUntil: new Date(formData.validUntil).toISOString()
       };
 

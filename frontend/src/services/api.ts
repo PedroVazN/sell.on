@@ -269,7 +269,7 @@ export interface Proposal {
   total: number;
   paymentCondition: string;
   observations?: string;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
+  status: 'negociacao' | 'venda_fechada' | 'venda_perdida' | 'expirada';
   validUntil: string;
   createdBy: User;
   createdAt: string;
@@ -883,14 +883,37 @@ class ApiService {
   }
 
   async updateProposalStatus(id: string, status: Proposal['status']): Promise<ApiResponse<Proposal>> {
-    return this.request<Proposal>(`/proposals/${id}/status`, {
-      method: 'PATCH',
+    return this.request<Proposal>(`/proposals/${id}`, {
+      method: 'PUT',
       body: JSON.stringify({ status }),
     });
   }
 
   async getPriceListByDistributor(distributorId: string, page = 1, limit = 10): Promise<ApiResponse<PriceListItem[]>> {
     return this.request<PriceListItem[]>(`/price-list/distributor/${distributorId}?page=${page}&limit=${limit}`);
+  }
+
+  async getProposalsDashboardSales(): Promise<ApiResponse<{
+    salesStats: {
+      totalRevenue: number;
+      totalSales: number;
+      averageSale: number;
+      totalItems: number;
+    };
+    topProducts: Array<{
+      name: string;
+      sales: number;
+      revenue: number;
+      quantity: number;
+    }>;
+    monthlyData: Array<{
+      month: number;
+      year: number;
+      revenue: number;
+      sales: number;
+    }>;
+  }>> {
+    return this.request(`/proposals/dashboard/sales`);
   }
 
   // Eventos do Calendário

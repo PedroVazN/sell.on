@@ -48,6 +48,18 @@ import {
   TotalValue
 } from './styles';
 
+// Funções de status
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'negociacao': return '#f59e0b';
+    case 'venda_fechada': return '#059669';
+    case 'venda_perdida': return '#dc2626';
+    case 'expirada': return '#6b7280';
+    default: return '#6b7280';
+  }
+};
+
+
 export const Proposals: React.FC = () => {
   const navigate = useNavigate();
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -270,7 +282,7 @@ export const Proposals: React.FC = () => {
         total,
         paymentCondition,
         observations,
-        status: 'draft' as const,
+        status: 'negociacao' as const,
         validUntil: new Date(validUntil).toISOString()
       };
 
@@ -303,33 +315,30 @@ export const Proposals: React.FC = () => {
 
   const getStatusIcon = (status: Proposal['status']) => {
     switch (status) {
-      case 'draft': return <FileText size={16} />;
-      case 'sent': return <Clock size={16} />;
-      case 'accepted': return <CheckCircle size={16} />;
-      case 'rejected': return <XCircle size={16} />;
-      case 'expired': return <AlertCircle size={16} />;
-      default: return <FileText size={16} />;
+      case 'negociacao': return <AlertCircle size={16} />;
+      case 'venda_fechada': return <CheckCircle size={16} />;
+      case 'venda_perdida': return <XCircle size={16} />;
+      case 'expirada': return <Clock size={16} />;
+      default: return <AlertCircle size={16} />;
     }
   };
 
   const getStatusColor = (status: Proposal['status']) => {
     switch (status) {
-      case 'draft': return '#6b7280';
-      case 'sent': return '#3b82f6';
-      case 'accepted': return '#10b981';
-      case 'rejected': return '#ef4444';
-      case 'expired': return '#f59e0b';
+      case 'negociacao': return '#f59e0b';
+      case 'venda_fechada': return '#059669';
+      case 'venda_perdida': return '#dc2626';
+      case 'expirada': return '#6b7280';
       default: return '#6b7280';
     }
   };
 
   const getStatusLabel = (status: Proposal['status']) => {
     switch (status) {
-      case 'draft': return 'Rascunho';
-      case 'sent': return 'Enviada';
-      case 'accepted': return 'Aceita';
-      case 'rejected': return 'Rejeitada';
-      case 'expired': return 'Expirada';
+      case 'negociacao': return 'Negociação';
+      case 'venda_fechada': return 'Venda Fechada';
+      case 'venda_perdida': return 'Venda Perdida';
+      case 'expirada': return 'Expirada';
       default: return status;
     }
   };
@@ -383,11 +392,10 @@ export const Proposals: React.FC = () => {
           </SearchContainer>
           <Select value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
             <option value="">Todos os status</option>
-            <option value="draft">Rascunho</option>
-            <option value="sent">Enviada</option>
-            <option value="accepted">Aceita</option>
-            <option value="rejected">Rejeitada</option>
-            <option value="expired">Expirada</option>
+            <option value="negociacao">Negociação</option>
+            <option value="venda_fechada">Venda Fechada</option>
+            <option value="venda_perdida">Venda Perdida</option>
+            <option value="expirada">Expirada</option>
           </Select>
           <CreateButton onClick={() => navigate('/proposals/create')}>
             <Plus size={20} />
@@ -444,9 +452,11 @@ export const Proposals: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div style={{ fontWeight: 'bold' }}>{proposal.distributor.apelido || 'N/A'}</div>
+                          <div style={{ fontWeight: 'bold' }}>
+                            {proposal.distributor?.apelido || proposal.distributor?.razaoSocial || 'N/A'}
+                          </div>
                           <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                            {proposal.distributor.razaoSocial || 'N/A'}
+                            {proposal.distributor?.razaoSocial || proposal.distributor?.apelido || ''}
                           </div>
                         </div>
                       </TableCell>
@@ -466,7 +476,7 @@ export const Proposals: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <StatusBadge 
-                          $isActive={proposal.status === 'accepted'} 
+                          $isActive={proposal.status === 'venda_fechada'} 
                           style={{ 
                             backgroundColor: getStatusColor(proposal.status),
                             color: 'white',
@@ -506,33 +516,31 @@ export const Proposals: React.FC = () => {
                           >
                             <Trash2 size={16} />
                           </ActionButton>
-                          {proposal.status === 'draft' && (
-                            <ActionButton 
-                              onClick={() => handleUpdateStatus(proposal, 'sent')}
-                              disabled={isDeleting}
-                              title="Enviar"
-                              style={{ backgroundColor: '#3b82f6' }}
-                            >
-                              <Eye size={16} />
-                            </ActionButton>
-                          )}
-                          {proposal.status === 'sent' && (
+                          {proposal.status === 'negociacao' && (
                             <>
                               <ActionButton 
-                                onClick={() => handleUpdateStatus(proposal, 'accepted')}
+                                onClick={() => handleUpdateStatus(proposal, 'venda_fechada')}
                                 disabled={isDeleting}
-                                title="Aceitar"
-                                style={{ backgroundColor: '#10b981' }}
+                                title="Venda Fechada"
+                                style={{ backgroundColor: '#059669' }}
                               >
                                 <CheckCircle size={16} />
                               </ActionButton>
                               <ActionButton 
-                                onClick={() => handleUpdateStatus(proposal, 'rejected')}
+                                onClick={() => handleUpdateStatus(proposal, 'venda_perdida')}
                                 disabled={isDeleting}
-                                title="Rejeitar"
-                                style={{ backgroundColor: '#ef4444' }}
+                                title="Venda Perdida"
+                                style={{ backgroundColor: '#dc2626' }}
                               >
                                 <XCircle size={16} />
+                              </ActionButton>
+                              <ActionButton 
+                                onClick={() => handleUpdateStatus(proposal, 'expirada')}
+                                disabled={isDeleting}
+                                title="Marcar como Expirada"
+                                style={{ backgroundColor: '#6b7280' }}
+                              >
+                                <Clock size={16} />
                               </ActionButton>
                             </>
                           )}
@@ -563,23 +571,23 @@ export const Proposals: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <Input
                     placeholder="Nome do cliente"
-                    value={selectedClient.name}
+                    value={selectedClient.name || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, name: e.target.value }))}
                   />
                   <Input
                     placeholder="Email"
                     type="email"
-                    value={selectedClient.email}
+                    value={selectedClient.email || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, email: e.target.value }))}
                   />
                   <Input
                     placeholder="Telefone"
-                    value={selectedClient.phone}
+                    value={selectedClient.phone || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, phone: e.target.value }))}
                   />
                   <Input
                     placeholder="Empresa"
-                    value={selectedClient.company}
+                    value={selectedClient.company || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, company: e.target.value }))}
                   />
                 </div>
@@ -590,7 +598,7 @@ export const Proposals: React.FC = () => {
                 <FormGroup>
                   <Label>Vendedor *</Label>
                   <Select
-                    value={selectedSeller}
+                    value={selectedSeller || ''}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeller(e.target.value)}
                   >
                     <option value="">Selecione o vendedor</option>
@@ -604,7 +612,7 @@ export const Proposals: React.FC = () => {
                 <FormGroup>
                   <Label>Distribuidor *</Label>
                   <Select
-                    value={selectedDistributor}
+                    value={selectedDistributor || ''}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedDistributor(e.target.value)}
                   >
                     <option value="">Selecione o distribuidor</option>
@@ -625,7 +633,7 @@ export const Proposals: React.FC = () => {
                     <ProductHeader>
                       <ProductName>
                         <Select
-                          value={product.productId}
+                          value={product.productId || ''}
                           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                             const selectedProduct = products.find(p => p._id === e.target.value);
                             if (selectedProduct) {
@@ -653,7 +661,7 @@ export const Proposals: React.FC = () => {
                         <PriceInput
                           type="number"
                           min="1"
-                          value={product.quantity}
+                          value={product.quantity || 1}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(index, 'quantity', parseInt(e.target.value) || 1)}
                         />
                       </PriceRow>
@@ -662,7 +670,7 @@ export const Proposals: React.FC = () => {
                         <PriceInput
                           type="number"
                           step="0.01"
-                          value={product.unitPrice}
+                          value={product.unitPrice || 0}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(index, 'unitPrice', parseFloat(e.target.value) || 0)}
                         />
                       </PriceRow>
@@ -672,7 +680,7 @@ export const Proposals: React.FC = () => {
                           type="number"
                           min="0"
                           max="100"
-                          value={product.discount}
+                          value={product.discount || 0}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(index, 'discount', parseFloat(e.target.value) || 0)}
                         />
                       </PriceRow>
@@ -681,7 +689,7 @@ export const Proposals: React.FC = () => {
                         <PriceInput
                           type="number"
                           step="0.01"
-                          value={product.total}
+                          value={product.total || 0}
                           readOnly
                           style={{ backgroundColor: '#f3f4f6' }}
                         />
@@ -715,7 +723,7 @@ export const Proposals: React.FC = () => {
                   <Label>Condição de Pagamento</Label>
                   <Input
                     placeholder="Ex: À vista, 30 dias, 3x sem juros"
-                    value={paymentCondition}
+                    value={paymentCondition || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaymentCondition(e.target.value)}
                   />
                 </FormGroup>
@@ -723,7 +731,7 @@ export const Proposals: React.FC = () => {
                   <Label>Válido Até</Label>
                   <Input
                     type="date"
-                    value={validUntil}
+                    value={validUntil || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValidUntil(e.target.value)}
                   />
                 </FormGroup>
@@ -733,7 +741,7 @@ export const Proposals: React.FC = () => {
                 <Label>Observações</Label>
                 <Input
                   placeholder="Observações adicionais..."
-                  value={observations}
+                  value={observations || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setObservations(e.target.value)}
                 />
               </FormGroup>

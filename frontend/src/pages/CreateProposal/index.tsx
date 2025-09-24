@@ -113,20 +113,32 @@ export const CreateProposal: React.FC = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('=== CARREGANDO DADOS ===');
+      
       const [productsResponse, distributorsResponse, sellersResponse] = await Promise.all([
         apiService.getProducts(),
         apiService.getDistributors(),
         apiService.getUsers()
       ]);
 
+      console.log('Products response:', productsResponse);
+      console.log('Distributors response:', distributorsResponse);
+      console.log('Sellers response:', sellersResponse);
+
       if (productsResponse.success) {
         setProducts(productsResponse.data || []);
+        console.log('Products loaded:', productsResponse.data?.length || 0);
       }
-      if (distributorsResponse.success) {
+      
+      // Distribuidores - verificar se tem success ou apenas data
+      if (distributorsResponse.success || distributorsResponse.data) {
         setDistributors(distributorsResponse.data || []);
+        console.log('Distributors loaded:', distributorsResponse.data?.length || 0);
       }
+      
       if (sellersResponse.success) {
         setSellers(sellersResponse.data || []);
+        console.log('Sellers loaded:', sellersResponse.data?.length || 0);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -333,7 +345,7 @@ export const CreateProposal: React.FC = () => {
         total,
         paymentCondition: formData.paymentCondition,
         observations: formData.observations,
-        status: 'sent' as const,
+        status: 'negociacao' as const,
         validUntil: new Date(formData.validUntil).toISOString()
       };
 
@@ -390,7 +402,7 @@ export const CreateProposal: React.FC = () => {
         paymentCondition: formData.paymentCondition,
         validUntil: formData.validUntil,
         observations: formData.observations,
-        status: 'draft',
+        status: 'negociacao',
         createdAt: new Date().toISOString()
       };
       
@@ -403,6 +415,84 @@ export const CreateProposal: React.FC = () => {
     } finally {
       setGeneratingPdf(false);
     }
+  };
+
+  const fillTestData = () => {
+    console.log('=== PREENCHENDO DADOS DE TESTE ===');
+    console.log('Distribuidores disponíveis:', distributors.length);
+    console.log('Produtos disponíveis:', products.length);
+    console.log('Vendedores disponíveis:', sellers.length);
+
+    // Dados de teste para o cliente
+    setFormData(prev => ({
+      ...prev,
+      client: {
+        name: 'João Silva Santos',
+        email: 'joao.silva@empresa.com.br',
+        phone: '(11) 99999-8888',
+        company: 'Empresa ABC Ltda'
+      }
+    }));
+
+    // Selecionar primeiro vendedor se existir
+    if (sellers.length > 0) {
+      console.log('Selecionando vendedor:', sellers[0].name);
+      handleSellerChange(sellers[0]._id);
+    } else {
+      console.log('Nenhum vendedor disponível');
+    }
+
+    // Selecionar primeiro distribuidor se existir
+    if (distributors.length > 0) {
+      console.log('Selecionando distribuidor:', distributors[0].apelido || distributors[0].razaoSocial);
+      handleDistributorChange(distributors[0]._id);
+    } else {
+      console.log('Nenhum distribuidor disponível');
+      alert('Nenhum distribuidor encontrado! Verifique se há distribuidores cadastrados.');
+      return;
+    }
+
+    // Adicionar produtos de teste se existirem
+    if (products.length > 0) {
+      console.log('Adicionando produtos de teste');
+      const testItems: ProposalItem[] = [
+        {
+          product: products[0],
+          quantity: 2,
+          unitPrice: products[0].price,
+          discount: 5,
+          total: products[0].price * 2 * 0.95
+        }
+      ];
+
+      // Adicionar segundo produto se existir
+      if (products.length > 1) {
+        testItems.push({
+          product: products[1],
+          quantity: 1,
+          unitPrice: products[1].price,
+          discount: 10,
+          total: products[1].price * 1 * 0.90
+        });
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        items: testItems
+      }));
+    } else {
+      console.log('Nenhum produto disponível');
+    }
+
+    // Preencher condições de pagamento
+    setFormData(prev => ({
+      ...prev,
+      paymentCondition: 'À vista com 5% de desconto ou parcelado em 3x sem juros',
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      observations: 'Proposta válida por 30 dias. Entrega em até 15 dias úteis após confirmação do pedido.'
+    }));
+
+    alert('Dados de teste preenchidos com sucesso!');
   };
 
   if (loading) {
@@ -641,6 +731,16 @@ export const CreateProposal: React.FC = () => {
 
         {/* Botões de Ação */}
         <ActionButtons>
+          <Button
+            type="button"
+            onClick={fillTestData}
+            variant="secondary"
+            style={{ backgroundColor: '#10b981', color: 'white' }}
+          >
+            <Plus size={16} />
+            Preencher Dados de Teste
+          </Button>
+          
           <SaveButton
             type="button"
             onClick={handleSave}

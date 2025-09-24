@@ -379,7 +379,7 @@ export const ProductHeader = styled.div`
   margin-bottom: 1rem;
 `;
 
-export const ProductName = styled.div`
+export const ProductNameContainer = styled.div`
   flex: 1;
   margin-right: 1rem;
 `;
@@ -397,7 +397,7 @@ export const PriceRow = styled.div`
   flex-wrap: wrap;
 `;
 
-export const PriceLabel = styled.label`
+export const PriceLabelInput = styled.label`
   font-size: 0.875rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text.primary};
@@ -456,4 +456,91 @@ export const AddProductButton = styled.button`
   &:hover {
     background: ${({ theme }) => theme.colors.primary};
   }
+`;
+
+export const DistributorRow = styled(TableRow)<{ $isExpanded: boolean; $isDeleting: boolean }>`
+  cursor: pointer;
+  opacity: ${({ $isDeleting }) => $isDeleting ? 0.5 : 1};
+  background: ${({ $isExpanded, theme }) => 
+    $isExpanded ? theme.colors.background : 'transparent'};
+  
+  &:hover {
+    background: ${({ theme }) => theme.colors.background};
+  }
+`;
+
+export const ProductRow = styled(TableRow)`
+  background: ${({ theme }) => theme.colors.background};
+  
+  &:hover {
+    background: ${({ theme }) => theme.colors.background};
+  }
+`;
+
+export const DistributorName = styled.div`
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export const ProductInfo = styled.div`
+  margin-left: 1rem;
+`;
+
+export const ProductNameDisplay = styled.div`
+  font-weight: bold;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export const ProductCategory = styled.div`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+export const PriceContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+export const PriceValue = styled.div<{ $color: string }>`
+  font-weight: bold;
+  color: ${({ $color }) => $color};
+`;
+
+export const PriceLabelDisplay = styled.div`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+export const ProductStatus = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+export const DateRange = styled.div`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+export const ProductNotes = styled.div`
+  font-size: 0.75rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+export const ActionContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+export const SummaryInfo = styled.div`
+  font-size: 0.875rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;

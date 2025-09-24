@@ -30,34 +30,46 @@ import {
   MetricItem,
   MetricItemLabel,
   MetricItemValue,
+  MetricItemIcon,
+  MetricItemDescription,
+  MetricItemTrend,
   LoadingContainer
 } from './styles';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TrendingDown, TrendingUp, DollarSign, AlertTriangle, Target, BarChart3 } from 'lucide-react';
 
-const salesData = [
-  { month: 'Jan', vendas: 0, receita: 0 },
-  { month: 'Fev', vendas: 0, receita: 0 },
-  { month: 'Mar', vendas: 0, receita: 0 },
-  { month: 'Abr', vendas: 0, receita: 0 },
-  { month: 'Mai', vendas: 0, receita: 0 },
-  { month: 'Jun', vendas: 0, receita: 0 },
-  { month: 'Jul', vendas: 0, receita: 0 },
-  { month: 'Ago', vendas: 0, receita: 0 },
-  { month: 'Set', vendas: 0, receita: 0 },
-];
+const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const revenueData = [
-  { month: 'Jan', receita: 0 },
-  { month: 'Fev', receita: 0 },
-  { month: 'Mar', receita: 0 },
-  { month: 'Abr', receita: 0 },
-  { month: 'Mai', receita: 0 },
-  { month: 'Jun', receita: 0 },
-  { month: 'Jul', receita: 0 },
-  { month: 'Ago', receita: 0 },
-  { month: 'Set', receita: 0 },
-];
+const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
+  const currentYear = new Date().getFullYear();
+  const data = [];
+  
+  for (let i = 1; i <= 12; i++) {
+    const monthData = monthlyData.find(d => d.month === i && d.year === currentYear);
+    data.push({
+      month: monthNames[i - 1],
+      vendas: monthData?.sales || 0,
+      receita: monthData?.revenue || 0
+    });
+  }
+  
+  return data;
+};
+
+const getRevenueData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
+  const currentYear = new Date().getFullYear();
+  const data = [];
+  
+  for (let i = 1; i <= 12; i++) {
+    const monthData = monthlyData.find(d => d.month === i && d.year === currentYear);
+    data.push({
+      month: monthNames[i - 1],
+      receita: monthData?.revenue || 0
+    });
+  }
+  
+  return data;
+};
 
 const topProducts = [
   { name: 'Nenhum produto vendido', sales: 0, revenue: 0 },
@@ -92,6 +104,13 @@ interface DashboardData {
     name: string;
     sales: number;
     revenue: number;
+    quantity: number;
+  }>;
+  monthlyData: Array<{
+    month: number;
+    year: number;
+    revenue: number;
+    sales: number;
   }>;
 }
 
@@ -110,11 +129,12 @@ export const Dashboard: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const [usersResponse, productsResponse, salesResponse, salesStatsResponse] = await Promise.all([
+      const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse] = await Promise.all([
         apiService.getUsers(1, 1),
         apiService.getProducts(1, 1),
         apiService.getSales(1, 1),
-        apiService.getSalesStats()
+        apiService.getSalesStats(),
+        apiService.getProposalsDashboardSales()
       ]);
 
       const topProducts = await getTopProducts();
@@ -122,15 +142,16 @@ export const Dashboard: React.FC = () => {
       setData({
         totalUsers: usersResponse.pagination?.total || 0,
         totalProducts: productsResponse.pagination?.total || 0,
-        totalSales: salesResponse.pagination?.total || 0,
-        totalRevenue: salesStatsResponse.data?.totalRevenue || 0,
-        salesStats: salesStatsResponse.data || {
+        totalSales: proposalsSalesResponse.data?.salesStats?.totalSales || 0,
+        totalRevenue: proposalsSalesResponse.data?.salesStats?.totalRevenue || 0,
+        salesStats: proposalsSalesResponse.data?.salesStats || {
           totalSales: 0,
           totalRevenue: 0,
           averageSale: 0,
           totalItems: 0
         },
-        topProducts
+        topProducts: proposalsSalesResponse.data?.topProducts || [],
+        monthlyData: proposalsSalesResponse.data?.monthlyData || []
       });
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
@@ -256,7 +277,7 @@ export const Dashboard: React.FC = () => {
             }
           </ChartSubtitle>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={salesData}>
+            <LineChart data={getSalesData(data?.monthlyData || [])}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
               <XAxis dataKey="month" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" />
@@ -297,7 +318,7 @@ export const Dashboard: React.FC = () => {
             }
           </ChartSubtitle>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenueData}>
+            <BarChart data={getRevenueData(data?.monthlyData || [])}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
               <XAxis dataKey="month" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" />
@@ -337,13 +358,21 @@ export const Dashboard: React.FC = () => {
             }
           </ChartSubtitle>
           <ProductsList>
-            {data?.topProducts.map((product, index) => (
-              <ProductItem key={index}>
-                <ProductName>{index + 1} {product.name}</ProductName>
-                <ProductSales>{product.sales} vendas</ProductSales>
-                <ProductRevenue>R$ {product.revenue.toLocaleString('pt-BR')}</ProductRevenue>
+            {data?.topProducts && data.topProducts.length > 0 ? (
+              data.topProducts.map((product, index) => (
+                <ProductItem key={index}>
+                  <ProductName>{index + 1}. {product.name}</ProductName>
+                  <ProductSales>{product.quantity} unidades vendidas</ProductSales>
+                  <ProductRevenue>R$ {product.revenue.toLocaleString('pt-BR')}</ProductRevenue>
+                </ProductItem>
+              ))
+            ) : (
+              <ProductItem>
+                <ProductName>Nenhum produto vendido ainda</ProductName>
+                <ProductSales>0 unidades</ProductSales>
+                <ProductRevenue>R$ 0</ProductRevenue>
               </ProductItem>
-            ))}
+            )}
           </ProductsList>
         </ChartCard>
 
@@ -375,31 +404,91 @@ export const Dashboard: React.FC = () => {
         {user?.role === 'vendedor' ? (
           <>
             <MetricItem>
+              <MetricItemIcon $color="#3B82F6">
+                <Target size={24} color="#3B82F6" />
+              </MetricItemIcon>
               <MetricItemLabel>Propostas Pendentes</MetricItemLabel>
               <MetricItemValue $negative>0</MetricItemValue>
+              <MetricItemDescription>
+                Propostas aguardando resposta do cliente
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                +0% este mês
+              </MetricItemTrend>
             </MetricItem>
             <MetricItem>
+              <MetricItemIcon $color="#EF4444">
+                <AlertTriangle size={24} color="#EF4444" />
+              </MetricItemIcon>
               <MetricItemLabel>Propostas Rejeitadas</MetricItemLabel>
               <MetricItemValue $negative>0</MetricItemValue>
+              <MetricItemDescription>
+                Propostas que foram rejeitadas pelos clientes
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingDown size={12} />
+                -0% este mês
+              </MetricItemTrend>
             </MetricItem>
             <MetricItem>
+              <MetricItemIcon $color="#10B981">
+                <DollarSign size={24} color="#10B981" />
+              </MetricItemIcon>
               <MetricItemLabel>Valor Médio Proposta</MetricItemLabel>
               <MetricItemValue $negative>R$ 0</MetricItemValue>
+              <MetricItemDescription>
+                Valor médio das suas propostas criadas
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                +0% vs mês anterior
+              </MetricItemTrend>
             </MetricItem>
           </>
         ) : (
           <>
             <MetricItem>
+              <MetricItemIcon $color="#EF4444">
+                <TrendingDown size={24} color="#EF4444" />
+              </MetricItemIcon>
               <MetricItemLabel>Propostas Perdidas</MetricItemLabel>
-              <MetricItemValue $negative>0</MetricItemValue>
+              <MetricItemValue $negative>{data?.salesStats?.totalSales || 0}</MetricItemValue>
+              <MetricItemDescription>
+                Propostas que não foram convertidas em vendas
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingDown size={12} />
+                -0% este mês
+              </MetricItemTrend>
             </MetricItem>
             <MetricItem>
+              <MetricItemIcon $color="#F59E0B">
+                <BarChart3 size={24} color="#F59E0B" />
+              </MetricItemIcon>
               <MetricItemLabel>Vendas Abertas</MetricItemLabel>
-              <MetricItemValue $negative>0</MetricItemValue>
+              <MetricItemValue $negative>{data?.salesStats?.totalSales || 0}</MetricItemValue>
+              <MetricItemDescription>
+                Propostas em processo de negociação
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                +0% este mês
+              </MetricItemTrend>
             </MetricItem>
             <MetricItem>
+              <MetricItemIcon $color="#10B981">
+                <DollarSign size={24} color="#10B981" />
+              </MetricItemIcon>
               <MetricItemLabel>Ticket Médio</MetricItemLabel>
-              <MetricItemValue $negative>R$ 0</MetricItemValue>
+              <MetricItemValue $negative>R$ {data?.salesStats?.averageSale?.toLocaleString('pt-BR') || '0'}</MetricItemValue>
+              <MetricItemDescription>
+                Valor médio por venda fechada
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                +0% vs mês anterior
+              </MetricItemTrend>
             </MetricItem>
           </>
         )}
