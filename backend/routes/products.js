@@ -12,11 +12,14 @@ router.post('/', [auth, authorize('admin', 'vendedor')], [
   body('name').trim().isLength({ min: 2 }).withMessage('Nome do produto é obrigatório'),
   body('price').isNumeric().isFloat({ min: 0 }).withMessage('Preço deve ser um número positivo'),
   body('category').trim().notEmpty().withMessage('Categoria é obrigatória'),
-  body('stock.current').optional().isInt({ min: 0 }).withMessage('Estoque atual deve ser um número inteiro positivo')
+  body('stock.current').optional().isNumeric().withMessage('Estoque atual deve ser um número')
 ], async (req, res) => {
   try {
+    console.log('Dados recebidos para criar produto:', JSON.stringify(req.body, null, 2));
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Erros de validação:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Dados inválidos',
@@ -27,6 +30,7 @@ router.post('/', [auth, authorize('admin', 'vendedor')], [
     const product = new Product(req.body);
     await product.save();
 
+    console.log('Produto criado com sucesso:', product._id);
     res.status(201).json({
       success: true,
       message: 'Produto criado com sucesso',
@@ -35,9 +39,11 @@ router.post('/', [auth, authorize('admin', 'vendedor')], [
 
   } catch (error) {
     console.error('Erro ao criar produto:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

@@ -100,7 +100,27 @@ export const CreateProduct: React.FC = () => {
 
     try {
       setLoading(true);
-      await apiService.createProduct(formData);
+      
+      // Simplificar dados para evitar problemas
+      const productData = {
+        name: formData.name,
+        category: formData.category,
+        price: formData.price,
+        description: formData.description || '',
+        cost: formData.cost || 0,
+        brand: formData.brand || '',
+        sku: formData.sku || '',
+        barcode: formData.barcode || '',
+        stock: {
+          current: formData.stock.current || 0,
+          min: formData.stock.min || 0,
+          max: formData.stock.max || 0
+        },
+        isActive: formData.isActive
+      };
+      
+      console.log('Dados do formulário:', productData);
+      await apiService.createProduct(productData);
       alert('Produto criado com sucesso!');
       navigate('/products');
     } catch (error) {
