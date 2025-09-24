@@ -8,10 +8,16 @@ const { auth } = require('../middleware/auth');
 // GET /api/price-list - Listar lista de preços agrupada por distribuidor
 router.get('/', auth, async (req, res) => {
   try {
+    console.log('=== INÍCIO DA REQUISIÇÃO PRICE-LIST ===');
+    console.log('Usuário autenticado:', req.user ? req.user.id : 'NENHUM');
+    console.log('Query params:', req.query);
+    
     const { page = 1, limit = 10, distributor, product, isActive } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = { createdBy: req.user.id };
+    let query = {}; // Temporariamente sem filtro de createdBy
+    console.log('Query inicial:', query);
+    console.log('Usuário ID:', req.user.id);
     
     if (distributor) {
       query.distributor = distributor;
@@ -36,8 +42,35 @@ router.get('/', auth, async (req, res) => {
     console.log('Itens encontrados no banco:', priceList.length);
     console.log('IDs dos itens encontrados:', priceList.map(item => item._id));
 
+    // Filtrar itens com referências válidas (distribuidor e produto existem)
+    const validPriceList = priceList.filter(item => 
+      item.distributor && item.distributor._id && 
+      item.product && item.product._id
+    );
+    
+    console.log('Itens válidos após filtro:', validPriceList.length);
+
+    // Se houver itens órfãos, removê-los do banco
+    if (validPriceList.length < priceList.length) {
+      const orphanedItems = priceList.filter(item => 
+        !item.distributor || !item.distributor._id || 
+        !item.product || !item.product._id
+      );
+      
+      console.log('Removendo itens órfãos:', orphanedItems.length);
+      
+      for (const orphan of orphanedItems) {
+        try {
+          await PriceList.findByIdAndDelete(orphan._id);
+          console.log('Item órfão removido:', orphan._id);
+        } catch (error) {
+          console.error('Erro ao remover item órfão:', orphan._id, error);
+        }
+      }
+    }
+
     // Agrupar por distribuidor
-    const groupedData = priceList.reduce((acc, item) => {
+    const groupedData = validPriceList.reduce((acc, item) => {
       const distributorId = item.distributor._id.toString();
       
       if (!acc[distributorId]) {
@@ -68,8 +101,10 @@ router.get('/', auth, async (req, res) => {
     const paginatedData = groupedArray.slice(skip, skip + parseInt(limit));
 
     console.log('Dados agrupados enviados para o frontend:', JSON.stringify(paginatedData, null, 2));
+    console.log('Total de grupos:', total);
+    console.log('Dados paginados:', paginatedData.length);
 
-    res.json({
+    const response = {
       success: true,
       data: paginatedData,
       pagination: {
@@ -78,10 +113,20 @@ router.get('/', auth, async (req, res) => {
         total,
         limit: parseInt(limit)
       }
-    });
+    };
+
+    console.log('Resposta final:', JSON.stringify(response, null, 2));
+    res.json(response);
   } catch (error) {
-    console.error('Erro ao buscar lista de preços:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('=== ERRO NA REQUISIÇÃO PRICE-LIST ===');
+    console.error('Erro completo:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -110,6 +155,10 @@ router.get('/:id', auth, async (req, res) => {
 // POST /api/price-list - Criar novo item na lista de preços
 router.post('/', auth, async (req, res) => {
   try {
+    console.log('=== CRIANDO NOVA LISTA DE PREÇOS ===');
+    console.log('Body recebido:', JSON.stringify(req.body, null, 2));
+    console.log('Usuário:', req.user.id);
+    
     const {
       distributor,
       product,
@@ -119,48 +168,111 @@ router.post('/', auth, async (req, res) => {
       notes
     } = req.body;
 
-    // Validações básicas
-    if (!distributor || !product || !pricing) {
-      return res.status(400).json({ 
-        error: 'Distribuidor, produto e preços são obrigatórios' 
+    // Verificar se é uma lista completa (formato do frontend)
+    if (req.body.distributorId && req.body.products) {
+      console.log('Processando lista completa do frontend');
+      
+      const { distributorId, products } = req.body;
+      
+      if (!distributorId || !products || products.length === 0) {
+        return res.status(400).json({ 
+          error: 'Distribuidor e produtos são obrigatórios' 
+        });
+      }
+
+      // Criar itens individuais para cada produto
+      const createdItems = [];
+      
+      for (const productData of products) {
+        // Verificar se já existe um item para este distribuidor e produto
+        const existingItem = await PriceList.findOne({
+          distributor: distributorId,
+          product: productData.productId,
+          createdBy: req.user.id
+        });
+
+        if (existingItem) {
+          console.log('Item já existe, pulando:', productData.productId);
+          continue;
+        }
+
+        const priceItem = new PriceList({
+          distributor: distributorId,
+          product: productData.productId,
+          pricing: {
+            aVista: productData.pricing?.aVista || 0,
+            tresXBoleto: productData.pricing?.boleto || 0,
+            tresXCartao: productData.pricing?.cartao || 0
+          },
+          isActive: productData.isActive !== false,
+          validFrom: productData.validFrom ? new Date(productData.validFrom) : new Date(),
+          validUntil: productData.validUntil ? new Date(productData.validUntil) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          notes: productData.notes || '',
+          createdBy: req.user.id
+        });
+
+        await priceItem.save();
+        await priceItem.populate('distributor', 'apelido razaoSocial contato.nome');
+        await priceItem.populate('product', 'name description price category');
+        await priceItem.populate('createdBy', 'name email');
+        
+        createdItems.push(priceItem);
+      }
+
+      console.log('Itens criados:', createdItems.length);
+      res.status(201).json({ 
+        success: true,
+        data: createdItems,
+        message: `${createdItems.length} itens criados com sucesso`
       });
-    }
+      
+    } else {
+      // Formato individual (API original)
+      console.log('Processando item individual');
+      
+      // Validações básicas
+      if (!distributor || !product || !pricing) {
+        return res.status(400).json({ 
+          error: 'Distribuidor, produto e preços são obrigatórios' 
+        });
+      }
 
-    if (!pricing.aVista || !pricing.tresXBoleto || !pricing.tresXCartao) {
-      return res.status(400).json({ 
-        error: 'Todos os valores de preço são obrigatórios' 
+      if (!pricing.aVista || !pricing.tresXBoleto || !pricing.tresXCartao) {
+        return res.status(400).json({ 
+          error: 'Todos os valores de preço são obrigatórios' 
+        });
+      }
+
+      // Verificar se já existe um item para este distribuidor e produto
+      const existingItem = await PriceList.findOne({
+        distributor,
+        product,
+        createdBy: req.user.id
       });
-    }
 
-    // Verificar se já existe um item para este distribuidor e produto
-    const existingItem = await PriceList.findOne({
-      distributor,
-      product,
-      createdBy: req.user.id
-    });
+      if (existingItem) {
+        return res.status(400).json({ 
+          error: 'Já existe um preço cadastrado para este distribuidor e produto' 
+        });
+      }
 
-    if (existingItem) {
-      return res.status(400).json({ 
-        error: 'Já existe um preço cadastrado para este distribuidor e produto' 
+      const priceItem = new PriceList({
+        distributor,
+        product,
+        pricing,
+        validFrom: validFrom ? new Date(validFrom) : undefined,
+        validUntil: validUntil ? new Date(validUntil) : undefined,
+        notes,
+        createdBy: req.user.id
       });
+
+      await priceItem.save();
+      await priceItem.populate('distributor', 'apelido razaoSocial contato.nome');
+      await priceItem.populate('product', 'name description price category');
+      await priceItem.populate('createdBy', 'name email');
+
+      res.status(201).json({ data: priceItem });
     }
-
-    const priceItem = new PriceList({
-      distributor,
-      product,
-      pricing,
-      validFrom: validFrom ? new Date(validFrom) : undefined,
-      validUntil: validUntil ? new Date(validUntil) : undefined,
-      notes,
-      createdBy: req.user.id
-    });
-
-    await priceItem.save();
-    await priceItem.populate('distributor', 'apelido razaoSocial contato.nome');
-    await priceItem.populate('product', 'name description price category');
-    await priceItem.populate('createdBy', 'name email');
-
-    res.status(201).json({ data: priceItem });
   } catch (error) {
     console.error('Erro ao criar item da lista de preços:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });

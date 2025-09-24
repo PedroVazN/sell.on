@@ -83,6 +83,9 @@ export const PriceList: React.FC = () => {
       ]);
       
       console.log('Resposta da API:', priceListResponse);
+      console.log('Dados da API (priceListResponse.data):', priceListResponse.data);
+      console.log('Tipo dos dados:', typeof priceListResponse.data);
+      console.log('É array?', Array.isArray(priceListResponse.data));
       
       setPriceLists(priceListResponse.data || []);
       setDistributors(distributorsResponse.data || []);
@@ -93,6 +96,16 @@ export const PriceList: React.FC = () => {
         distributors: distributorsResponse.data?.length || 0,
         products: productsResponse.data?.length || 0
       });
+      
+      // Debug: verificar estrutura dos dados
+      if (priceListResponse.data && priceListResponse.data.length > 0) {
+        console.log('Primeira lista de preços:', priceListResponse.data[0]);
+        console.log('Estrutura da primeira lista:', {
+          hasDistributor: !!priceListResponse.data[0].distributor,
+          hasProducts: !!priceListResponse.data[0].products,
+          productsLength: priceListResponse.data[0].products?.length || 0
+        });
+      }
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error('Erro ao carregar dados:', err);
@@ -310,6 +323,11 @@ export const PriceList: React.FC = () => {
       )
     );
   });
+
+  // Debug: verificar dados filtrados
+  console.log('PriceLists totais:', priceLists.length);
+  console.log('PriceLists filtrados:', filteredPriceLists.length);
+  console.log('Search term:', searchTerm);
 
   if (loading) {
     return (

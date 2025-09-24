@@ -62,4 +62,4 @@ priceListSchema.index({ validFrom: 1, validUntil: 1 });
 // Índice único para evitar duplicatas por usuário (permite múltiplos produtos por distribuidor)
 priceListSchema.index({ distributor: 1, product: 1, createdBy: 1 }, { unique: true });
 
-module.exports = mongoose.model('PriceList', priceListSchema);
+module.exports = mongoose.model('PriceList', priceListSchema, 'pricelists');
