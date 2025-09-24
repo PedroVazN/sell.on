@@ -92,7 +92,7 @@ const DistributorSchema = new mongoose.Schema({
 
 // Schema de Cliente
 const ClientSchema = new mongoose.Schema({
-  cnpj: { type: String, required: true, unique: true, index: true },
+  cnpj: { type: String, required: true, unique: true },
   razaoSocial: { type: String, required: true },
   nomeFantasia: String,
   contato: {

@@ -103,7 +103,6 @@ const clientSchema = new mongoose.Schema({
 });
 
 // Índices para melhor performance
-clientSchema.index({ cnpj: 1 });
 clientSchema.index({ razaoSocial: 1 });
 clientSchema.index({ 'contato.email': 1 });
 clientSchema.index({ 'endereco.uf': 1 });

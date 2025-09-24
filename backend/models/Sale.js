@@ -100,7 +100,6 @@ const saleSchema = new mongoose.Schema({
 });
 
 // Índices para melhor performance
-saleSchema.index({ saleNumber: 1 });
 saleSchema.index({ customer: 1 });
 saleSchema.index({ seller: 1 });
 saleSchema.index({ createdAt: -1 });
