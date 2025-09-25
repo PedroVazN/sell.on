@@ -5,7 +5,7 @@ export const Container = styled.div`
   background: #0f172a;
   min-height: 100vh;
   position: relative;
-  animation: fadeIn 0.8s ease-out;
+  animation: fadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
   
   &::before {
@@ -16,25 +16,41 @@ export const Container = styled.div`
     right: 0;
     bottom: 0;
     background: 
-      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+      radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 60% 60%, rgba(245, 158, 11, 0.06) 0%, transparent 50%);
     pointer-events: none;
-    animation: backgroundShift 20s ease-in-out infinite;
+    animation: backgroundShift 25s ease-in-out infinite;
   }
 
   @keyframes backgroundShift {
     0%, 100% {
-      transform: translateX(0) translateY(0);
+      transform: translateX(0) translateY(0) scale(1);
+      opacity: 1;
     }
     25% {
-      transform: translateX(-10px) translateY(-5px);
+      transform: translateX(-15px) translateY(-8px) scale(1.02);
+      opacity: 0.8;
     }
     50% {
-      transform: translateX(5px) translateY(-10px);
+      transform: translateX(8px) translateY(-12px) scale(0.98);
+      opacity: 0.9;
     }
     75% {
-      transform: translateX(-5px) translateY(5px);
+      transform: translateX(-8px) translateY(6px) scale(1.01);
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 `;
@@ -43,7 +59,18 @@ export const Header = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xxl};
   position: relative;
   z-index: 1;
-  animation: slideIn 0.8s ease-out 0.2s both;
+  animation: slideIn 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export const Title = styled.h1`
@@ -54,7 +81,7 @@ export const Title = styled.h1`
   letter-spacing: -1px;
   position: relative;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  animation: titleGlow 3s ease-in-out infinite alternate;
+  animation: titleGlow 4s ease-in-out infinite alternate, titleSlide 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
   
   &::after {
     content: '';
@@ -65,24 +92,44 @@ export const Title = styled.h1`
     height: 3px;
     background: linear-gradient(135deg, #3b82f6, #10b981);
     border-radius: 3px;
-    animation: underlineGlow 2s ease-in-out infinite alternate;
+    animation: underlineGlow 3s ease-in-out infinite alternate, underlineExpand 1s cubic-bezier(0.4, 0, 0.2, 1) 1s both;
   }
   
   @keyframes titleGlow {
     0% {
-      filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.3));
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
     }
     100% {
-      filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.6));
+      filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+    }
+  }
+  
+  @keyframes titleSlide {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
     }
   }
   
   @keyframes underlineGlow {
     0% {
-      box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
     }
     100% {
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 1);
+    }
+  }
+  
+  @keyframes underlineExpand {
+    from {
+      width: 0;
+    }
+    to {
+      width: 80px;
     }
   }
 `;
@@ -92,8 +139,19 @@ export const Subtitle = styled.p`
   color: ${({ theme }) => theme.colors.text.secondary};
   margin: 0;
   font-weight: 500;
-  animation: fadeInUp 0.8s ease-out 0.4s both;
+  animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.7s both;
   line-height: 1.5;
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export const MetricsGrid = styled.div`
@@ -103,23 +161,23 @@ export const MetricsGrid = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
   position: relative;
   z-index: 1;
-  animation: fadeInUp 0.8s ease-out 0.6s both;
+  animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s both;
 `;
 
 export const MetricCard = styled.div`
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(71, 85, 105, 0.3);
-  border-radius: 16px;
-  padding: 24px;
-  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 28px;
+  backdrop-filter: blur(25px);
   box-shadow: 
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  animation: scaleIn 0.6s ease-out both;
+  animation: scaleIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
 
   &::before {
     content: '';
@@ -128,11 +186,11 @@ export const MetricCard = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05));
-    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08));
+    border-radius: 20px;
     z-index: -1;
     opacity: 0;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &::after {
@@ -142,29 +200,40 @@ export const MetricCard = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
-    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
+    border-radius: 20px;
     z-index: -2;
     opacity: 0;
-    transition: all 0.3s ease;
-    transform: scale(0.95);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.9);
   }
 
   &:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: rgba(71, 85, 105, 0.5);
+    transform: translateY(-12px) scale(1.03);
+    border-color: rgba(71, 85, 105, 0.6);
     box-shadow: 
-      0 20px 40px rgba(0, 0, 0, 0.15),
-      0 0 0 1px rgba(255, 255, 255, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      0 32px 64px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
     
     &::before {
       opacity: 1;
     }
     
     &::after {
-      opacity: 0.3;
+      opacity: 0.4;
       transform: scale(1);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.8) translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
     }
   }
 
@@ -520,5 +589,14 @@ export const LoadingContainer = styled.div`
   p {
     color: ${({ theme }) => theme.colors.text.secondary};
     font-size: 1rem;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 `;

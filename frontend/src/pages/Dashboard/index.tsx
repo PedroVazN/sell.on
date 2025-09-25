@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 import { 
@@ -42,33 +42,25 @@ const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set
 
 const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
   const currentYear = new Date().getFullYear();
-  const data = [];
-  
-  for (let i = 1; i <= 12; i++) {
-    const monthData = monthlyData.find(d => d.month === i && d.year === currentYear);
-    data.push({
-      month: monthNames[i - 1],
+  return monthNames.map((month, index) => {
+    const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
+    return {
+      month,
       vendas: monthData?.sales || 0,
       receita: monthData?.revenue || 0
-    });
-  }
-  
-  return data;
+    };
+  });
 };
 
 const getRevenueData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
   const currentYear = new Date().getFullYear();
-  const data = [];
-  
-  for (let i = 1; i <= 12; i++) {
-    const monthData = monthlyData.find(d => d.month === i && d.year === currentYear);
-    data.push({
-      month: monthNames[i - 1],
+  return monthNames.map((month, index) => {
+    const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
+    return {
+      month,
       receita: monthData?.revenue || 0
-    });
-  }
-  
-  return data;
+    };
+  });
 };
 
 const topProducts = [
@@ -114,17 +106,34 @@ interface DashboardData {
   }>;
 }
 
+// Componente de Loading Skeleton
+const LoadingSkeleton: React.FC = () => (
+  <Container>
+    <Header>
+      <div style={{ height: '60px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', marginBottom: '16px', animation: 'pulse 2s infinite' }} />
+      <div style={{ height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', width: '60%', animation: 'pulse 2s infinite' }} />
+    </Header>
+    <MetricsGrid>
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} style={{ 
+          height: '120px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '20px', 
+          animation: 'pulse 2s infinite',
+          animationDelay: `${i * 0.1}s`
+        }} />
+      ))}
+    </MetricsGrid>
+  </Container>
+);
+
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -136,8 +145,6 @@ export const Dashboard: React.FC = () => {
         apiService.getSalesStats(),
         apiService.getProposalsDashboardSales()
       ]);
-
-      const topProducts = await getTopProducts();
 
       setData({
         totalUsers: usersResponse.pagination?.total || 0,
@@ -159,31 +166,18 @@ export const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getTopProducts = async () => {
-    try {
-      const response = await apiService.getProducts(1, 5);
-      return response.data.map(product => ({
-        name: product.name,
-        sales: 0, // Dados reais - sem vendas ainda
-        revenue: 0 // Dados reais - sem receita ainda
-      }));
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      return [];
-    }
-  };
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Memoizar dados dos gráficos para evitar recálculos desnecessários
+  const salesData = useMemo(() => getSalesData(data?.monthlyData || []), [data?.monthlyData]);
+  const revenueData = useMemo(() => getRevenueData(data?.monthlyData || []), [data?.monthlyData]);
 
   if (isLoading) {
-    return (
-      <Container>
-        <LoadingContainer>
-          <Loader2 size={48} className="animate-spin" />
-          <p>Carregando dashboard...</p>
-        </LoadingContainer>
-      </Container>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (error) {
@@ -277,7 +271,7 @@ export const Dashboard: React.FC = () => {
             }
           </ChartSubtitle>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={getSalesData(data?.monthlyData || [])}>
+            <LineChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
               <XAxis dataKey="month" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" />
@@ -295,6 +289,7 @@ export const Dashboard: React.FC = () => {
                 stroke="#3B82F6" 
                 strokeWidth={3}
                 dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                animationDuration={1000}
               />
               <Line 
                 type="monotone" 
@@ -302,6 +297,7 @@ export const Dashboard: React.FC = () => {
                 stroke="#EC4899" 
                 strokeWidth={3}
                 dot={{ fill: '#EC4899', strokeWidth: 2, r: 4 }}
+                animationDuration={1000}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -318,7 +314,7 @@ export const Dashboard: React.FC = () => {
             }
           </ChartSubtitle>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getRevenueData(data?.monthlyData || [])}>
+            <BarChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
               <XAxis dataKey="month" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" />
@@ -334,6 +330,7 @@ export const Dashboard: React.FC = () => {
                 dataKey="receita" 
                 fill="url(#colorGradient)"
                 radius={[4, 4, 0, 0]}
+                animationDuration={1000}
               />
               <defs>
                 <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">

@@ -147,15 +147,15 @@ export const PriceList: React.FC = () => {
       const updatedLists = priceLists.filter(list => list._id !== priceList._id);
       setPriceLists(updatedLists);
       localStorage.setItem('priceLists', JSON.stringify(updatedLists));
-      alert('Lista de preços excluída com sucesso!');
+        alert('Lista de preços excluída com sucesso!');
     }
   };
 
   const handleSavePriceList = () => {
-    if (!selectedDistributor || selectedProducts.length === 0) {
-      alert('Selecione um distribuidor e pelo menos um produto');
-      return;
-    }
+      if (!selectedDistributor || selectedProducts.length === 0) {
+        alert('Selecione um distribuidor e pelo menos um produto');
+        return;
+      }
 
     const distributor = distributors.find(d => d._id === selectedDistributor);
     if (!distributor) {
@@ -165,7 +165,7 @@ export const PriceList: React.FC = () => {
 
     const newPriceList: NewPriceList = {
       _id: Date.now().toString(),
-      distributorId: selectedDistributor,
+        distributorId: selectedDistributor,
       distributorName: distributor.apelido || distributor.razaoSocial || 'Distribuidor',
       products: selectedProducts,
       createdAt: new Date().toISOString()
@@ -175,8 +175,8 @@ export const PriceList: React.FC = () => {
     setPriceLists(updatedLists);
     localStorage.setItem('priceLists', JSON.stringify(updatedLists));
     
-    alert('Lista de preços criada com sucesso!');
-    setShowModal(false);
+        alert('Lista de preços criada com sucesso!');
+      setShowModal(false);
     setSelectedDistributor('');
     setSelectedProducts([]);
   };
@@ -200,7 +200,7 @@ export const PriceList: React.FC = () => {
   const updateProduct = (index: number, field: string, value: any) => {
     setSelectedProducts(prev => prev.map((product, i) => {
       if (i === index) {
-        return { ...product, [field]: value };
+          return { ...product, [field]: value };
       }
       return product;
     }));
@@ -388,24 +388,24 @@ export const PriceList: React.FC = () => {
                         $isDeleting={false}
                         onClick={() => toggleRowExpansion(priceList._id)}
                       >
-                        <TableCell>
+                      <TableCell>
                           <DistributorName>
                             {isExpanded ? '▼' : '▶'} {priceList.distributorName}
                           </DistributorName>
-                        </TableCell>
-                        <TableCell>
+                      </TableCell>
+                      <TableCell>
                           <SummaryInfo>
                             {priceList.products.length} produto(s)
                           </SummaryInfo>
-                        </TableCell>
-                        <TableCell>
+                      </TableCell>
+                      <TableCell>
                           <SummaryInfo>{formatDate(priceList.createdAt)}</SummaryInfo>
-                        </TableCell>
-                        <TableCell>
+                      </TableCell>
+                      <TableCell>
                           <ActionContainer onClick={(e) => e.stopPropagation()}>
                             <ActionButton 
-                              onClick={() => handleDeletePriceList(priceList)}
-                              title="Excluir Lista"
+                                onClick={() => handleDeletePriceList(priceList)}
+                                title="Excluir Lista"
                             >
                               <Trash2 size={16} />
                             </ActionButton>
@@ -433,7 +433,7 @@ export const PriceList: React.FC = () => {
                                  `${product.installments}x Boleto`}
                               </PriceLabelDisplay>
                             </PriceContainer>
-                          </TableCell>
+                      </TableCell>
                           <TableCell></TableCell>
                         </ProductRow>
                       ))}
@@ -525,7 +525,7 @@ export const PriceList: React.FC = () => {
                         </Select>
                       </PriceRow>
                       {(product.paymentMethod === 'cartao' || product.paymentMethod === 'boleto') && (
-                        <PriceRow>
+                      <PriceRow>
                           <PriceLabelInput>Parcelas:</PriceLabelInput>
                           <Select
                             value={product.installments || 1}
@@ -535,7 +535,7 @@ export const PriceList: React.FC = () => {
                               <option key={num} value={num}>{num}x</option>
                             ))}
                           </Select>
-                        </PriceRow>
+                      </PriceRow>
                       )}
                     </ProductPricing>
                   </ProductItem>
