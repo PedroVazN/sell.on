@@ -303,4 +303,149 @@ router.get('/stats/summary', [auth, authorize('admin', 'vendedor')], async (req,
   }
 });
 
+// @route   GET /api/sales/stats/detailed
+// @desc    Estatísticas detalhadas de vendas
+// @access  Private (Admin/Vendedor)
+router.get('/stats/detailed', [auth, authorize('admin', 'vendedor')], async (req, res) => {
+  try {
+    const { startDate, endDate, seller } = req.query;
+    
+    const matchQuery = {};
+    
+    if (startDate || endDate) {
+      matchQuery.createdAt = {};
+      if (startDate) matchQuery.createdAt.$gte = new Date(startDate);
+      if (endDate) matchQuery.createdAt.$lte = new Date(endDate);
+    }
+    
+    if (seller) matchQuery.seller = seller;
+    if (req.user.role !== 'admin') matchQuery.seller = req.user._id;
+
+    // Estatísticas gerais
+    const generalStats = await Sale.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: 1 },
+          finalizadaSales: {
+            $sum: { $cond: [{ $eq: ['$status', 'finalizada'] }, 1, 0] }
+          },
+          canceladaSales: {
+            $sum: { $cond: [{ $eq: ['$status', 'cancelada'] }, 1, 0] }
+          },
+          devolvidaSales: {
+            $sum: { $cond: [{ $eq: ['$status', 'devolvida'] }, 1, 0] }
+          },
+          rascunhoSales: {
+            $sum: { $cond: [{ $eq: ['$status', 'rascunho'] }, 1, 0] }
+          },
+          totalRevenue: { $sum: '$total' },
+          averageSale: { $avg: '$total' },
+          totalItems: { $sum: { $sum: '$items.quantity' } }
+        }
+      }
+    ]);
+
+    // Estatísticas por status de pagamento
+    const paymentStats = await Sale.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$paymentStatus',
+          count: { $sum: 1 },
+          totalValue: { $sum: '$total' }
+        }
+      }
+    ]);
+
+    // Estatísticas por método de pagamento
+    const methodStats = await Sale.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$paymentMethod',
+          count: { $sum: 1 },
+          totalValue: { $sum: '$total' }
+        }
+      }
+    ]);
+
+    // Vendas por mês (últimos 12 meses)
+    const monthlyStats = await Sale.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          sales: { $sum: 1 },
+          revenue: { $sum: '$total' }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+      { $limit: 12 }
+    ]);
+
+    // Top vendedores
+    const topSellers = await Sale.aggregate([
+      { $match: { ...matchQuery, status: 'finalizada' } },
+      {
+        $group: {
+          _id: '$seller',
+          sales: { $sum: 1 },
+          revenue: { $sum: '$total' }
+        }
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'sellerInfo'
+        }
+      },
+      {
+        $project: {
+          seller: { $arrayElemAt: ['$sellerInfo', 0] },
+          sales: 1,
+          revenue: 1
+        }
+      }
+    ]);
+
+    const result = {
+      general: generalStats[0] || {
+        totalSales: 0,
+        finalizadaSales: 0,
+        canceladaSales: 0,
+        devolvidaSales: 0,
+        rascunhoSales: 0,
+        totalRevenue: 0,
+        averageSale: 0,
+        totalItems: 0
+      },
+      paymentStatus: paymentStats,
+      paymentMethod: methodStats,
+      monthly: monthlyStats,
+      topSellers: topSellers
+    };
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas detalhadas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
 module.exports = router;

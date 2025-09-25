@@ -610,6 +610,49 @@ class ApiService {
     return this.request(url);
   }
 
+  async getSalesDetailedStats(startDate?: string, endDate?: string): Promise<ApiResponse<{
+    general: {
+      totalSales: number;
+      finalizadaSales: number;
+      canceladaSales: number;
+      devolvidaSales: number;
+      rascunhoSales: number;
+      totalRevenue: number;
+      averageSale: number;
+      totalItems: number;
+    };
+    paymentStatus: Array<{
+      _id: string;
+      count: number;
+      totalValue: number;
+    }>;
+    paymentMethod: Array<{
+      _id: string;
+      count: number;
+      totalValue: number;
+    }>;
+    monthly: Array<{
+      _id: { year: number; month: number };
+      sales: number;
+      revenue: number;
+    }>;
+    topSellers: Array<{
+      seller: {
+        _id: string;
+        name: string;
+        email: string;
+      };
+      sales: number;
+      revenue: number;
+    }>;
+  }>> {
+    let url = '/sales/stats/detailed';
+    if (startDate) url += `?startDate=${startDate}`;
+    if (endDate) url += `&endDate=${endDate}`;
+    
+    return this.request(url);
+  }
+
   // Propostas
   async getProposals(page = 1, limit = 10, status?: string, search?: string): Promise<ApiResponse<Proposal[]>> {
     let url = `/proposals?page=${page}&limit=${limit}`;
@@ -914,6 +957,50 @@ class ApiService {
     }>;
   }>> {
     return this.request(`/proposals/dashboard/sales`);
+  }
+
+  async getProposalsDashboardStats(): Promise<ApiResponse<{
+    proposalStats: {
+      totalProposals: number;
+      negociacaoProposals: number;
+      vendaFechadaProposals: number;
+      vendaPerdidaProposals: number;
+      expiradaProposals: number;
+    };
+    salesStats: {
+      totalRevenue: number;
+      totalSales: number;
+      averageSale: number;
+    };
+  }>> {
+    return this.request(`/proposals/dashboard/stats`);
+  }
+
+  async getProposalsTopPerformers(): Promise<ApiResponse<{
+    topDistributors: Array<{
+      _id: string;
+      apelido: string;
+      razaoSocial: string;
+      totalProposals: number;
+      vendaFechadaProposals: number;
+      totalRevenue: number;
+    }>;
+    topProducts: Array<{
+      _id: string;
+      totalQuantity: number;
+      totalRevenue: number;
+      proposals: number;
+    }>;
+    topSellers: Array<{
+      _id: string;
+      name: string;
+      email: string;
+      totalProposals: number;
+      vendaFechadaProposals: number;
+      totalRevenue: number;
+    }>;
+  }>> {
+    return this.request(`/proposals/top-performers`);
   }
 
   // Eventos do Calendário

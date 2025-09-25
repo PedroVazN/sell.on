@@ -92,6 +92,13 @@ interface DashboardData {
     averageSale: number;
     totalItems: number;
   };
+  proposalStats: {
+    totalProposals: number;
+    negociacaoProposals: number;
+    vendaFechadaProposals: number;
+    vendaPerdidaProposals: number;
+    expiradaProposals: number;
+  };
   topProducts: Array<{
     name: string;
     sales: number;
@@ -138,12 +145,13 @@ export const Dashboard: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse] = await Promise.all([
+      const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse, proposalsStatsResponse] = await Promise.all([
         apiService.getUsers(1, 1),
         apiService.getProducts(1, 1),
         apiService.getSales(1, 1),
         apiService.getSalesStats(),
-        apiService.getProposalsDashboardSales()
+        apiService.getProposalsDashboardSales(),
+        apiService.getProposalsDashboardStats()
       ]);
 
       setData({
@@ -156,6 +164,13 @@ export const Dashboard: React.FC = () => {
           totalRevenue: 0,
           averageSale: 0,
           totalItems: 0
+        },
+        proposalStats: proposalsStatsResponse.data?.proposalStats || {
+          totalProposals: 0,
+          negociacaoProposals: 0,
+          vendaFechadaProposals: 0,
+          vendaPerdidaProposals: 0,
+          expiradaProposals: 0
         },
         topProducts: proposalsSalesResponse.data?.topProducts || [],
         monthlyData: proposalsSalesResponse.data?.monthlyData || []
@@ -450,7 +465,7 @@ export const Dashboard: React.FC = () => {
                 <TrendingDown size={24} color="#EF4444" />
               </MetricItemIcon>
               <MetricItemLabel>Propostas Perdidas</MetricItemLabel>
-              <MetricItemValue $negative>{data?.salesStats?.totalSales || 0}</MetricItemValue>
+              <MetricItemValue $negative>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricItemValue>
               <MetricItemDescription>
                 Propostas que não foram convertidas em vendas
               </MetricItemDescription>
@@ -464,7 +479,7 @@ export const Dashboard: React.FC = () => {
                 <BarChart3 size={24} color="#F59E0B" />
               </MetricItemIcon>
               <MetricItemLabel>Vendas Abertas</MetricItemLabel>
-              <MetricItemValue $negative>{data?.salesStats?.totalSales || 0}</MetricItemValue>
+              <MetricItemValue $negative>{data?.proposalStats?.negociacaoProposals || 0}</MetricItemValue>
               <MetricItemDescription>
                 Propostas em processo de negociação
               </MetricItemDescription>

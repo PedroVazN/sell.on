@@ -328,14 +328,13 @@ router.get('/dashboard/sales', auth, async (req, res) => {
           ]
         } 
       },
-      { $unwind: '$items' },
       {
         $group: {
           _id: null,
           totalRevenue: { $sum: '$total' },
           totalSales: { $sum: 1 },
           averageSale: { $avg: '$total' },
-          totalItems: { $sum: '$items.quantity' }
+          totalItems: { $sum: { $sum: '$items.quantity' } }
         }
       }
     ]);
@@ -415,6 +414,216 @@ router.get('/dashboard/sales', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar dados de vendas:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/proposals/dashboard/stats - Estatísticas detalhadas para o dashboard
+router.get('/dashboard/stats', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Buscar estatísticas de todas as propostas
+    const proposalStats = await Proposal.aggregate([
+      { 
+        $match: { 
+          $or: [
+            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+            { createdBy: new mongoose.Types.ObjectId(userId) }
+          ]
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalProposals: { $sum: 1 },
+          negociacaoProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'negociacao'] }, 1, 0] }
+          },
+          vendaFechadaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_fechada'] }, 1, 0] }
+          },
+          vendaPerdidaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_perdida'] }, 1, 0] }
+          },
+          expiradaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'expirada'] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    // Buscar estatísticas de vendas fechadas (receita e ticket médio)
+    const salesStats = await Proposal.aggregate([
+      { 
+        $match: { 
+          status: 'venda_fechada',
+          $or: [
+            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+            { createdBy: new mongoose.Types.ObjectId(userId) }
+          ]
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$total' },
+          totalSales: { $sum: 1 },
+          averageSale: { $avg: '$total' }
+        }
+      }
+    ]);
+
+    const result = {
+      proposalStats: proposalStats[0] || {
+        totalProposals: 0,
+        negociacaoProposals: 0,
+        vendaFechadaProposals: 0,
+        vendaPerdidaProposals: 0,
+        expiradaProposals: 0
+      },
+      salesStats: salesStats[0] || {
+        totalRevenue: 0,
+        totalSales: 0,
+        averageSale: 0
+      }
+    };
+
+    res.json({ 
+      success: true,
+      data: result 
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas detalhadas:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/proposals/top-performers - Top performers das propostas
+router.get('/top-performers', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    console.log('Buscando top performers para userId:', userId);
+    
+    // Primeiro, vamos ver quantas propostas existem
+    const totalProposals = await Proposal.countDocuments({
+      $or: [
+        { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+        { createdBy: new mongoose.Types.ObjectId(userId) }
+      ]
+    });
+    
+    console.log('Total de propostas encontradas:', totalProposals);
+    
+    // Top Distribuidores
+    const topDistributors = await Proposal.aggregate([
+      { 
+        $match: { 
+          $or: [
+            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+            { createdBy: new mongoose.Types.ObjectId(userId) }
+          ]
+        } 
+      },
+      {
+        $group: {
+          _id: '$distributor._id',
+          apelido: { $first: '$distributor.apelido' },
+          razaoSocial: { $first: '$distributor.razaoSocial' },
+          totalProposals: { $sum: 1 },
+          vendaFechadaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_fechada'] }, 1, 0] }
+          },
+          totalRevenue: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_fechada'] }, '$total', 0] }
+          }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Top Produtos
+    const topProducts = await Proposal.aggregate([
+      { 
+        $match: { 
+          status: 'venda_fechada',
+          $or: [
+            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+            { createdBy: new mongoose.Types.ObjectId(userId) }
+          ]
+        } 
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product.name',
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: '$items.total' },
+          proposals: { $sum: 1 }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Top Vendedores
+    const topSellers = await Proposal.aggregate([
+      { 
+        $match: { 
+          $or: [
+            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+            { createdBy: new mongoose.Types.ObjectId(userId) }
+          ]
+        } 
+      },
+      {
+        $group: {
+          _id: '$seller._id',
+          name: { $first: '$seller.name' },
+          email: { $first: '$seller.email' },
+          totalProposals: { $sum: 1 },
+          vendaFechadaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_fechada'] }, 1, 0] }
+          },
+          totalRevenue: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_fechada'] }, '$total', 0] }
+          }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    console.log('Top Distribuidores encontrados:', topDistributors.length);
+    console.log('Top Produtos encontrados:', topProducts.length);
+    console.log('Top Vendedores encontrados:', topSellers.length);
+
+    const result = {
+      topDistributors: topDistributors.length > 0 ? topDistributors : [
+        { _id: '1', apelido: 'Nenhum distribuidor', razaoSocial: 'Sem dados', totalProposals: 0, vendaFechadaProposals: 0, totalRevenue: 0 }
+      ],
+      topProducts: topProducts.length > 0 ? topProducts : [
+        { _id: '1', totalQuantity: 0, totalRevenue: 0, proposals: 0 }
+      ],
+      topSellers: topSellers.length > 0 ? topSellers : [
+        { _id: '1', name: 'Nenhum vendedor', email: 'sem@dados.com', totalProposals: 0, vendaFechadaProposals: 0, totalRevenue: 0 }
+      ]
+    };
+
+    res.json({ 
+      success: true,
+      data: result 
+    });
+  } catch (error) {
+    console.error('Erro ao buscar top performers:', error);
     res.status(500).json({ 
       success: false,
       error: 'Erro interno do servidor' 
