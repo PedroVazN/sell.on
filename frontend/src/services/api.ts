@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://backend-sell.vercel.app/api' 
-  : 'http://localhost:3000/api';
+  ? 'https://backend-lccnyu98k-pedrovazns-projects.vercel.app/api' 
+  : 'https://backend-lccnyu98k-pedrovazns-projects.vercel.app/api';
 
 export interface User {
   _id: string;
@@ -9,7 +9,7 @@ export interface User {
   role: 'admin' | 'vendedor' | 'cliente';
   phone?: string;
   address?: {
-    street?: string;
+    street?: string;  
     city?: string;
     state?: string;
     zipCode?: string;

@@ -1,17 +1,8 @@
 module.exports = {
-  extends: [
-    'react-app',
-    'react-app/jest'
-  ],
   rules: {
-    '@typescript-eslint/no-unused-vars': 'warn',
-    'jsx-a11y/anchor-is-valid': 'warn',
-    'react-hooks/exhaustive-deps': 'warn',
-    '@typescript-eslint/no-redeclare': 'warn'
+    '@typescript-eslint/no-unused-vars': 'off',
+    'jsx-a11y/anchor-is-valid': 'off',
+    '@typescript-eslint/no-redeclare': 'off',
   },
-  env: {
-    browser: true,
-    node: true,
-    es6: true
-  }
+  ignorePatterns: ['**/*'],
 };

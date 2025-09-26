@@ -4,12 +4,12 @@ const Client = require('../models/Client');
 const { auth } = require('../middleware/auth');
 
 // GET /api/clients - Listar todos os clientes
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, uf, classificacao, isActive } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = { createdBy: req.user.id };
+    let query = {};
     
     if (search) {
       query.$or = [
