@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://backend-lccnyu98k-pedrovazns-projects.vercel.app/api' 
-  : 'https://backend-lccnyu98k-pedrovazns-projects.vercel.app/api';
+  ? 'https://backend-sable-eta-89.vercel.app/api' 
+  : 'https://backend-sable-eta-89.vercel.app/api';
 
 export interface User {
   _id: string;

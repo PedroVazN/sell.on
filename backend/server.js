@@ -5,13 +5,26 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-// Middlewares CORS - Configuração simplificada e permissiva
+// Middlewares CORS - Configuração otimizada para Vercel
 app.use((req, res, next) => {
-  // Permitir todas as origins
-  res.header('Access-Control-Allow-Origin', '*');
+  // Permitir origins específicas do Vercel
+  const allowedOrigins = [
+    'https://sellonn.vercel.app',
+    'https://sell.on',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Allow-Credentials', 'false');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Max-Age', '86400');
   
   // Responder imediatamente para requisições OPTIONS
@@ -24,8 +37,24 @@ app.use((req, res, next) => {
 
 // Middleware CORS adicional usando a biblioteca cors
 app.use(cors({
-  origin: '*', // Permitir todas as origins
-  credentials: false,
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (ex: mobile apps, Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://sellonn.vercel.app',
+      'https://sell.on',
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permitir todas as origins por enquanto
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
@@ -77,54 +106,6 @@ app.get('/api', (req, res) => {
   });
 });
 
-// ROTAS SIMPLES DE POST PARA TESTE (ANTES DAS ROTAS PRINCIPAIS)
-// Rota simples para criar produto
-app.post('/api/products', async (req, res) => {
-  try {
-    console.log('Dados recebidos para criar produto:', JSON.stringify(req.body, null, 2));
-    
-    const Product = require('./models/Product');
-    const product = new Product(req.body);
-    await product.save();
-    
-    res.status(201).json({
-      success: true,
-      message: 'Produto criado com sucesso',
-      data: product
-    });
-  } catch (error) {
-    console.error('Erro ao criar produto:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor',
-      error: error.message
-    });
-  }
-});
-
-// Rota simples para criar cliente
-app.post('/api/clients', async (req, res) => {
-  try {
-    console.log('Dados recebidos para criar cliente:', JSON.stringify(req.body, null, 2));
-    
-    const Client = require('./models/Client');
-    const client = new Client(req.body);
-    await client.save();
-    
-    res.status(201).json({
-      success: true,
-      message: 'Cliente criado com sucesso',
-      data: client
-    });
-  } catch (error) {
-    console.error('Erro ao criar cliente:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor',
-      error: error.message
-    });
-  }
-});
 
 // Importar e usar as rotas
 const clientsRouter = require('./routes/clients');
@@ -193,54 +174,6 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// ROTAS SIMPLES DE POST PARA TESTE
-// Rota simples para criar produto
-app.post('/api/products', async (req, res) => {
-  try {
-    console.log('Dados recebidos para criar produto:', JSON.stringify(req.body, null, 2));
-    
-    const Product = require('./models/Product');
-    const product = new Product(req.body);
-    await product.save();
-    
-    res.status(201).json({
-      success: true,
-      message: 'Produto criado com sucesso',
-      data: product
-    });
-  } catch (error) {
-    console.error('Erro ao criar produto:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor',
-      error: error.message
-    });
-  }
-});
-
-// Rota simples para criar cliente
-app.post('/api/clients', async (req, res) => {
-  try {
-    console.log('Dados recebidos para criar cliente:', JSON.stringify(req.body, null, 2));
-    
-    const Client = require('./models/Client');
-    const client = new Client(req.body);
-    await client.save();
-    
-    res.status(201).json({
-      success: true,
-      message: 'Cliente criado com sucesso',
-      data: client
-    });
-  } catch (error) {
-    console.error('Erro ao criar cliente:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor',
-      error: error.message
-    });
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 
