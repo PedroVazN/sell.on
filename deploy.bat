@@ -8,13 +8,12 @@ echo [1/4] Adicionando arquivos ao Git...
 git add .
 
 echo [2/4] Fazendo commit das alterações...
-git commit -m "fix: corrigir erro 404 - reestruturar para Vercel API
+git commit -m "fix: testar configuração simples do Vercel
 
-- Criar api/index.js para estrutura correta do Vercel
-- Atualizar vercel.json para usar api/index.js
-- Manter server.js para desenvolvimento local
-- Corrigir roteamento e resolver erro 404
-- Garantir funcionamento completo da API"
+- Criar test.js para teste básico do Vercel
+- Simplificar vercel.json para debug
+- Testar se o problema é na estrutura complexa
+- Resolver erro 404 com abordagem minimalista"
 
 echo [3/4] Enviando para o repositório...
 git push origin main
