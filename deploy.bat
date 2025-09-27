@@ -8,13 +8,13 @@ echo [1/4] Adicionando arquivos ao Git...
 git add .
 
 echo [2/4] Fazendo commit das alterações...
-git commit -m "feat: atualizar URLs e configurações para Vercel
+git commit -m "fix: corrigir erro 404 - reestruturar para Vercel API
 
-- Atualizar URL do backend para https://backend-sable-eta-89.vercel.app
-- Otimizar configuração de CORS para frontend https://sellonn.vercel.app
-- Remover rotas duplicadas no servidor
-- Adicionar configurações de timeout no Vercel
-- Garantir integração completa entre frontend e backend"
+- Criar api/index.js para estrutura correta do Vercel
+- Atualizar vercel.json para usar api/index.js
+- Manter server.js para desenvolvimento local
+- Corrigir roteamento e resolver erro 404
+- Garantir funcionamento completo da API"
 
 echo [3/4] Enviando para o repositório...
 git push origin main
