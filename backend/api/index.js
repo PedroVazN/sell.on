@@ -95,13 +95,14 @@ const connectDB = async () => {
 // Conectar ao MongoDB
 connectDB();
 
-// Rota da API
+// Rota da API principal
 app.get('/api', (req, res) => {
   res.json({
     message: 'Bem-vindo ao SellOne API',
     version: '1.0.0',
     status: 'online',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -138,7 +139,11 @@ app.use('/api/price-list', priceListRouter);
 
 // Rota de health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'API funcionando' });
+  res.json({ 
+    status: 'OK', 
+    message: 'API funcionando',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Rota de teste para verificar se o servidor está funcionando
@@ -146,7 +151,8 @@ app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'Backend funcionando!', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
 });
 
@@ -179,13 +185,31 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     status: 'online',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       health: '/health',
       api: '/api',
       test: '/api/test',
-      testDb: '/api/test-db'
+      testDb: '/api/test-db',
+      clients: '/api/clients',
+      products: '/api/products',
+      distributors: '/api/distributors',
+      sales: '/api/sales',
+      proposals: '/api/proposals'
     }
   });
 });
+
+// Para Vercel - não usar app.listen()
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor SellOne funcionando na porta ${PORT}`);
+    console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Frontend: http://localhost:${PORT}`);
+    console.log(`🔗 API: http://localhost:${PORT}/api`);
+    console.log(`🔐 Login: admin@sellone.com / 123456`);
+  });
+}
 
 module.exports = app;
