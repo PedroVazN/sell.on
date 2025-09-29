@@ -67,8 +67,7 @@ const connectDB = async () => {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      bufferCommands: false,
-      bufferMaxEntries: 0
+      bufferCommands: false
     };
     
     const conn = await mongoose.connect(atlasUri, options);
@@ -86,7 +85,10 @@ const connectDB = async () => {
 
 // Conectar ao MongoDB apenas se não estiver em produção ou se for necessário
 if (process.env.NODE_ENV !== 'production' || process.env.MONGODB_URI) {
-  connectDB().catch(console.error);
+  connectDB().catch((error) => {
+    console.log('⚠️  MongoDB não conectado, mas servidor continuará funcionando');
+    console.log('💡 Para conectar ao MongoDB, configure MONGODB_URI');
+  });
 }
 
 // Rota da API
