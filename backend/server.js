@@ -153,6 +153,7 @@ app.get('/api/test', (req, res) => {
 app.get('/api/test-db', async (req, res) => {
   try {
     const isConnected = mongoose.connection.readyState === 1;
+    let connectionError = null;
     
     // Se não estiver conectado, tentar conectar
     if (!isConnected && process.env.MONGODB_URI) {
@@ -162,6 +163,7 @@ app.get('/api/test-db', async (req, res) => {
         console.log('✅ Reconexão bem-sucedida!');
       } catch (reconnectError) {
         console.log('❌ Falha na reconexão:', reconnectError.message);
+        connectionError = reconnectError.message;
       }
     }
     
@@ -173,6 +175,8 @@ app.get('/api/test-db', async (req, res) => {
       host: mongoose.connection.host || 'N/A',
       database: mongoose.connection.name || 'N/A',
       mongodbUri: process.env.MONGODB_URI ? 'Configurada' : 'Não configurada',
+      connectionError: connectionError,
+      environment: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
