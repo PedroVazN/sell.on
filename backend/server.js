@@ -189,6 +189,60 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
+// Rota para testar conexão MongoDB diretamente
+app.get('/api/force-connect', async (req, res) => {
+  try {
+    console.log('🔄 Forçando conexão MongoDB...');
+    console.log('🔍 MONGODB_URI existe:', !!process.env.MONGODB_URI);
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    
+    if (!process.env.MONGODB_URI) {
+      return res.json({
+        success: false,
+        message: 'MONGODB_URI não configurada',
+        error: 'Variável de ambiente MONGODB_URI não encontrada'
+      });
+    }
+
+    // Tentar conectar diretamente
+    const mongoose = require('mongoose');
+    
+    // Fechar conexão existente se houver
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    
+    // Conectar novamente
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      bufferCommands: false
+    });
+    
+    res.json({
+      success: true,
+      message: 'Conexão MongoDB estabelecida com sucesso!',
+      connected: true,
+      host: conn.connection.host,
+      database: conn.connection.name,
+      state: mongoose.connection.readyState
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na conexão:', error);
+    res.json({
+      success: false,
+      message: 'Erro ao conectar com MongoDB',
+      error: error.message,
+      code: error.code,
+      name: error.name
+    });
+  }
+});
+
 // Rota de teste para verificar todas as rotas da API
 app.get('/api/routes', (req, res) => {
   const routes = [
