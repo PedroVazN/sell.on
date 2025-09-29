@@ -6,6 +6,21 @@ const { auth } = require('../middleware/auth');
 // GET /api/clients - Listar todos os clientes
 router.get('/', auth, async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        message: 'MongoDB não conectado - retornando lista vazia'
+      });
+    }
+
     const { page = 1, limit = 10, search, uf, classificacao, isActive } = req.query;
     const skip = (page - 1) * limit;
 
@@ -42,6 +57,7 @@ router.get('/', auth, async (req, res) => {
     const total = await Client.countDocuments(query);
 
     res.json({
+      success: true,
       data: clients,
       pagination: {
         current: parseInt(page),
@@ -52,7 +68,11 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar clientes:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
