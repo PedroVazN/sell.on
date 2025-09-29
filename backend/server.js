@@ -83,13 +83,12 @@ const connectDB = async () => {
   }
 };
 
-// Conectar ao MongoDB apenas se não estiver em produção ou se for necessário
-if (process.env.NODE_ENV !== 'production' || process.env.MONGODB_URI) {
-  connectDB().catch((error) => {
-    console.log('⚠️  MongoDB não conectado, mas servidor continuará funcionando');
-    console.log('💡 Para conectar ao MongoDB, configure MONGODB_URI');
-  });
-}
+// Conectar ao MongoDB sempre que possível
+connectDB().catch((error) => {
+  console.log('⚠️  MongoDB não conectado, mas servidor continuará funcionando');
+  console.log('💡 Para conectar ao MongoDB, configure MONGODB_URI');
+  console.log('🔍 Erro:', error.message);
+});
 
 // Rota da API
 app.get('/api', (req, res) => {
@@ -155,13 +154,25 @@ app.get('/api/test-db', async (req, res) => {
   try {
     const isConnected = mongoose.connection.readyState === 1;
     
+    // Se não estiver conectado, tentar conectar
+    if (!isConnected && process.env.MONGODB_URI) {
+      console.log('🔄 Tentando reconectar ao MongoDB...');
+      try {
+        await connectDB();
+        console.log('✅ Reconexão bem-sucedida!');
+      } catch (reconnectError) {
+        console.log('❌ Falha na reconexão:', reconnectError.message);
+      }
+    }
+    
     res.json({
       success: true,
       message: 'Teste de conexão com MongoDB',
-      connected: isConnected,
+      connected: mongoose.connection.readyState === 1,
       state: mongoose.connection.readyState,
       host: mongoose.connection.host || 'N/A',
       database: mongoose.connection.name || 'N/A',
+      mongodbUri: process.env.MONGODB_URI ? 'Configurada' : 'Não configurada',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
