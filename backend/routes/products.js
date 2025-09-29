@@ -8,7 +8,7 @@ const router = express.Router();
 // @route   POST /api/products
 // @desc    Criar novo produto
 // @access  Private (Admin/Vendedor)
-router.post('/', [
+router.post('/', auth, [
   body('name').trim().isLength({ min: 2 }).withMessage('Nome do produto é obrigatório'),
   body('price').isNumeric().withMessage('Preço deve ser um número'),
   body('category').trim().notEmpty().withMessage('Categoria é obrigatória'),
@@ -156,7 +156,7 @@ router.get('/:id', async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Atualizar produto
 // @access  Private (Admin/Vendedor)
-router.put('/:id', [
+router.put('/:id', auth, [
   body('name').optional().trim().isLength({ min: 2 }).withMessage('Nome deve ter pelo menos 2 caracteres'),
   body('price').optional().isNumeric().isFloat({ min: 0 }).withMessage('Preço deve ser um número positivo'),
   body('stock.current').optional().isInt({ min: 0 }).withMessage('Estoque deve ser um número inteiro positivo')
@@ -200,7 +200,7 @@ router.put('/:id', [
 // @route   DELETE /api/products/:id
 // @desc    Deletar produto permanentemente
 // @access  Private (Admin)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     console.log('Tentando deletar produto:', req.params.id);
     

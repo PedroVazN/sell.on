@@ -4,7 +4,7 @@ const Client = require('../models/Client');
 const { auth } = require('../middleware/auth');
 
 // GET /api/clients - Listar todos os clientes
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, uf, classificacao, isActive } = req.query;
     const skip = (page - 1) * limit;

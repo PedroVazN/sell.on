@@ -5,50 +5,23 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-// Middlewares CORS - Configuração otimizada para Vercel
-app.use((req, res, next) => {
-  // Permitir origins específicas do Vercel
-  const allowedOrigins = [
-    'https://sellonn.vercel.app',
-    'https://sell.on',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ];
-  
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  // Responder imediatamente para requisições OPTIONS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
-
-// Middleware CORS adicional usando a biblioteca cors
+// Middleware CORS otimizado para Vercel
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requisições sem origin (ex: mobile apps, Postman)
+    // Permitir requisições sem origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
       'https://sellonn.vercel.app',
       'https://sell.on',
       'http://localhost:3000',
-      'http://localhost:3001'
+      'http://localhost:3001',
+      'https://sell-on-frontend.vercel.app',
+      'https://sell-on-frontend-git-main.vercel.app'
     ];
     
-    if (allowedOrigins.includes(origin)) {
+    // Permitir todas as origins do Vercel
+    if (origin.includes('vercel.app') || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(null, true); // Permitir todas as origins por enquanto
@@ -56,18 +29,25 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Carregar variáveis de ambiente
-require('dotenv').config({ path: './.env' });
+require('dotenv').config();
 
-// Conexão com MongoDB
+// Conexão com MongoDB otimizada para Vercel
 const connectDB = async () => {
   try {
+    // Verificar se já está conectado
+    if (mongoose.connection.readyState === 1) {
+      console.log('✅ MongoDB já conectado');
+      return;
+    }
+
     const atlasUri = process.env.MONGODB_URI;
     
     if (!atlasUri) {
@@ -77,10 +57,21 @@ const connectDB = async () => {
         console.log('⚠️  Continuando sem conexão com MongoDB em produção');
         return;
       }
-      process.exit(1);
+      throw new Error('MONGODB_URI não configurada');
     }
     
-    const conn = await mongoose.connect(atlasUri);
+    // Configurações otimizadas para Vercel
+    const options = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      bufferCommands: false,
+      bufferMaxEntries: 0
+    };
+    
+    const conn = await mongoose.connect(atlasUri, options);
     console.log(`✅ MongoDB Atlas conectado: ${conn.connection.host}`);
     console.log(`📊 Database: ${conn.connection.name}`);
   } catch (error) {
@@ -88,13 +79,15 @@ const connectDB = async () => {
     if (process.env.NODE_ENV === 'production') {
       console.log('⚠️  Continuando sem conexão com MongoDB em produção');
     } else {
-      process.exit(1);
+      throw error;
     }
   }
 };
 
-// Conectar ao MongoDB
-connectDB();
+// Conectar ao MongoDB apenas se não estiver em produção ou se for necessário
+if (process.env.NODE_ENV !== 'production' || process.env.MONGODB_URI) {
+  connectDB().catch(console.error);
+}
 
 // Rota da API
 app.get('/api', (req, res) => {
@@ -146,9 +139,12 @@ app.get('/health', (req, res) => {
 // Rota de teste para verificar se o servidor está funcionando
 app.get('/api/test', (req, res) => {
   res.json({ 
-    message: 'Backend funcionando!', 
+    success: true,
+    message: 'Backend funcionando perfeitamente!', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0',
+    status: 'online'
   });
 });
 
@@ -158,6 +154,7 @@ app.get('/api/test-db', async (req, res) => {
     const isConnected = mongoose.connection.readyState === 1;
     
     res.json({
+      success: true,
       message: 'Teste de conexão com MongoDB',
       connected: isConnected,
       state: mongoose.connection.readyState,
@@ -167,6 +164,7 @@ app.get('/api/test-db', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: 'Erro ao testar conexão com MongoDB',
       error: error.message,
       timestamp: new Date().toISOString()
@@ -174,6 +172,66 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
+// Rota de teste para verificar todas as rotas da API
+app.get('/api/routes', (req, res) => {
+  const routes = [
+    { method: 'GET', path: '/api', description: 'Informações da API' },
+    { method: 'GET', path: '/api/test', description: 'Teste do servidor' },
+    { method: 'GET', path: '/api/test-db', description: 'Teste do MongoDB' },
+    { method: 'GET', path: '/api/routes', description: 'Lista de rotas' },
+    { method: 'GET', path: '/health', description: 'Health check' },
+    { method: 'GET', path: '/api/clients', description: 'Listar clientes' },
+    { method: 'POST', path: '/api/clients', description: 'Criar cliente' },
+    { method: 'GET', path: '/api/products', description: 'Listar produtos' },
+    { method: 'POST', path: '/api/products', description: 'Criar produto' },
+    { method: 'GET', path: '/api/users', description: 'Listar usuários' },
+    { method: 'POST', path: '/api/users', description: 'Criar usuário' },
+    { method: 'GET', path: '/api/sales', description: 'Listar vendas' },
+    { method: 'POST', path: '/api/sales', description: 'Criar venda' },
+    { method: 'GET', path: '/api/proposals', description: 'Listar propostas' },
+    { method: 'POST', path: '/api/proposals', description: 'Criar proposta' },
+    { method: 'GET', path: '/api/distributors', description: 'Listar distribuidores' },
+    { method: 'POST', path: '/api/distributors', description: 'Criar distribuidor' },
+    { method: 'GET', path: '/api/goals', description: 'Listar metas' },
+    { method: 'POST', path: '/api/goals', description: 'Criar meta' },
+    { method: 'GET', path: '/api/events', description: 'Listar eventos' },
+    { method: 'POST', path: '/api/events', description: 'Criar evento' },
+    { method: 'GET', path: '/api/notifications', description: 'Listar notificações' },
+    { method: 'GET', path: '/api/price-list', description: 'Listar lista de preços' },
+    { method: 'POST', path: '/api/price-list', description: 'Criar lista de preços' }
+  ];
+  
+  res.json({
+    success: true,
+    message: 'Rotas disponíveis na API',
+    total: routes.length,
+    routes: routes,
+    timestamp: new Date().toISOString()
+  });
+});
+
+
+// Middleware de tratamento de erro global
+app.use((err, req, res, next) => {
+  console.error('Erro capturado pelo middleware global:', err);
+  
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Erro interno do servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// Middleware para rotas não encontradas
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Rota não encontrada',
+    path: req.originalUrl,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Para Vercel - não usar app.listen() em produção
 if (process.env.NODE_ENV !== 'production') {
