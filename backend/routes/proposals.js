@@ -7,6 +7,20 @@ const { auth } = require('../middleware/auth');
 // GET /api/proposals - Listar todas as propostas do usuário
 router.get('/', auth, async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        message: 'MongoDB não conectado - retornando lista vazia'
+      });
+    }
+
     const { page = 1, limit = 10, status, search } = req.query;
     const skip = (page - 1) * limit;
 
@@ -39,6 +53,7 @@ router.get('/', auth, async (req, res) => {
     const total = await Proposal.countDocuments(query);
 
     res.json({
+      success: true,
       data: proposals,
       pagination: {
         current: parseInt(page),
@@ -49,7 +64,11 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar propostas:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

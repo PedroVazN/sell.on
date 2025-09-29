@@ -6,12 +6,23 @@ const { auth } = require('../middleware/auth');
 // GET /api/distributors - Listar todos os distribuidores
 router.get('/', auth, async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        message: 'MongoDB não conectado - retornando lista vazia'
+      });
+    }
+
     const { page = 1, limit = 10, search, origem, isActive } = req.query;
     const skip = (page - 1) * limit;
-
-    console.log('=== DEBUG DISTRIBUTORS ===');
-    console.log('User ID:', req.user.id);
-    console.log('User:', req.user);
 
     // Query mais flexível - buscar todos os distribuidores primeiro
     let query = {};
@@ -40,8 +51,6 @@ router.get('/', auth, async (req, res) => {
       query.isActive = isActive === 'true';
     }
 
-    console.log('Query:', JSON.stringify(query, null, 2));
-
     const distributors = await Distributor.find(query)
       .populate('createdBy', 'name email')
       .sort({ apelido: 1 })
@@ -49,9 +58,6 @@ router.get('/', auth, async (req, res) => {
       .limit(parseInt(limit));
 
     const total = await Distributor.countDocuments(query);
-
-    console.log('Distributors found:', distributors.length);
-    console.log('Total:', total);
 
     res.json({
       success: true,
@@ -68,7 +74,7 @@ router.get('/', auth, async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: 'Erro interno do servidor',
-      details: error.message 
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

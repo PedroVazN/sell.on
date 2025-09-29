@@ -96,6 +96,21 @@ router.post('/', [auth, authorize('admin', 'vendedor')], [
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        message: 'MongoDB não conectado - retornando lista vazia'
+      });
+    }
+
     const { 
       page = 1, 
       limit = 10, 
@@ -158,7 +173,8 @@ router.get('/', auth, async (req, res) => {
     console.error('Erro ao buscar vendas:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

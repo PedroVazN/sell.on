@@ -10,6 +10,21 @@ router.use(auth);
 // GET /api/users - Listar usuários (apenas admin)
 router.get('/', async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        message: 'MongoDB não conectado - retornando lista vazia'
+      });
+    }
+
     // Verificar se é admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({
@@ -56,7 +71,8 @@ router.get('/', async (req, res) => {
     console.error('Erro ao buscar usuários:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
