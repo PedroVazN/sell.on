@@ -272,6 +272,21 @@ router.put('/:id/status', [auth, authorize('admin', 'vendedor')], [
 // @access  Private (Admin/Vendedor)
 router.get('/stats/summary', [auth, authorize('admin', 'vendedor')], async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: {
+          totalSales: 0,
+          totalRevenue: 0,
+          averageSale: 0,
+          totalItems: 0
+        },
+        message: 'MongoDB não conectado - retornando estatísticas zeradas'
+      });
+    }
+
     const { startDate, endDate, seller } = req.query;
     
     const matchQuery = { status: 'finalizada' };
@@ -314,7 +329,8 @@ router.get('/stats/summary', [auth, authorize('admin', 'vendedor')], async (req,
     console.error('Erro ao buscar estatísticas:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

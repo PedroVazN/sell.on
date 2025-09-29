@@ -334,6 +334,24 @@ router.get('/stats/summary', auth, async (req, res) => {
 // GET /api/proposals/dashboard/sales - Dados de vendas para o dashboard
 router.get('/dashboard/sales', auth, async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: {
+          salesStats: {
+            totalRevenue: 0,
+            totalSales: 0,
+            averageSale: 0,
+            totalItems: 0
+          },
+          topProducts: [],
+          monthlyData: []
+        },
+        message: 'MongoDB não conectado - retornando dados zerados'
+      });
+    }
+
     const userId = req.user.id;
     
     // Buscar vendas fechadas (receita total)
@@ -443,6 +461,28 @@ router.get('/dashboard/sales', auth, async (req, res) => {
 // GET /api/proposals/dashboard/stats - Estatísticas detalhadas para o dashboard
 router.get('/dashboard/stats', auth, async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: {
+          proposalStats: {
+            totalProposals: 0,
+            negociacaoProposals: 0,
+            vendaFechadaProposals: 0,
+            vendaPerdidaProposals: 0,
+            expiradaProposals: 0
+          },
+          salesStats: {
+            totalRevenue: 0,
+            totalSales: 0,
+            averageSale: 0
+          }
+        },
+        message: 'MongoDB não conectado - retornando dados zerados'
+      });
+    }
+
     const userId = req.user.id;
     
     // Buscar estatísticas de todas as propostas
