@@ -21,6 +21,7 @@
   ],
   "env": {
     "DISABLE_ESLINT_PLUGIN": "true",
-    "CI": "false"
+    "CI": "false",
+    "NODE_ENV": "production"
   }
 }

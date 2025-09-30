@@ -7,8 +7,8 @@ const router = express.Router();
 
 // @route   POST /api/products
 // @desc    Criar novo produto
-// @access  Private (Admin/Vendedor)
-router.post('/', auth, [
+// @access  Public (temporário para desenvolvimento)
+router.post('/', [
   body('name').trim().isLength({ min: 2 }).withMessage('Nome do produto é obrigatório'),
   body('price').isNumeric().withMessage('Preço deve ser um número'),
   body('category').trim().notEmpty().withMessage('Categoria é obrigatória'),
@@ -27,14 +27,14 @@ router.post('/', auth, [
       });
     }
 
-    // Adicionar createdBy baseado no usuário autenticado
+    // Adicionar createdBy temporário para desenvolvimento
     const productData = {
       ...req.body,
-      createdBy: req.user ? {
-        _id: req.user.id,
-        name: req.user.name,
-        email: req.user.email
-      } : undefined
+      createdBy: {
+        _id: '68c1afbcf906c14a8e7e8ff7',
+        name: 'Usuário Temporário',
+        email: 'temp@example.com'
+      }
     };
 
     const product = new Product(productData);
@@ -171,8 +171,8 @@ router.get('/:id', async (req, res) => {
 
 // @route   PUT /api/products/:id
 // @desc    Atualizar produto
-// @access  Private (Admin/Vendedor)
-router.put('/:id', auth, [
+// @access  Public (temporário para desenvolvimento)
+router.put('/:id', [
   body('name').optional().trim().isLength({ min: 2 }).withMessage('Nome deve ter pelo menos 2 caracteres'),
   body('price').optional().isNumeric().isFloat({ min: 0 }).withMessage('Preço deve ser um número positivo'),
   body('stock.current').optional().isInt({ min: 0 }).withMessage('Estoque deve ser um número inteiro positivo')
@@ -215,8 +215,8 @@ router.put('/:id', auth, [
 
 // @route   DELETE /api/products/:id
 // @desc    Deletar produto permanentemente
-// @access  Private (Admin)
-router.delete('/:id', auth, async (req, res) => {
+// @access  Public (temporário para desenvolvimento)
+router.delete('/:id', async (req, res) => {
   try {
     console.log('Tentando deletar produto:', req.params.id);
     
@@ -270,8 +270,8 @@ router.get('/categories/list', async (req, res) => {
 
 // @route   PUT /api/products/:id/stock
 // @desc    Atualizar estoque
-// @access  Private (Admin/Vendedor)
-router.put('/:id/stock', [auth, authorize('admin', 'vendedor')], [
+// @access  Public (temporário para desenvolvimento)
+router.put('/:id/stock', [
   body('current').isInt({ min: 0 }).withMessage('Estoque atual deve ser um número inteiro positivo'),
   body('min').optional().isInt({ min: 0 }).withMessage('Estoque mínimo deve ser um número inteiro positivo'),
   body('max').optional().isInt({ min: 0 }).withMessage('Estoque máximo deve ser um número inteiro positivo')

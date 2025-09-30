@@ -4,7 +4,7 @@ const Client = require('../models/Client');
 const { auth } = require('../middleware/auth');
 
 // GET /api/clients - Listar todos os clientes
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Verificar se o MongoDB está conectado
     const mongoose = require('mongoose');
@@ -77,26 +77,33 @@ router.get('/', auth, async (req, res) => {
 });
 
 // GET /api/clients/:id - Buscar cliente específico
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user.id
-    }).populate('createdBy', 'name email');
+    const client = await Client.findById(req.params.id)
+      .populate('createdBy', 'name email');
 
     if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Cliente não encontrado' 
+      });
     }
 
-    res.json({ data: client });
+    res.json({ 
+      success: true,
+      data: client 
+    });
   } catch (error) {
     console.error('Erro ao buscar cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor' 
+    });
   }
 });
 
 // POST /api/clients - Criar novo cliente
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const {
       cnpj,
@@ -111,13 +118,15 @@ router.post('/', auth, async (req, res) => {
     // Validações básicas
     if (!cnpj || !razaoSocial || !contato?.nome || !contato?.email || !contato?.telefone) {
       return res.status(400).json({ 
-        error: 'CNPJ, razão social e dados de contato são obrigatórios' 
+        success: false,
+        message: 'CNPJ, razão social e dados de contato são obrigatórios' 
       });
     }
 
     if (!endereco?.uf) {
       return res.status(400).json({ 
-        error: 'UF é obrigatória' 
+        success: false,
+        message: 'UF é obrigatória' 
       });
     }
 
@@ -129,24 +138,33 @@ router.post('/', auth, async (req, res) => {
       endereco,
       classificacao: classificacao || 'OUTROS',
       observacoes,
-      createdBy: req.user.id
+      createdBy: '68c1afbcf906c14a8e7e8ff7' // ID temporário para desenvolvimento
     });
 
     await client.save();
     await client.populate('createdBy', 'name email');
 
-    res.status(201).json({ data: client });
+    res.status(201).json({ 
+      success: true,
+      data: client 
+    });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ error: 'CNPJ já cadastrado' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'CNPJ já cadastrado' 
+      });
     }
     console.error('Erro ao criar cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor' 
+    });
   }
 });
 
 // PUT /api/clients/:id - Atualizar cliente
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const {
       cnpj,
@@ -159,13 +177,13 @@ router.put('/:id', auth, async (req, res) => {
       observacoes
     } = req.body;
 
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user.id
-    });
+    const client = await Client.findById(req.params.id);
 
     if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Cliente não encontrado' 
+      });
     }
 
     // Atualizar campos se fornecidos
@@ -181,57 +199,70 @@ router.put('/:id', auth, async (req, res) => {
     await client.save();
     await client.populate('createdBy', 'name email');
 
-    res.json({ data: client });
+    res.json({ 
+      success: true,
+      data: client 
+    });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ error: 'CNPJ já cadastrado' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'CNPJ já cadastrado' 
+      });
     }
     console.error('Erro ao atualizar cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor' 
+    });
   }
 });
 
 // DELETE /api/clients/:id - Deletar cliente
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const client = await Client.findOneAndDelete({
-      _id: req.params.id,
-      createdBy: req.user.id
-    });
+    const client = await Client.findByIdAndDelete(req.params.id);
 
     if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Cliente não encontrado' 
+      });
     }
 
-    res.json({ message: 'Cliente deletado com sucesso' });
+    res.json({ 
+      success: true,
+      message: 'Cliente deletado com sucesso' 
+    });
   } catch (error) {
     console.error('Erro ao deletar cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor' 
+    });
   }
 });
 
 // GET /api/clients/stats/summary - Estatísticas dos clientes
-router.get('/stats/summary', auth, async (req, res) => {
+router.get('/stats/summary', async (req, res) => {
   try {
-    const totalClients = await Client.countDocuments({ createdBy: req.user.id });
+    const totalClients = await Client.countDocuments();
     const activeClients = await Client.countDocuments({ 
-      createdBy: req.user.id, 
       isActive: true 
     });
     
     const clientsByClassification = await Client.aggregate([
-      { $match: { createdBy: req.user.id } },
       { $group: { _id: '$classificacao', count: { $sum: 1 } } }
     ]);
     
     const clientsByUF = await Client.aggregate([
-      { $match: { createdBy: req.user.id } },
       { $group: { _id: '$endereco.uf', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 }
     ]);
 
     res.json({
+      success: true,
       data: {
         totalClients,
         activeClients,
@@ -242,7 +273,10 @@ router.get('/stats/summary', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar estatísticas dos clientes:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor' 
+    });
   }
 });
 

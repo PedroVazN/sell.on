@@ -1,6 +1,4 @@
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://backend-sable-eta-89.vercel.app/api' 
-  : 'https://backend-sable-eta-89.vercel.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backend-sable-eta-89.vercel.app/api';
 
 export interface User {
   _id: string;
