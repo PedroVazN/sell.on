@@ -22,6 +22,10 @@ require('dotenv').config();
 // Conexão com MongoDB
 const connectDB = async () => {
   try {
+    console.log('🔄 Iniciando conexão com MongoDB...');
+    console.log('🔍 Estado atual:', mongoose.connection.readyState);
+    console.log('🔍 MONGODB_URI existe:', !!process.env.MONGODB_URI);
+    
     if (mongoose.connection.readyState === 1) {
       console.log('✅ MongoDB já conectado');
       return;
@@ -34,27 +38,60 @@ const connectDB = async () => {
       return;
     }
     
+    console.log('🔍 String de conexão (primeiros 50 chars):', atlasUri.substring(0, 50) + '...');
+    
+    // Fechar conexão existente se houver
+    if (mongoose.connection.readyState !== 0) {
+      console.log('🔄 Fechando conexão existente...');
+      await mongoose.disconnect();
+    }
+    
     const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000, // Aumentar timeout
       socketTimeoutMS: 45000,
-      bufferCommands: false
+      bufferCommands: false,
+      retryWrites: true,
+      w: 'majority'
     };
     
+    console.log('🔄 Tentando conectar com opções:', options);
     const conn = await mongoose.connect(atlasUri, options);
     console.log(`✅ MongoDB Atlas conectado: ${conn.connection.host}`);
+    console.log(`📊 Database: ${conn.connection.name}`);
+    console.log(`📊 Estado: ${mongoose.connection.readyState}`);
   } catch (error) {
     console.error('❌ Erro ao conectar com MongoDB:', error.message);
+    console.error('📋 Detalhes do erro:', error);
   }
 };
 
 // Conectar ao MongoDB
 connectDB();
 
+// Middleware para garantir conexão com MongoDB em cada requisição
+app.use(async (req, res, next) => {
+  console.log('🔍 Middleware - Estado MongoDB:', mongoose.connection.readyState);
+  console.log('🔍 Middleware - MONGODB_URI existe:', !!process.env.MONGODB_URI);
+  
+  // Se não estiver conectado, tentar conectar
+  if (mongoose.connection.readyState !== 1 && process.env.MONGODB_URI) {
+    try {
+      console.log('🔄 Middleware - Tentando reconectar ao MongoDB...');
+      await connectDB();
+      console.log('✅ Middleware - Reconexão bem-sucedida!');
+    } catch (error) {
+      console.log('❌ Middleware - Falha na reconexão:', error.message);
+    }
+  }
+  next();
+});
+
 // Rota da API
 app.get('/api', (req, res) => {
+  console.log('🔍 Rota /api chamada');
   res.json({
     message: 'Bem-vindo ao SellOne API',
     version: '1.0.0',
@@ -65,6 +102,7 @@ app.get('/api', (req, res) => {
 
 // Rota na raiz para evitar 404
 app.get('/', (req, res) => {
+  console.log('🔍 Rota raiz / chamada');
   res.json({
     message: 'Bem-vindo ao SellOne API',
     version: '1.0.0',
@@ -90,6 +128,7 @@ app.get('/', (req, res) => {
 
 // Rota de teste
 app.get('/api/test', (req, res) => {
+  console.log('🔍 Rota /api/test chamada');
   res.json({ 
     success: true,
     message: 'Backend funcionando perfeitamente!', 
@@ -122,6 +161,70 @@ app.get('/api/test-db', async (req, res) => {
       message: 'Erro ao testar conexão com MongoDB',
       error: error.message,
       timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Rota para forçar reconexão com MongoDB
+app.get('/api/force-connect', async (req, res) => {
+  try {
+    console.log('🔄 Forçando conexão MongoDB...');
+    console.log('🔍 MONGODB_URI existe:', !!process.env.MONGODB_URI);
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 Estado atual:', mongoose.connection.readyState);
+    
+    if (!process.env.MONGODB_URI) {
+      return res.json({
+        success: false,
+        message: 'MONGODB_URI não configurada',
+        error: 'Variável de ambiente MONGODB_URI não encontrada'
+      });
+    }
+
+    // Fechar conexão existente se houver
+    if (mongoose.connection.readyState !== 0) {
+      console.log('🔄 Fechando conexão existente...');
+      await mongoose.disconnect();
+    }
+    
+    // Conectar novamente com configurações otimizadas
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 15000, // Aumentar timeout
+      socketTimeoutMS: 45000,
+      bufferCommands: false,
+      retryWrites: true,
+      w: 'majority'
+    });
+    
+    console.log('✅ Conexão estabelecida com sucesso!');
+    
+    // Testar uma consulta simples
+    const User = require('../models/User');
+    const userCount = await User.countDocuments();
+    console.log('👥 Total de usuários encontrados:', userCount);
+    
+    res.json({
+      success: true,
+      message: 'Conexão MongoDB estabelecida com sucesso!',
+      connected: true,
+      host: conn.connection.host,
+      database: conn.connection.name,
+      state: mongoose.connection.readyState,
+      userCount: userCount
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na conexão:', error);
+    res.json({
+      success: false,
+      message: 'Erro ao conectar com MongoDB',
+      error: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack
     });
   }
 });
