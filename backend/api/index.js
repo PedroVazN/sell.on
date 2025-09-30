@@ -63,6 +63,31 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Rota na raiz para evitar 404
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Bem-vindo ao SellOne API',
+    version: '1.0.0',
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      api: '/api',
+      test: '/api/test',
+      testDb: '/api/test-db',
+      products: '/api/products',
+      clients: '/api/clients',
+      users: '/api/users',
+      sales: '/api/sales',
+      proposals: '/api/proposals',
+      distributors: '/api/distributors',
+      goals: '/api/goals',
+      events: '/api/events',
+      notifications: '/api/notifications',
+      priceList: '/api/price-list'
+    }
+  });
+});
+
 // Rota de teste
 app.get('/api/test', (req, res) => {
   res.json({ 
