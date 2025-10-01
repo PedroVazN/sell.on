@@ -14,10 +14,6 @@
     {
       "src": "/health",
       "dest": "/backend/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/backend/api/index.js"
     }
   ],
   "env": {
