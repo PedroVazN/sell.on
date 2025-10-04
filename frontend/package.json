@@ -1,6 +1,7 @@
 {
   "name": "salesone-crm",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Sistema de gestão de vendas - SellOne CRM",
   "private": true,
   "dependencies": {
     "@types/node": "^16.18.0",
