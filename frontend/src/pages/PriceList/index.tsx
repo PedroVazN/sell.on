@@ -114,7 +114,7 @@ export const PriceList: React.FC = () => {
       if (priceListsResponse.data && priceListsResponse.data.length > 0) {
         console.log('Primeira PriceList:', priceListsResponse.data[0]);
         console.log('Distributor da primeira PriceList:', priceListsResponse.data[0].distributor);
-        console.log('Product da primeira PriceList:', priceListsResponse.data[0].product);
+        console.log('Products da primeira PriceList:', priceListsResponse.data[0].products);
       }
     } catch (err) {
       setError('Erro ao carregar dados');
@@ -439,27 +439,29 @@ export const PriceList: React.FC = () => {
                       </DistributorRow>
                       
                       {/* Linhas dos produtos (quando expandido) */}
-                      {isExpanded && priceList.product && (
-                        <ProductRow key={`${priceList._id}-0`}>
-                          <TableCell></TableCell>
-                          <TableCell>
-                            <ProductInfo>
-                              <ProductNameDisplay>{priceList.product.name || 'Produto não encontrado'}</ProductNameDisplay>
-                            </ProductInfo>
-                          </TableCell>
-                          <TableCell>
-                            <PriceContainer>
-                              <PriceValue $color="#10b981">
-                                {formatCurrency(priceList.pricing?.aVista || 0)}
-                              </PriceValue>
-                              <PriceLabelDisplay>
-                                À Vista
-                              </PriceLabelDisplay>
-                            </PriceContainer>
-                      </TableCell>
-                          <TableCell></TableCell>
-                        </ProductRow>
-                      )}
+                      {isExpanded && priceList.products && priceList.products.length > 0 && 
+                        priceList.products.map((product: any, productIndex: number) => (
+                          <ProductRow key={`${priceList._id}-${productIndex}`}>
+                            <TableCell></TableCell>
+                            <TableCell>
+                              <ProductInfo>
+                                <ProductNameDisplay>{product.name || 'Produto não encontrado'}</ProductNameDisplay>
+                              </ProductInfo>
+                            </TableCell>
+                            <TableCell>
+                              <PriceContainer>
+                                <PriceValue $color="#10b981">
+                                  {formatCurrency(product.pricing?.aVista || 0)}
+                                </PriceValue>
+                                <PriceLabelDisplay>
+                                  À Vista
+                                </PriceLabelDisplay>
+                              </PriceContainer>
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </ProductRow>
+                        ))
+                      }
                     </React.Fragment>
                   );
                 })}
