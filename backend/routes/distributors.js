@@ -123,8 +123,20 @@ router.post('/', async (req, res) => {
     // Validações básicas
     if (!apelido || !razaoSocial || !idDistribuidor || !contato?.nome || !contato?.telefone || !origem || !pedidoMinimo?.valor) {
       return res.status(400).json({ 
+        success: false,
         error: 'Apelido, razão social, ID do distribuidor, contato, origem e pedido mínimo são obrigatórios' 
       });
+    }
+
+    // Validar UF se fornecido
+    if (endereco?.uf && endereco.uf !== '') {
+      const validUFs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+      if (!validUFs.includes(endereco.uf.toUpperCase())) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'UF inválida. Use uma das siglas válidas do Brasil.' 
+        });
+      }
     }
 
     const distributor = new Distributor({
