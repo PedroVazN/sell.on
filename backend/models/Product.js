@@ -33,17 +33,11 @@ const productSchema = new mongoose.Schema({
   },
   sku: {
     type: String,
-    unique: true,
-    sparse: true,
-    trim: true,
-    default: null
+    trim: true
   },
   barcode: {
     type: String,
-    unique: true,
-    sparse: true,
-    trim: true,
-    default: null
+    trim: true
   },
   stock: {
     current: {
