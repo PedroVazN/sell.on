@@ -12,6 +12,21 @@ router.get('/', async (req, res) => {
     console.log('Usuário autenticado:', req.user ? req.user.id : 'NENHUM');
     console.log('Query params:', req.query);
     
+    // Verificar se o MongoDB está conectado
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        message: 'MongoDB não conectado - retornando lista vazia'
+      });
+    }
+    
     const { page = 1, limit = 10, distributor, product, isActive } = req.query;
     const skip = (page - 1) * limit;
 
