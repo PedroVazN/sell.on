@@ -166,7 +166,7 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const priceItem = await PriceList.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      createdBy: req.user ? req.user.id : 'temp-user'
     })
     .populate('distributor', 'apelido razaoSocial contato.nome')
     .populate('product', 'name description price category')
@@ -188,7 +188,7 @@ router.post('/', auth, async (req, res) => {
   try {
     console.log('=== CRIANDO NOVA LISTA DE PREÇOS ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
-    console.log('Usuário:', req.user.id);
+    console.log('Usuário:', req.user ? req.user.id : 'NENHUM');
     
     const {
       distributor,
@@ -219,7 +219,7 @@ router.post('/', auth, async (req, res) => {
         const existingItem = await PriceList.findOne({
           distributor: distributorId,
           product: productData.productId,
-          createdBy: req.user.id
+          createdBy: req.user ? req.user.id : 'temp-user'
         });
 
         if (existingItem) {
@@ -239,7 +239,7 @@ router.post('/', auth, async (req, res) => {
           validFrom: productData.validFrom ? new Date(productData.validFrom) : new Date(),
           validUntil: productData.validUntil ? new Date(productData.validUntil) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           notes: productData.notes || '',
-          createdBy: req.user.id
+          createdBy: req.user ? req.user.id : 'temp-user'
         });
 
         await priceItem.save();
@@ -278,7 +278,7 @@ router.post('/', auth, async (req, res) => {
       const existingItem = await PriceList.findOne({
         distributor,
         product,
-        createdBy: req.user.id
+        createdBy: req.user ? req.user.id : 'temp-user'
       });
 
       if (existingItem) {
@@ -294,7 +294,7 @@ router.post('/', auth, async (req, res) => {
         validFrom: validFrom ? new Date(validFrom) : undefined,
         validUntil: validUntil ? new Date(validUntil) : undefined,
         notes,
-        createdBy: req.user.id
+        createdBy: req.user ? req.user.id : 'temp-user'
       });
 
       await priceItem.save();
@@ -323,7 +323,7 @@ router.put('/:id', auth, async (req, res) => {
 
     const priceItem = await PriceList.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      createdBy: req.user ? req.user.id : 'temp-user'
     });
 
     if (!priceItem) {
@@ -352,7 +352,7 @@ router.put('/:id', auth, async (req, res) => {
 // DELETE /api/price-list/:id - Deletar item da lista de preços
 router.delete('/:id', auth, async (req, res) => {
   try {
-    console.log('Tentando deletar item:', req.params.id, 'para usuário:', req.user.id);
+    console.log('Tentando deletar item:', req.params.id, 'para usuário:', req.user ? req.user.id : 'NENHUM');
     
     // Verificar se é um ID de grupo (começa com "group_")
     if (req.params.id.startsWith('group_')) {
@@ -362,7 +362,7 @@ router.delete('/:id', auth, async (req, res) => {
       // Deletar todos os itens deste distribuidor para este usuário
       const result = await PriceList.deleteMany({
         distributor: distributorId,
-        createdBy: req.user.id
+        createdBy: req.user ? req.user.id : 'temp-user'
       });
       
       console.log('Itens deletados:', result.deletedCount);
@@ -376,7 +376,7 @@ router.delete('/:id', auth, async (req, res) => {
       // Deletar item individual
       const existingItem = await PriceList.findOne({
         _id: req.params.id,
-        createdBy: req.user.id
+        createdBy: req.user ? req.user.id : 'temp-user'
       });
       
       if (!existingItem) {
@@ -388,7 +388,7 @@ router.delete('/:id', auth, async (req, res) => {
       
       const priceItem = await PriceList.findOneAndDelete({
         _id: req.params.id,
-        createdBy: req.user.id
+        createdBy: req.user ? req.user.id : 'temp-user'
       });
 
       if (!priceItem) {
@@ -419,7 +419,7 @@ router.get('/distributor/:distributorId', auth, async (req, res) => {
 
     const priceList = await PriceList.find({
       distributor: distributorId,
-      createdBy: req.user.id,
+      createdBy: req.user ? req.user.id : 'temp-user',
       isActive: true
     })
     .populate('product', 'name description price category')
@@ -429,7 +429,7 @@ router.get('/distributor/:distributorId', auth, async (req, res) => {
 
     const total = await PriceList.countDocuments({
       distributor: distributorId,
-      createdBy: req.user.id,
+      createdBy: req.user ? req.user.id : 'temp-user',
       isActive: true
     });
 
