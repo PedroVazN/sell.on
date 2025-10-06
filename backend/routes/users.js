@@ -67,6 +67,59 @@ router.post('/test-login', async (req, res) => {
   }
 });
 
+// POST /api/users/fix-vendedor - Corrigir usuários vendedores existentes
+router.post('/fix-vendedor', async (req, res) => {
+  try {
+    console.log('🔧 Corrigindo usuários vendedores...');
+    
+    // Buscar todos os usuários vendedores
+    const vendedores = await User.find({ role: 'vendedor' });
+    console.log('👥 Vendedores encontrados:', vendedores.length);
+    
+    const results = [];
+    
+    for (const vendedor of vendedores) {
+      console.log('🔧 Corrigindo vendedor:', vendedor.email);
+      
+      // Definir senha padrão
+      const novaSenha = '123456';
+      
+      // Hash da nova senha
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(novaSenha, salt);
+      
+      // Atualizar usuário
+      vendedor.password = hashedPassword;
+      vendedor.isActive = true;
+      await vendedor.save();
+      
+      console.log('✅ Vendedor corrigido:', {
+        email: vendedor.email,
+        novaSenha: novaSenha,
+        hash: hashedPassword
+      });
+      
+      results.push({
+        email: vendedor.email,
+        novaSenha: novaSenha,
+        role: vendedor.role
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Vendedores corrigidos com sucesso',
+      data: results
+    });
+  } catch (error) {
+    console.error('❌ Erro ao corrigir vendedores:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao corrigir vendedores'
+    });
+  }
+});
+
 // POST /api/users/login - Login de usuário
 router.post('/login', async (req, res) => {
   try {
