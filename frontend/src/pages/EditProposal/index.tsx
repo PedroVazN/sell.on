@@ -118,9 +118,12 @@ export const EditProposal: React.FC = () => {
       
       // Carregar proposta
       if (id) {
+        console.log('Carregando proposta com ID:', id);
         const proposalResponse = await apiService.getProposal(id);
+        console.log('Resposta da API:', proposalResponse);
         if (proposalResponse.success && proposalResponse.data) {
           const proposalData = proposalResponse.data;
+          console.log('Dados da proposta:', proposalData);
           setProposal(proposalData);
           
           // Preencher formulário com dados da proposta
