@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiService, User } from '../services/api';
+import { apiService, User, LoginRequest } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -63,39 +63,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Simular login com diferentes usuários
-      let userData: User | null = null;
+      // Fazer login real via API
+      const credentials: LoginRequest = { email, password };
+      const response = await apiService.login(credentials);
       
-      if (email === 'admin@sellone.com' && password === '123456') {
-        userData = {
-          _id: '1',
-          name: 'Administrador',
-          email: 'admin@sellone.com',
-          role: 'admin',
-          phone: '',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-      } else if (email === 'vendedor@sellone.com' && password === '123456') {
-        userData = {
-          _id: '2',
-          name: 'Vendedor',
-          email: 'vendedor@sellone.com',
-          role: 'vendedor',
-          phone: '',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-      }
-
-      if (userData) {
+      if (response.success && response.data) {
+        const userData = response.data;
         setUser(userData);
         setIsAuthenticated(true);
-        const token = 'temp-token-' + Date.now();
-        localStorage.setItem('token', token);
-        localStorage.setItem('authToken', token);
+        
+        // Token já é gerenciado pelo apiService
         return true;
       } else {
         return false;
