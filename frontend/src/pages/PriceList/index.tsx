@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Plus, Search, Edit, Trash2, Loader2, Download } from 'lucide-react';
-import { apiService, PriceList as PriceListType, PriceListItem, Distributor, Product } from '../../services/api';
+import { apiService, PriceList as PriceListType, Distributor, Product } from '../../services/api';
 import { 
   Container, 
   Header, 
@@ -75,7 +75,7 @@ interface NewPriceList {
 }
 
 export const PriceList: React.FC = () => {
-  const [priceLists, setPriceLists] = useState<PriceListItem[]>([]);
+  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +145,7 @@ export const PriceList: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDeletePriceList = async (priceList: PriceListItem) => {
+  const handleDeletePriceList = async (priceList: PriceList) => {
     if (window.confirm(`Tem certeza que deseja excluir esta lista de preços?`)) {
       try {
         setLoading(true);
