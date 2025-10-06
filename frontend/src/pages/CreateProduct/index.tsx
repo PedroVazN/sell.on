@@ -29,10 +29,10 @@ import {
 interface ProductFormData {
   name: string;
   category: string;
-  price: number;
+  description: string; // Agora obrigatório
   isActive: boolean;
-  // Campos obrigatórios para a API
-  description?: string;
+  // Campos opcionais
+  price?: number;
   cost?: number;
   brand?: string;
   sku?: string;
@@ -68,10 +68,10 @@ export const CreateProduct: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     category: '',
-    price: 0,
+    description: '', // Agora obrigatório
     isActive: true,
     // Valores padrão para compatibilidade com a API
-    description: '',
+    price: 0,
     cost: 0,
     brand: '',
     sku: '',
@@ -93,8 +93,8 @@ export const CreateProduct: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.category || formData.price <= 0) {
-      alert('Por favor, preencha todos os campos obrigatórios');
+    if (!formData.name || !formData.category || !formData.description || formData.description.trim().length < 5) {
+      alert('Por favor, preencha todos os campos obrigatórios (nome, categoria e descrição com pelo menos 5 caracteres)');
       return;
     }
 
@@ -105,8 +105,9 @@ export const CreateProduct: React.FC = () => {
       const productData = {
         name: formData.name,
         category: formData.category,
-        price: formData.price,
-        description: formData.description || '',
+        description: formData.description, // Agora obrigatório
+        // Preço opcional - só incluir se fornecido
+        ...(formData.price && formData.price > 0 && { price: formData.price }),
         cost: formData.cost || 0,
         brand: formData.brand || '',
         // Só incluir sku e barcode se não estiverem vazios (para evitar erro de unique)
@@ -185,14 +186,13 @@ export const CreateProduct: React.FC = () => {
 
             <FormRow>
               <FormGroup>
-                <Label>Preço (R$)</Label>
+                <Label>Descrição *</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Digite uma descrição detalhada do produto (mínimo 5 caracteres)"
+                  required
                 />
               </FormGroup>
 
