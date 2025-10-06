@@ -29,7 +29,7 @@ export const BackButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${theme.colors.background.hover};
+    background: ${theme.colors.background.cardHover};
     border-color: ${theme.colors.border.secondary};
     transform: translateY(-1px);
   }
@@ -118,8 +118,8 @@ export const Button = styled.button<{ disabled?: boolean }>`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: ${props => props.disabled ? theme.colors.background.disabled : theme.colors.primary.main};
-  color: ${props => props.disabled ? theme.colors.text.disabled : theme.colors.text.onPrimary};
+  background: ${props => props.disabled ? theme.colors.background.tertiary : theme.colors.primary};
+  color: ${props => props.disabled ? theme.colors.text.disabled : theme.colors.text.primary};
   border: none;
   border-radius: ${theme.borderRadius.md};
   font-size: 0.875rem;
@@ -129,7 +129,7 @@ export const Button = styled.button<{ disabled?: boolean }>`
   opacity: ${props => props.disabled ? 0.6 : 1};
 
   &:hover:not(:disabled) {
-    background: ${theme.colors.primary.hover};
+    background: ${theme.colors.hover.primary};
     transform: translateY(-1px);
     box-shadow: ${theme.shadows.medium};
   }
@@ -140,7 +140,7 @@ export const Button = styled.button<{ disabled?: boolean }>`
 `;
 
 export const ProductItem = styled.div`
-  background: ${theme.colors.background.hover};
+  background: ${theme.colors.background.cardHover};
   border: 1px solid ${theme.colors.border.primary};
   border-radius: ${theme.borderRadius.md};
   padding: 1.5rem;
@@ -221,15 +221,15 @@ export const RemoveButton = styled.button`
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: ${theme.colors.error.main};
-  color: ${theme.colors.text.onError};
+  background: ${theme.colors.error};
+  color: ${theme.colors.text.primary};
   border: none;
   border-radius: ${theme.borderRadius.md};
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${theme.colors.error.hover};
+    background: ${theme.colors.hover.danger};
     transform: scale(1.05);
   }
 
@@ -253,7 +253,7 @@ export const AddProductButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${theme.colors.background.hover};
+    background: ${theme.colors.background.cardHover};
     border-color: ${theme.colors.border.secondary};
     transform: translateY(-1px);
   }
@@ -291,7 +291,7 @@ export const ProductList = styled.div`
 export const EmptyState = styled.div`
   text-align: center;
   padding: 3rem 1rem;
-  background: ${theme.colors.background.hover};
+  background: ${theme.colors.background.cardHover};
   border: 2px dashed ${theme.colors.border.primary};
   border-radius: ${theme.borderRadius.md};
   color: ${theme.colors.text.secondary};
