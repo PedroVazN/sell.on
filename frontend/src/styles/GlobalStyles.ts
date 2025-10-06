@@ -354,6 +354,49 @@ export const GlobalStyles = createGlobalStyle`
     }
   }
 
+  /* Estilos globais para selects - Forçar tema escuro */
+  select {
+    background: ${theme.colors.background.card} !important;
+    color: ${theme.colors.text.primary} !important;
+    border: 1px solid ${theme.colors.border.primary} !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+  }
+
+  select option {
+    background: ${theme.colors.background.card} !important;
+    color: ${theme.colors.text.primary} !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Força estilos em todos os navegadores */
+  select::-ms-expand {
+    display: none !important;
+  }
+
+  /* Estilo específico para Firefox */
+  @-moz-document url-prefix() {
+    select option {
+      background: ${theme.colors.background.card} !important;
+      color: ${theme.colors.text.primary} !important;
+    }
+  }
+
+  /* Estilo específico para Webkit (Chrome, Safari) */
+  select::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  select::-webkit-scrollbar-track {
+    background: ${theme.colors.background.card};
+  }
+
+  select::-webkit-scrollbar-thumb {
+    background: ${theme.colors.border.primary};
+    border-radius: 4px;
+  }
+
   /* Print styles */
   @media print {
     body {
