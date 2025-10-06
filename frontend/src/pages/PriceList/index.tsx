@@ -294,7 +294,7 @@ export const PriceList: React.FC = () => {
     const search = searchTerm.toLowerCase();
     return (
       (priceList.distributor?.apelido || priceList.distributor?.razaoSocial || '').toLowerCase().includes(search) ||
-      priceList.product?.name?.toLowerCase().includes(search)
+      priceList.products?.some((product: any) => product.name?.toLowerCase().includes(search))
     );
   });
 
@@ -302,6 +302,7 @@ export const PriceList: React.FC = () => {
   console.log('PriceLists totais:', priceLists.length);
   console.log('PriceLists filtrados:', filteredPriceLists.length);
   console.log('Search term:', searchTerm);
+  console.log('filteredPriceLists:', filteredPriceLists);
 
   if (loading) {
     return (
