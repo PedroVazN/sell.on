@@ -4,7 +4,7 @@ const Distributor = require('../models/DistributorNew');
 const { auth } = require('../middleware/auth');
 
 // GET /api/distributors - Listar todos os distribuidores
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Verificar se o MongoDB está conectado
     const mongoose = require('mongoose');
@@ -80,13 +80,13 @@ router.get('/', auth, async (req, res) => {
 });
 
 // GET /api/distributors/:id - Buscar distribuidor específico
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const distributor = await Distributor.findOne({
       _id: req.params.id,
       $or: [
-        { 'createdBy._id': req.user.id },
-        { createdBy: req.user.id }
+        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
+        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
       ]
     }).populate('createdBy', 'name email');
 
@@ -102,7 +102,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // POST /api/distributors - Criar novo distribuidor
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const {
       apelido,
@@ -135,7 +135,7 @@ router.post('/', auth, async (req, res) => {
       pedidoMinimo,
       endereco,
       observacoes,
-      createdBy: req.user.id // Salvar como string para compatibilidade
+      createdBy: '68c1afbcf906c14a8e7e8ff7' // ID temporário para desenvolvimento
     });
 
     await distributor.save();
@@ -152,7 +152,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // PUT /api/distributors/:id - Atualizar distribuidor
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const {
       apelido,
@@ -171,9 +171,9 @@ router.put('/:id', auth, async (req, res) => {
     const distributor = await Distributor.findOne({
       _id: req.params.id,
       createdBy: {
-        _id: req.user.id,
-        name: req.user.name,
-        email: req.user.email
+        _id: '68c1afbcf906c14a8e7e8ff7',
+        name: 'Usuário Temporário',
+        email: 'temp@example.com'
       }
     });
 
@@ -208,14 +208,14 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // DELETE /api/distributors/:id - Deletar distribuidor
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const distributor = await Distributor.findOneAndDelete({
       _id: req.params.id,
       createdBy: {
-        _id: req.user.id,
-        name: req.user.name,
-        email: req.user.email
+        _id: '68c1afbcf906c14a8e7e8ff7',
+        name: 'Usuário Temporário',
+        email: 'temp@example.com'
       }
     });
 

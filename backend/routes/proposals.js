@@ -5,7 +5,7 @@ const Proposal = require('../models/Proposal');
 const { auth } = require('../middleware/auth');
 
 // GET /api/proposals - Listar todas as propostas do usuário
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Verificar se o MongoDB está conectado
     if (mongoose.connection.readyState !== 1) {
@@ -26,8 +26,8 @@ router.get('/', auth, async (req, res) => {
 
     let query = { 
       $or: [
-        { 'createdBy._id': req.user.id },
-        { createdBy: req.user.id }
+        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
+        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
       ]
     };
     
@@ -73,13 +73,13 @@ router.get('/', auth, async (req, res) => {
 });
 
 // GET /api/proposals/:id - Buscar proposta específica
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const proposal = await Proposal.findOne({
       _id: req.params.id,
       $or: [
-        { 'createdBy._id': req.user.id },
-        { createdBy: req.user.id }
+        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
+        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
       ]
     }).populate('createdBy', 'name email');
 
@@ -95,7 +95,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // POST /api/proposals - Criar nova proposta
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     console.log('=== CRIANDO PROPOSTA ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
@@ -192,7 +192,7 @@ router.post('/', auth, async (req, res) => {
       observations: observations || '',
       status: status || 'negociacao',
       validUntil: new Date(validUntil),
-      createdBy: req.user.id
+      createdBy: '68c1afbcf906c14a8e7e8ff7' // ID temporário para desenvolvimento
     });
 
     console.log('Proposta criada:', proposal);
@@ -217,15 +217,15 @@ router.post('/', auth, async (req, res) => {
 });
 
 // PUT /api/proposals/:id - Atualizar proposta
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { status } = req.body;
 
     const proposal = await Proposal.findOne({
       _id: req.params.id,
       $or: [
-        { 'createdBy._id': req.user.id },
-        { createdBy: req.user.id }
+        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
+        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
       ]
     });
 
@@ -255,13 +255,13 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // DELETE /api/proposals/:id - Deletar proposta
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const proposal = await Proposal.findOneAndDelete({
       _id: req.params.id,
       $or: [
-        { 'createdBy._id': req.user.id },
-        { createdBy: req.user.id }
+        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
+        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
       ]
     });
 
@@ -283,9 +283,9 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // GET /api/proposals/stats/summary - Estatísticas das propostas
-router.get('/stats/summary', auth, async (req, res) => {
+router.get('/stats/summary', async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
     
     const stats = await Proposal.aggregate([
       { 
@@ -332,7 +332,7 @@ router.get('/stats/summary', auth, async (req, res) => {
 });
 
 // GET /api/proposals/dashboard/sales - Dados de vendas para o dashboard
-router.get('/dashboard/sales', auth, async (req, res) => {
+router.get('/dashboard/sales', async (req, res) => {
   try {
     // Verificar se o MongoDB está conectado
     if (mongoose.connection.readyState !== 1) {
@@ -352,7 +352,7 @@ router.get('/dashboard/sales', auth, async (req, res) => {
       });
     }
 
-    const userId = req.user.id;
+    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
     
     // Buscar vendas fechadas (receita total)
     const salesStats = await Proposal.aggregate([
@@ -459,7 +459,7 @@ router.get('/dashboard/sales', auth, async (req, res) => {
 });
 
 // GET /api/proposals/dashboard/stats - Estatísticas detalhadas para o dashboard
-router.get('/dashboard/stats', auth, async (req, res) => {
+router.get('/dashboard/stats', async (req, res) => {
   try {
     // Verificar se o MongoDB está conectado
     if (mongoose.connection.readyState !== 1) {
@@ -483,7 +483,7 @@ router.get('/dashboard/stats', auth, async (req, res) => {
       });
     }
 
-    const userId = req.user.id;
+    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
     
     // Buscar estatísticas de todas as propostas
     const proposalStats = await Proposal.aggregate([
@@ -565,9 +565,9 @@ router.get('/dashboard/stats', auth, async (req, res) => {
 });
 
 // GET /api/proposals/top-performers - Top performers das propostas
-router.get('/top-performers', auth, async (req, res) => {
+router.get('/top-performers', async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
     
     console.log('Buscando top performers para userId:', userId);
     
