@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 
     let query = {}; // Temporariamente sem filtro de createdBy
     console.log('Query inicial:', query);
-    console.log('Usuário ID:', req.user.id);
+    console.log('Usuário ID:', req.user ? req.user.id : 'NENHUM');
     
     if (distributor) {
       query.distributor = distributor;
