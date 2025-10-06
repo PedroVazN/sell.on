@@ -198,9 +198,10 @@ router.post('/', async (req, res) => {
     console.log('Proposta criada:', proposal);
 
     await proposal.save();
-    await proposal.populate('createdBy', 'name email');
-
     console.log('Proposta salva com sucesso:', proposal._id);
+    
+    await proposal.populate('createdBy', 'name email');
+    console.log('Proposta populada:', proposal);
 
     res.status(201).json({ 
       success: true,
@@ -208,6 +209,15 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao criar proposta:', error);
+    console.error('Stack trace:', error.stack);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Número da proposta já existe' 
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
       error: 'Erro interno do servidor',

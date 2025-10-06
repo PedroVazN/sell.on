@@ -152,8 +152,22 @@ const proposalSchema = new mongoose.Schema({
 // Gerar número da proposta antes de salvar
 proposalSchema.pre('save', async function(next) {
   if (!this.proposalNumber) {
-    const count = await this.constructor.countDocuments();
-    this.proposalNumber = `PROP-${String(count + 1).padStart(4, '0')}`;
+    try {
+      // Buscar o maior número de proposta existente
+      const lastProposal = await this.constructor.findOne({}, {}, { sort: { proposalNumber: -1 } });
+      let nextNumber = 1;
+      
+      if (lastProposal && lastProposal.proposalNumber) {
+        const lastNumber = parseInt(lastProposal.proposalNumber.split('-')[1]);
+        nextNumber = lastNumber + 1;
+      }
+      
+      this.proposalNumber = `PROP-${String(nextNumber).padStart(4, '0')}`;
+    } catch (error) {
+      console.error('Erro ao gerar número da proposta:', error);
+      // Fallback: usar timestamp
+      this.proposalNumber = `PROP-${Date.now()}`;
+    }
   }
   next();
 });

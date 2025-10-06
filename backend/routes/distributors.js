@@ -104,6 +104,9 @@ router.get('/:id', async (req, res) => {
 // POST /api/distributors - Criar novo distribuidor
 router.post('/', async (req, res) => {
   try {
+    console.log('=== CRIANDO DISTRIBUIDOR ===');
+    console.log('Body recebido:', JSON.stringify(req.body, null, 2));
+    
     const {
       apelido,
       razaoSocial,
@@ -138,16 +141,34 @@ router.post('/', async (req, res) => {
       createdBy: '68c1afbcf906c14a8e7e8ff7' // ID temporário para desenvolvimento
     });
 
+    console.log('Distribuidor criado:', distributor);
+    
     await distributor.save();
+    console.log('Distribuidor salvo com sucesso:', distributor._id);
+    
     await distributor.populate('createdBy', 'name email');
+    console.log('Distribuidor populado:', distributor);
 
-    res.status(201).json({ data: distributor });
+    res.status(201).json({ 
+      success: true,
+      data: distributor 
+    });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ error: 'Apelido ou ID do distribuidor já cadastrado' });
-    }
     console.error('Erro ao criar distribuidor:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('Stack trace:', error.stack);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Apelido ou ID do distribuidor já cadastrado' 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
   }
 });
 
