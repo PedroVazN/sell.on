@@ -25,6 +25,7 @@ import { Proposals } from './pages/Proposals';
 import { CreateProposal } from './pages/CreateProposal';
 import { EditProposal } from './pages/EditProposal';
 import { CreateProduct } from './pages/CreateProduct';
+import { CreatePriceList } from './pages/CreatePriceList';
 import { ClientRegistration } from './pages/ClientRegistration';
 import { DistributorRegistration } from './pages/DistributorRegistration';
 import { UserRegistration } from './pages/UserRegistration';
@@ -69,6 +70,7 @@ function App() {
           <Route path="proposals/create" element={<ProtectedRoute permission="proposals"><CreateProposal /></ProtectedRoute>} />
           <Route path="proposals/edit/:id" element={<ProtectedRoute permission="proposals"><EditProposal /></ProtectedRoute>} />
           <Route path="price-list" element={<ProtectedRoute permission="admin"><PriceList /></ProtectedRoute>} />
+          <Route path="price-list/create" element={<ProtectedRoute permission="admin"><CreatePriceList /></ProtectedRoute>} />
         </Route>
       </Routes>
     </AuthProvider>
