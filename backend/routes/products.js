@@ -61,18 +61,22 @@ router.post('/', [
     console.error('Stack trace:', error.stack);
     console.error('Error code:', error.code);
     console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error details:', error);
     
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Produto com este nome já existe'
+        message: 'Erro de duplicação de dados. Verifique se SKU ou código de barras já existem.',
+        details: error.message
       });
     }
     
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      details: error.message
     });
   }
 });
