@@ -15,6 +15,7 @@ router.post('/', [
   body('stock.current').optional().isNumeric().withMessage('Estoque atual deve ser um número')
 ], async (req, res) => {
   try {
+    console.log('=== CRIANDO PRODUTO ===');
     console.log('Dados recebidos para criar produto:', JSON.stringify(req.body, null, 2));
     
     const errors = validationResult(req);
@@ -27,20 +28,19 @@ router.post('/', [
       });
     }
 
-    // Adicionar createdBy temporário para desenvolvimento
+    // Usar dados do produto diretamente (modelo Product não tem createdBy)
     const productData = {
-      ...req.body,
-      createdBy: {
-        _id: '68c1afbcf906c14a8e7e8ff7',
-        name: 'Usuário Temporário',
-        email: 'temp@example.com'
-      }
+      ...req.body
     };
 
+    console.log('Dados do produto a ser criado:', productData);
+    
     const product = new Product(productData);
+    console.log('Produto instanciado:', product);
+    
     await product.save();
+    console.log('Produto salvo com sucesso:', product._id);
 
-    console.log('Produto criado com sucesso:', product._id);
     res.status(201).json({
       success: true,
       message: 'Produto criado com sucesso',
@@ -50,6 +50,16 @@ router.post('/', [
   } catch (error) {
     console.error('Erro ao criar produto:', error);
     console.error('Stack trace:', error.stack);
+    console.error('Error code:', error.code);
+    console.error('Error name:', error.name);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Produto com este nome já existe'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor',
