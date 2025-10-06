@@ -9,9 +9,12 @@ const { auth } = require('../middleware/auth');
 // POST /api/users/login - Login de usuário
 router.post('/login', async (req, res) => {
   try {
+    console.log('🔐 Tentativa de login:', { email: req.body.email });
+    
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.log('❌ Dados obrigatórios não fornecidos');
       return res.status(400).json({
         success: false,
         message: 'Email e senha são obrigatórios'
@@ -20,7 +23,10 @@ router.post('/login', async (req, res) => {
 
     // Buscar usuário por email
     const user = await User.findOne({ email });
+    console.log('👤 Usuário encontrado:', user ? 'Sim' : 'Não');
+    
     if (!user) {
+      console.log('❌ Usuário não encontrado');
       return res.status(401).json({
         success: false,
         message: 'Credenciais inválidas'
@@ -29,7 +35,10 @@ router.post('/login', async (req, res) => {
 
     // Verificar senha
     const isPasswordValid = await user.comparePassword(password);
+    console.log('🔑 Senha válida:', isPasswordValid);
+    
     if (!isPasswordValid) {
+      console.log('❌ Senha inválida');
       return res.status(401).json({
         success: false,
         message: 'Credenciais inválidas'
@@ -38,6 +47,7 @@ router.post('/login', async (req, res) => {
 
     // Verificar se usuário está ativo
     if (!user.isActive) {
+      console.log('❌ Usuário inativo');
       return res.status(401).json({
         success: false,
         message: 'Conta desativada'
@@ -50,6 +60,7 @@ router.post('/login', async (req, res) => {
 
     // Retornar usuário sem senha
     const userResponse = await User.findById(user._id).select('-password');
+    console.log('✅ Login bem-sucedido para:', userResponse.email);
 
     res.json({
       success: true,
@@ -57,7 +68,7 @@ router.post('/login', async (req, res) => {
       data: userResponse
     });
   } catch (error) {
-    console.error('Erro no login:', error);
+    console.error('❌ Erro no login:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
