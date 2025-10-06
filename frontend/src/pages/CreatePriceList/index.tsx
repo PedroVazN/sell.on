@@ -47,6 +47,41 @@ export const CreatePriceList: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    
+    // Injeta CSS global para forçar cores das opções
+    const style = document.createElement('style');
+    style.textContent = `
+      select option {
+        background: #1f2937 !important;
+        background-color: #1f2937 !important;
+        color: #ffffff !important;
+        padding: 8px !important;
+        font-size: 14px !important;
+      }
+      
+      select:focus option {
+        background: #1f2937 !important;
+        background-color: #1f2937 !important;
+        color: #ffffff !important;
+      }
+      
+      select option:hover {
+        background: #374151 !important;
+        background-color: #374151 !important;
+        color: #ffffff !important;
+      }
+      
+      select option:checked {
+        background: #3b82f6 !important;
+        background-color: #3b82f6 !important;
+        color: #ffffff !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   const loadData = async () => {
@@ -176,6 +211,10 @@ export const CreatePriceList: React.FC = () => {
             <Select
               value={selectedDistributor}
               onChange={(e) => setSelectedDistributor(e.target.value)}
+              style={{
+                backgroundColor: '#1f2937',
+                color: '#ffffff'
+              }}
             >
               <option value="">Selecione um distribuidor</option>
               {distributors.map(distributor => (
@@ -211,6 +250,10 @@ export const CreatePriceList: React.FC = () => {
                             updateProduct(index, 'productName', selectedProduct.name);
                           }
                         }}
+                        style={{
+                          backgroundColor: '#1f2937',
+                          color: '#ffffff'
+                        }}
                       >
                         <option value="">Selecione um produto</option>
                         {products.map(p => (
@@ -238,6 +281,10 @@ export const CreatePriceList: React.FC = () => {
                       <Select
                         value={product.paymentMethod}
                         onChange={(e) => updateProduct(index, 'paymentMethod', e.target.value)}
+                        style={{
+                          backgroundColor: '#1f2937',
+                          color: '#ffffff'
+                        }}
                       >
                         <option value="aVista">À Vista</option>
                         <option value="cartao">Cartão</option>
@@ -250,6 +297,10 @@ export const CreatePriceList: React.FC = () => {
                         <Select
                           value={product.installments || 1}
                           onChange={(e) => updateProduct(index, 'installments', parseInt(e.target.value))}
+                          style={{
+                            backgroundColor: '#1f2937',
+                            color: '#ffffff'
+                          }}
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
                             <option key={num} value={num}>{num}x</option>

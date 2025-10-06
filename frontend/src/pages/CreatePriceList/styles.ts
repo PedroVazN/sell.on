@@ -95,21 +95,41 @@ export const Select = styled.select`
     box-shadow: 0 0 0 3px ${theme.colors.border.focus}33;
   }
 
+  /* Força cores das opções com máxima prioridade */
   option {
-    background: ${theme.colors.background.card} !important;
-    color: ${theme.colors.text.primary} !important;
-    padding: 0.5rem;
+    background: #1f2937 !important;
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    padding: 0.5rem !important;
+    font-size: 0.875rem !important;
   }
 
+  /* Para todos os navegadores */
   &::-ms-expand {
-    display: none;
+    display: none !important;
   }
 
+  /* Firefox específico */
   @-moz-document url-prefix() {
     option {
-      background: ${theme.colors.background.card} !important;
-      color: ${theme.colors.text.primary} !important;
+      background: #1f2937 !important;
+      background-color: #1f2937 !important;
+      color: #ffffff !important;
     }
+  }
+
+  /* Webkit específico */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
   }
 `;
 

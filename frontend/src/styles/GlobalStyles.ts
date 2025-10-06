@@ -356,18 +356,21 @@ export const GlobalStyles = createGlobalStyle`
 
   /* Estilos globais para selects - Forçar tema escuro */
   select {
-    background: ${theme.colors.background.card} !important;
-    color: ${theme.colors.text.primary} !important;
-    border: 1px solid ${theme.colors.border.primary} !important;
+    background: #1f2937 !important;
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
   }
 
   select option {
-    background: ${theme.colors.background.card} !important;
-    color: ${theme.colors.text.primary} !important;
+    background: #1f2937 !important;
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
     padding: 0.5rem !important;
+    font-size: 0.875rem !important;
   }
 
   /* Força estilos em todos os navegadores */
