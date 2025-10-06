@@ -84,10 +84,16 @@ router.get('/:id', async (req, res) => {
     }).populate('createdBy', 'name email');
 
     if (!proposal) {
-      return res.status(404).json({ error: 'Proposta não encontrada' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Proposta não encontrada' 
+      });
     }
 
-    res.json({ data: proposal });
+    res.json({ 
+      success: true,
+      data: proposal 
+    });
   } catch (error) {
     console.error('Erro ao buscar proposta:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
