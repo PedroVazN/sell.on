@@ -51,36 +51,97 @@ export const CreatePriceList: React.FC = () => {
     // Injeta CSS global para forçar cores das opções
     const style = document.createElement('style');
     style.textContent = `
-      select option {
+      /* Força cores em TODOS os selects e opções */
+      select[data-theme="dark"], 
+      select[data-theme="dark"] *,
+      select[data-theme="dark"] option {
         background: #1f2937 !important;
         background-color: #1f2937 !important;
         color: #ffffff !important;
         padding: 8px !important;
         font-size: 14px !important;
+        border: none !important;
       }
       
-      select:focus option {
-        background: #1f2937 !important;
-        background-color: #1f2937 !important;
-        color: #ffffff !important;
-      }
-      
-      select option:hover {
+      select[data-theme="dark"] option:hover {
         background: #374151 !important;
         background-color: #374151 !important;
         color: #ffffff !important;
       }
       
-      select option:checked {
+      select[data-theme="dark"] option:checked {
         background: #3b82f6 !important;
         background-color: #3b82f6 !important;
+        color: #ffffff !important;
+      }
+      
+      select[data-theme="dark"] option:focus {
+        background: #1f2937 !important;
+        background-color: #1f2937 !important;
+        color: #ffffff !important;
+      }
+      
+      select[data-theme="dark"] option:active {
+        background: #374151 !important;
+        background-color: #374151 !important;
+        color: #ffffff !important;
+      }
+      
+      /* Fallback para todos os selects */
+      select, select option {
+        background: #1f2937 !important;
+        background-color: #1f2937 !important;
+        color: #ffffff !important;
+      }
+      
+      /* Força para Webkit */
+      select::-webkit-list-button {
+        background: #1f2937 !important;
+        color: #ffffff !important;
+      }
+      
+      /* Força para Firefox */
+      select:-moz-focusring {
+        color: transparent !important;
+        text-shadow: 0 0 0 #ffffff !important;
+      }
+      
+      /* Força para Edge */
+      select::-ms-value {
+        background: #1f2937 !important;
+        color: #ffffff !important;
+      }
+      
+      select::-ms-expand {
+        background: #1f2937 !important;
         color: #ffffff !important;
       }
     `;
     document.head.appendChild(style);
     
+    // Força cores via JavaScript também
+    const forceSelectColors = () => {
+      const selects = document.querySelectorAll('select');
+      selects.forEach(select => {
+        const options = select.querySelectorAll('option');
+        options.forEach(option => {
+          option.style.backgroundColor = '#1f2937';
+          option.style.color = '#ffffff';
+          option.style.padding = '8px';
+        });
+      });
+    };
+    
+    // Aplica imediatamente
+    forceSelectColors();
+    
+    // Aplica quando o DOM muda
+    const observer = new MutationObserver(forceSelectColors);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
     return () => {
       document.head.removeChild(style);
+      observer.disconnect();
     };
   }, []);
 
@@ -215,6 +276,7 @@ export const CreatePriceList: React.FC = () => {
                 backgroundColor: '#1f2937',
                 color: '#ffffff'
               }}
+              data-theme="dark"
             >
               <option value="">Selecione um distribuidor</option>
               {distributors.map(distributor => (
@@ -254,6 +316,7 @@ export const CreatePriceList: React.FC = () => {
                           backgroundColor: '#1f2937',
                           color: '#ffffff'
                         }}
+                        data-theme="dark"
                       >
                         <option value="">Selecione um produto</option>
                         {products.map(p => (
@@ -285,6 +348,7 @@ export const CreatePriceList: React.FC = () => {
                           backgroundColor: '#1f2937',
                           color: '#ffffff'
                         }}
+                        data-theme="dark"
                       >
                         <option value="aVista">À Vista</option>
                         <option value="cartao">Cartão</option>
