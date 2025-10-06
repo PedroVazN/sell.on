@@ -74,7 +74,13 @@ export const CreateProduct: React.FC = () => {
       const productData = {
         name: formData.name,
         category: formData.category,
-        description: formData.description
+        description: formData.description,
+        stock: {
+          current: 0,
+          min: 0,
+          max: 0
+        },
+        isActive: true
       };
       
       console.log('Dados do formulário:', productData);
