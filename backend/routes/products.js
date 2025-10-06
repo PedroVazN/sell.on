@@ -42,6 +42,14 @@ router.post('/', [
       ...req.body
     };
 
+    // Remover campos vazios que podem causar erro de unique constraint
+    if (productData.sku === '' || productData.sku === null) {
+      delete productData.sku;
+    }
+    if (productData.barcode === '' || productData.barcode === null) {
+      delete productData.barcode;
+    }
+
     console.log('Dados do produto a ser criado:', productData);
     
     const product = new Product(productData);
