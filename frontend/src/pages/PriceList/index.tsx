@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Plus, Search, Edit, Trash2, Loader2, Download } from 'lucide-react';
-import { apiService, PriceList as PriceListType, Distributor, Product } from '../../services/api';
+import { apiService, PriceList as PriceListType, PriceListItem, Distributor, Product } from '../../services/api';
 import { 
   Container, 
   Header, 
@@ -75,7 +75,7 @@ interface NewPriceList {
 }
 
 export const PriceList: React.FC = () => {
-  const [priceLists, setPriceLists] = useState<NewPriceList[]>([]);
+  const [priceLists, setPriceLists] = useState<PriceListItem[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +138,7 @@ export const PriceList: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDeletePriceList = async (priceList: NewPriceList) => {
+  const handleDeletePriceList = async (priceList: PriceListItem) => {
     if (window.confirm(`Tem certeza que deseja excluir esta lista de preços?`)) {
       try {
         setLoading(true);
@@ -255,17 +255,14 @@ export const PriceList: React.FC = () => {
 
     // Dados
     priceLists.forEach(priceList => {
-      priceList.products.forEach(product => {
-        csvData.push([
-          priceList.distributorName,
-          product.productName,
-          formatCurrency(product.price),
-          product.paymentMethod === 'aVista' ? 'À Vista' : 
-          product.paymentMethod === 'cartao' ? 'Cartão' : 'Boleto',
-          product.installments?.toString() || '1',
-          formatDate(priceList.createdAt)
-        ]);
-      });
+      csvData.push([
+        priceList.distributor.apelido || priceList.distributor.razaoSocial || 'Distribuidor',
+        priceList.product.name,
+        formatCurrency(priceList.pricing.aVista),
+        'À Vista',
+        '1',
+        formatDate(priceList.createdAt)
+      ]);
     });
 
     // Converter para CSV
@@ -289,10 +286,8 @@ export const PriceList: React.FC = () => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
-      priceList.distributorName.toLowerCase().includes(search) ||
-      priceList.products.some(product => 
-        product.productName.toLowerCase().includes(search)
-      )
+      (priceList.distributor.apelido || priceList.distributor.razaoSocial || '').toLowerCase().includes(search) ||
+      priceList.product.name.toLowerCase().includes(search)
     );
   });
 
@@ -413,12 +408,12 @@ export const PriceList: React.FC = () => {
                       >
                       <TableCell>
                           <DistributorName>
-                            {isExpanded ? '▼' : '▶'} {priceList.distributorName}
+                            {isExpanded ? '▼' : '▶'} {priceList.distributor.apelido || priceList.distributor.razaoSocial || 'Distribuidor'}
                           </DistributorName>
                       </TableCell>
                       <TableCell>
                           <SummaryInfo>
-                            {priceList.products.length} produto(s)
+                            1 produto
                           </SummaryInfo>
                       </TableCell>
                       <TableCell>
@@ -437,29 +432,27 @@ export const PriceList: React.FC = () => {
                       </DistributorRow>
                       
                       {/* Linhas dos produtos (quando expandido) */}
-                      {isExpanded && priceList.products.map((product, index) => (
-                        <ProductRow key={`${priceList._id}-${index}`}>
+                      {isExpanded && (
+                        <ProductRow key={`${priceList._id}-0`}>
                           <TableCell></TableCell>
                           <TableCell>
                             <ProductInfo>
-                              <ProductNameDisplay>{product.productName}</ProductNameDisplay>
+                              <ProductNameDisplay>{priceList.product.name}</ProductNameDisplay>
                             </ProductInfo>
                           </TableCell>
                           <TableCell>
                             <PriceContainer>
                               <PriceValue $color="#10b981">
-                                {formatCurrency(product.price)}
+                                {formatCurrency(priceList.pricing.aVista)}
                               </PriceValue>
                               <PriceLabelDisplay>
-                                {product.paymentMethod === 'aVista' ? 'À Vista' : 
-                                 product.paymentMethod === 'cartao' ? `${product.installments}x Cartão` :
-                                 `${product.installments}x Boleto`}
+                                À Vista
                               </PriceLabelDisplay>
                             </PriceContainer>
                       </TableCell>
                           <TableCell></TableCell>
                         </ProductRow>
-                      ))}
+                      )}
                     </React.Fragment>
                   );
                 })}
