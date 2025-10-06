@@ -111,8 +111,8 @@ export const CreateProduct: React.FC = () => {
         cost: formData.cost || 0,
         brand: formData.brand || '',
         // Só incluir sku e barcode se não estiverem vazios (para evitar erro de unique)
-        ...(formData.sku && { sku: formData.sku }),
-        ...(formData.barcode && { barcode: formData.barcode }),
+        ...(formData.sku && formData.sku.trim() && { sku: formData.sku.trim() }),
+        ...(formData.barcode && formData.barcode.trim() && { barcode: formData.barcode.trim() }),
         stock: {
           current: formData.stock.current || 0,
           min: formData.stock.min || 0,
