@@ -6,7 +6,7 @@ const Product = require('../models/Product');
 const { auth } = require('../middleware/auth');
 
 // GET /api/price-list - Listar lista de preços agrupada por distribuidor
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     console.log('=== INÍCIO DA REQUISIÇÃO PRICE-LIST ===');
     console.log('Usuário autenticado:', req.user ? req.user.id : 'NENHUM');
