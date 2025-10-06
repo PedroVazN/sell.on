@@ -6,46 +6,63 @@ const { auth } = require('../middleware/auth');
 
 // Middleware de autenticação será aplicado individualmente nas rotas
 
-// POST /api/users/test-login - Criar usuário de teste para debug
+// POST /api/users/test-login - Criar usuários de teste para debug
 router.post('/test-login', async (req, res) => {
   try {
-    const testUser = {
-      name: 'Teste Login',
-      email: 'teste@teste.com',
-      password: '123456',
-      role: 'vendedor',
-      isActive: true
-    };
+    const testUsers = [
+      {
+        name: 'Teste Admin',
+        email: 'teste-admin@teste.com',
+        password: '123456',
+        role: 'admin',
+        isActive: true
+      },
+      {
+        name: 'Teste Vendedor',
+        email: 'teste-vendedor@teste.com',
+        password: '123456',
+        role: 'vendedor',
+        isActive: true
+      }
+    ];
 
-    // Verificar se já existe
-    const existingUser = await User.findOne({ email: testUser.email });
-    if (existingUser) {
-      await User.deleteOne({ email: testUser.email });
+    const results = [];
+
+    for (const testUser of testUsers) {
+      // Verificar se já existe
+      const existingUser = await User.findOne({ email: testUser.email });
+      if (existingUser) {
+        await User.deleteOne({ email: testUser.email });
+      }
+
+      // Criar usuário de teste
+      const user = new User(testUser);
+      await user.save();
+
+      console.log('✅ Usuário de teste criado:', {
+        email: testUser.email,
+        password: testUser.password,
+        role: testUser.role,
+        hash: user.password
+      });
+
+      results.push({
+        email: testUser.email,
+        password: testUser.password,
+        role: testUser.role
+      });
     }
-
-    // Criar usuário de teste
-    const user = new User(testUser);
-    await user.save();
-
-    console.log('✅ Usuário de teste criado:', {
-      email: testUser.email,
-      password: testUser.password,
-      hash: user.password
-    });
 
     res.json({
       success: true,
-      message: 'Usuário de teste criado',
-      data: {
-        email: testUser.email,
-        password: testUser.password
-      }
+      message: 'Usuários de teste criados',
+      data: results
     });
   } catch (error) {
-    console.error('❌ Erro ao criar usuário de teste:', error);
+    console.error('❌ Erro ao criar usuários de teste:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro ao criar usuário de teste'
+      message: 'Erro ao criar usuários de teste'
     });
   }
 });
@@ -79,6 +96,15 @@ router.post('/login', async (req, res) => {
         message: 'Credenciais inválidas'
       });
     }
+
+    console.log('👤 Dados do usuário:', {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt
+    });
 
     // Verificar senha
     console.log('🔑 Comparando senhas...');
