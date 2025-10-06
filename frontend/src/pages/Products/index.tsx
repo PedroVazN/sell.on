@@ -200,7 +200,7 @@ export const Products: React.FC = () => {
                     <TableCell>{product.category}</TableCell>
                     <TableCell>
                       <strong style={{ color: '#10b981' }}>
-                        {formatPrice(product.price)}
+                        {formatPrice(product.price || 0)}
                       </strong>
                     </TableCell>
                     <TableCell>

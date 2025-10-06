@@ -139,7 +139,7 @@ export const EditProposal: React.FC = () => {
                 name: item.product.name,
                 description: item.product.description || '',
                 category: item.product.category || '',
-                price: item.product.price,
+                price: item.product.price || 0,
                 stock: { current: 0, min: 0 },
                 isActive: true,
                 createdAt: '',
@@ -245,11 +245,12 @@ export const EditProposal: React.FC = () => {
     const product = products.find(p => p._id === productId);
     if (product) {
       const newItems = [...formData.items];
+      const price = product.price || 0; // Usar 0 como padrão se price for undefined
       newItems[index] = {
         ...newItems[index],
         product,
-        unitPrice: product.price,
-        total: newItems[index].quantity * product.price * (1 - newItems[index].discount / 100)
+        unitPrice: price,
+        total: newItems[index].quantity * price * (1 - newItems[index].discount / 100)
       };
       setFormData(prev => ({
         ...prev,
@@ -371,7 +372,7 @@ export const EditProposal: React.FC = () => {
             name: item.product!.name,
             description: item.product!.description || '',
             category: item.product!.category || '',
-            price: item.product!.price
+            price: item.product!.price || 0
           },
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -592,7 +593,7 @@ export const EditProposal: React.FC = () => {
                     <option value="">Selecione um produto</option>
                     {products.map(product => (
                       <option key={product._id} value={product._id}>
-                        {product.name} - R$ {product.price.toFixed(2)}
+                        {product.name} - R$ {(product.price || 0).toFixed(2)}
                       </option>
                     ))}
                   </Select>

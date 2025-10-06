@@ -235,7 +235,7 @@ export interface ProposalItem {
     name: string;
     description?: string;
     category?: string;
-    price: number;
+    price?: number; // Agora opcional
   };
   quantity: number;
   unitPrice: number;
