@@ -22,8 +22,8 @@ export interface User {
 export interface Product {
   _id: string;
   name: string;
-  description?: string;
-  price: number;
+  description: string; // Agora obrigatório
+  price?: number; // Agora opcional
   cost?: number;
   category: string;
   brand?: string;
