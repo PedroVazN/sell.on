@@ -10,8 +10,9 @@ const router = express.Router();
 // @access  Public (temporário para desenvolvimento)
 router.post('/', [
   body('name').trim().isLength({ min: 2 }).withMessage('Nome do produto é obrigatório'),
-  body('price').isNumeric().withMessage('Preço deve ser um número'),
+  body('description').trim().isLength({ min: 5 }).withMessage('Descrição é obrigatória e deve ter pelo menos 5 caracteres'),
   body('category').trim().notEmpty().withMessage('Categoria é obrigatória'),
+  body('price').optional().isNumeric().withMessage('Preço deve ser um número'),
   body('stock.current').optional().isNumeric().withMessage('Estoque atual deve ser um número')
 ], async (req, res) => {
   try {
@@ -25,6 +26,14 @@ router.post('/', [
         success: false,
         message: 'Dados inválidos',
         errors: errors.array()
+      });
+    }
+
+    // Validação adicional para descrição
+    if (!req.body.description || req.body.description.trim().length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Descrição é obrigatória e deve ter pelo menos 5 caracteres'
       });
     }
 

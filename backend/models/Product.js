@@ -9,13 +9,14 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
+    required: [true, 'Descrição é obrigatória'],
     trim: true,
     maxlength: [500, 'Descrição não pode ter mais de 500 caracteres']
   },
   price: {
     type: Number,
-    required: [true, 'Preço é obrigatório'],
-    min: [0, 'Preço não pode ser negativo']
+    min: [0, 'Preço não pode ser negativo'],
+    default: 0
   },
   cost: {
     type: Number,
