@@ -109,6 +109,13 @@ export const PriceList: React.FC = () => {
         products: productsResponse.data?.length || 0,
         priceLists: priceListsResponse.data?.length || 0
       });
+      
+      // Debug: verificar estrutura dos dados
+      if (priceListsResponse.data && priceListsResponse.data.length > 0) {
+        console.log('Primeira PriceList:', priceListsResponse.data[0]);
+        console.log('Distributor da primeira PriceList:', priceListsResponse.data[0].distributor);
+        console.log('Product da primeira PriceList:', priceListsResponse.data[0].product);
+      }
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error('Erro ao carregar dados:', err);
@@ -256,8 +263,8 @@ export const PriceList: React.FC = () => {
     // Dados
     priceLists.forEach(priceList => {
       csvData.push([
-        priceList.distributor.apelido || priceList.distributor.razaoSocial || 'Distribuidor',
-        priceList.product.name,
+        priceList.distributor?.apelido || priceList.distributor?.razaoSocial || 'Distribuidor',
+        priceList.product?.name || 'Produto não encontrado',
         formatCurrency(priceList.pricing.aVista),
         'À Vista',
         '1',
@@ -286,8 +293,8 @@ export const PriceList: React.FC = () => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
-      (priceList.distributor.apelido || priceList.distributor.razaoSocial || '').toLowerCase().includes(search) ||
-      priceList.product.name.toLowerCase().includes(search)
+      (priceList.distributor?.apelido || priceList.distributor?.razaoSocial || '').toLowerCase().includes(search) ||
+      priceList.product?.name?.toLowerCase().includes(search)
     );
   });
 
@@ -408,7 +415,7 @@ export const PriceList: React.FC = () => {
                       >
                       <TableCell>
                           <DistributorName>
-                            {isExpanded ? '▼' : '▶'} {priceList.distributor.apelido || priceList.distributor.razaoSocial || 'Distribuidor'}
+                            {isExpanded ? '▼' : '▶'} {priceList.distributor?.apelido || priceList.distributor?.razaoSocial || 'Distribuidor'}
                           </DistributorName>
                       </TableCell>
                       <TableCell>
@@ -432,18 +439,18 @@ export const PriceList: React.FC = () => {
                       </DistributorRow>
                       
                       {/* Linhas dos produtos (quando expandido) */}
-                      {isExpanded && (
+                      {isExpanded && priceList.product && (
                         <ProductRow key={`${priceList._id}-0`}>
                           <TableCell></TableCell>
                           <TableCell>
                             <ProductInfo>
-                              <ProductNameDisplay>{priceList.product.name}</ProductNameDisplay>
+                              <ProductNameDisplay>{priceList.product.name || 'Produto não encontrado'}</ProductNameDisplay>
                             </ProductInfo>
                           </TableCell>
                           <TableCell>
                             <PriceContainer>
                               <PriceValue $color="#10b981">
-                                {formatCurrency(priceList.pricing.aVista)}
+                                {formatCurrency(priceList.pricing?.aVista || 0)}
                               </PriceValue>
                               <PriceLabelDisplay>
                                 À Vista
