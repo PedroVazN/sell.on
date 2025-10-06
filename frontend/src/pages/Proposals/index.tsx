@@ -211,9 +211,9 @@ export const Proposals: React.FC = () => {
         productId: products[0]._id,
         productName: products[0].name,
         quantity: 1,
-        unitPrice: products[0].price,
+        unitPrice: products[0].price || 0,
         discount: 0,
-        total: products[0].price
+        total: products[0].price || 0
       }]);
     }
   };
@@ -639,7 +639,7 @@ export const Proposals: React.FC = () => {
                             if (selectedProduct) {
                               updateProduct(index, 'productId', selectedProduct._id);
                               updateProduct(index, 'productName', selectedProduct.name);
-                              updateProduct(index, 'unitPrice', selectedProduct.price);
+                              updateProduct(index, 'unitPrice', selectedProduct.price || 0);
                             }
                           }}
                         >

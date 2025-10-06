@@ -334,7 +334,7 @@ export const CreateProposal: React.FC = () => {
             name: item.product!.name,
             description: item.product!.description || '',
             category: item.product!.category || '',
-            price: item.product!.price
+            price: item.product!.price || 0
           },
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -460,9 +460,9 @@ export const CreateProposal: React.FC = () => {
         {
           product: products[0],
           quantity: 2,
-          unitPrice: products[0].price,
+          unitPrice: products[0].price || 0,
           discount: 5,
-          total: products[0].price * 2 * 0.95
+          total: (products[0].price || 0) * 2 * 0.95
         }
       ];
 
@@ -471,9 +471,9 @@ export const CreateProposal: React.FC = () => {
         testItems.push({
           product: products[1],
           quantity: 1,
-          unitPrice: products[1].price,
+          unitPrice: products[1].price || 0,
           discount: 10,
-          total: products[1].price * 1 * 0.90
+          total: (products[1].price || 0) * 1 * 0.90
         });
       }
 
