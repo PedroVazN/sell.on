@@ -899,8 +899,19 @@ class ApiService {
     };
   }
 
+  async getPriceLists(page: number = 1, limit: number = 10): Promise<ApiResponse<PriceListItem[]>> {
+    return this.request<PriceListItem[]>(`/price-list?page=${page}&limit=${limit}`);
+  }
+
   async getPriceListItem(id: string): Promise<ApiResponse<PriceListItem>> {
     return this.request<PriceListItem>(`/price-list/${id}`);
+  }
+
+  async createPriceList(priceListData: { distributorId: string; products: any[] }): Promise<ApiResponse<any>> {
+    return this.request<any>('/price-list', {
+      method: 'POST',
+      body: JSON.stringify(priceListData),
+    });
   }
 
   async createPriceListItem(priceData: Omit<PriceListItem, '_id' | 'distributor' | 'product' | 'createdBy' | 'createdAt' | 'updatedAt'> & { distributor: string; product: string }): Promise<ApiResponse<PriceListItem>> {

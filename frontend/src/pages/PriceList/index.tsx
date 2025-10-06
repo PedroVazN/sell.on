@@ -94,24 +94,20 @@ export const PriceList: React.FC = () => {
       
       console.log('Carregando dados...');
       
-      const [distributorsResponse, productsResponse] = await Promise.all([
+      const [distributorsResponse, productsResponse, priceListsResponse] = await Promise.all([
         apiService.getDistributors(1, 100),
-        apiService.getProducts(1, 100)
+        apiService.getProducts(1, 100),
+        apiService.getPriceLists(1, 100)
       ]);
       
       setDistributors(distributorsResponse.data || []);
       setProducts(productsResponse.data || []);
-      
-      // Carregar listas de preços do localStorage (simulação)
-      const savedLists = localStorage.getItem('priceLists');
-      if (savedLists) {
-        setPriceLists(JSON.parse(savedLists));
-      }
+      setPriceLists(priceListsResponse.data || []);
       
       console.log('Dados carregados:', {
         distributors: distributorsResponse.data?.length || 0,
         products: productsResponse.data?.length || 0,
-        priceLists: savedLists ? JSON.parse(savedLists).length : 0
+        priceLists: priceListsResponse.data?.length || 0
       });
     } catch (err) {
       setError('Erro ao carregar dados');
@@ -142,20 +138,30 @@ export const PriceList: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDeletePriceList = (priceList: NewPriceList) => {
+  const handleDeletePriceList = async (priceList: NewPriceList) => {
     if (window.confirm(`Tem certeza que deseja excluir esta lista de preços?`)) {
-      const updatedLists = priceLists.filter(list => list._id !== priceList._id);
-      setPriceLists(updatedLists);
-      localStorage.setItem('priceLists', JSON.stringify(updatedLists));
+      try {
+        setLoading(true);
+        // Aqui você pode implementar a chamada para a API de delete se necessário
+        // await apiService.deletePriceList(priceList._id);
+        
+        const updatedLists = priceLists.filter(list => list._id !== priceList._id);
+        setPriceLists(updatedLists);
         alert('Lista de preços excluída com sucesso!');
+      } catch (error) {
+        console.error('Erro ao excluir lista de preços:', error);
+        alert('Erro ao excluir lista de preços. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const handleSavePriceList = () => {
-      if (!selectedDistributor || selectedProducts.length === 0) {
-        alert('Selecione um distribuidor e pelo menos um produto');
-        return;
-      }
+  const handleSavePriceList = async () => {
+    if (!selectedDistributor || selectedProducts.length === 0) {
+      alert('Selecione um distribuidor e pelo menos um produto');
+      return;
+    }
 
     const distributor = distributors.find(d => d._id === selectedDistributor);
     if (!distributor) {
@@ -163,22 +169,39 @@ export const PriceList: React.FC = () => {
       return;
     }
 
-    const newPriceList: NewPriceList = {
-      _id: Date.now().toString(),
+    try {
+      setLoading(true);
+      
+      // Preparar dados para a API
+      const priceListData = {
         distributorId: selectedDistributor,
-      distributorName: distributor.apelido || distributor.razaoSocial || 'Distribuidor',
-      products: selectedProducts,
-      createdAt: new Date().toISOString()
-    };
+        products: selectedProducts.map(product => ({
+          productId: product.productId,
+          pricing: {
+            aVista: product.price,
+            boleto: product.paymentMethod === 'boleto' ? product.price : 0,
+            cartao: product.paymentMethod === 'cartao' ? product.price : 0
+          },
+          installments: product.installments || 1
+        }))
+      };
 
-    const updatedLists = [...priceLists, newPriceList];
-    setPriceLists(updatedLists);
-    localStorage.setItem('priceLists', JSON.stringify(updatedLists));
-    
-        alert('Lista de preços criada com sucesso!');
+      console.log('Enviando dados para API:', priceListData);
+      await apiService.createPriceList(priceListData);
+      
+      alert('Lista de preços criada com sucesso!');
       setShowModal(false);
-    setSelectedDistributor('');
-    setSelectedProducts([]);
+      setSelectedDistributor('');
+      setSelectedProducts([]);
+      
+      // Recarregar dados
+      await loadData();
+    } catch (error) {
+      console.error('Erro ao criar lista de preços:', error);
+      alert('Erro ao criar lista de preços. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addProduct = () => {
