@@ -34,8 +34,19 @@ const connectDB = async () => {
     const atlasUri = process.env.MONGODB_URI;
     
     if (!atlasUri) {
-      console.log('⚠️  MONGODB_URI não configurada - continuando sem banco');
-      return;
+      console.log('⚠️  MONGODB_URI não configurada - usando string padrão');
+      // Usar string de conexão padrão para desenvolvimento/Vercel
+      const defaultUri = 'mongodb+srv://pedrovazn:pedrovazn123@cluster0.8qjqj.mongodb.net/sellone?retryWrites=true&w=majority';
+      console.log('🔄 Tentando conectar com string padrão...');
+      try {
+        const conn = await mongoose.connect(defaultUri, options);
+        console.log(`✅ MongoDB conectado: ${conn.connection.host}`);
+        return;
+      } catch (defaultError) {
+        console.error('❌ Erro ao conectar com string padrão:', defaultError.message);
+        console.log('⚠️  Continuando sem banco de dados');
+        return;
+      }
     }
     
     console.log('🔍 String de conexão (primeiros 50 chars):', atlasUri.substring(0, 50) + '...');

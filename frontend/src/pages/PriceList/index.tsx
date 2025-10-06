@@ -266,7 +266,7 @@ export const PriceList: React.FC = () => {
         priceList.products.forEach(product => {
           csvData.push([
             priceList.distributor?.apelido || priceList.distributor?.razaoSocial || 'Distribuidor',
-            product.name || 'Produto não encontrado',
+            product.product?.name || 'Produto não encontrado',
             formatCurrency(product.pricing?.aVista || 0),
             'À Vista',
             '1',
@@ -450,7 +450,7 @@ export const PriceList: React.FC = () => {
                             <TableCell></TableCell>
                             <TableCell>
                               <ProductInfo>
-                                <ProductNameDisplay>{product.name || 'Produto não encontrado'}</ProductNameDisplay>
+                                <ProductNameDisplay>{product.product?.name || 'Produto não encontrado'}</ProductNameDisplay>
                               </ProductInfo>
                             </TableCell>
                             <TableCell>

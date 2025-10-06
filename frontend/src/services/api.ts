@@ -899,8 +899,8 @@ class ApiService {
     };
   }
 
-  async getPriceLists(page: number = 1, limit: number = 10): Promise<ApiResponse<PriceListItem[]>> {
-    return this.request<PriceListItem[]>(`/price-list?page=${page}&limit=${limit}`);
+  async getPriceLists(page: number = 1, limit: number = 10): Promise<ApiResponse<PriceList[]>> {
+    return this.request<PriceList[]>(`/price-list?page=${page}&limit=${limit}`);
   }
 
   async getPriceListItem(id: string): Promise<ApiResponse<PriceListItem>> {
