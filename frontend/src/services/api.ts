@@ -1,4 +1,4 @@
-// API Base URL - Atualizado para deploy
+// API Base URL - Atualizado para deploy - Vercel trigger
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backend-sable-eta-89.vercel.app/api';
 
 export interface User {
