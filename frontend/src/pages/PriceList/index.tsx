@@ -262,14 +262,18 @@ export const PriceList: React.FC = () => {
 
     // Dados
     priceLists.forEach(priceList => {
-      csvData.push([
-        priceList.distributor?.apelido || priceList.distributor?.razaoSocial || 'Distribuidor',
-        priceList.product?.name || 'Produto não encontrado',
-        formatCurrency(priceList.pricing.aVista),
-        'À Vista',
-        '1',
-        formatDate(priceList.createdAt)
-      ]);
+      if (priceList.products && priceList.products.length > 0) {
+        priceList.products.forEach(product => {
+          csvData.push([
+            priceList.distributor?.apelido || priceList.distributor?.razaoSocial || 'Distribuidor',
+            product.name || 'Produto não encontrado',
+            formatCurrency(product.pricing?.aVista || 0),
+            'À Vista',
+            '1',
+            formatDate(priceList.createdAt)
+          ]);
+        });
+      }
     });
 
     // Converter para CSV
