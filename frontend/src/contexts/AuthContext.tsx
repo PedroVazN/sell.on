@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
           // Verificar se o token é válido fazendo uma requisição
           const response = await apiService.getUsers();
@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('Erro ao verificar autenticação:', error);
         localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
       } finally {
         setIsLoading(false);
       }
@@ -92,7 +93,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData) {
         setUser(userData);
         setIsAuthenticated(true);
-        localStorage.setItem('token', 'fake-token');
+        const token = 'temp-token-' + Date.now();
+        localStorage.setItem('token', token);
+        localStorage.setItem('authToken', token);
         return true;
       } else {
         return false;
@@ -109,6 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
   };
 
   const hasPermission = (permission: string): boolean => {

@@ -449,7 +449,7 @@ class ApiService {
 
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = localStorage.getItem('authToken');
+    this.token = localStorage.getItem('authToken') || localStorage.getItem('token');
   }
 
   private async request<T>(
@@ -458,10 +458,13 @@ class ApiService {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
+    // Sempre buscar o token mais recente
+    const currentToken = this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
         ...options.headers,
       },
       ...options,
@@ -469,7 +472,7 @@ class ApiService {
 
     console.log('Fazendo requisição para:', url);
     console.log('Headers:', config.headers);
-    console.log('Token:', this.token);
+    console.log('Token:', currentToken);
 
     try {
       const response = await fetch(url, config);
@@ -503,8 +506,9 @@ class ApiService {
     });
 
     if (response.success) {
-      this.token = 'dummy-token'; // Em produção, usar JWT real
+      this.token = 'temp-token-' + Date.now(); // Token temporário único
       localStorage.setItem('authToken', this.token);
+      localStorage.setItem('token', this.token);
       localStorage.setItem('currentUser', JSON.stringify(response.data));
     }
 
@@ -521,6 +525,7 @@ class ApiService {
   async logout(): Promise<void> {
     this.token = null;
     localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
   }
 
@@ -1238,7 +1243,8 @@ class ApiService {
 
   // Verificar se está autenticado
   isAuthenticated(): boolean {
-    return !!this.token;
+    const token = this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    return !!token;
   }
 
   // Obter usuário atual
