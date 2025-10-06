@@ -6,10 +6,57 @@ const { auth } = require('../middleware/auth');
 
 // Middleware de autenticação será aplicado individualmente nas rotas
 
+// POST /api/users/test-login - Criar usuário de teste para debug
+router.post('/test-login', async (req, res) => {
+  try {
+    const testUser = {
+      name: 'Teste Login',
+      email: 'teste@teste.com',
+      password: '123456',
+      role: 'vendedor',
+      isActive: true
+    };
+
+    // Verificar se já existe
+    const existingUser = await User.findOne({ email: testUser.email });
+    if (existingUser) {
+      await User.deleteOne({ email: testUser.email });
+    }
+
+    // Criar usuário de teste
+    const user = new User(testUser);
+    await user.save();
+
+    console.log('✅ Usuário de teste criado:', {
+      email: testUser.email,
+      password: testUser.password,
+      hash: user.password
+    });
+
+    res.json({
+      success: true,
+      message: 'Usuário de teste criado',
+      data: {
+        email: testUser.email,
+        password: testUser.password
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao criar usuário de teste:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao criar usuário de teste'
+    });
+  }
+});
+
 // POST /api/users/login - Login de usuário
 router.post('/login', async (req, res) => {
   try {
-    console.log('🔐 Tentativa de login:', { email: req.body.email });
+    console.log('🔐 Tentativa de login:', { 
+      email: req.body.email, 
+      passwordLength: req.body.password ? req.body.password.length : 0 
+    });
     
     const { email, password } = req.body;
 
@@ -34,11 +81,20 @@ router.post('/login', async (req, res) => {
     }
 
     // Verificar senha
+    console.log('🔑 Comparando senhas...');
+    console.log('🔑 Senha recebida:', password);
+    console.log('🔑 Hash no banco:', user.password);
+    
     const isPasswordValid = await user.comparePassword(password);
     console.log('🔑 Senha válida:', isPasswordValid);
     
     if (!isPasswordValid) {
-      console.log('❌ Senha inválida');
+      console.log('❌ Senha inválida - tentando comparação manual');
+      
+      // Teste manual com bcrypt
+      const manualCompare = await bcrypt.compare(password, user.password);
+      console.log('🔑 Comparação manual:', manualCompare);
+      
       return res.status(401).json({
         success: false,
         message: 'Credenciais inválidas'
