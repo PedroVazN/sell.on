@@ -29,24 +29,7 @@ import {
 interface ProductFormData {
   name: string;
   category: string;
-  description: string; // Agora obrigatório
-  isActive: boolean;
-  // Campos opcionais
-  price?: number;
-  cost?: number;
-  brand?: string;
-  sku?: string;
-  barcode?: string;
-  stock: {
-    current: number;
-    min: number;
-    max: number;
-  };
-  images?: Array<{
-    url: string;
-    alt: string;
-  }>;
-  tags?: string[];
+  description: string;
 }
 
 const categories = [
@@ -68,21 +51,7 @@ export const CreateProduct: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     category: '',
-    description: '', // Agora obrigatório
-    isActive: true,
-    // Valores padrão para compatibilidade com a API
-    price: 0,
-    cost: 0,
-    brand: '',
-    sku: '',
-    barcode: '',
-    stock: {
-      current: 0,
-      min: 0,
-      max: 0
-    },
-    images: [],
-    tags: []
+    description: ''
   });
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -101,24 +70,11 @@ export const CreateProduct: React.FC = () => {
     try {
       setLoading(true);
       
-      // Simplificar dados para evitar problemas
+      // Enviar apenas os campos essenciais
       const productData = {
         name: formData.name,
         category: formData.category,
-        description: formData.description, // Agora obrigatório
-        // Preço opcional - só incluir se fornecido
-        ...(formData.price && formData.price > 0 && { price: formData.price }),
-        cost: formData.cost || 0,
-        brand: formData.brand || '',
-        // Só incluir sku e barcode se não estiverem vazios (para evitar erro de unique)
-        ...(formData.sku && formData.sku.trim() && { sku: formData.sku.trim() }),
-        ...(formData.barcode && formData.barcode.trim() && { barcode: formData.barcode.trim() }),
-        stock: {
-          current: formData.stock.current || 0,
-          min: formData.stock.min || 0,
-          max: formData.stock.max || 0
-        },
-        isActive: formData.isActive
+        description: formData.description
       };
       
       console.log('Dados do formulário:', productData);
@@ -184,37 +140,16 @@ export const CreateProduct: React.FC = () => {
               </FormGroup>
             </FormRow>
 
-            <FormRow>
-              <FormGroup>
-                <Label>Descrição *</Label>
-                <Input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Digite uma descrição detalhada do produto (mínimo 5 caracteres)"
-                  required
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <SwitchContainer>
-                  <SwitchLabel htmlFor="isActive">
-                    Status do Produto
-                  </SwitchLabel>
-                  <Switch
-                    type="checkbox"
-                    id="isActive"
-                    checked={formData.isActive}
-                    onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                  />
-                </SwitchContainer>
-                {formData.isActive && (
-                  <StatusIndicator isActive={formData.isActive}>
-                    Produto Ativo
-                  </StatusIndicator>
-                )}
-              </FormGroup>
-            </FormRow>
+            <FormGroup>
+              <Label>Descrição *</Label>
+              <Input
+                type="text"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Digite uma descrição detalhada do produto (mínimo 5 caracteres)"
+                required
+              />
+            </FormGroup>
           </FormSection>
 
           <ButtonGroup>
