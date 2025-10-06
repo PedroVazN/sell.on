@@ -331,6 +331,12 @@ export const Select = styled.select`
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
   }
+
+  option {
+    background: ${({ theme }) => theme.colors.background.card};
+    color: ${({ theme }) => theme.colors.text.primary};
+    padding: 0.5rem;
+  }
 `;
 
 export const Input = styled.input`
