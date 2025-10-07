@@ -891,8 +891,8 @@ export const Proposals: React.FC = () => {
 
               {proposalToLose && (
                 <div style={{ 
-                  backgroundColor: '#f8fafc', 
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: '#1f2937', 
+                  border: '1px solid #374151',
                   padding: '1rem', 
                   borderRadius: '0.5rem',
                   marginTop: '1rem'
@@ -902,12 +902,12 @@ export const Proposals: React.FC = () => {
                     alignItems: 'center', 
                     marginBottom: '0.5rem' 
                   }}>
-                    <FileText size={16} style={{ marginRight: '0.5rem', color: '#64748b' }} />
+                    <FileText size={16} style={{ marginRight: '0.5rem', color: '#9ca3af' }} />
                     <h4 style={{ 
                       margin: '0', 
                       fontSize: '0.875rem', 
                       fontWeight: '600',
-                      color: '#1e293b'
+                      color: '#ffffff'
                     }}>
                       {proposalToLose.proposalNumber}
                     </h4>
@@ -919,15 +919,15 @@ export const Proposals: React.FC = () => {
                     fontSize: '0.875rem'
                   }}>
                     <div>
-                      <span style={{ color: '#64748b', fontWeight: '500' }}>Cliente:</span>
-                      <span style={{ color: '#1e293b', marginLeft: '0.25rem' }}>
+                      <span style={{ color: '#9ca3af', fontWeight: '500' }}>Cliente:</span>
+                      <span style={{ color: '#ffffff', marginLeft: '0.25rem' }}>
                         {proposalToLose.client.name}
                       </span>
                     </div>
                     <div>
-                      <span style={{ color: '#64748b', fontWeight: '500' }}>Total:</span>
+                      <span style={{ color: '#9ca3af', fontWeight: '500' }}>Total:</span>
                       <span style={{ 
-                        color: '#dc2626', 
+                        color: '#f87171', 
                         fontWeight: '600', 
                         marginLeft: '0.25rem' 
                       }}>

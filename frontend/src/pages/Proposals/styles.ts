@@ -226,7 +226,7 @@ export const Modal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -235,25 +235,26 @@ export const Modal = styled.div`
 `;
 
 export const ModalContent = styled.div`
-  background: ${({ theme }) => theme.colors.background.card};
+  background: #1f2937;
+  border: 1px solid #374151;
   border-radius: 12px;
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
 `;
 
 export const ModalHeader = styled.div`
   padding: 1.5rem;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-bottom: 1px solid #374151;
 `;
 
 export const ModalTitle = styled.h2`
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: #ffffff;
 `;
 
 export const ModalBody = styled.div`
@@ -264,7 +265,7 @@ export const ModalBody = styled.div`
 
 export const ModalFooter = styled.div`
   padding: 1.5rem;
-  border-top: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-top: 1px solid #374151;
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
@@ -278,43 +279,48 @@ export const Label = styled.label`
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: #ffffff;
   font-size: 0.875rem;
 `;
 
 export const Select = styled.select`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border: 1px solid #374151;
   border-radius: 8px;
-  background: ${({ theme }) => theme.colors.background.card};
-  color: ${({ theme }) => theme.colors.text.primary};
+  background: #374151;
+  color: #ffffff;
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s;
 
   &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
+    border-color: #3b82f6;
+  }
+
+  option {
+    background: #374151;
+    color: #ffffff;
   }
 `;
 
 export const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border: 1px solid #374151;
   border-radius: 8px;
-  background: ${({ theme }) => theme.colors.background.card};
-  color: ${({ theme }) => theme.colors.text.primary};
+  background: #374151;
+  color: #ffffff;
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s;
 
   &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
+    border-color: #3b82f6;
   }
 
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text.secondary};
+    color: #9ca3af;
   }
 `;
 
