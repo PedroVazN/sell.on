@@ -686,6 +686,8 @@ router.get('/vendedor/:vendedorId', async (req, res) => {
 
     let query = {
       $or: [
+        { 'createdBy._id': new mongoose.Types.ObjectId(vendedorId) },
+        { 'createdBy': new mongoose.Types.ObjectId(vendedorId) },
         { 'seller._id': new mongoose.Types.ObjectId(vendedorId) },
         { 'seller': new mongoose.Types.ObjectId(vendedorId) }
       ]
@@ -696,6 +698,21 @@ router.get('/vendedor/:vendedorId', async (req, res) => {
     }
 
     console.log('🔍 Query de busca:', JSON.stringify(query, null, 2));
+
+    // Primeiro, verificar se há propostas no banco
+    const totalProposalsInDB = await Proposal.countDocuments();
+    console.log('📊 Total de propostas no banco:', totalProposalsInDB);
+
+    // Verificar uma proposta de exemplo para ver a estrutura
+    const sampleProposal = await Proposal.findOne().populate('createdBy', 'name email');
+    if (sampleProposal) {
+      console.log('📊 Exemplo de proposta:', {
+        _id: sampleProposal._id,
+        createdBy: sampleProposal.createdBy,
+        seller: sampleProposal.seller,
+        status: sampleProposal.status
+      });
+    }
 
     const proposals = await Proposal.find(query)
       .populate('createdBy', 'name email')
