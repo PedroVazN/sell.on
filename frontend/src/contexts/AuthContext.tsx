@@ -34,23 +34,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-        if (token) {
-          // Verificar se o token é válido fazendo uma requisição
-          const response = await apiService.getUsers();
-          if (response.success) {
-            // Buscar dados do usuário atual
-            const currentUser = response.data?.find(u => u.email === 'admin@sellone.com') || 
-                              response.data?.find(u => u.email === 'vendedor@sellone.com');
-            if (currentUser) {
-              setUser(currentUser);
+        const storedUser = localStorage.getItem('currentUser');
+        
+        if (token && storedUser) {
+          try {
+            // Tentar usar o usuário armazenado no localStorage
+            const userData = JSON.parse(storedUser);
+            console.log('🔍 Usuário armazenado encontrado:', userData);
+            
+            // Verificar se o token ainda é válido fazendo uma requisição simples
+            const response = await apiService.getUsers(1, 1);
+            if (response.success) {
+              setUser(userData);
               setIsAuthenticated(true);
+              console.log('✅ Usuário restaurado do localStorage:', userData.email);
+            } else {
+              // Token inválido, limpar dados
+              localStorage.removeItem('token');
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('currentUser');
+              console.log('❌ Token inválido, limpando dados');
             }
+          } catch (parseError) {
+            console.error('Erro ao parsear usuário armazenado:', parseError);
+            localStorage.removeItem('currentUser');
           }
+        } else {
+          console.log('🔍 Nenhum token ou usuário armazenado encontrado');
         }
       } catch (error) {
         console.error('Erro ao verificar autenticação:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
       } finally {
         setIsLoading(false);
       }
@@ -62,23 +78,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('🔐 Iniciando login para:', email);
       
       // Fazer login real via API
       const credentials: LoginRequest = { email, password };
       const response = await apiService.login(credentials);
       
+      console.log('🔐 Resposta do login:', response);
+      
       if (response.success && response.data) {
         const userData = response.data;
+        console.log('✅ Usuário logado com sucesso:', userData.email, 'Role:', userData.role);
+        
         setUser(userData);
         setIsAuthenticated(true);
         
-        // Token já é gerenciado pelo apiService
+        // Verificar se o usuário foi salvo no localStorage
+        const storedUser = localStorage.getItem('currentUser');
+        console.log('💾 Usuário salvo no localStorage:', storedUser ? 'Sim' : 'Não');
+        
         return true;
       } else {
+        console.log('❌ Login falhou:', response);
         return false;
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('❌ Erro no login:', error);
       return false;
     } finally {
       setIsLoading(false);
@@ -90,6 +115,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
     localStorage.removeItem('token');
     localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    console.log('🚪 Logout realizado - dados limpos');
   };
 
   const hasPermission = (permission: string): boolean => {
