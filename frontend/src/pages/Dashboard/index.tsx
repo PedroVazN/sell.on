@@ -162,10 +162,10 @@ export const Dashboard: React.FC = () => {
         setData({
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
-          totalSales: vendedorStats?.vendaFechadaProposals || 0,
+          totalSales: vendedorStats?.totalProposals || 0, // Mostrar total de propostas, não apenas vendas fechadas
           totalRevenue: vendedorStats?.totalRevenue || 0,
           salesStats: {
-            totalSales: vendedorStats?.vendaFechadaProposals || 0,
+            totalSales: vendedorStats?.vendaFechadaProposals || 0, // Vendas fechadas
             totalRevenue: vendedorStats?.totalRevenue || 0,
             averageSale: vendedorStats?.totalRevenue && vendedorStats?.vendaFechadaProposals 
               ? vendedorStats.totalRevenue / vendedorStats.vendaFechadaProposals 

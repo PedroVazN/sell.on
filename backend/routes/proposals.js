@@ -101,7 +101,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/proposals - Criar nova proposta
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     console.log('=== CRIANDO PROPOSTA ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
