@@ -139,6 +139,9 @@ export const CreateProposal: React.FC = () => {
       if (sellersResponse.success) {
         setSellers(sellersResponse.data || []);
         console.log('Sellers loaded:', sellersResponse.data?.length || 0);
+        console.log('Sellers data:', sellersResponse.data);
+      } else {
+        console.log('Sellers response error:', sellersResponse);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
