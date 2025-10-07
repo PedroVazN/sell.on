@@ -67,6 +67,50 @@ router.get('/', async (req, res) => {
   }
 });
 
+// PUT /api/proposals/:id - Atualizar status da proposta
+router.put('/:id', async (req, res) => {
+  try {
+    console.log('=== ATUALIZANDO STATUS DA PROPOSTA ===');
+    console.log('ID da proposta:', req.params.id);
+    console.log('Novo status:', req.body.status);
+
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status é obrigatório'
+      });
+    }
+
+    const proposal = await Proposal.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('createdBy', 'name email');
+
+    if (!proposal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proposta não encontrada'
+      });
+    }
+
+    console.log('Proposta atualizada:', proposal);
+
+    res.json({
+      success: true,
+      data: proposal
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar proposta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
+    });
+  }
+});
+
 // GET /api/proposals/:id - Buscar proposta específica
 router.get('/:id', async (req, res) => {
   try {
