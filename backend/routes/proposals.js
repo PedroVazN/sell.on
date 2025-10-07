@@ -73,8 +73,9 @@ router.put('/:id', async (req, res) => {
     console.log('=== ATUALIZANDO STATUS DA PROPOSTA ===');
     console.log('ID da proposta:', req.params.id);
     console.log('Novo status:', req.body.status);
+    console.log('Motivo da perda:', req.body.lossReason);
 
-    const { status } = req.body;
+    const { status, lossReason, lossDescription } = req.body;
 
     if (!status) {
       return res.status(400).json({
@@ -83,9 +84,28 @@ router.put('/:id', async (req, res) => {
       });
     }
 
+    // Se for venda perdida, verificar se tem motivo
+    if (status === 'venda_perdida' && !lossReason) {
+      return res.status(400).json({
+        success: false,
+        error: 'Motivo da perda é obrigatório para venda perdida'
+      });
+    }
+
+    const updateData = { status };
+    
+    // Adicionar motivo da perda se fornecido
+    if (lossReason) {
+      updateData.lossReason = lossReason;
+    }
+    
+    if (lossDescription) {
+      updateData.lossDescription = lossDescription;
+    }
+
     const proposal = await Proposal.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateData,
       { new: true }
     ).populate('createdBy', 'name email');
 

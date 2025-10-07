@@ -136,6 +136,31 @@ const proposalSchema = new mongoose.Schema({
     enum: ['negociacao', 'venda_fechada', 'venda_perdida', 'expirada'],
     default: 'negociacao'
   },
+  lossReason: {
+    type: String,
+    enum: [
+      'preco_concorrente',
+      'condicao_pagamento',
+      'sem_retorno',
+      'credito_negado',
+      'concorrencia_marca',
+      'adiamento_compra',
+      'cotacao_preco',
+      'perca_preco',
+      'urgencia_comprou_local',
+      'golpe',
+      'licitacao',
+      'fechado_outro_parceiro'
+    ],
+    required: function() {
+      return this.status === 'venda_perdida';
+    }
+  },
+  lossDescription: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
   validUntil: {
     type: Date,
     required: true

@@ -269,6 +269,8 @@ export interface Proposal {
   paymentCondition: string;
   observations?: string;
   status: 'negociacao' | 'venda_fechada' | 'venda_perdida' | 'expirada';
+  lossReason?: 'preco_concorrente' | 'condicao_pagamento' | 'sem_retorno' | 'credito_negado' | 'concorrencia_marca' | 'adiamento_compra' | 'cotacao_preco' | 'perca_preco' | 'urgencia_comprou_local' | 'golpe' | 'licitacao' | 'fechado_outro_parceiro';
+  lossDescription?: string;
   validUntil: string;
   createdBy: User;
   createdAt: string;
@@ -940,10 +942,10 @@ class ApiService {
     });
   }
 
-  async updateProposalStatus(id: string, status: Proposal['status']): Promise<ApiResponse<Proposal>> {
+  async updateProposalStatus(id: string, status: Proposal['status'], lossReason?: string, lossDescription?: string): Promise<ApiResponse<Proposal>> {
     return this.request<Proposal>(`/proposals/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, lossReason, lossDescription }),
     });
   }
 

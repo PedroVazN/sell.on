@@ -75,6 +75,26 @@ export const Proposals: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [deletingItems, setDeletingItems] = useState<string[]>([]);
+  const [showLossModal, setShowLossModal] = useState(false);
+  const [proposalToLose, setProposalToLose] = useState<Proposal | null>(null);
+  const [lossReason, setLossReason] = useState('');
+  const [lossDescription, setLossDescription] = useState('');
+
+  // Opções de motivo da perda
+  const lossReasons = [
+    { value: 'preco_concorrente', label: 'Preço Concorrente' },
+    { value: 'condicao_pagamento', label: 'Condição de Pagamento' },
+    { value: 'sem_retorno', label: 'Sem Retorno' },
+    { value: 'credito_negado', label: 'Crédito Negado' },
+    { value: 'concorrencia_marca', label: 'Concorrência (Marca)' },
+    { value: 'adiamento_compra', label: 'Adiamento de Compra' },
+    { value: 'cotacao_preco', label: 'Cotação de Preço' },
+    { value: 'perca_preco', label: 'Perda de Preço' },
+    { value: 'urgencia_comprou_local', label: 'Urgência / Comprou Localmente' },
+    { value: 'golpe', label: 'Golpe' },
+    { value: 'licitacao', label: 'Licitação' },
+    { value: 'fechado_outro_parceiro', label: 'Fechado em Outro Parceiro' }
+  ];
 
   // Form states
   const [selectedClient, setSelectedClient] = useState({
@@ -213,6 +233,16 @@ export const Proposals: React.FC = () => {
   };
 
   const handleUpdateStatus = async (proposal: Proposal, newStatus: Proposal['status']) => {
+    // Se for venda perdida, mostrar modal para capturar motivo
+    if (newStatus === 'venda_perdida') {
+      setProposalToLose(proposal);
+      setLossReason('');
+      setLossDescription('');
+      setShowLossModal(true);
+      return;
+    }
+
+    // Para outros status, atualizar diretamente
     try {
       await apiService.updateProposalStatus(proposal._id, newStatus);
       await loadData();
@@ -220,6 +250,31 @@ export const Proposals: React.FC = () => {
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
       alert(`Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+    }
+  };
+
+  const handleConfirmLoss = async () => {
+    if (!proposalToLose || !lossReason) {
+      alert('Selecione um motivo para a perda da venda');
+      return;
+    }
+
+    try {
+      await apiService.updateProposalStatus(
+        proposalToLose._id, 
+        'venda_perdida', 
+        lossReason, 
+        lossDescription
+      );
+      await loadData();
+      setShowLossModal(false);
+      setProposalToLose(null);
+      setLossReason('');
+      setLossDescription('');
+      alert('Proposta marcada como venda perdida com sucesso!');
+    } catch (err) {
+      console.error('Erro ao marcar como venda perdida:', err);
+      alert(`Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -792,6 +847,72 @@ export const Proposals: React.FC = () => {
                 style={{ backgroundColor: '#10b981' }}
               >
                 {editingProposal ? 'Atualizar' : 'Criar'} Proposta
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Modal de motivo da perda */}
+      {showLossModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Motivo da Perda da Venda</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <FormGroup>
+                <Label>Motivo da Perda *</Label>
+                <Select
+                  value={lossReason}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLossReason(e.target.value)}
+                >
+                  <option value="">Selecione o motivo da perda</option>
+                  {lossReasons.map(reason => (
+                    <option key={reason.value} value={reason.value}>
+                      {reason.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Descrição Adicional (Opcional)</Label>
+                <Input
+                  placeholder="Descreva mais detalhes sobre a perda da venda..."
+                  value={lossDescription}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLossDescription(e.target.value)}
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                />
+              </FormGroup>
+
+              {proposalToLose && (
+                <div style={{ 
+                  backgroundColor: '#f3f4f6', 
+                  padding: '1rem', 
+                  borderRadius: '0.5rem',
+                  marginTop: '1rem'
+                }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 'bold' }}>
+                    Proposta: {proposalToLose.proposalNumber}
+                  </h4>
+                  <p style={{ margin: '0', fontSize: '0.875rem', color: '#6b7280' }}>
+                    Cliente: {proposalToLose.client.name} | 
+                    Total: {formatCurrency(proposalToLose.total)}
+                  </p>
+                </div>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={() => setShowLossModal(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleConfirmLoss}
+                style={{ backgroundColor: '#dc2626' }}
+                disabled={!lossReason}
+              >
+                Confirmar Perda
               </Button>
             </ModalFooter>
           </ModalContent>
