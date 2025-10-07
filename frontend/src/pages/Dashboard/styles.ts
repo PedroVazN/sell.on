@@ -157,8 +157,8 @@ export const Subtitle = styled.p`
 export const MetricsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: ${({ theme }) => theme.spacing.lg};
-  margin-bottom: 4rem;
+  gap: 1.5rem;
+  margin-bottom: 5rem;
   position: relative;
   z-index: 1;
   animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s both;

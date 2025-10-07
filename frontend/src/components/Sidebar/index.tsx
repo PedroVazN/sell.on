@@ -69,22 +69,8 @@ export const Sidebar: React.FC = () => {
       title: 'PRINCIPAL',
       items: [
         { icon: <BarChart3 size={20} />, label: 'Dashboard', path: '/', permission: 'dashboard' },
-        ...(hasPermission('admin') ? [
-          { icon: <UsersIcon size={20} />, label: 'Leads', path: '/leads', permission: 'admin' },
-          { icon: <TrendingUp size={20} />, label: 'Vendas', path: '/sales', permission: 'admin' },
-          { icon: <FileText size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
-          { icon: <Target size={20} />, label: 'Metas', path: '/goals', permission: 'admin' },
-        ] : [])
       ]
     },
-    ...(hasPermission('admin') ? [{
-      title: 'ANÁLISE',
-      items: [
-        { icon: <Activity size={20} />, label: 'Performance', path: '/performance', permission: 'admin' },
-        { icon: <BarChart3 size={20} />, label: 'Análise', path: '/analysis', permission: 'admin' },
-        { icon: <Calendar size={20} />, label: 'Calendário', path: '/calendar', permission: 'admin' },
-      ]
-    }] : []),
     {
       title: user?.role === 'vendedor' ? 'PROPOSTAS' : 'GESTÃO',
       items: [
@@ -97,19 +83,16 @@ export const Sidebar: React.FC = () => {
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
       ]
     },
-        ...(hasPermission('admin') ? [{
-          title: 'SISTEMA',
-          items: [
-            { icon: <UsersIcon size={20} />, label: 'Usuários', path: '/users', permission: 'admin' },
-            { icon: <UserPlus size={20} />, label: 'Cadastrar Usuário', path: '/users/register', permission: 'admin' },
-            { icon: <Bell size={20} />, label: 'Notificações', path: '/notifications', permission: 'admin' },
-            { icon: <Settings size={20} />, label: 'Configurações', path: '/configurations', permission: 'admin' },
-          ]
-        }] : []),
+    ...(hasPermission('admin') ? [{
+      title: 'SISTEMA',
+      items: [
+        { icon: <UsersIcon size={20} />, label: 'Usuários', path: '/users', permission: 'admin' },
+        { icon: <UserPlus size={20} />, label: 'Cadastrar Usuário', path: '/users/register', permission: 'admin' },
+      ]
+    }] : []),
     {
       title: 'PERFIL',
       items: [
-        { icon: <User size={20} />, label: 'Meu Perfil', path: '/profile', permission: 'profile' },
         { icon: <LogOut size={20} />, label: 'Sair', path: '', onClick: logout },
       ]
     }
