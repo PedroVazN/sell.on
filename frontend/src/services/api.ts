@@ -1018,7 +1018,8 @@ class ApiService {
     return this.request(`/proposals/top-performers`);
   }
 
-  async getVendedorProposals(vendedorId: string, page = 1, limit = 10, status?: string): Promise<ApiResponse<{
+  async getVendedorProposals(vendedorId: string, page = 1, limit = 10, status?: string): Promise<{
+    success: boolean;
     data: Proposal[];
     pagination: {
       current: number;
@@ -1033,14 +1034,28 @@ class ApiService {
       expiradaProposals: number;
       totalRevenue: number;
     };
-  }>> {
+  }> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
       ...(status && { status })
     });
     
-    return this.request(`/proposals/vendedor/${vendedorId}?${params}`);
+    const url = `${this.baseURL}/proposals/vendedor/${vendedorId}?${params}`;
+    const currentToken = this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro na requisição');
+    }
+    
+    return response.json();
   }
 
   // Eventos do Calendário
