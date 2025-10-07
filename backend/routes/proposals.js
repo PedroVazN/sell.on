@@ -223,7 +223,7 @@ router.post('/', async (req, res) => {
       observations: observations || '',
       status: status || 'negociacao',
       validUntil: new Date(validUntil),
-      createdBy: '68c1afbcf906c14a8e7e8ff7' // ID temporário para desenvolvimento
+      createdBy: req.user ? req.user.id : seller._id // Usar usuário logado ou vendedor selecionado
     });
 
     console.log('Proposta criada:', proposal);
