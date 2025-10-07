@@ -433,6 +433,94 @@ router.get('/stats/summary', async (req, res) => {
   }
 });
 
+// GET /api/proposals/dashboard/loss-reasons - Estatísticas de motivos de perda
+router.get('/dashboard/loss-reasons', async (req, res) => {
+  try {
+    console.log('=== ESTATÍSTICAS DE MOTIVOS DE PERDA ===');
+    console.log('User ID:', req.user ? req.user.id : 'NENHUM');
+    console.log('User Role:', req.user ? req.user.role : 'NENHUM');
+
+    // Verificar conexão com MongoDB
+    if (mongoose.connection.readyState !== 1) {
+      console.log('❌ MongoDB não conectado');
+      return res.status(500).json({
+        success: false,
+        error: 'Erro interno do servidor',
+        message: 'Client must be connected before running operations'
+      });
+    }
+
+    // Filtro baseado no role do usuário
+    let matchFilter = {};
+    if (req.user && req.user.role === 'vendedor') {
+      matchFilter.createdBy = new mongoose.Types.ObjectId(req.user.id);
+    }
+
+    console.log('Match filter:', matchFilter);
+
+    const lossReasonsStats = await Proposal.aggregate([
+      {
+        $match: {
+          ...matchFilter,
+          status: 'venda_perdida',
+          lossReason: { $exists: true, $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: '$lossReason',
+          count: { $sum: 1 },
+          totalValue: { $sum: '$total' }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+
+    console.log('Loss reasons stats:', lossReasonsStats);
+
+    // Mapear os motivos para nomes legíveis
+    const reasonLabels = {
+      'preco_concorrente': 'Preço Concorrente',
+      'condicao_pagamento': 'Condição de Pagamento',
+      'sem_retorno': 'Sem Retorno',
+      'credito_negado': 'Crédito Negado',
+      'concorrencia_marca': 'Concorrência (Marca)',
+      'adiamento_compra': 'Adiamento de Compra',
+      'cotacao_preco': 'Cotação de Preço',
+      'perca_preco': 'Perda de Preço',
+      'urgencia_comprou_local': 'Urgência / Comprou Local',
+      'golpe': 'Golpe',
+      'licitacao': 'Licitação',
+      'fechado_outro_parceiro': 'Fechado em Outro Parceiro'
+    };
+
+    const formattedStats = lossReasonsStats.map(stat => ({
+      reason: stat._id,
+      label: reasonLabels[stat._id] || stat._id,
+      count: stat.count,
+      totalValue: stat.totalValue
+    }));
+
+    res.json({
+      success: true,
+      data: formattedStats
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas de motivos de perda:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // GET /api/proposals/dashboard/sales - Dados de vendas para o dashboard
 router.get('/dashboard/sales', async (req, res) => {
   try {

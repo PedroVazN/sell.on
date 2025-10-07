@@ -1060,6 +1060,15 @@ class ApiService {
     return response.json();
   }
 
+  async getLossReasonsStats(): Promise<ApiResponse<{
+    reason: string;
+    label: string;
+    count: number;
+    totalValue: number;
+  }[]>> {
+    return this.request(`/proposals/dashboard/loss-reasons`);
+  }
+
   // Eventos do Calendário
   async getEvents(page = 1, limit = 100, search = '', startDate?: string, endDate?: string): Promise<ApiResponse<Event[]>> {
     let url = `/events?page=${page}&limit=${limit}`;

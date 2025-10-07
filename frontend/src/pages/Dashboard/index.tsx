@@ -139,6 +139,12 @@ export const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lossReasons, setLossReasons] = useState<{
+    reason: string;
+    label: string;
+    count: number;
+    totalValue: number;
+  }[]>([]);
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -151,10 +157,11 @@ export const Dashboard: React.FC = () => {
         console.log('🔍 User role:', user.role);
         console.log('🔍 User ID:', user._id);
         
-        const [usersResponse, productsResponse, vendedorProposalsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getVendedorProposals(user._id, 1, 100)
+          apiService.getVendedorProposals(user._id, 1, 100),
+          apiService.getLossReasonsStats()
         ]);
 
         console.log('📊 Resposta completa do vendedor:', vendedorProposalsResponse);
@@ -187,17 +194,19 @@ export const Dashboard: React.FC = () => {
         
         console.log('📊 Dashboard data para vendedor:', dashboardData);
         setData(dashboardData);
+        setLossReasons(lossReasonsResponse.data || []);
       } else {
         // Dashboard para admin
         console.log('🔍 Carregando dashboard do admin');
         
-        const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse, proposalsStatsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse, proposalsStatsResponse, lossReasonsResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getSales(1, 1),
           apiService.getSalesStats(),
           apiService.getProposalsDashboardSales(),
-          apiService.getProposalsDashboardStats()
+          apiService.getProposalsDashboardStats(),
+          apiService.getLossReasonsStats()
         ]);
 
         setData({
@@ -221,6 +230,7 @@ export const Dashboard: React.FC = () => {
           topProducts: proposalsSalesResponse.data?.topProducts || [],
           monthlyData: proposalsSalesResponse.data?.monthlyData || []
         });
+        setLossReasons(lossReasonsResponse.data || []);
       }
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
@@ -552,6 +562,64 @@ export const Dashboard: React.FC = () => {
           </>
         )}
       </PerformanceMetrics>
+
+      {/* Seção de Motivos de Perda */}
+      {lossReasons.length > 0 && (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>Principais Motivos de Venda Perdida</ChartTitle>
+            <ChartSubtitle>Análise dos motivos mais comuns de perda de vendas</ChartSubtitle>
+            <div style={{ marginTop: '1rem' }}>
+              {lossReasons.slice(0, 5).map((reason, index) => (
+                <div key={reason.reason} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.75rem',
+                  marginBottom: '0.5rem',
+                  backgroundColor: '#1f2937',
+                  borderRadius: '8px',
+                  border: '1px solid #374151'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      backgroundColor: index === 0 ? '#ef4444' : index === 1 ? '#f97316' : index === 2 ? '#eab308' : '#6b7280',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '0.75rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      color: 'white'
+                    }}>
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div style={{ color: '#ffffff', fontWeight: '600', fontSize: '0.875rem' }}>
+                        {reason.label}
+                      </div>
+                      <div style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                        {reason.count} venda{reason.count !== 1 ? 's' : ''} perdida{reason.count !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#ef4444', fontWeight: '600', fontSize: '0.875rem' }}>
+                      R$ {reason.totalValue.toLocaleString('pt-BR')}
+                    </div>
+                    <div style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                      Valor perdido
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        </ChartsGrid>
+      )}
     </Container>
   );
 };
