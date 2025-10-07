@@ -276,6 +276,7 @@ export const Dashboard: React.FC = () => {
       </Header>
 
       <MetricsGrid>
+        {console.log('🔍 User role no dashboard:', user?.role)}
         {user?.role === 'vendedor' ? (
           <>
             <MetricCard>
