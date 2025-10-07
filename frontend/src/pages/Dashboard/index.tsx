@@ -52,6 +52,19 @@ const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: 
   });
 };
 
+const getVendedorSalesData = (monthlyData: Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>) => {
+  const currentYear = new Date().getFullYear();
+  return monthNames.map((month, index) => {
+    const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
+    return {
+      month,
+      propostas: monthData?.totalProposals || 0,
+      aprovadas: monthData?.approvedProposals || 0,
+      receita: monthData?.revenue || 0
+    };
+  });
+};
+
 const getRevenueData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
   const currentYear = new Date().getFullYear();
   return monthNames.map((month, index) => {
@@ -157,16 +170,57 @@ export const Dashboard: React.FC = () => {
         console.log('🔍 User role:', user.role);
         console.log('🔍 User ID:', user._id);
         
-        const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse, proposalsResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getVendedorProposals(user._id, 1, 100),
-          apiService.getLossReasonsStats()
+          apiService.getLossReasonsStats(),
+          apiService.getProposals(1, 100)
         ]);
 
         console.log('📊 Resposta completa do vendedor:', vendedorProposalsResponse);
         const vendedorStats = vendedorProposalsResponse.stats;
         console.log('📊 Stats do vendedor:', vendedorStats);
+
+        // Processar dados mensais das propostas do vendedor
+        const vendedorProposals = proposalsResponse.data?.filter((proposal: any) => 
+          proposal.createdBy?._id === user._id || proposal.createdBy === user._id
+        ) || [];
+
+        console.log('📊 Propostas do vendedor:', vendedorProposals);
+
+        // Agrupar propostas por mês
+        const monthlyProposals = vendedorProposals.reduce((acc: any, proposal: any) => {
+          const date = new Date(proposal.createdAt);
+          const month = date.getMonth() + 1;
+          const year = date.getFullYear();
+          const key = `${year}-${month}`;
+          
+          if (!acc[key]) {
+            acc[key] = {
+              month,
+              year,
+              totalProposals: 0,
+              approvedProposals: 0,
+              revenue: 0
+            };
+          }
+          
+          acc[key].totalProposals++;
+          if (proposal.status === 'venda_fechada') {
+            acc[key].approvedProposals++;
+            acc[key].revenue += proposal.total || 0;
+          }
+          
+          return acc;
+        }, {});
+
+        const monthlyData = Object.values(monthlyProposals).sort((a: any, b: any) => {
+          if (a.year !== b.year) return a.year - b.year;
+          return a.month - b.month;
+        });
+
+        console.log('📊 Dados mensais do vendedor:', monthlyData);
 
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
@@ -189,7 +243,7 @@ export const Dashboard: React.FC = () => {
             expiradaProposals: vendedorStats?.expiradaProposals || 0
           },
           topProducts: [],
-          monthlyData: []
+          monthlyData: monthlyData
         };
         
         console.log('📊 Dashboard data para vendedor:', dashboardData);
@@ -245,7 +299,13 @@ export const Dashboard: React.FC = () => {
   }, [loadDashboardData]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
-  const salesData = useMemo(() => getSalesData(data?.monthlyData || []), [data?.monthlyData]);
+  const salesData = useMemo(() => {
+    if (user?.role === 'vendedor') {
+      return getVendedorSalesData(data?.monthlyData || []);
+    }
+    return getSalesData(data?.monthlyData || []);
+  }, [data?.monthlyData, user?.role]);
+  
   const revenueData = useMemo(() => getRevenueData(data?.monthlyData || []), [data?.monthlyData]);
 
   // Debug: verificar role do usuário
@@ -360,19 +420,21 @@ export const Dashboard: React.FC = () => {
               />
               <Line 
                 type="monotone" 
-                dataKey="vendas" 
+                dataKey={user?.role === 'vendedor' ? 'propostas' : 'vendas'} 
                 stroke="#3B82F6" 
                 strokeWidth={3}
                 dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                 animationDuration={1000}
+                name={user?.role === 'vendedor' ? 'Propostas' : 'Vendas'}
               />
               <Line 
                 type="monotone" 
-                dataKey="receita" 
+                dataKey={user?.role === 'vendedor' ? 'aprovadas' : 'receita'} 
                 stroke="#EC4899" 
                 strokeWidth={3}
                 dot={{ fill: '#EC4899', strokeWidth: 2, r: 4 }}
                 animationDuration={1000}
+                name={user?.role === 'vendedor' ? 'Aprovadas' : 'Receita'}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -480,7 +542,9 @@ export const Dashboard: React.FC = () => {
                 <Target size={24} color="#3B82F6" />
               </MetricItemIcon>
               <MetricItemLabel>Propostas Pendentes</MetricItemLabel>
-              <MetricItemValue $negative>0</MetricItemValue>
+              <MetricItemValue $negative={data?.proposalStats?.negociacaoProposals === 0}>
+                {data?.proposalStats?.negociacaoProposals || 0}
+              </MetricItemValue>
               <MetricItemDescription>
                 Propostas aguardando resposta do cliente
               </MetricItemDescription>
@@ -494,7 +558,9 @@ export const Dashboard: React.FC = () => {
                 <AlertTriangle size={24} color="#EF4444" />
               </MetricItemIcon>
               <MetricItemLabel>Propostas Rejeitadas</MetricItemLabel>
-              <MetricItemValue $negative>0</MetricItemValue>
+              <MetricItemValue $negative={data?.proposalStats?.vendaPerdidaProposals === 0}>
+                {data?.proposalStats?.vendaPerdidaProposals || 0}
+              </MetricItemValue>
               <MetricItemDescription>
                 Propostas que foram rejeitadas pelos clientes
               </MetricItemDescription>
@@ -508,7 +574,9 @@ export const Dashboard: React.FC = () => {
                 <DollarSign size={24} color="#10B981" />
               </MetricItemIcon>
               <MetricItemLabel>Valor Médio Proposta</MetricItemLabel>
-              <MetricItemValue $negative>R$ 0</MetricItemValue>
+              <MetricItemValue $negative={!data?.salesStats?.averageSale || data?.salesStats?.averageSale === 0}>
+                R$ {data?.salesStats?.averageSale?.toLocaleString('pt-BR') || '0'}
+              </MetricItemValue>
               <MetricItemDescription>
                 Valor médio das suas propostas criadas
               </MetricItemDescription>
