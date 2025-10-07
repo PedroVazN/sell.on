@@ -3,6 +3,7 @@ import { Plus, Search, Edit, Trash2, Eye, FileText, CheckCircle, XCircle, Clock,
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   Container, 
   Header, 
@@ -62,6 +63,7 @@ const getStatusColor = (status: string) => {
 
 export const Proposals: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -98,24 +100,39 @@ export const Proposals: React.FC = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [proposalsRes, productsRes, distributorsRes, sellersRes] = await Promise.all([
-        apiService.getProposals(1, 100, statusFilter || undefined, searchTerm || undefined),
+      console.log('🔍 Carregando propostas para usuário:', user?.email, 'Role:', user?.role);
+      
+      let proposalsRes;
+      
+      // Se for vendedor, carregar apenas suas propostas
+      if (user?.role === 'vendedor') {
+        console.log('👤 Carregando propostas do vendedor:', user._id);
+        proposalsRes = await apiService.getVendedorProposals(user._id, 1, 100);
+      } else {
+        // Se for admin, carregar todas as propostas
+        console.log('👑 Carregando todas as propostas (admin)');
+        proposalsRes = await apiService.getProposals(1, 100, statusFilter || undefined, searchTerm || undefined);
+      }
+      
+      const [productsRes, distributorsRes, sellersRes] = await Promise.all([
         apiService.getProducts(1, 100),
         apiService.getDistributors(1, 100),
         apiService.getUsers(1, 100)
       ]);
 
-      setProposals(proposalsRes.data);
+      setProposals(proposalsRes.data || []);
       setProducts(productsRes.data);
       setDistributors(distributorsRes.data);
       setSellers(sellersRes.data.filter(user => user.role === 'vendedor' || user.role === 'admin'));
+      
+      console.log('📊 Propostas carregadas:', proposalsRes.data?.length || 0);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
       setError('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, user]);
 
   useEffect(() => {
     loadData();
@@ -132,7 +149,8 @@ export const Proposals: React.FC = () => {
   const handleCreateProposal = () => {
     setEditingProposal(null);
     setSelectedClient({ name: '', email: '', phone: '', company: '' });
-    setSelectedSeller('');
+    // Se for vendedor, selecionar automaticamente ele mesmo
+    setSelectedSeller(user?.role === 'vendedor' ? user._id : '');
     setSelectedDistributor('');
     setSelectedProducts([]);
     setPaymentCondition('');
@@ -380,7 +398,9 @@ export const Proposals: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>Propostas Comerciais</Title>
+        <Title>
+          {user?.role === 'vendedor' ? 'Minhas Propostas' : 'Propostas Comerciais'}
+        </Title>
         <Actions>
           <SearchContainer>
             <Search size={20} />
@@ -408,8 +428,15 @@ export const Proposals: React.FC = () => {
         {filteredProposals.length === 0 ? (
           <EmptyState>
             <FileText size={48} />
-            <h3>Nenhuma proposta encontrada</h3>
-            <p>Crie sua primeira proposta comercial</p>
+            <h3>
+              {user?.role === 'vendedor' ? 'Você ainda não criou nenhuma proposta' : 'Nenhuma proposta encontrada'}
+            </h3>
+            <p>
+              {user?.role === 'vendedor' 
+                ? 'Crie sua primeira proposta comercial para começar a vender' 
+                : 'Crie sua primeira proposta comercial'
+              }
+            </p>
             <CreateButton onClick={() => navigate('/proposals/create')}>
               <Plus size={20} />
               Nova Proposta
@@ -600,6 +627,11 @@ export const Proposals: React.FC = () => {
                   <Select
                     value={selectedSeller || ''}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeller(e.target.value)}
+                    disabled={user?.role === 'vendedor'}
+                    style={{ 
+                      backgroundColor: user?.role === 'vendedor' ? '#f3f4f6' : 'white',
+                      cursor: user?.role === 'vendedor' ? 'not-allowed' : 'pointer'
+                    }}
                   >
                     <option value="">Selecione o vendedor</option>
                     {sellers.map(seller => (
@@ -608,6 +640,11 @@ export const Proposals: React.FC = () => {
                       </option>
                     ))}
                   </Select>
+                  {user?.role === 'vendedor' && (
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      Você será automaticamente selecionado como vendedor
+                    </div>
+                  )}
                 </FormGroup>
                 <FormGroup>
                   <Label>Distribuidor *</Label>
