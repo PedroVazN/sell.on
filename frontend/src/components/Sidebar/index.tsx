@@ -115,7 +115,7 @@ export const Sidebar: React.FC = () => {
               label={item.label}
               path={item.path}
               isActive={location.pathname === item.path}
-              onClick={item.onClick}
+              onClick={'onClick' in item ? item.onClick : undefined}
             />
           ))}
         </MenuSection>
