@@ -40,7 +40,7 @@ import { Loader2, TrendingDown, TrendingUp, DollarSign, AlertTriangle, Target, B
 
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
+const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales?: number; totalProposals?: number; approvedProposals?: number}>) => {
   const currentYear = new Date().getFullYear();
   return monthNames.map((month, index) => {
     const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
@@ -52,7 +52,7 @@ const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: 
   });
 };
 
-const getVendedorSalesData = (monthlyData: Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>) => {
+const getVendedorSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales?: number; totalProposals?: number; approvedProposals?: number}>) => {
   const currentYear = new Date().getFullYear();
   return monthNames.map((month, index) => {
     const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
@@ -65,7 +65,7 @@ const getVendedorSalesData = (monthlyData: Array<{month: number; year: number; t
   });
 };
 
-const getRevenueData = (monthlyData: Array<{month: number; year: number; revenue: number; sales: number}>) => {
+const getRevenueData = (monthlyData: Array<{month: number; year: number; revenue: number; sales?: number; totalProposals?: number; approvedProposals?: number}>) => {
   const currentYear = new Date().getFullYear();
   return monthNames.map((month, index) => {
     const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
@@ -122,7 +122,9 @@ interface DashboardData {
     month: number;
     year: number;
     revenue: number;
-    sales: number;
+    sales?: number;
+    totalProposals?: number;
+    approvedProposals?: number;
   }>;
 }
 
@@ -218,7 +220,7 @@ export const Dashboard: React.FC = () => {
         const monthlyData = Object.values(monthlyProposals).sort((a: any, b: any) => {
           if (a.year !== b.year) return a.year - b.year;
           return a.month - b.month;
-        });
+        }) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
 
         console.log('📊 Dados mensais do vendedor:', monthlyData);
 
