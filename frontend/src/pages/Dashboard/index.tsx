@@ -269,27 +269,27 @@ export const Dashboard: React.FC = () => {
         {user?.role === 'vendedor' ? (
           <>
             <MetricCard>
-              <MetricValue>0</MetricValue>
+              <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
               <MetricLabel>Propostas Criadas</MetricLabel>
               <MetricChange $positive>+0% este mês</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>0</MetricValue>
+              <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
               <MetricLabel>Propostas Aprovadas</MetricLabel>
               <MetricChange $positive>+0% taxa de conversão</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ 0</MetricValue>
+              <MetricValue>R$ {data?.totalRevenue?.toLocaleString('pt-BR') || '0'}</MetricValue>
               <MetricLabel>Valor Total Propostas</MetricLabel>
               <MetricChange $positive>+0% vs mês anterior</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>0</MetricValue>
-              <MetricLabel>Clientes Atendidos</MetricLabel>
-              <MetricChange $positive>+0% novos clientes</MetricChange>
+              <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
+              <MetricLabel>Em Negociação</MetricLabel>
+              <MetricChange $positive>+0% novas negociações</MetricChange>
             </MetricCard>
           </>
         ) : (
