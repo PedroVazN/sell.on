@@ -397,20 +397,25 @@ router.get('/dashboard/sales', async (req, res) => {
 
     // Usar ID do usuário logado ou ID temporário se não houver usuário
     const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
-    console.log('🔍 Dashboard stats - User ID:', userId);
+    const userRole = req.user ? req.user.role : 'admin';
+    console.log('🔍 Dashboard sales - User ID:', userId, 'Role:', userRole);
+    
+    // Definir filtro baseado no role do usuário
+    let salesMatchFilter = { status: 'venda_fechada' };
+    if (userRole !== 'admin') {
+      // Vendedor vê apenas suas vendas fechadas
+      salesMatchFilter.$or = [
+        { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+        { createdBy: new mongoose.Types.ObjectId(userId) }
+      ];
+      console.log('🔍 Filtro de vendas para vendedor:', salesMatchFilter);
+    } else {
+      console.log('🔍 Admin - buscando todas as vendas fechadas');
+    }
     
     // Buscar vendas fechadas (receita total)
-    console.log('🔍 Buscando vendas fechadas para userId:', userId);
     const salesStats = await Proposal.aggregate([
-      { 
-        $match: { 
-          status: 'venda_fechada',
-          $or: [
-            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
-            { createdBy: new mongoose.Types.ObjectId(userId) }
-          ]
-        } 
-      },
+      { $match: salesMatchFilter },
       {
         $group: {
           _id: null,
@@ -424,15 +429,7 @@ router.get('/dashboard/sales', async (req, res) => {
 
     // Buscar produtos mais vendidos
     const topProducts = await Proposal.aggregate([
-      { 
-        $match: { 
-          status: 'venda_fechada',
-          $or: [
-            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
-            { createdBy: new mongoose.Types.ObjectId(userId) }
-          ]
-        } 
-      },
+      { $match: salesMatchFilter },
       { $unwind: '$items' },
       {
         $group: {
@@ -448,15 +445,7 @@ router.get('/dashboard/sales', async (req, res) => {
 
     // Buscar dados mensais para gráficos
     const monthlyData = await Proposal.aggregate([
-      { 
-        $match: { 
-          status: 'venda_fechada',
-          $or: [
-            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
-            { createdBy: new mongoose.Types.ObjectId(userId) }
-          ]
-        } 
-      },
+      { $match: salesMatchFilter },
       {
         $group: {
           _id: {
@@ -537,19 +526,28 @@ router.get('/dashboard/stats', async (req, res) => {
 
     // Usar ID do usuário logado ou ID temporário se não houver usuário
     const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
-    console.log('🔍 Dashboard stats - User ID:', userId);
+    const userRole = req.user ? req.user.role : 'admin';
+    console.log('🔍 Dashboard stats - User ID:', userId, 'Role:', userRole);
     
-    // Buscar estatísticas de todas as propostas
-    console.log('🔍 Buscando propostas para userId:', userId);
+    // Definir filtro baseado no role do usuário
+    let matchFilter = {};
+    if (userRole !== 'admin') {
+      // Vendedor vê apenas suas propostas
+      matchFilter = {
+        $or: [
+          { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+          { createdBy: new mongoose.Types.ObjectId(userId) }
+        ]
+      };
+      console.log('🔍 Filtro para vendedor:', matchFilter);
+    } else {
+      // Admin vê todas as propostas
+      console.log('🔍 Admin - buscando todas as propostas');
+    }
+    
+    // Buscar estatísticas de propostas
     const proposalStats = await Proposal.aggregate([
-      { 
-        $match: { 
-          $or: [
-            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
-            { createdBy: new mongoose.Types.ObjectId(userId) }
-          ]
-        } 
-      },
+      { $match: matchFilter },
       {
         $group: {
           _id: null,
@@ -571,16 +569,17 @@ router.get('/dashboard/stats', async (req, res) => {
     ]);
 
     // Buscar estatísticas de vendas fechadas (receita e ticket médio)
+    const salesMatchFilter = { status: 'venda_fechada' };
+    if (userRole !== 'admin') {
+      // Vendedor vê apenas suas vendas fechadas
+      salesMatchFilter.$or = [
+        { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+        { createdBy: new mongoose.Types.ObjectId(userId) }
+      ];
+    }
+    
     const salesStats = await Proposal.aggregate([
-      { 
-        $match: { 
-          status: 'venda_fechada',
-          $or: [
-            { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
-            { createdBy: new mongoose.Types.ObjectId(userId) }
-          ]
-        } 
-      },
+      { $match: salesMatchFilter },
       {
         $group: {
           _id: null,
@@ -593,6 +592,18 @@ router.get('/dashboard/stats', async (req, res) => {
 
     console.log('📊 Proposal Stats encontradas:', proposalStats);
     console.log('💰 Sales Stats encontradas:', salesStats);
+    
+    // Log detalhado dos dados encontrados
+    if (proposalStats[0]) {
+      console.log('📈 Propostas totais:', proposalStats[0].totalProposals);
+      console.log('📈 Vendas fechadas:', proposalStats[0].vendaFechadaProposals);
+      console.log('📈 Vendas perdidas:', proposalStats[0].vendaPerdidaProposals);
+    }
+    
+    if (salesStats[0]) {
+      console.log('💰 Receita total:', salesStats[0].totalRevenue);
+      console.log('💰 Vendas totais:', salesStats[0].totalSales);
+    }
 
     const result = {
       proposalStats: proposalStats[0] || {
