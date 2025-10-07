@@ -145,43 +145,84 @@ export const Dashboard: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse, proposalsStatsResponse] = await Promise.all([
-        apiService.getUsers(1, 1),
-        apiService.getProducts(1, 1),
-        apiService.getSales(1, 1),
-        apiService.getSalesStats(),
-        apiService.getProposalsDashboardSales(),
-        apiService.getProposalsDashboardStats()
-      ]);
+      if (user?.role === 'vendedor' && user?._id) {
+        // Dashboard específico para vendedor
+        console.log('🔍 Carregando dashboard do vendedor:', user._id);
+        
+        const [usersResponse, productsResponse, vendedorProposalsResponse] = await Promise.all([
+          apiService.getUsers(1, 1),
+          apiService.getProducts(1, 1),
+          apiService.getVendedorProposals(user._id, 1, 100)
+        ]);
 
-      setData({
-        totalUsers: usersResponse.pagination?.total || 0,
-        totalProducts: productsResponse.pagination?.total || 0,
-        totalSales: proposalsSalesResponse.data?.salesStats?.totalSales || 0,
-        totalRevenue: proposalsSalesResponse.data?.salesStats?.totalRevenue || 0,
-        salesStats: proposalsSalesResponse.data?.salesStats || {
-          totalSales: 0,
-          totalRevenue: 0,
-          averageSale: 0,
-          totalItems: 0
-        },
-        proposalStats: proposalsStatsResponse.data?.proposalStats || {
-          totalProposals: 0,
-          negociacaoProposals: 0,
-          vendaFechadaProposals: 0,
-          vendaPerdidaProposals: 0,
-          expiradaProposals: 0
-        },
-        topProducts: proposalsSalesResponse.data?.topProducts || [],
-        monthlyData: proposalsSalesResponse.data?.monthlyData || []
-      });
+        const vendedorStats = vendedorProposalsResponse.data?.stats;
+        console.log('📊 Stats do vendedor:', vendedorStats);
+
+        setData({
+          totalUsers: usersResponse.pagination?.total || 0,
+          totalProducts: productsResponse.pagination?.total || 0,
+          totalSales: vendedorStats?.vendaFechadaProposals || 0,
+          totalRevenue: vendedorStats?.totalRevenue || 0,
+          salesStats: {
+            totalSales: vendedorStats?.vendaFechadaProposals || 0,
+            totalRevenue: vendedorStats?.totalRevenue || 0,
+            averageSale: vendedorStats?.totalRevenue && vendedorStats?.vendaFechadaProposals 
+              ? vendedorStats.totalRevenue / vendedorStats.vendaFechadaProposals 
+              : 0,
+            totalItems: 0
+          },
+          proposalStats: {
+            totalProposals: vendedorStats?.totalProposals || 0,
+            negociacaoProposals: vendedorStats?.negociacaoProposals || 0,
+            vendaFechadaProposals: vendedorStats?.vendaFechadaProposals || 0,
+            vendaPerdidaProposals: vendedorStats?.vendaPerdidaProposals || 0,
+            expiradaProposals: vendedorStats?.expiradaProposals || 0
+          },
+          topProducts: [],
+          monthlyData: []
+        });
+      } else {
+        // Dashboard para admin
+        console.log('🔍 Carregando dashboard do admin');
+        
+        const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse, proposalsStatsResponse] = await Promise.all([
+          apiService.getUsers(1, 1),
+          apiService.getProducts(1, 1),
+          apiService.getSales(1, 1),
+          apiService.getSalesStats(),
+          apiService.getProposalsDashboardSales(),
+          apiService.getProposalsDashboardStats()
+        ]);
+
+        setData({
+          totalUsers: usersResponse.pagination?.total || 0,
+          totalProducts: productsResponse.pagination?.total || 0,
+          totalSales: proposalsSalesResponse.data?.salesStats?.totalSales || 0,
+          totalRevenue: proposalsSalesResponse.data?.salesStats?.totalRevenue || 0,
+          salesStats: proposalsSalesResponse.data?.salesStats || {
+            totalSales: 0,
+            totalRevenue: 0,
+            averageSale: 0,
+            totalItems: 0
+          },
+          proposalStats: proposalsStatsResponse.data?.proposalStats || {
+            totalProposals: 0,
+            negociacaoProposals: 0,
+            vendaFechadaProposals: 0,
+            vendaPerdidaProposals: 0,
+            expiradaProposals: 0
+          },
+          topProducts: proposalsSalesResponse.data?.topProducts || [],
+          monthlyData: proposalsSalesResponse.data?.monthlyData || []
+        });
+      }
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
       setError('Erro ao carregar dados do dashboard');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadDashboardData();

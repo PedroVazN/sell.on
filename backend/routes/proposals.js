@@ -651,6 +651,94 @@ router.get('/dashboard/stats', async (req, res) => {
   }
 });
 
+// GET /api/proposals/vendedor/:vendedorId - Propostas de um vendedor específico
+router.get('/vendedor/:vendedorId', async (req, res) => {
+  try {
+    const { vendedorId } = req.params;
+    const { page = 1, limit = 10, status } = req.query;
+    const skip = (page - 1) * limit;
+
+    console.log('🔍 Buscando propostas para vendedor:', vendedorId);
+
+    let query = {
+      $or: [
+        { 'seller._id': new mongoose.Types.ObjectId(vendedorId) },
+        { 'seller': new mongoose.Types.ObjectId(vendedorId) }
+      ]
+    };
+
+    if (status) {
+      query.status = status;
+    }
+
+    const proposals = await Proposal.find(query)
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Proposal.countDocuments(query);
+
+    // Estatísticas do vendedor
+    const stats = await Proposal.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalProposals: { $sum: 1 },
+          negociacaoProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'negociacao'] }, 1, 0] }
+          },
+          vendaFechadaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_fechada'] }, 1, 0] }
+          },
+          vendaPerdidaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'venda_perdida'] }, 1, 0] }
+          },
+          expiradaProposals: {
+            $sum: { $cond: [{ $eq: ['$status', 'expirada'] }, 1, 0] }
+          },
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $eq: ['$status', 'venda_fechada'] },
+                '$total',
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    console.log('📊 Stats do vendedor:', stats[0]);
+
+    res.json({
+      success: true,
+      data: proposals,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total: total
+      },
+      stats: stats[0] || {
+        totalProposals: 0,
+        negociacaoProposals: 0,
+        vendaFechadaProposals: 0,
+        vendaPerdidaProposals: 0,
+        expiradaProposals: 0,
+        totalRevenue: 0
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar propostas do vendedor:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
+    });
+  }
+});
+
 // GET /api/proposals/top-performers - Top performers das propostas
 router.get('/top-performers', async (req, res) => {
   try {

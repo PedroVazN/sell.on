@@ -1018,6 +1018,31 @@ class ApiService {
     return this.request(`/proposals/top-performers`);
   }
 
+  async getVendedorProposals(vendedorId: string, page = 1, limit = 10, status?: string): Promise<ApiResponse<{
+    data: Proposal[];
+    pagination: {
+      current: number;
+      pages: number;
+      total: number;
+    };
+    stats: {
+      totalProposals: number;
+      negociacaoProposals: number;
+      vendaFechadaProposals: number;
+      vendaPerdidaProposals: number;
+      expiradaProposals: number;
+      totalRevenue: number;
+    };
+  }>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(status && { status })
+    });
+    
+    return this.request(`/proposals/vendedor/${vendedorId}?${params}`);
+  }
+
   // Eventos do Calendário
   async getEvents(page = 1, limit = 100, search = '', startDate?: string, endDate?: string): Promise<ApiResponse<Event[]>> {
     let url = `/events?page=${page}&limit=${limit}`;
