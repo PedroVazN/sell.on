@@ -156,12 +156,20 @@ export const Subtitle = styled.p`
 
 export const MetricsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: ${({ theme }) => theme.spacing.lg};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
   position: relative;
   z-index: 1;
   animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s both;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const MetricCard = styled.div`

@@ -279,27 +279,27 @@ export const Dashboard: React.FC = () => {
         {user?.role === 'vendedor' ? (
           <>
             <MetricCard>
-              <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
-              <MetricLabel>Propostas Criadas</MetricLabel>
+              <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
+              <MetricLabel>Propostas Perdidas</MetricLabel>
+              <MetricChange $negative>-0% este mês</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
+              <MetricLabel>Propostas Abertas</MetricLabel>
               <MetricChange $positive>+0% este mês</MetricChange>
             </MetricCard>
 
             <MetricCard>
               <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
-              <MetricLabel>Propostas Aprovadas</MetricLabel>
-              <MetricChange $positive>+0% taxa de conversão</MetricChange>
+              <MetricLabel>Vendas Fechadas</MetricLabel>
+              <MetricChange $positive>+0% este mês</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.totalRevenue?.toLocaleString('pt-BR') || '0'}</MetricValue>
-              <MetricLabel>Valor Total Propostas</MetricLabel>
+              <MetricValue>R$ {data?.salesStats?.averageSale?.toLocaleString('pt-BR') || '0'}</MetricValue>
+              <MetricLabel>Ticket Médio</MetricLabel>
               <MetricChange $positive>+0% vs mês anterior</MetricChange>
-            </MetricCard>
-
-            <MetricCard>
-              <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
-              <MetricLabel>Em Negociação</MetricLabel>
-              <MetricChange $positive>+0% novas negociações</MetricChange>
             </MetricCard>
           </>
         ) : (
