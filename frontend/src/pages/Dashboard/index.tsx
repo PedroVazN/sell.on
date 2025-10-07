@@ -281,7 +281,7 @@ export const Dashboard: React.FC = () => {
             <MetricCard>
               <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
               <MetricLabel>Propostas Perdidas</MetricLabel>
-              <MetricChange $negative>-0% este mês</MetricChange>
+              <MetricChange>-0% este mês</MetricChange>
             </MetricCard>
 
             <MetricCard>
