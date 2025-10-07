@@ -137,3 +137,5 @@ Desenvolvido com ❤️ para facilitar a gestão de vendas e relacionamento com 
 ---
 
 **SalesOne CRM** - Transformando vendas em resultados! 🚀
+
+*Deploy atualizado com toasts personalizados e design melhorado*
