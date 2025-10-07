@@ -106,6 +106,8 @@ router.post('/', auth, async (req, res) => {
     console.log('=== CRIANDO PROPOSTA ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
     console.log('User:', req.user);
+    console.log('Headers:', req.headers);
+    console.log('Authorization:', req.headers.authorization);
 
     const {
       client,
@@ -223,7 +225,7 @@ router.post('/', auth, async (req, res) => {
       observations: observations || '',
       status: status || 'negociacao',
       validUntil: new Date(validUntil),
-      createdBy: req.user ? req.user.id : seller._id // Usar usuário logado ou vendedor selecionado
+      createdBy: (req.user && req.user.id !== '68c1afbcf906c14a8e7e8ff7') ? req.user.id : seller._id // Usar usuário logado real ou vendedor selecionado
     });
 
     console.log('Proposta criada:', proposal);
