@@ -121,64 +121,89 @@ router.post('/', async (req, res) => {
       validUntil
     } = req.body;
 
-    // Validações básicas
+    // Validações básicas com logs detalhados
+    console.log('🔍 Validando cliente:', { client, hasName: !!client?.name, hasEmail: !!client?.email });
     if (!client || !client.name || !client.email) {
+      console.log('❌ Erro: Cliente inválido');
       return res.status(400).json({ 
         success: false,
         error: 'Nome e email do cliente são obrigatórios' 
       });
     }
 
+    console.log('🔍 Validando vendedor:', { seller, hasId: !!seller?._id, hasName: !!seller?.name });
     if (!seller || !seller._id || !seller.name) {
+      console.log('❌ Erro: Vendedor inválido');
       return res.status(400).json({ 
         success: false,
         error: 'Vendedor é obrigatório' 
       });
     }
 
+    console.log('🔍 Validando distribuidor:', { distributor, hasId: !!distributor?._id });
     if (!distributor || !distributor._id) {
+      console.log('❌ Erro: Distribuidor inválido');
       return res.status(400).json({ 
         success: false,
         error: 'Distribuidor é obrigatório' 
       });
     }
 
+    console.log('🔍 Validando itens:', { items, isArray: Array.isArray(items), length: items?.length });
     if (!items || !Array.isArray(items) || items.length === 0) {
+      console.log('❌ Erro: Itens inválidos');
       return res.status(400).json({ 
         success: false,
         error: 'Pelo menos um item é obrigatório' 
       });
     }
 
+    console.log('🔍 Validando condição de pagamento:', { paymentCondition });
     if (!paymentCondition) {
+      console.log('❌ Erro: Condição de pagamento inválida');
       return res.status(400).json({ 
         success: false,
         error: 'Condição de pagamento é obrigatória' 
       });
     }
 
+    console.log('🔍 Validando data de validade:', { validUntil });
     if (!validUntil) {
+      console.log('❌ Erro: Data de validade inválida');
       return res.status(400).json({ 
         success: false,
         error: 'Data de validade é obrigatória' 
       });
     }
 
-    // Validar itens
-    for (const item of items) {
+    // Validar itens com logs detalhados
+    console.log('🔍 Validando itens individuais...');
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      console.log(`🔍 Item ${i}:`, { 
+        product: item.product, 
+        hasProductId: !!item.product?._id, 
+        hasProductName: !!item.product?.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      });
+      
       if (!item.product || !item.product._id || !item.product.name) {
+        console.log(`❌ Erro: Item ${i} sem produto válido`);
         return res.status(400).json({ 
           success: false,
           error: 'Todos os itens devem ter produto selecionado' 
         });
       }
       if (!item.quantity || item.quantity <= 0) {
+        console.log(`❌ Erro: Item ${i} com quantidade inválida`);
         return res.status(400).json({ 
           success: false,
           error: 'Quantidade deve ser maior que zero' 
         });
       }
-      if (!item.unitPrice || item.unitPrice < 0) {
+      if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice < 0) {
+        console.log(`❌ Erro: Item ${i} com preço inválido`);
         return res.status(400).json({ 
           success: false,
           error: 'Preço unitário deve ser maior ou igual a zero' 
