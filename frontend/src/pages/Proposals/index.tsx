@@ -65,7 +65,7 @@ const getStatusColor = (status: string) => {
 export const Proposals: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { success, error, warning } = useToastContext();
+  const { success, error: showError, warning } = useToastContext();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -195,7 +195,7 @@ export const Proposals: React.FC = () => {
         success('Sucesso!', 'Proposta excluída com sucesso!');
       } catch (err) {
         console.error('Erro ao deletar proposta:', err);
-        error('Erro!', `Erro ao deletar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+        showError('Erro!', `Erro ao deletar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       }
     }
   };
@@ -231,7 +231,7 @@ export const Proposals: React.FC = () => {
       success('PDF Gerado!', 'PDF da proposta gerado com sucesso!');
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      error('Erro!', 'Erro ao gerar PDF da proposta');
+      showError('Erro!', 'Erro ao gerar PDF da proposta');
     }
   };
 
@@ -252,7 +252,7 @@ export const Proposals: React.FC = () => {
       success('Status Atualizado!', 'Status da proposta atualizado com sucesso!');
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
-      error('Erro!', `Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      showError('Erro!', `Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -277,7 +277,7 @@ export const Proposals: React.FC = () => {
       success('Venda Perdida!', 'Proposta marcada como venda perdida com sucesso!');
     } catch (err) {
       console.error('Erro ao marcar como venda perdida:', err);
-      error('Erro!', `Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      showError('Erro!', `Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -330,7 +330,7 @@ export const Proposals: React.FC = () => {
       const selectedSellerData = sellers.find(s => s._id === selectedSeller);
 
       if (!selectedDistributorData || !selectedSellerData) {
-        error('Erro!', 'Distribuidor ou vendedor não encontrado');
+        showError('Erro!', 'Distribuidor ou vendedor não encontrado');
         return;
       }
 
@@ -374,7 +374,7 @@ export const Proposals: React.FC = () => {
       await loadData();
     } catch (err) {
       console.error('Erro ao salvar proposta:', err);
-      error('Erro!', `Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      showError('Erro!', `Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
