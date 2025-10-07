@@ -266,6 +266,90 @@ app.use('/api/proposals', proposalsRouter);
 const priceListRouter = require('../routes/priceList');
 app.use('/api/price-list', priceListRouter);
 
+// Rota para limpar dados de teste
+app.delete('/api/clear-test-data', async (req, res) => {
+  try {
+    console.log('🧹 Iniciando limpeza de dados de teste...');
+    
+    // Importar todos os modelos
+    const User = require('../models/User');
+    const Product = require('../models/Product');
+    const Client = require('../models/Client');
+    const Distributor = require('../models/Distributor');
+    const Proposal = require('../models/Proposal');
+    const Sale = require('../models/Sale');
+    const Goal = require('../models/Goal');
+    const Event = require('../models/Event');
+    const Notification = require('../models/Notification');
+    const PriceList = require('../models/PriceList');
+    
+    // Contar registros antes da limpeza
+    const countsBefore = {
+      users: await User.countDocuments(),
+      products: await Product.countDocuments(),
+      clients: await Client.countDocuments(),
+      distributors: await Distributor.countDocuments(),
+      proposals: await Proposal.countDocuments(),
+      sales: await Sale.countDocuments(),
+      goals: await Goal.countDocuments(),
+      events: await Event.countDocuments(),
+      notifications: await Notification.countDocuments(),
+      priceLists: await PriceList.countDocuments()
+    };
+    
+    console.log('📊 Dados antes da limpeza:', countsBefore);
+    
+    // Limpar todos os dados (exceto usuários admin)
+    const results = {
+      users: await User.deleteMany({ role: { $ne: 'admin' } }),
+      products: await Product.deleteMany({}),
+      clients: await Client.deleteMany({}),
+      distributors: await Distributor.deleteMany({}),
+      proposals: await Proposal.deleteMany({}),
+      sales: await Sale.deleteMany({}),
+      goals: await Goal.deleteMany({}),
+      events: await Event.deleteMany({}),
+      notifications: await Notification.deleteMany({}),
+      priceLists: await PriceList.deleteMany({})
+    };
+    
+    // Contar registros após a limpeza
+    const countsAfter = {
+      users: await User.countDocuments(),
+      products: await Product.countDocuments(),
+      clients: await Client.countDocuments(),
+      distributors: await Distributor.countDocuments(),
+      proposals: await Proposal.countDocuments(),
+      sales: await Sale.countDocuments(),
+      goals: await Goal.countDocuments(),
+      events: await Event.countDocuments(),
+      notifications: await Notification.countDocuments(),
+      priceLists: await PriceList.countDocuments()
+    };
+    
+    console.log('📊 Dados após a limpeza:', countsAfter);
+    console.log('✅ Limpeza concluída com sucesso!');
+    
+    res.json({
+      success: true,
+      message: 'Dados de teste removidos com sucesso!',
+      deleted: results,
+      countsBefore,
+      countsAfter,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao limpar dados de teste:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao limpar dados de teste',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });
