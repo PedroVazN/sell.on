@@ -33,6 +33,11 @@ const connectDB = async () => {
 
     const atlasUri = process.env.MONGODB_URI;
     
+    console.log('🔍 Verificando variáveis de ambiente:');
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 MONGODB_URI existe:', !!atlasUri);
+    console.log('🔍 MONGODB_URI length:', atlasUri ? atlasUri.length : 0);
+    
     if (!atlasUri) {
       console.log('⚠️  MONGODB_URI não configurada - continuando sem banco de dados');
       console.log('💡 Configure MONGODB_URI no Vercel ou crie um arquivo .env');

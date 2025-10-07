@@ -528,6 +528,7 @@ router.get('/dashboard/stats', async (req, res) => {
     const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
     const userRole = req.user ? req.user.role : 'admin';
     console.log('🔍 Dashboard stats - User ID:', userId, 'Role:', userRole);
+    console.log('🔍 req.user completo:', req.user);
     
     // Definir filtro baseado no role do usuário
     let matchFilter = {};
@@ -543,6 +544,21 @@ router.get('/dashboard/stats', async (req, res) => {
     } else {
       // Admin vê todas as propostas
       console.log('🔍 Admin - buscando todas as propostas');
+    }
+    
+    // Primeiro, verificar se há propostas no banco
+    const totalProposals = await Proposal.countDocuments();
+    console.log('🔍 Total de propostas no banco:', totalProposals);
+    
+    // Verificar propostas do usuário específico
+    if (userRole !== 'admin') {
+      const userProposals = await Proposal.countDocuments({
+        $or: [
+          { 'createdBy._id': new mongoose.Types.ObjectId(userId) },
+          { createdBy: new mongoose.Types.ObjectId(userId) }
+        ]
+      });
+      console.log('🔍 Propostas do usuário', userId, ':', userProposals);
     }
     
     // Buscar estatísticas de propostas
