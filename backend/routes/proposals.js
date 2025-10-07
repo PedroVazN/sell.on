@@ -24,12 +24,7 @@ router.get('/', async (req, res) => {
     const { page = 1, limit = 10, status, search } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = { 
-      $or: [
-        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
-        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
-      ]
-    };
+    let query = {}; // Buscar todas as propostas
     
     if (status) {
       query.status = status;
@@ -105,6 +100,7 @@ router.post('/', async (req, res) => {
   try {
     console.log('=== CRIANDO PROPOSTA ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
+    console.log('Seller ID que será usado como createdBy:', req.body.seller?._id);
 
     const {
       client,
