@@ -148,6 +148,8 @@ export const Dashboard: React.FC = () => {
       if (user?.role === 'vendedor' && user?._id) {
         // Dashboard específico para vendedor
         console.log('🔍 Carregando dashboard do vendedor:', user._id);
+        console.log('🔍 User role:', user.role);
+        console.log('🔍 User ID:', user._id);
         
         const [usersResponse, productsResponse, vendedorProposalsResponse] = await Promise.all([
           apiService.getUsers(1, 1),
@@ -159,7 +161,7 @@ export const Dashboard: React.FC = () => {
         const vendedorStats = vendedorProposalsResponse.stats;
         console.log('📊 Stats do vendedor:', vendedorStats);
 
-        setData({
+        const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
           totalSales: vendedorStats?.totalProposals || 0, // Mostrar total de propostas, não apenas vendas fechadas
@@ -181,7 +183,10 @@ export const Dashboard: React.FC = () => {
           },
           topProducts: [],
           monthlyData: []
-        });
+        };
+        
+        console.log('📊 Dashboard data para vendedor:', dashboardData);
+        setData(dashboardData);
       } else {
         // Dashboard para admin
         console.log('🔍 Carregando dashboard do admin');
