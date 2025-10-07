@@ -167,28 +167,40 @@ router.post('/login', async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
     console.log('🔑 Senha válida:', isPasswordValid);
     
-    // Se senha não for válida, tentar senha padrão para vendedores
-    if (!isPasswordValid && user.role === 'vendedor' && password === '123456') {
-      console.log('🔧 Tentando senha padrão para vendedor...');
+    // Se senha não for válida, tentar diferentes abordagens
+    if (!isPasswordValid) {
+      console.log('❌ Senha inválida - tentando diferentes abordagens...');
       
-      // Atualizar senha do vendedor
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('123456', salt);
-      user.password = hashedPassword;
-      await user.save();
-      
-      console.log('✅ Senha do vendedor atualizada');
-    } else if (!isPasswordValid) {
-      console.log('❌ Senha inválida - tentando comparação manual');
-      
-      // Teste manual com bcrypt
+      // Teste 1: Comparação manual com bcrypt
       const manualCompare = await bcrypt.compare(password, user.password);
       console.log('🔑 Comparação manual:', manualCompare);
       
-      return res.status(401).json({
-        success: false,
-        message: 'Credenciais inválidas'
-      });
+      // Teste 2: Verificar se a senha original é a mesma (sem hash)
+      const isOriginalPassword = password === user.password;
+      console.log('🔑 É senha original (sem hash):', isOriginalPassword);
+      
+      // Teste 3: Se for vendedor e senha for 123456, atualizar
+      if (user.role === 'vendedor' && password === '123456') {
+        console.log('🔧 Atualizando senha do vendedor para 123456...');
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('123456', salt);
+        user.password = hashedPassword;
+        await user.save();
+        console.log('✅ Senha do vendedor atualizada');
+      } else if (isOriginalPassword) {
+        console.log('🔧 Senha original detectada - fazendo hash...');
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        user.password = hashedPassword;
+        await user.save();
+        console.log('✅ Senha original hashada e salva');
+      } else {
+        console.log('❌ Nenhuma correção possível');
+        return res.status(401).json({
+          success: false,
+          message: 'Credenciais inválidas'
+        });
+      }
     }
 
     // Verificar se usuário está ativo

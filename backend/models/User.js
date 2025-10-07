@@ -52,8 +52,16 @@ userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
+    // Verificar se a senha já está hashada (começa com $2a$)
+    if (this.password.startsWith('$2a$')) {
+      console.log('🔑 Senha já está hashada, pulando hash');
+      return next();
+    }
+    
+    console.log('🔑 Fazendo hash da senha:', this.password);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    console.log('🔑 Senha hashada:', this.password);
     next();
   } catch (error) {
     next(error);
