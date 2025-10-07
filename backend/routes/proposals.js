@@ -654,11 +654,35 @@ router.get('/dashboard/stats', async (req, res) => {
 // GET /api/proposals/vendedor/:vendedorId - Propostas de um vendedor específico
 router.get('/vendedor/:vendedorId', async (req, res) => {
   try {
+    // Verificar se o MongoDB está conectado
+    if (mongoose.connection.readyState !== 1) {
+      console.log('❌ MongoDB não conectado na rota vendedor');
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          current: 1,
+          pages: 0,
+          total: 0
+        },
+        stats: {
+          totalProposals: 0,
+          negociacaoProposals: 0,
+          vendaFechadaProposals: 0,
+          vendaPerdidaProposals: 0,
+          expiradaProposals: 0,
+          totalRevenue: 0
+        },
+        message: 'MongoDB não conectado - retornando dados zerados'
+      });
+    }
+
     const { vendedorId } = req.params;
     const { page = 1, limit = 10, status } = req.query;
     const skip = (page - 1) * limit;
 
     console.log('🔍 Buscando propostas para vendedor:', vendedorId);
+    console.log('🔍 Parâmetros:', { page, limit, status });
 
     let query = {
       $or: [
@@ -671,15 +695,21 @@ router.get('/vendedor/:vendedorId', async (req, res) => {
       query.status = status;
     }
 
+    console.log('🔍 Query de busca:', JSON.stringify(query, null, 2));
+
     const proposals = await Proposal.find(query)
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
+    console.log('📊 Propostas encontradas:', proposals.length);
+
     const total = await Proposal.countDocuments(query);
+    console.log('📊 Total de propostas:', total);
 
     // Estatísticas do vendedor
+    console.log('🔍 Calculando estatísticas...');
     const stats = await Proposal.aggregate([
       { $match: query },
       {
@@ -712,6 +742,7 @@ router.get('/vendedor/:vendedorId', async (req, res) => {
     ]);
 
     console.log('📊 Stats do vendedor:', stats[0]);
+    console.log('📊 Stats array completo:', stats);
 
     res.json({
       success: true,
