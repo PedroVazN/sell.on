@@ -248,6 +248,9 @@ export const Dashboard: React.FC = () => {
   const salesData = useMemo(() => getSalesData(data?.monthlyData || []), [data?.monthlyData]);
   const revenueData = useMemo(() => getRevenueData(data?.monthlyData || []), [data?.monthlyData]);
 
+  // Debug: verificar role do usuário
+  console.log('🔍 User role no dashboard:', user?.role);
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }
@@ -276,7 +279,6 @@ export const Dashboard: React.FC = () => {
       </Header>
 
       <MetricsGrid>
-        {console.log('🔍 User role no dashboard:', user?.role)}
         {user?.role === 'vendedor' ? (
           <>
             <MetricCard>
