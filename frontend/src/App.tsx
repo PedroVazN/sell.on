@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 // App principal do sistema
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { ToastContainer } from './components/ToastContainer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
@@ -33,7 +35,8 @@ import { UserRegistration } from './pages/UserRegistration';
 function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <ToastProvider>
+        <Routes>
         <Route 
           path="/login" 
           element={<Login />} 
@@ -72,7 +75,9 @@ function App() {
           <Route path="price-list" element={<ProtectedRoute permission="admin"><PriceList /></ProtectedRoute>} />
           <Route path="price-list/create" element={<ProtectedRoute permission="admin"><CreatePriceList /></ProtectedRoute>} />
         </Route>
-      </Routes>
+        </Routes>
+        <ToastContainer />
+      </ToastProvider>
     </AuthProvider>
   );
 }

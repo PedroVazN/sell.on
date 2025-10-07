@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 import { 
   Container, 
   Header, 
@@ -64,6 +65,7 @@ const getStatusColor = (status: string) => {
 export const Proposals: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { success, error, warning } = useToastContext();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -190,10 +192,10 @@ export const Proposals: React.FC = () => {
         await apiService.deleteProposal(proposal._id);
         setDeletingItems(prev => prev.filter(id => id !== proposal._id));
         await loadData();
-        alert('Proposta excluída com sucesso!');
+        success('Sucesso!', 'Proposta excluída com sucesso!');
       } catch (err) {
         console.error('Erro ao deletar proposta:', err);
-        alert(`Erro ao deletar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+        error('Erro!', `Erro ao deletar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       }
     }
   };
@@ -226,9 +228,10 @@ export const Proposals: React.FC = () => {
       };
       
       generateProposalPdf(pdfData);
+      success('PDF Gerado!', 'PDF da proposta gerado com sucesso!');
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      alert('Erro ao gerar PDF');
+      error('Erro!', 'Erro ao gerar PDF da proposta');
     }
   };
 
@@ -246,16 +249,16 @@ export const Proposals: React.FC = () => {
     try {
       await apiService.updateProposalStatus(proposal._id, newStatus);
       await loadData();
-      alert('Status atualizado com sucesso!');
+      success('Status Atualizado!', 'Status da proposta atualizado com sucesso!');
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
-      alert(`Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      error('Erro!', `Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
   const handleConfirmLoss = async () => {
     if (!proposalToLose || !lossReason) {
-      alert('Selecione um motivo para a perda da venda');
+      warning('Atenção!', 'Selecione um motivo para a perda da venda');
       return;
     }
 
@@ -271,10 +274,10 @@ export const Proposals: React.FC = () => {
       setProposalToLose(null);
       setLossReason('');
       setLossDescription('');
-      alert('Proposta marcada como venda perdida com sucesso!');
+      success('Venda Perdida!', 'Proposta marcada como venda perdida com sucesso!');
     } catch (err) {
       console.error('Erro ao marcar como venda perdida:', err);
-      alert(`Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      error('Erro!', `Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -318,7 +321,7 @@ export const Proposals: React.FC = () => {
   const handleSaveProposal = async () => {
     try {
       if (!selectedClient.name || !selectedSeller || !selectedDistributor || selectedProducts.length === 0) {
-        alert('Preencha todos os campos obrigatórios');
+        warning('Atenção!', 'Preencha todos os campos obrigatórios');
         return;
       }
 
@@ -327,7 +330,7 @@ export const Proposals: React.FC = () => {
       const selectedSellerData = sellers.find(s => s._id === selectedSeller);
 
       if (!selectedDistributorData || !selectedSellerData) {
-        alert('Distribuidor ou vendedor não encontrado');
+        error('Erro!', 'Distribuidor ou vendedor não encontrado');
         return;
       }
 
@@ -361,17 +364,17 @@ export const Proposals: React.FC = () => {
 
       if (editingProposal) {
         await apiService.updateProposal(editingProposal._id, proposalData);
-        alert('Proposta atualizada com sucesso!');
+        success('Sucesso!', 'Proposta atualizada com sucesso!');
       } else {
         await apiService.createProposal(proposalData);
-        alert('Proposta criada com sucesso!');
+        success('Sucesso!', 'Proposta criada com sucesso!');
       }
 
       setShowModal(false);
       await loadData();
     } catch (err) {
       console.error('Erro ao salvar proposta:', err);
-      alert(`Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      error('Erro!', `Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -888,18 +891,50 @@ export const Proposals: React.FC = () => {
 
               {proposalToLose && (
                 <div style={{ 
-                  backgroundColor: '#f3f4f6', 
+                  backgroundColor: '#f8fafc', 
+                  border: '1px solid #e2e8f0',
                   padding: '1rem', 
                   borderRadius: '0.5rem',
                   marginTop: '1rem'
                 }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 'bold' }}>
-                    Proposta: {proposalToLose.proposalNumber}
-                  </h4>
-                  <p style={{ margin: '0', fontSize: '0.875rem', color: '#6b7280' }}>
-                    Cliente: {proposalToLose.client.name} | 
-                    Total: {formatCurrency(proposalToLose.total)}
-                  </p>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    marginBottom: '0.5rem' 
+                  }}>
+                    <FileText size={16} style={{ marginRight: '0.5rem', color: '#64748b' }} />
+                    <h4 style={{ 
+                      margin: '0', 
+                      fontSize: '0.875rem', 
+                      fontWeight: '600',
+                      color: '#1e293b'
+                    }}>
+                      {proposalToLose.proposalNumber}
+                    </h4>
+                  </div>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr', 
+                    gap: '0.5rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <div>
+                      <span style={{ color: '#64748b', fontWeight: '500' }}>Cliente:</span>
+                      <span style={{ color: '#1e293b', marginLeft: '0.25rem' }}>
+                        {proposalToLose.client.name}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: '#64748b', fontWeight: '500' }}>Total:</span>
+                      <span style={{ 
+                        color: '#dc2626', 
+                        fontWeight: '600', 
+                        marginLeft: '0.25rem' 
+                      }}>
+                        {formatCurrency(proposalToLose.total)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
             </ModalBody>
