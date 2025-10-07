@@ -140,6 +140,7 @@ export const CreateProposal: React.FC = () => {
         setSellers(sellersResponse.data || []);
         console.log('Sellers loaded:', sellersResponse.data?.length || 0);
         console.log('Sellers data:', sellersResponse.data);
+        console.log('Sellers array after setState:', sellersResponse.data);
       } else {
         console.log('Sellers response error:', sellersResponse);
       }
@@ -184,7 +185,10 @@ export const CreateProposal: React.FC = () => {
   };
 
   const handleSellerChange = (sellerId: string) => {
+    console.log('🔍 Selecionando vendedor:', sellerId);
+    console.log('🔍 Vendedores disponíveis:', sellers);
     const seller = sellers.find(s => s._id === sellerId);
+    console.log('🔍 Vendedor encontrado:', seller);
     if (seller) {
       setFormData(prev => ({
         ...prev,
@@ -194,6 +198,9 @@ export const CreateProposal: React.FC = () => {
           email: seller.email
         }
       }));
+      console.log('✅ Vendedor selecionado:', seller.name);
+    } else {
+      console.log('❌ Vendedor não encontrado');
     }
   };
 
@@ -576,11 +583,15 @@ export const CreateProposal: React.FC = () => {
                 onChange={(e) => handleSellerChange(e.target.value)}
               >
                 <option value="">Selecione um vendedor</option>
-                {sellers.map(seller => (
-                  <option key={seller._id} value={seller._id}>
-                    {seller.name}
-                  </option>
-                ))}
+                {sellers.length > 0 ? (
+                  sellers.map(seller => (
+                    <option key={seller._id} value={seller._id}>
+                      {seller.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Carregando vendedores...</option>
+                )}
               </Select>
             </FormGroup>
             <FormGroup>
