@@ -155,7 +155,8 @@ export const Dashboard: React.FC = () => {
           apiService.getVendedorProposals(user._id, 1, 100)
         ]);
 
-        const vendedorStats = vendedorProposalsResponse.data?.stats;
+        console.log('📊 Resposta completa do vendedor:', vendedorProposalsResponse);
+        const vendedorStats = vendedorProposalsResponse.stats;
         console.log('📊 Stats do vendedor:', vendedorStats);
 
         setData({
