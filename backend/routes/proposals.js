@@ -326,7 +326,9 @@ router.delete('/:id', async (req, res) => {
 // GET /api/proposals/stats/summary - Estatísticas das propostas
 router.get('/stats/summary', async (req, res) => {
   try {
-    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
+    // Usar ID do usuário logado ou ID temporário se não houver usuário
+    const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
+    console.log('🔍 Dashboard stats - User ID:', userId);
     
     const stats = await Proposal.aggregate([
       { 
@@ -393,9 +395,12 @@ router.get('/dashboard/sales', async (req, res) => {
       });
     }
 
-    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
+    // Usar ID do usuário logado ou ID temporário se não houver usuário
+    const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
+    console.log('🔍 Dashboard stats - User ID:', userId);
     
     // Buscar vendas fechadas (receita total)
+    console.log('🔍 Buscando vendas fechadas para userId:', userId);
     const salesStats = await Proposal.aggregate([
       { 
         $match: { 
@@ -465,6 +470,10 @@ router.get('/dashboard/sales', async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
+    console.log('📊 Sales Stats encontradas:', salesStats);
+    console.log('🏆 Top Products encontrados:', topProducts);
+    console.log('📅 Monthly Data encontrada:', monthlyData);
+
     const result = {
       salesStats: salesStats[0] || {
         totalRevenue: 0,
@@ -485,6 +494,8 @@ router.get('/dashboard/sales', async (req, res) => {
         sales: data.totalSales
       }))
     };
+
+    console.log('📈 Resultado final do dashboard sales:', result);
 
     res.json({ 
       success: true,
@@ -524,9 +535,12 @@ router.get('/dashboard/stats', async (req, res) => {
       });
     }
 
-    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
+    // Usar ID do usuário logado ou ID temporário se não houver usuário
+    const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
+    console.log('🔍 Dashboard stats - User ID:', userId);
     
     // Buscar estatísticas de todas as propostas
+    console.log('🔍 Buscando propostas para userId:', userId);
     const proposalStats = await Proposal.aggregate([
       { 
         $match: { 
@@ -577,6 +591,9 @@ router.get('/dashboard/stats', async (req, res) => {
       }
     ]);
 
+    console.log('📊 Proposal Stats encontradas:', proposalStats);
+    console.log('💰 Sales Stats encontradas:', salesStats);
+
     const result = {
       proposalStats: proposalStats[0] || {
         totalProposals: 0,
@@ -591,6 +608,8 @@ router.get('/dashboard/stats', async (req, res) => {
         averageSale: 0
       }
     };
+
+    console.log('📈 Resultado final do dashboard:', result);
 
     res.json({ 
       success: true,
@@ -608,7 +627,9 @@ router.get('/dashboard/stats', async (req, res) => {
 // GET /api/proposals/top-performers - Top performers das propostas
 router.get('/top-performers', async (req, res) => {
   try {
-    const userId = '68c1afbcf906c14a8e7e8ff7'; // ID temporário para desenvolvimento
+    // Usar ID do usuário logado ou ID temporário se não houver usuário
+    const userId = req.user ? req.user.id : '68c1afbcf906c14a8e7e8ff7';
+    console.log('🔍 Dashboard stats - User ID:', userId);
     
     console.log('Buscando top performers para userId:', userId);
     
