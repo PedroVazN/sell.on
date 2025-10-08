@@ -7,6 +7,8 @@ export interface ProposalPdfData {
     email: string;
     phone?: string;
     company?: string;
+    cnpj?: string;
+    razaoSocial?: string;
   };
   seller: {
     name: string;
@@ -88,7 +90,7 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   yPosition = 45;
   
   // Seção de informações do cliente (lado esquerdo)
-  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
+  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 80, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
@@ -101,17 +103,21 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.text(`Nome: ${data.client.name}`, 30, yPosition + 24);
   doc.text(`Email: ${data.client.email}`, 30, yPosition + 34);
   
-  if (data.client.phone) {
-    doc.text(`Telefone: ${data.client.phone}`, 30, yPosition + 44);
+  if (data.client.cnpj) {
+    doc.text(`CNPJ: ${data.client.cnpj}`, 30, yPosition + 44);
+  }
+  
+  if (data.client.razaoSocial) {
+    doc.text(`Razão Social: ${data.client.razaoSocial}`, 30, yPosition + 54);
   }
   
   if (data.client.company) {
-    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 54);
+    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 64);
   }
   
   // Seção de vendedor e distribuidor (lado direito)
   const rightX = 20 + (pageWidth - 50) / 2 + 10;
-  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 70, white, borderColor);
+  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 80, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
@@ -122,22 +128,17 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
   doc.text(`${data.seller.name}`, rightX + 10, yPosition + 24);
-  doc.text(`${data.seller.email}`, rightX + 10, yPosition + 34);
   
   if (data.distributor.razaoSocial) {
     doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('DISTRIBUIDOR', rightX + 10, yPosition + 46);
+    doc.text('DISTRIBUIDOR', rightX + 10, yPosition + 40);
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-    doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 56);
-    
-    if (data.distributor.cnpj) {
-      doc.text(`CNPJ: ${data.distributor.cnpj}`, rightX + 10, yPosition + 66);
-    }
+    doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 50);
   }
   
   yPosition += 90;
@@ -225,49 +226,45 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   
   yPosition += 15;
   
-  // Resumo financeiro (lado esquerdo)
+  // Condições de pagamento (lado esquerdo)
   drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 50, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('RESUMO FINANCEIRO', 30, yPosition + 12);
+  doc.text('CONDIÇÕES DE PAGAMENTO', 30, yPosition + 12);
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`Subtotal: R$ ${data.subtotal.toFixed(2)}`, 30, yPosition + 25);
-  doc.text(`Desconto: -R$ ${data.discount.toFixed(2)}`, 30, yPosition + 35);
+  doc.text(`Forma: ${data.paymentCondition}`, 30, yPosition + 25);
+  doc.text(`Válido até: ${new Date(data.validUntil).toLocaleDateString('pt-BR')}`, 30, yPosition + 35);
   
-  // Linha separadora
-  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
-  doc.setLineWidth(0.5);
-  doc.line(30, yPosition + 40, 30 + (pageWidth - 50) / 2 - 20, yPosition + 40);
-  
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, 30, yPosition + 45);
-  
-  // Condições de pagamento (lado direito)
+  // Resumo financeiro (lado direito)
   drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 50, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONDIÇÕES', rightX + 10, yPosition + 12);
+  doc.text('RESUMO FINANCEIRO', rightX + 10, yPosition + 12);
   
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.text(`Subtotal: R$ ${data.subtotal.toFixed(2)}`, rightX + 10, yPosition + 25);
+  doc.text(`Desconto: -R$ ${data.discount.toFixed(2)}`, rightX + 10, yPosition + 35);
   
-  // Quebrar texto se muito longo
-  const paymentText = doc.splitTextToSize(data.paymentCondition, (pageWidth - 50) / 2 - 20);
-  doc.text(paymentText, rightX + 10, yPosition + 25);
+  // Linha separadora
+  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+  doc.setLineWidth(0.5);
+  doc.line(rightX + 10, yPosition + 40, rightX + 10 + (pageWidth - 50) / 2 - 20, yPosition + 40);
   
-  doc.text(`Válido até: ${new Date(data.validUntil).toLocaleDateString('pt-BR')}`, rightX + 10, yPosition + 38);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, rightX + 10, yPosition + 45);
   
-  yPosition += 70;
+  yPosition += 60;
   
   // Observações (se houver)
   if (data.observations && data.observations.trim()) {
@@ -290,16 +287,11 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.save(`proposta-${data.proposalNumber}.pdf`);
 };
 
-// Função auxiliar para desenhar cards
+// Função auxiliar para desenhar cards (sem bordas)
 const drawCard = (doc: jsPDF, x: number, y: number, width: number, height: number, bgColor: number[], borderColor: number[]) => {
-  // Background do card
+  // Background do card (sem borda)
   doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
   doc.rect(x, y, width, height, 'F');
-  
-  // Borda do card
-  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
-  doc.setLineWidth(0.5);
-  doc.rect(x, y, width, height, 'S');
 };
 
 const getStatusColor = (status: string): number[] => {
