@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
       isActive: true,
       $or: [
         { expiresAt: { $exists: false } },
+        { expiresAt: null },
         { expiresAt: { $gt: new Date() } }
       ]
     };
@@ -52,12 +53,23 @@ router.post('/', async (req, res) => {
       });
     }
     
+    // Buscar um usuário admin para associar o aviso
+    const User = require('../models/User');
+    const adminUser = await User.findOne({ role: 'admin' });
+    
+    if (!adminUser) {
+      return res.status(500).json({
+        success: false,
+        error: 'Nenhum usuário administrador encontrado'
+      });
+    }
+    
     const notice = new Notice({
       title,
       content,
       priority: priority || 'medium',
       expiresAt: expiresAt ? new Date(expiresAt) : null,
-      createdBy: '64f8b5c5e4b0a8b5c5e4b0a8', // ID fixo para admin
+      createdBy: adminUser._id,
       targetRoles: targetRoles || ['all']
     });
     
