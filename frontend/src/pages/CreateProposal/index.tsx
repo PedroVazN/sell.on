@@ -741,7 +741,9 @@ export const CreateProposal: React.FC = () => {
                     onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 1)}
                   />
                 </FormGroup>
-                
+              </ProductRow>
+              
+              <ProductRow>
                 <FormGroup>
                   <Label>Preço Unitário</Label>
                   <ProductInput
@@ -763,7 +765,9 @@ export const CreateProposal: React.FC = () => {
                     onChange={(e) => handleDiscountChange(index, parseFloat(e.target.value) || 0)}
                   />
                 </FormGroup>
-                
+              </ProductRow>
+              
+              <ProductRow>
                 <FormGroup>
                   <Label>Total</Label>
                   <ProductInput

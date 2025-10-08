@@ -5,16 +5,20 @@ export const Container = styled.div`
   flex-direction: column;
   height: 100vh;
   background: ${({ theme }) => theme.colors.background.tertiary};
+  margin: 0;
+  padding: 0;
+  width: 100%;
 `;
 
 export const Header = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem 2rem;
+  padding: 1rem 1.5rem;
   background: ${({ theme }) => theme.colors.background.card};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 `;
 
 export const Title = styled.h1`
@@ -46,10 +50,9 @@ export const BackButton = styled.button`
 
 export const FormContainer = styled.div`
   flex: 1;
-  padding: 2rem;
+  padding: 1rem;
   overflow-y: auto;
-  max-width: 1200px;
-  margin: 0 auto;
+  margin: 0 0.5rem;
   width: 100%;
 `;
 
@@ -232,15 +235,10 @@ export const ProductHeader = styled.div`
 
 export const ProductRow = styled.div`
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   align-items: end;
   min-width: 0;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -349,10 +347,11 @@ export const GeneratePdfButton = styled(Button)`
 
 export const TwoColumnLayout = styled.div`
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   height: 100%;
   min-width: 0;
   overflow: hidden;
+  width: 100%;
 `;
 
 export const LeftColumn = styled.div`
@@ -362,14 +361,16 @@ export const LeftColumn = styled.div`
 `;
 
 export const RightColumn = styled.div`
-  width: 400px;
+  width: 350px;
+  min-width: 300px;
   background: ${({ theme }) => theme.colors.background.card};
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   border: 1px solid ${({ theme }) => theme.colors.border};
   height: fit-content;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 150px);
   overflow-y: auto;
+  flex-shrink: 0;
 `;
 
 export const PriceListTitle = styled.h3`
