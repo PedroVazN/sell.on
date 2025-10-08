@@ -263,7 +263,7 @@ export const CreateProposal: React.FC = () => {
 
       // Carregar lista de preços do distribuidor
       try {
-        const priceListResponse = await apiService.getPriceList(1, 100, undefined, distributorId, true);
+        const priceListResponse = await apiService.getPriceListByDistributor(distributorId, 1, 100);
         setDistributorPriceList(priceListResponse.data || []);
         console.log('Lista de preços do distribuidor:', priceListResponse.data);
       } catch (error) {

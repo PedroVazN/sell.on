@@ -233,8 +233,14 @@ export const ProductHeader = styled.div`
 export const ProductRow = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
   align-items: end;
+  min-width: 0;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -345,11 +351,14 @@ export const TwoColumnLayout = styled.div`
   display: flex;
   gap: 2rem;
   height: 100%;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 export const LeftColumn = styled.div`
   flex: 1;
   min-width: 0;
+  overflow-x: hidden;
 `;
 
 export const RightColumn = styled.div`
