@@ -31,6 +31,8 @@ import { CreatePriceList } from './pages/CreatePriceList';
 import { ClientRegistration } from './pages/ClientRegistration';
 import { DistributorRegistration } from './pages/DistributorRegistration';
 import { UserRegistration } from './pages/UserRegistration';
+import { NoticesAdmin } from './pages/NoticesAdmin';
+import { NoticesViewer } from './pages/NoticesViewer';
 
 function App() {
   return (
@@ -74,6 +76,8 @@ function App() {
           <Route path="proposals/edit/:id" element={<ProtectedRoute permission="proposals"><EditProposal /></ProtectedRoute>} />
           <Route path="price-list" element={<ProtectedRoute permission="admin"><PriceList /></ProtectedRoute>} />
           <Route path="price-list/create" element={<ProtectedRoute permission="admin"><CreatePriceList /></ProtectedRoute>} />
+          <Route path="notices-admin" element={<ProtectedRoute permission="admin"><NoticesAdmin /></ProtectedRoute>} />
+          <Route path="notices" element={<ProtectedRoute permission="notices"><NoticesViewer /></ProtectedRoute>} />
         </Route>
         </Routes>
         <ToastContainer />

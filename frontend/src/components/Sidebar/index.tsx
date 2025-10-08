@@ -17,7 +17,8 @@ import {
   DollarSign,
   UserPlus,
   User,
-  LogOut
+  LogOut,
+  Megaphone
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -69,6 +70,12 @@ export const Sidebar: React.FC = () => {
       title: 'PRINCIPAL',
       items: [
         { icon: <BarChart3 size={20} />, label: 'Dashboard', path: '/', permission: 'dashboard' },
+        { 
+          icon: <Megaphone size={20} />, 
+          label: user?.role === 'admin' ? 'Gerenciar Avisos' : 'Mural de Avisos', 
+          path: user?.role === 'admin' ? '/notices-admin' : '/notices', 
+          permission: 'notices' 
+        },
       ]
     },
     {

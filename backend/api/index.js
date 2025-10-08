@@ -266,6 +266,9 @@ app.use('/api/proposals', proposalsRouter);
 const priceListRouter = require('../routes/priceList');
 app.use('/api/price-list', priceListRouter);
 
+const noticesRouter = require('../routes/notices');
+app.use('/api/notices', noticesRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });

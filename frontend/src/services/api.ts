@@ -19,6 +19,19 @@ export interface User {
   updatedAt: string;
 }
 
+export interface Notice {
+  _id: string;
+  title: string;
+  content: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  isActive: boolean;
+  expiresAt?: string;
+  createdBy: User;
+  targetRoles: ('admin' | 'vendedor' | 'all')[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -1318,6 +1331,32 @@ class ApiService {
   getCurrentUser(): User | null {
     const userStr = localStorage.getItem('currentUser');
     return userStr ? JSON.parse(userStr) : null;
+  }
+
+  // ===== AVISOS =====
+  
+  async getNotices(): Promise<ApiResponse<Notice[]>> {
+    return this.request<Notice[]>('/notices');
+  }
+
+  async createNotice(noticeData: Partial<Notice>): Promise<ApiResponse<Notice>> {
+    return this.request<Notice>('/notices', {
+      method: 'POST',
+      body: JSON.stringify(noticeData),
+    });
+  }
+
+  async updateNotice(id: string, noticeData: Partial<Notice>): Promise<ApiResponse<Notice>> {
+    return this.request<Notice>(`/notices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(noticeData),
+    });
+  }
+
+  async deleteNotice(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/notices/${id}`, {
+      method: 'DELETE',
+    });
   }
 }
 
