@@ -354,7 +354,7 @@ export const Proposals: React.FC = () => {
 
   const handleSaveProposal = async () => {
     try {
-      if (!selectedClient.name || !selectedSeller || !selectedDistributor || selectedProducts.length === 0) {
+      if (!selectedClient.name || !selectedSeller || !selectedDistributor || selectedProducts.length === 0 || !paymentCondition) {
         warning('Atenção!', 'Preencha todos os campos obrigatórios');
         return;
       }
@@ -396,6 +396,9 @@ export const Proposals: React.FC = () => {
         status: 'negociacao' as const,
         validUntil: new Date(validUntil).toISOString()
       };
+
+      console.log('📝 Dados da proposta sendo enviados:', proposalData);
+      console.log('💳 Condição de pagamento:', paymentCondition);
 
       if (editingProposal) {
         await apiService.updateProposal(editingProposal._id, proposalData);
@@ -748,7 +751,7 @@ export const Proposals: React.FC = () => {
                     <option value="">Selecione o distribuidor</option>
                     {distributors.map(distributor => (
                       <option key={distributor._id} value={distributor._id}>
-                        {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'}
+                        {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'} {distributor.cnpj ? `(CNPJ: ${distributor.cnpj})` : ''}
                       </option>
                     ))}
                   </Select>
