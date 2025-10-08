@@ -680,7 +680,7 @@ class ApiService {
   }
 
   async updateProposal(id: string, proposalData: Partial<Proposal>): Promise<ApiResponse<Proposal>> {
-    return this.request<Proposal>(`/proposals/${id}`, {
+    return this.request<Proposal>(`/proposals/${id}/edit`, {
       method: 'PUT',
       body: JSON.stringify(proposalData),
     });

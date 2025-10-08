@@ -338,6 +338,56 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/proposals/:id/edit - Atualizar proposta completa (edição)
+router.put('/:id/edit', async (req, res) => {
+  try {
+    console.log('=== EDITANDO PROPOSTA COMPLETA ===');
+    console.log('ID da proposta:', req.params.id);
+    console.log('Body completo:', req.body);
+
+    const proposalId = req.params.id;
+    const updateData = req.body;
+
+    // Remover campos que não devem ser atualizados diretamente
+    delete updateData._id;
+    delete updateData.createdAt;
+    delete updateData.updatedAt;
+    delete updateData.proposalNumber;
+
+    console.log('🔍 Dados para atualização:', updateData);
+
+    const proposal = await Proposal.findByIdAndUpdate(
+      proposalId,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'name email');
+
+    if (!proposal) {
+      console.log('❌ Proposta não encontrada após atualização');
+      return res.status(404).json({
+        success: false,
+        message: 'Proposta não encontrada'
+      });
+    }
+
+    console.log('✅ Proposta editada com sucesso:');
+    console.log('ID:', proposal._id);
+    console.log('Status:', proposal.status);
+    console.log('Cliente:', proposal.client.name);
+
+    res.json({
+      success: true,
+      data: proposal
+    });
+  } catch (error) {
+    console.error('Erro ao editar proposta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
 
 // DELETE /api/proposals/:id - Deletar proposta
 router.delete('/:id', async (req, res) => {
