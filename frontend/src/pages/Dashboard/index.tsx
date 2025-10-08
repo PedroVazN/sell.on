@@ -191,6 +191,46 @@ export const Dashboard: React.FC = () => {
 
         console.log('📊 Propostas do vendedor:', vendedorProposals);
 
+        // Calcular estatísticas detalhadas das propostas do vendedor
+        const proposalStats = vendedorProposals.reduce((acc: any, proposal: any) => {
+          const total = proposal.total || 0;
+          
+          acc.totalProposals++;
+          acc.totalValue += total;
+          
+          switch (proposal.status) {
+            case 'negociacao':
+              acc.negociacaoProposals++;
+              acc.negociacaoValue += total;
+              break;
+            case 'venda_fechada':
+              acc.vendaFechadaProposals++;
+              acc.vendaFechadaValue += total;
+              break;
+            case 'venda_perdida':
+              acc.vendaPerdidaProposals++;
+              acc.vendaPerdidaValue += total;
+              break;
+            case 'expirada':
+              acc.expiradaProposals++;
+              acc.expiradaValue += total;
+              break;
+          }
+          
+          return acc;
+        }, {
+          totalProposals: 0,
+          totalValue: 0,
+          negociacaoProposals: 0,
+          negociacaoValue: 0,
+          vendaFechadaProposals: 0,
+          vendaFechadaValue: 0,
+          vendaPerdidaProposals: 0,
+          vendaPerdidaValue: 0,
+          expiradaProposals: 0,
+          expiradaValue: 0
+        });
+
         // Agrupar propostas por mês
         const monthlyProposals = vendedorProposals.reduce((acc: any, proposal: any) => {
           const date = new Date(proposal.createdAt);
@@ -227,22 +267,27 @@ export const Dashboard: React.FC = () => {
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
-          totalSales: vendedorStats?.totalProposals || 0, // Mostrar total de propostas, não apenas vendas fechadas
-          totalRevenue: vendedorStats?.totalRevenue || 0,
+          totalSales: proposalStats.totalProposals,
+          totalRevenue: proposalStats.vendaFechadaValue,
           salesStats: {
-            totalSales: vendedorStats?.vendaFechadaProposals || 0, // Vendas fechadas
-            totalRevenue: vendedorStats?.totalRevenue || 0,
-            averageSale: vendedorStats?.totalRevenue && vendedorStats?.vendaFechadaProposals 
-              ? vendedorStats.totalRevenue / vendedorStats.vendaFechadaProposals 
+            totalSales: proposalStats.vendaFechadaProposals,
+            totalRevenue: proposalStats.vendaFechadaValue,
+            averageSale: proposalStats.vendaFechadaProposals > 0 
+              ? proposalStats.vendaFechadaValue / proposalStats.vendaFechadaProposals 
               : 0,
             totalItems: 0
           },
           proposalStats: {
-            totalProposals: vendedorStats?.totalProposals || 0,
-            negociacaoProposals: vendedorStats?.negociacaoProposals || 0,
-            vendaFechadaProposals: vendedorStats?.vendaFechadaProposals || 0,
-            vendaPerdidaProposals: vendedorStats?.vendaPerdidaProposals || 0,
-            expiradaProposals: vendedorStats?.expiradaProposals || 0
+            totalProposals: proposalStats.totalProposals,
+            totalValue: proposalStats.totalValue,
+            negociacaoProposals: proposalStats.negociacaoProposals,
+            negociacaoValue: proposalStats.negociacaoValue,
+            vendaFechadaProposals: proposalStats.vendaFechadaProposals,
+            vendaFechadaValue: proposalStats.vendaFechadaValue,
+            vendaPerdidaProposals: proposalStats.vendaPerdidaProposals,
+            vendaPerdidaValue: proposalStats.vendaPerdidaValue,
+            expiradaProposals: proposalStats.expiradaProposals,
+            expiradaValue: proposalStats.expiradaValue
           },
           topProducts: [],
           monthlyData: monthlyData
@@ -343,28 +388,54 @@ export const Dashboard: React.FC = () => {
       <MetricsGrid>
         {user?.role === 'vendedor' ? (
           <>
+            {/* Valores */}
+            <MetricCard>
+              <MetricValue>R$ {data?.proposalStats?.vendaFechadaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Ganho</MetricLabel>
+              <MetricChange>Propostas fechadas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>R$ {data?.proposalStats?.vendaPerdidaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Perdido</MetricLabel>
+              <MetricChange>Propostas perdidas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>R$ {data?.proposalStats?.totalValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Propostas Geradas</MetricLabel>
+              <MetricChange>Todas as propostas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>R$ {data?.proposalStats?.negociacaoValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Propostas em Negociação</MetricLabel>
+              <MetricChange>Em andamento</MetricChange>
+            </MetricCard>
+
+            {/* Quantidades */}
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
+              <MetricLabel>Quantidade Propostas Ganhas</MetricLabel>
+              <MetricChange>Fechadas com sucesso</MetricChange>
+            </MetricCard>
+
             <MetricCard>
               <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
-              <MetricLabel>Propostas Perdidas</MetricLabel>
-              <MetricChange>-0% este mês</MetricChange>
+              <MetricLabel>Quantidade Propostas Perdidas</MetricLabel>
+              <MetricChange>Não convertidas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
+              <MetricLabel>Quantidade Propostas Geradas</MetricLabel>
+              <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
             <MetricCard>
               <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
-              <MetricLabel>Propostas Abertas</MetricLabel>
-              <MetricChange $positive>+0% este mês</MetricChange>
-            </MetricCard>
-
-            <MetricCard>
-              <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
-              <MetricLabel>Vendas Fechadas</MetricLabel>
-              <MetricChange $positive>+0% este mês</MetricChange>
-            </MetricCard>
-
-            <MetricCard>
-              <MetricValue>R$ {data?.salesStats?.averageSale?.toLocaleString('pt-BR') || '0'}</MetricValue>
-              <MetricLabel>Ticket Médio</MetricLabel>
-              <MetricChange $positive>+0% vs mês anterior</MetricChange>
+              <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
+              <MetricChange>Em andamento</MetricChange>
             </MetricCard>
           </>
         ) : (
