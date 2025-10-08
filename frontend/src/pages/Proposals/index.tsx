@@ -98,6 +98,40 @@ export const Proposals: React.FC = () => {
     { value: 'fechado_outro_parceiro', label: 'Fechado em Outro Parceiro' }
   ];
 
+  // Opções de condição de pagamento
+  const paymentConditions = [
+    { value: 'À vista', label: 'À vista' },
+    { value: 'Débito - 1x', label: 'Débito - 1x' },
+    { value: 'Débito - 2x', label: 'Débito - 2x' },
+    { value: 'Débito - 3x', label: 'Débito - 3x' },
+    { value: 'Débito - 4x', label: 'Débito - 4x' },
+    { value: 'Débito - 5x', label: 'Débito - 5x' },
+    { value: 'Débito - 6x', label: 'Débito - 6x' },
+    { value: 'Débito - 7x', label: 'Débito - 7x' },
+    { value: 'Débito - 8x', label: 'Débito - 8x' },
+    { value: 'Débito - 9x', label: 'Débito - 9x' },
+    { value: 'Débito - 10x', label: 'Débito - 10x' },
+    { value: 'Débito - 11x', label: 'Débito - 11x' },
+    { value: 'Débito - 12x', label: 'Débito - 12x' },
+    { value: 'Crédito - 1x', label: 'Crédito - 1x' },
+    { value: 'Crédito - 2x', label: 'Crédito - 2x' },
+    { value: 'Crédito - 3x', label: 'Crédito - 3x' },
+    { value: 'Crédito - 4x', label: 'Crédito - 4x' },
+    { value: 'Crédito - 5x', label: 'Crédito - 5x' },
+    { value: 'Crédito - 6x', label: 'Crédito - 6x' },
+    { value: 'Crédito - 7x', label: 'Crédito - 7x' },
+    { value: 'Crédito - 8x', label: 'Crédito - 8x' },
+    { value: 'Crédito - 9x', label: 'Crédito - 9x' },
+    { value: 'Crédito - 10x', label: 'Crédito - 10x' },
+    { value: 'Crédito - 11x', label: 'Crédito - 11x' },
+    { value: 'Crédito - 12x', label: 'Crédito - 12x' },
+    { value: '30 dias', label: '30 dias' },
+    { value: '45 dias', label: '45 dias' },
+    { value: '60 dias', label: '60 dias' },
+    { value: '90 dias', label: '90 dias' },
+    { value: '120 dias', label: '120 dias' }
+  ];
+
   // Form states
   const [selectedClient, setSelectedClient] = useState({
     name: '',
@@ -344,7 +378,8 @@ export const Proposals: React.FC = () => {
         distributor: {
           _id: selectedDistributorData._id,
           apelido: selectedDistributorData.apelido || selectedDistributorData.name || '',
-          razaoSocial: selectedDistributorData.razaoSocial || selectedDistributorData.name || ''
+          razaoSocial: selectedDistributorData.razaoSocial || selectedDistributorData.name || '',
+          cnpj: selectedDistributorData.cnpj || ''
         },
         items: selectedProducts.map(item => ({
           product: products.find(p => p._id === item.productId)!,
@@ -816,51 +851,17 @@ export const Proposals: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <FormGroup>
                   <Label>Condição de Pagamento</Label>
-                  <select
+                  <Select
                     value={paymentCondition || ''}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPaymentCondition(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem',
-                      backgroundColor: 'white',
-                      color: '#374151'
-                    }}
                   >
                     <option value="">Selecione a condição de pagamento</option>
-                    <option value="À vista">À vista</option>
-                    <option value="Débito - 1x">Débito - 1x</option>
-                    <option value="Débito - 2x">Débito - 2x</option>
-                    <option value="Débito - 3x">Débito - 3x</option>
-                    <option value="Débito - 4x">Débito - 4x</option>
-                    <option value="Débito - 5x">Débito - 5x</option>
-                    <option value="Débito - 6x">Débito - 6x</option>
-                    <option value="Débito - 7x">Débito - 7x</option>
-                    <option value="Débito - 8x">Débito - 8x</option>
-                    <option value="Débito - 9x">Débito - 9x</option>
-                    <option value="Débito - 10x">Débito - 10x</option>
-                    <option value="Débito - 11x">Débito - 11x</option>
-                    <option value="Débito - 12x">Débito - 12x</option>
-                    <option value="Crédito - 1x">Crédito - 1x</option>
-                    <option value="Crédito - 2x">Crédito - 2x</option>
-                    <option value="Crédito - 3x">Crédito - 3x</option>
-                    <option value="Crédito - 4x">Crédito - 4x</option>
-                    <option value="Crédito - 5x">Crédito - 5x</option>
-                    <option value="Crédito - 6x">Crédito - 6x</option>
-                    <option value="Crédito - 7x">Crédito - 7x</option>
-                    <option value="Crédito - 8x">Crédito - 8x</option>
-                    <option value="Crédito - 9x">Crédito - 9x</option>
-                    <option value="Crédito - 10x">Crédito - 10x</option>
-                    <option value="Crédito - 11x">Crédito - 11x</option>
-                    <option value="Crédito - 12x">Crédito - 12x</option>
-                    <option value="30 dias">30 dias</option>
-                    <option value="45 dias">45 dias</option>
-                    <option value="60 dias">60 dias</option>
-                    <option value="90 dias">90 dias</option>
-                    <option value="120 dias">120 dias</option>
-                  </select>
+                    {paymentConditions.map(condition => (
+                      <option key={condition.value} value={condition.value}>
+                        {condition.label}
+                      </option>
+                    ))}
+                  </Select>
                 </FormGroup>
                 <FormGroup>
                   <Label>Válido Até</Label>

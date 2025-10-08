@@ -12,6 +12,12 @@ const distributorSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  cnpj: {
+    type: String,
+    required: true,
+    trim: true,
+    unique: true
+  },
   idDistribuidor: {
     type: String,
     required: true,
