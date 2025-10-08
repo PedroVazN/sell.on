@@ -95,7 +95,8 @@ router.put('/:id', async (req, res) => {
     }
 
     // Se for venda perdida, verificar se tem motivo
-    if (status === 'venda_perdida' && !lossReason) {
+    // Mas só se lossReason foi fornecido explicitamente (não é edição completa)
+    if (status === 'venda_perdida' && 'lossReason' in req.body && !lossReason) {
       console.log('❌ Venda perdida sem motivo');
       return res.status(400).json({
         success: false,
@@ -114,6 +115,8 @@ router.put('/:id', async (req, res) => {
       updateData.lossDescription = lossDescription;
     }
 
+    console.log('🔍 Dados para atualização:', updateData);
+    
     const proposal = await Proposal.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -121,13 +124,18 @@ router.put('/:id', async (req, res) => {
     ).populate('createdBy', 'name email');
 
     if (!proposal) {
+      console.log('❌ Proposta não encontrada após atualização');
       return res.status(404).json({
         success: false,
         message: 'Proposta não encontrada'
       });
     }
 
-    console.log('Proposta atualizada:', proposal);
+    console.log('✅ Proposta atualizada com sucesso:');
+    console.log('ID:', proposal._id);
+    console.log('Status:', proposal.status);
+    console.log('Loss Reason:', proposal.lossReason);
+    console.log('Loss Description:', proposal.lossDescription);
 
     res.json({
       success: true,
