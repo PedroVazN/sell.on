@@ -468,7 +468,7 @@ export const Dashboard: React.FC = () => {
         <Subtitle>
           {user?.role === 'vendedor' 
             ? 'Suas propostas e performance de vendas' 
-            : 'Visão geral das suas vendas e performance'
+            : 'Visão geral de todas as propostas e performance da equipe'
           }
         </Subtitle>
       </Header>
@@ -528,28 +528,54 @@ export const Dashboard: React.FC = () => {
           </>
         ) : (
           <>
+            {/* Valores - Admin */}
             <MetricCard>
-              <MetricValue>R$ {(data?.totalRevenue || 0).toLocaleString('pt-BR')}</MetricValue>
-              <MetricLabel>Receita Total</MetricLabel>
-              <MetricChange $positive>+0% vs mês anterior</MetricChange>
+              <MetricValue>R$ {data?.proposalStats?.vendaFechadaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Ganho</MetricLabel>
+              <MetricChange>Propostas fechadas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>{data?.totalUsers || 0}</MetricValue>
-              <MetricLabel>Usuários</MetricLabel>
-              <MetricChange $positive>+0% novos usuários</MetricChange>
+              <MetricValue>R$ {data?.proposalStats?.vendaPerdidaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Perdido</MetricLabel>
+              <MetricChange>Propostas perdidas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>{data?.totalSales || 0}</MetricValue>
-              <MetricLabel>Vendas Fechadas</MetricLabel>
-              <MetricChange $positive>+0% este mês</MetricChange>
+              <MetricValue>R$ {data?.proposalStats?.totalValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Propostas Geradas</MetricLabel>
+              <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>{data?.totalProducts || 0}</MetricValue>
-              <MetricLabel>Produtos</MetricLabel>
-              <MetricChange $positive>+0% novos produtos</MetricChange>
+              <MetricValue>R$ {data?.proposalStats?.negociacaoValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricLabel>Valor Propostas em Negociação</MetricLabel>
+              <MetricChange>Em andamento</MetricChange>
+            </MetricCard>
+
+            {/* Quantidades - Admin */}
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
+              <MetricLabel>Quantidade Propostas Ganhas</MetricLabel>
+              <MetricChange>Fechadas com sucesso</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
+              <MetricLabel>Quantidade Propostas Perdidas</MetricLabel>
+              <MetricChange>Não convertidas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
+              <MetricLabel>Quantidade Propostas Geradas</MetricLabel>
+              <MetricChange>Todas as propostas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
+              <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
+              <MetricChange>Em andamento</MetricChange>
             </MetricCard>
           </>
         )}
