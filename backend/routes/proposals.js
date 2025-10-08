@@ -79,7 +79,15 @@ router.put('/:id', async (req, res) => {
 
     const { status, lossReason, lossDescription } = req.body;
 
+    console.log('🔍 Dados extraídos:');
+    console.log('Status:', status);
+    console.log('Loss Reason:', lossReason);
+    console.log('Loss Description:', lossDescription);
+    console.log('Loss Reason type:', typeof lossReason);
+    console.log('Loss Reason truthy:', !!lossReason);
+
     if (!status) {
+      console.log('❌ Status não fornecido');
       return res.status(400).json({
         success: false,
         error: 'Status é obrigatório'
@@ -88,6 +96,7 @@ router.put('/:id', async (req, res) => {
 
     // Se for venda perdida, verificar se tem motivo
     if (status === 'venda_perdida' && !lossReason) {
+      console.log('❌ Venda perdida sem motivo');
       return res.status(400).json({
         success: false,
         error: 'Motivo da perda é obrigatório para venda perdida'
