@@ -392,18 +392,19 @@ router.put('/:id/edit', async (req, res) => {
 // DELETE /api/proposals/:id - Deletar proposta
 router.delete('/:id', async (req, res) => {
   try {
-    const proposal = await Proposal.findOneAndDelete({
-      _id: req.params.id,
-      $or: [
-        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
-        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
-      ]
-    });
+    console.log('🗑️ Tentando deletar proposta:', req.params.id);
+    
+    const proposal = await Proposal.findByIdAndDelete(req.params.id);
 
     if (!proposal) {
-      return res.status(404).json({ error: 'Proposta não encontrada' });
+      console.log('❌ Proposta não encontrada:', req.params.id);
+      return res.status(404).json({ 
+        success: false,
+        error: 'Proposta não encontrada' 
+      });
     }
 
+    console.log('✅ Proposta deletada com sucesso:', proposal._id);
     res.json({ 
       success: true,
       message: 'Proposta deletada com sucesso' 
