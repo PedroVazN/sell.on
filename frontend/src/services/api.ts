@@ -265,6 +265,8 @@ export interface Proposal {
     email: string;
     phone?: string;
     company?: string;
+    cnpj?: string;
+    razaoSocial?: string;
   };
   seller: {
     _id: string;
@@ -275,6 +277,7 @@ export interface Proposal {
     _id: string;
     apelido?: string;
     razaoSocial?: string;
+    cnpj?: string;
   };
   items: ProposalItem[];
   subtotal: number;
