@@ -340,3 +340,80 @@ export const GeneratePdfButton = styled(Button)`
     transform: translateY(-2px);
   }
 `;
+
+export const TwoColumnLayout = styled.div`
+  display: flex;
+  gap: 2rem;
+  height: 100%;
+`;
+
+export const LeftColumn = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+export const RightColumn = styled.div`
+  width: 400px;
+  background: ${({ theme }) => theme.colors.background.card};
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  height: fit-content;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+`;
+
+export const PriceListTitle = styled.h3`
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+export const PriceListItem = styled.div`
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.tertiary};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+export const ProductName = styled.div`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 0.5rem;
+`;
+
+export const PriceRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+`;
+
+export const PriceLabel = styled.span`
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+export const PriceValue = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export const NoPricesMessage = styled.div`
+  text-align: center;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-style: italic;
+  padding: 2rem;
+`;
