@@ -131,6 +131,7 @@ export interface Distributor {
   _id: string;
   apelido?: string;
   razaoSocial?: string;
+  cnpj?: string;
   idDistribuidor?: string;
   contato?: {
     nome: string;
