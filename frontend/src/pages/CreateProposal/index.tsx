@@ -56,6 +56,7 @@ interface ProposalFormData {
     _id: string;
     apelido?: string;
     razaoSocial?: string;
+    cnpj?: string;
   };
   items: ProposalItem[];
   paymentCondition: string;
@@ -90,7 +91,8 @@ export const CreateProposal: React.FC = () => {
     distributor: {
       _id: '',
       apelido: '',
-      razaoSocial: ''
+      razaoSocial: '',
+      cnpj: ''
     },
     items: [{
       product: null,
@@ -108,6 +110,40 @@ export const CreateProposal: React.FC = () => {
   const [subtotal, setSubtotal] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [total, setTotal] = useState(0);
+
+  // Opções de condição de pagamento
+  const paymentConditions = [
+    { value: 'À vista', label: 'À vista' },
+    { value: 'Débito - 1x', label: 'Débito - 1x' },
+    { value: 'Débito - 2x', label: 'Débito - 2x' },
+    { value: 'Débito - 3x', label: 'Débito - 3x' },
+    { value: 'Débito - 4x', label: 'Débito - 4x' },
+    { value: 'Débito - 5x', label: 'Débito - 5x' },
+    { value: 'Débito - 6x', label: 'Débito - 6x' },
+    { value: 'Débito - 7x', label: 'Débito - 7x' },
+    { value: 'Débito - 8x', label: 'Débito - 8x' },
+    { value: 'Débito - 9x', label: 'Débito - 9x' },
+    { value: 'Débito - 10x', label: 'Débito - 10x' },
+    { value: 'Débito - 11x', label: 'Débito - 11x' },
+    { value: 'Débito - 12x', label: 'Débito - 12x' },
+    { value: 'Crédito - 1x', label: 'Crédito - 1x' },
+    { value: 'Crédito - 2x', label: 'Crédito - 2x' },
+    { value: 'Crédito - 3x', label: 'Crédito - 3x' },
+    { value: 'Crédito - 4x', label: 'Crédito - 4x' },
+    { value: 'Crédito - 5x', label: 'Crédito - 5x' },
+    { value: 'Crédito - 6x', label: 'Crédito - 6x' },
+    { value: 'Crédito - 7x', label: 'Crédito - 7x' },
+    { value: 'Crédito - 8x', label: 'Crédito - 8x' },
+    { value: 'Crédito - 9x', label: 'Crédito - 9x' },
+    { value: 'Crédito - 10x', label: 'Crédito - 10x' },
+    { value: 'Crédito - 11x', label: 'Crédito - 11x' },
+    { value: 'Crédito - 12x', label: 'Crédito - 12x' },
+    { value: '30 dias', label: '30 dias' },
+    { value: '45 dias', label: '45 dias' },
+    { value: '60 dias', label: '60 dias' },
+    { value: '90 dias', label: '90 dias' },
+    { value: '120 dias', label: '120 dias' }
+  ];
 
   // Carregar dados iniciais
   const loadData = useCallback(async () => {
@@ -212,7 +248,8 @@ export const CreateProposal: React.FC = () => {
         distributor: {
           _id: distributor._id,
           apelido: distributor.apelido || '',
-          razaoSocial: distributor.razaoSocial || ''
+          razaoSocial: distributor.razaoSocial || '',
+          cnpj: distributor.cnpj || ''
         }
       }));
     }
@@ -396,7 +433,10 @@ export const CreateProposal: React.FC = () => {
         proposalNumber: 'PROP-XXXX', // Será gerado pelo servidor
         client: formData.client,
         seller: formData.seller,
-        distributor: formData.distributor,
+        distributor: {
+          ...formData.distributor,
+          cnpj: formData.distributor.cnpj || ''
+        },
         items: formData.items.map(item => ({
           product: {
             name: item.product!.name,
@@ -603,7 +643,7 @@ export const CreateProposal: React.FC = () => {
                 <option value="">Selecione um distribuidor</option>
                 {distributors.map(distributor => (
                   <option key={distributor._id} value={distributor._id}>
-                    {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'}
+                    {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'} {distributor.cnpj ? `(CNPJ: ${distributor.cnpj})` : ''}
                   </option>
                 ))}
               </Select>
@@ -701,12 +741,17 @@ export const CreateProposal: React.FC = () => {
           <FormRow>
             <FormGroup>
               <Label>Condição de Pagamento *</Label>
-              <Input
-                type="text"
+              <Select
                 value={formData.paymentCondition}
                 onChange={(e) => handleInputChange('paymentCondition', e.target.value)}
-                placeholder="Ex: À vista, 30 dias, parcelado em 3x"
-              />
+              >
+                <option value="">Selecione a condição de pagamento</option>
+                {paymentConditions.map(condition => (
+                  <option key={condition.value} value={condition.value}>
+                    {condition.label}
+                  </option>
+                ))}
+              </Select>
             </FormGroup>
             <FormGroup>
               <Label>Válido até *</Label>
