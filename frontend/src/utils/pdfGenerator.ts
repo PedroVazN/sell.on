@@ -88,75 +88,75 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   yPosition = 70;
   
   // Seção de informações do cliente (lado esquerdo)
-  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 80, white, borderColor);
+  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
-  doc.setFontSize(16);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DO CLIENTE', 30, yPosition + 15);
+  doc.text('DADOS DO CLIENTE', 30, yPosition + 12);
   
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`Nome: ${data.client.name}`, 30, yPosition + 30);
-  doc.text(`Email: ${data.client.email}`, 30, yPosition + 42);
+  doc.text(`Nome: ${data.client.name}`, 30, yPosition + 24);
+  doc.text(`Email: ${data.client.email}`, 30, yPosition + 34);
   
   if (data.client.phone) {
-    doc.text(`Telefone: ${data.client.phone}`, 30, yPosition + 54);
+    doc.text(`Telefone: ${data.client.phone}`, 30, yPosition + 44);
   }
   
   if (data.client.company) {
-    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 66);
+    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 54);
   }
   
   // Seção de vendedor e distribuidor (lado direito)
   const rightX = 20 + (pageWidth - 50) / 2 + 10;
-  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 80, white, borderColor);
+  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
-  doc.setFontSize(16);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('VENDEDOR', rightX + 10, yPosition + 15);
+  doc.text('VENDEDOR', rightX + 10, yPosition + 12);
   
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`${data.seller.name}`, rightX + 10, yPosition + 30);
-  doc.text(`${data.seller.email}`, rightX + 10, yPosition + 42);
+  doc.text(`${data.seller.name}`, rightX + 10, yPosition + 24);
+  doc.text(`${data.seller.email}`, rightX + 10, yPosition + 34);
   
   if (data.distributor.razaoSocial) {
     doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
-    doc.setFontSize(14);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('DISTRIBUIDOR', rightX + 10, yPosition + 58);
+    doc.text('DISTRIBUIDOR', rightX + 10, yPosition + 46);
     
-    doc.setFontSize(11);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-    doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 70);
+    doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 56);
   }
   
-  yPosition += 100;
+  yPosition += 80;
   
   // Tabela de produtos compacta
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('PRODUTOS', 20, yPosition);
   
-  yPosition += 20;
+  yPosition += 15;
   
-  // Cabeçalho da tabela
+  // Cabeçalho da tabela - colunas ajustadas
   const tableWidth = pageWidth - 40;
-  const colPositions = [25, 100, 120, 150, 175];
+  const colPositions = [25, 100, 125, 150, 175];
   
   // Background do cabeçalho
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(20, yPosition - 8, tableWidth, 18, 'F');
+  doc.rect(20, yPosition - 6, tableWidth, 15, 'F');
   
   // Texto do cabeçalho
   doc.setTextColor(white[0], white[1], white[2]);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text('PRODUTO', colPositions[0], yPosition + 2);
   doc.text('QTD', colPositions[1], yPosition + 2);
@@ -164,59 +164,59 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.text('DESC%', colPositions[3], yPosition + 2);
   doc.text('TOTAL', colPositions[4], yPosition + 2);
   
-  yPosition += 12;
+  yPosition += 10;
   
-  // Linhas dos produtos (máximo 8 itens para caber na página)
-  const maxItems = Math.min(data.items.length, 8);
+  // Linhas dos produtos (máximo 10 itens para caber na página)
+  const maxItems = Math.min(data.items.length, 10);
   for (let i = 0; i < maxItems; i++) {
     const item = data.items[i];
     
     // Background alternado para linhas
     if (i % 2 === 0) {
       doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
-      doc.rect(20, yPosition - 5, tableWidth, 12, 'F');
+      doc.rect(20, yPosition - 4, tableWidth, 10, 'F');
     }
     
     // Bordas da linha
     doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
     doc.setLineWidth(0.3);
-    doc.rect(20, yPosition - 5, tableWidth, 12, 'S');
+    doc.rect(20, yPosition - 4, tableWidth, 10, 'S');
     
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
     
     // Nome do produto (truncado se muito longo)
-    const productName = item.product.name.length > 20 
-      ? item.product.name.substring(0, 20) + '...' 
+    const productName = item.product.name.length > 18 
+      ? item.product.name.substring(0, 18) + '...' 
       : item.product.name;
-    doc.text(productName, colPositions[0], yPosition + 2);
+    doc.text(productName, colPositions[0], yPosition + 1);
     
     // Quantidade
-    doc.text(item.quantity.toString(), colPositions[1], yPosition + 2);
+    doc.text(item.quantity.toString(), colPositions[1], yPosition + 1);
     
     // Preço unitário
-    doc.text(`R$ ${item.unitPrice.toFixed(2)}`, colPositions[2], yPosition + 2);
+    doc.text(`R$ ${item.unitPrice.toFixed(2)}`, colPositions[2], yPosition + 1);
     
     // Desconto
-    doc.text(`${item.discount}%`, colPositions[3], yPosition + 2);
+    doc.text(`${item.discount}%`, colPositions[3], yPosition + 1);
     
     // Total
     doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(`R$ ${item.total.toFixed(2)}`, colPositions[4], yPosition + 2);
+    doc.setFontSize(8);
+    doc.text(`R$ ${item.total.toFixed(2)}`, colPositions[4], yPosition + 1);
     
-    yPosition += 12;
+    yPosition += 10;
   }
   
   // Se houver mais itens, mostrar "..."
-  if (data.items.length > 8) {
+  if (data.items.length > 10) {
     doc.setTextColor(textLight[0], textLight[1], textLight[2]);
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9);
-    doc.text(`... e mais ${data.items.length - 8} itens`, 25, yPosition + 2);
-    yPosition += 12;
+    doc.setFontSize(8);
+    doc.text(`... e mais ${data.items.length - 10} itens`, 25, yPosition + 1);
+    yPosition += 10;
   }
   
   yPosition += 15;
@@ -271,32 +271,16 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
     
     doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.text('OBSERVAÇÕES', 30, yPosition + 15);
     
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
     
     const splitObservations = doc.splitTextToSize(data.observations, pageWidth - 60);
     doc.text(splitObservations, 30, yPosition + 28);
   }
-  
-  // Rodapé elegante
-  const footerY = pageHeight - 25;
-  doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
-  doc.rect(0, footerY, pageWidth, 25, 'F');
-  
-  // Linha superior do rodapé
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setLineWidth(1);
-  doc.line(0, footerY, pageWidth, footerY);
-  
-  doc.setFontSize(10);
-  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Sell.On - Sistema de Gestão Comercial', 25, footerY + 12);
-  doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth - 120, footerY + 12);
   
   // Salvar o PDF
   doc.save(`proposta-${data.proposalNumber}.pdf`);
