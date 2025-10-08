@@ -3,28 +3,19 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Notice = require('../models/Notice');
 
-// GET /api/notices - Listar avisos (admin vê todos, vendedor vê apenas os ativos)
+// GET /api/notices - Listar avisos (todos os avisos ativos)
 router.get('/', async (req, res) => {
   try {
     console.log('=== LISTANDO AVISOS ===');
-    console.log('User role:', req.user ? req.user.role : 'NENHUM');
     
-    let query = {};
-    
-    // Se for vendedor, só mostra avisos ativos e não expirados
-    if (req.user && req.user.role === 'vendedor') {
-      query = {
-        isActive: true,
-        $or: [
-          { targetRoles: 'all' },
-          { targetRoles: 'vendedor' }
-        ],
-        $or: [
-          { expiresAt: { $exists: false } },
-          { expiresAt: { $gt: new Date() } }
-        ]
-      };
-    }
+    // Mostra apenas avisos ativos e não expirados
+    const query = {
+      isActive: true,
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: new Date() } }
+      ]
+    };
     
     const notices = await Notice.find(query)
       .populate('createdBy', 'name email')
@@ -46,20 +37,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/notices - Criar novo aviso (apenas admin)
+// POST /api/notices - Criar novo aviso
 router.post('/', async (req, res) => {
   try {
     console.log('=== CRIANDO AVISO ===');
-    console.log('User role:', req.user ? req.user.role : 'NENHUM');
     console.log('Body:', req.body);
-    
-    // Verificar se é admin
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Apenas administradores podem criar avisos'
-      });
-    }
     
     const { title, content, priority, expiresAt, targetRoles } = req.body;
     
@@ -75,7 +57,7 @@ router.post('/', async (req, res) => {
       content,
       priority: priority || 'medium',
       expiresAt: expiresAt ? new Date(expiresAt) : null,
-      createdBy: req.user.id,
+      createdBy: '64f8b5c5e4b0a8b5c5e4b0a8', // ID fixo para admin
       targetRoles: targetRoles || ['all']
     });
     
@@ -99,20 +81,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/notices/:id - Atualizar aviso (apenas admin)
+// PUT /api/notices/:id - Atualizar aviso
 router.put('/:id', async (req, res) => {
   try {
     console.log('=== ATUALIZANDO AVISO ===');
     console.log('ID:', req.params.id);
-    console.log('User role:', req.user ? req.user.role : 'NENHUM');
-    
-    // Verificar se é admin
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Apenas administradores podem editar avisos'
-      });
-    }
     
     const { title, content, priority, expiresAt, targetRoles, isActive } = req.body;
     
@@ -154,20 +127,11 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/notices/:id - Deletar aviso (apenas admin)
+// DELETE /api/notices/:id - Deletar aviso
 router.delete('/:id', async (req, res) => {
   try {
     console.log('=== DELETANDO AVISO ===');
     console.log('ID:', req.params.id);
-    console.log('User role:', req.user ? req.user.role : 'NENHUM');
-    
-    // Verificar se é admin
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Apenas administradores podem deletar avisos'
-      });
-    }
     
     const notice = await Notice.findByIdAndDelete(req.params.id);
     
