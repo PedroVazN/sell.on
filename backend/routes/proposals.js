@@ -72,6 +72,8 @@ router.put('/:id', async (req, res) => {
   try {
     console.log('=== ATUALIZANDO STATUS DA PROPOSTA ===');
     console.log('ID da proposta:', req.params.id);
+    console.log('Body completo:', req.body);
+    console.log('Headers:', req.headers);
     console.log('Novo status:', req.body.status);
     console.log('Motivo da perda:', req.body.lossReason);
 
@@ -319,43 +321,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/proposals/:id - Atualizar proposta
-router.put('/:id', async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const proposal = await Proposal.findOne({
-      _id: req.params.id,
-      $or: [
-        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
-        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
-      ]
-    });
-
-    if (!proposal) {
-      return res.status(404).json({ error: 'Proposta não encontrada' });
-    }
-
-    // Atualizar status se fornecido
-    if (status) {
-      proposal.status = status;
-    }
-
-    await proposal.save();
-    await proposal.populate('createdBy', 'name email');
-
-    res.json({ 
-      success: true,
-      data: proposal 
-    });
-  } catch (error) {
-    console.error('Erro ao atualizar proposta:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Erro interno do servidor' 
-    });
-  }
-});
 
 // DELETE /api/proposals/:id - Deletar proposta
 router.delete('/:id', async (req, res) => {
