@@ -816,11 +816,51 @@ export const Proposals: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <FormGroup>
                   <Label>Condição de Pagamento</Label>
-                  <Input
-                    placeholder="Ex: À vista, 30 dias, 3x sem juros"
+                  <select
                     value={paymentCondition || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaymentCondition(e.target.value)}
-                  />
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPaymentCondition(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white',
+                      color: '#374151'
+                    }}
+                  >
+                    <option value="">Selecione a condição de pagamento</option>
+                    <option value="À vista">À vista</option>
+                    <option value="Débito - 1x">Débito - 1x</option>
+                    <option value="Débito - 2x">Débito - 2x</option>
+                    <option value="Débito - 3x">Débito - 3x</option>
+                    <option value="Débito - 4x">Débito - 4x</option>
+                    <option value="Débito - 5x">Débito - 5x</option>
+                    <option value="Débito - 6x">Débito - 6x</option>
+                    <option value="Débito - 7x">Débito - 7x</option>
+                    <option value="Débito - 8x">Débito - 8x</option>
+                    <option value="Débito - 9x">Débito - 9x</option>
+                    <option value="Débito - 10x">Débito - 10x</option>
+                    <option value="Débito - 11x">Débito - 11x</option>
+                    <option value="Débito - 12x">Débito - 12x</option>
+                    <option value="Crédito - 1x">Crédito - 1x</option>
+                    <option value="Crédito - 2x">Crédito - 2x</option>
+                    <option value="Crédito - 3x">Crédito - 3x</option>
+                    <option value="Crédito - 4x">Crédito - 4x</option>
+                    <option value="Crédito - 5x">Crédito - 5x</option>
+                    <option value="Crédito - 6x">Crédito - 6x</option>
+                    <option value="Crédito - 7x">Crédito - 7x</option>
+                    <option value="Crédito - 8x">Crédito - 8x</option>
+                    <option value="Crédito - 9x">Crédito - 9x</option>
+                    <option value="Crédito - 10x">Crédito - 10x</option>
+                    <option value="Crédito - 11x">Crédito - 11x</option>
+                    <option value="Crédito - 12x">Crédito - 12x</option>
+                    <option value="30 dias">30 dias</option>
+                    <option value="45 dias">45 dias</option>
+                    <option value="60 dias">60 dias</option>
+                    <option value="90 dias">90 dias</option>
+                    <option value="120 dias">120 dias</option>
+                  </select>
                 </FormGroup>
                 <FormGroup>
                   <Label>Válido Até</Label>

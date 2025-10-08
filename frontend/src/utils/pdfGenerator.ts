@@ -15,6 +15,7 @@ export interface ProposalPdfData {
   distributor: {
     apelido?: string;
     razaoSocial?: string;
+    cnpj?: string;
   };
   items: Array<{
     product: {
@@ -110,7 +111,7 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   
   // Seção de vendedor e distribuidor (lado direito)
   const rightX = 20 + (pageWidth - 50) / 2 + 10;
-  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
+  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 70, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
@@ -133,9 +134,13 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
     doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 56);
+    
+    if (data.distributor.cnpj) {
+      doc.text(`CNPJ: ${data.distributor.cnpj}`, rightX + 10, yPosition + 66);
+    }
   }
   
-  yPosition += 80;
+  yPosition += 90;
   
   // Tabela de produtos compacta
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
@@ -231,18 +236,18 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`Subtotal: R$ ${data.subtotal.toFixed(2)}`, 30, yPosition + 28);
-  doc.text(`Desconto: -R$ ${data.discount.toFixed(2)}`, 30, yPosition + 38);
+  doc.text(`Subtotal: R$ ${data.subtotal.toFixed(2)}`, 30, yPosition + 25);
+  doc.text(`Desconto: -R$ ${data.discount.toFixed(2)}`, 30, yPosition + 35);
   
   // Linha separadora
   doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
   doc.setLineWidth(0.5);
-  doc.line(30, yPosition + 42, 30 + (pageWidth - 50) / 2 - 20, yPosition + 42);
+  doc.line(30, yPosition + 40, 30 + (pageWidth - 50) / 2 - 20, yPosition + 40);
   
   doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, 30, yPosition + 40);
+  doc.setFontSize(10);
+  doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, 30, yPosition + 45);
   
   // Condições de pagamento (lado direito)
   drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 50, white, borderColor);
