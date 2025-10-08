@@ -46,6 +46,8 @@ interface ProposalFormData {
     email: string;
     phone: string;
     company: string;
+    cnpj: string;
+    razaoSocial: string;
   };
   seller: {
     _id: string;
@@ -56,6 +58,7 @@ interface ProposalFormData {
     _id: string;
     apelido?: string;
     razaoSocial?: string;
+    cnpj?: string;
   };
   items: ProposalItem[];
   paymentCondition: string;
@@ -82,7 +85,9 @@ export const EditProposal: React.FC = () => {
       name: '',
       email: '',
       phone: '',
-      company: ''
+      company: '',
+      cnpj: '',
+      razaoSocial: ''
     },
     seller: {
       _id: '',
@@ -92,7 +97,8 @@ export const EditProposal: React.FC = () => {
     distributor: {
       _id: '',
       apelido: '',
-      razaoSocial: ''
+      razaoSocial: '',
+      cnpj: ''
     },
     items: [{
       product: null,
@@ -110,6 +116,33 @@ export const EditProposal: React.FC = () => {
   const [subtotal, setSubtotal] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [total, setTotal] = useState(0);
+
+  // Opções de condição de pagamento
+  const paymentConditions = [
+    { value: 'À vista', label: 'À vista' },
+    { value: 'Crédito - 1x', label: 'Crédito - 1x' },
+    { value: 'Crédito - 2x', label: 'Crédito - 2x' },
+    { value: 'Crédito - 3x', label: 'Crédito - 3x' },
+    { value: 'Crédito - 4x', label: 'Crédito - 4x' },
+    { value: 'Crédito - 5x', label: 'Crédito - 5x' },
+    { value: 'Crédito - 6x', label: 'Crédito - 6x' },
+    { value: 'Crédito - 7x', label: 'Crédito - 7x' },
+    { value: 'Crédito - 8x', label: 'Crédito - 8x' },
+    { value: 'Crédito - 9x', label: 'Crédito - 9x' },
+    { value: 'Crédito - 10x', label: 'Crédito - 10x' },
+    { value: 'Crédito - 11x', label: 'Crédito - 11x' },
+    { value: 'Crédito - 12x', label: 'Crédito - 12x' },
+    { value: 'Boleto - 1x', label: 'Boleto - 1x' },
+    { value: 'Boleto - 2x', label: 'Boleto - 2x' },
+    { value: 'Boleto - 3x', label: 'Boleto - 3x' },
+    { value: 'Boleto - 4x', label: 'Boleto - 4x' },
+    { value: 'Boleto - 5x', label: 'Boleto - 5x' },
+    { value: 'Boleto - 6x', label: 'Boleto - 6x' },
+    { value: 'Boleto - 7x', label: 'Boleto - 7x' },
+    { value: 'Boleto - 8x', label: 'Boleto - 8x' },
+    { value: 'Boleto - 9x', label: 'Boleto - 9x' },
+    { value: 'Boleto - 10x', label: 'Boleto - 10x' }
+  ];
 
   // Carregar dados iniciais
   const loadData = useCallback(async () => {
@@ -132,10 +165,15 @@ export const EditProposal: React.FC = () => {
               name: proposalData.client.name,
               email: proposalData.client.email,
               phone: proposalData.client.phone || '',
-              company: proposalData.client.company || ''
+              company: proposalData.client.company || '',
+              cnpj: proposalData.client.cnpj || '',
+              razaoSocial: proposalData.client.razaoSocial || ''
             },
             seller: proposalData.seller,
-            distributor: proposalData.distributor,
+            distributor: {
+              ...proposalData.distributor,
+              cnpj: proposalData.distributor.cnpj || ''
+            },
             items: proposalData.items.map(item => ({
               product: {
                 _id: item.product._id,
@@ -531,6 +569,26 @@ export const EditProposal: React.FC = () => {
               />
             </FormGroup>
           </FormRow>
+          <FormRow>
+            <FormGroup>
+              <Label>CNPJ</Label>
+              <Input
+                type="text"
+                value={formData.client.cnpj}
+                onChange={(e) => handleClientChange('cnpj', e.target.value)}
+                placeholder="00.000.000/0000-00"
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label>Razão Social</Label>
+              <Input
+                type="text"
+                value={formData.client.razaoSocial}
+                onChange={(e) => handleClientChange('razaoSocial', e.target.value)}
+                placeholder="Razão social da empresa"
+              />
+            </FormGroup>
+          </FormRow>
         </FormSection>
 
         {/* Vendedor e Distribuidor */}
@@ -560,7 +618,7 @@ export const EditProposal: React.FC = () => {
                 <option value="">Selecione um distribuidor</option>
                 {distributors.map(distributor => (
                   <option key={distributor._id} value={distributor._id}>
-                    {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'}
+                    {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'} {distributor.cnpj ? `(CNPJ: ${distributor.cnpj})` : ''}
                   </option>
                 ))}
               </Select>
@@ -658,12 +716,17 @@ export const EditProposal: React.FC = () => {
           <FormRow>
             <FormGroup>
               <Label>Condição de Pagamento *</Label>
-              <Input
-                type="text"
+              <Select
                 value={formData.paymentCondition}
                 onChange={(e) => handleInputChange('paymentCondition', e.target.value)}
-                placeholder="Ex: À vista, 30 dias, parcelado em 3x"
-              />
+              >
+                <option value="">Selecione a condição de pagamento</option>
+                {paymentConditions.map(condition => (
+                  <option key={condition.value} value={condition.value}>
+                    {condition.label}
+                  </option>
+                ))}
+              </Select>
             </FormGroup>
             <FormGroup>
               <Label>Válido até *</Label>
