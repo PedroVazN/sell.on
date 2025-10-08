@@ -118,18 +118,6 @@ export const CreateProposal: React.FC = () => {
   // Opções de condição de pagamento
   const paymentConditions = [
     { value: 'À vista', label: 'À vista' },
-    { value: 'Débito - 1x', label: 'Débito - 1x' },
-    { value: 'Débito - 2x', label: 'Débito - 2x' },
-    { value: 'Débito - 3x', label: 'Débito - 3x' },
-    { value: 'Débito - 4x', label: 'Débito - 4x' },
-    { value: 'Débito - 5x', label: 'Débito - 5x' },
-    { value: 'Débito - 6x', label: 'Débito - 6x' },
-    { value: 'Débito - 7x', label: 'Débito - 7x' },
-    { value: 'Débito - 8x', label: 'Débito - 8x' },
-    { value: 'Débito - 9x', label: 'Débito - 9x' },
-    { value: 'Débito - 10x', label: 'Débito - 10x' },
-    { value: 'Débito - 11x', label: 'Débito - 11x' },
-    { value: 'Débito - 12x', label: 'Débito - 12x' },
     { value: 'Crédito - 1x', label: 'Crédito - 1x' },
     { value: 'Crédito - 2x', label: 'Crédito - 2x' },
     { value: 'Crédito - 3x', label: 'Crédito - 3x' },
@@ -142,11 +130,16 @@ export const CreateProposal: React.FC = () => {
     { value: 'Crédito - 10x', label: 'Crédito - 10x' },
     { value: 'Crédito - 11x', label: 'Crédito - 11x' },
     { value: 'Crédito - 12x', label: 'Crédito - 12x' },
-    { value: '30 dias', label: '30 dias' },
-    { value: '45 dias', label: '45 dias' },
-    { value: '60 dias', label: '60 dias' },
-    { value: '90 dias', label: '90 dias' },
-    { value: '120 dias', label: '120 dias' }
+    { value: 'Boleto - 1x', label: 'Boleto - 1x' },
+    { value: 'Boleto - 2x', label: 'Boleto - 2x' },
+    { value: 'Boleto - 3x', label: 'Boleto - 3x' },
+    { value: 'Boleto - 4x', label: 'Boleto - 4x' },
+    { value: 'Boleto - 5x', label: 'Boleto - 5x' },
+    { value: 'Boleto - 6x', label: 'Boleto - 6x' },
+    { value: 'Boleto - 7x', label: 'Boleto - 7x' },
+    { value: 'Boleto - 8x', label: 'Boleto - 8x' },
+    { value: 'Boleto - 9x', label: 'Boleto - 9x' },
+    { value: 'Boleto - 10x', label: 'Boleto - 10x' }
   ];
 
   // Carregar dados iniciais

@@ -151,9 +151,9 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   
   yPosition += 15;
   
-  // Cabeçalho da tabela - colunas ajustadas
+  // Cabeçalho da tabela - colunas ajustadas com menor espaçamento
   const tableWidth = pageWidth - 40;
-  const colPositions = [25, 100, 125, 150, 175];
+  const colPositions = [25, 80, 100, 120, 140];
   
   // Background do cabeçalho
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
