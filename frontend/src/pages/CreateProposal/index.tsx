@@ -46,6 +46,8 @@ interface ProposalFormData {
     email: string;
     phone: string;
     company: string;
+    cnpj: string;
+    razaoSocial: string;
   };
   seller: {
     _id: string;
@@ -81,7 +83,9 @@ export const CreateProposal: React.FC = () => {
       name: '',
       email: '',
       phone: '',
-      company: ''
+      company: '',
+      cnpj: '',
+      razaoSocial: ''
     },
     seller: {
       _id: '',
@@ -481,7 +485,9 @@ export const CreateProposal: React.FC = () => {
         name: 'João Silva Santos',
         email: 'joao.silva@empresa.com.br',
         phone: '(11) 99999-8888',
-        company: 'Empresa ABC Ltda'
+        company: 'Empresa ABC Ltda',
+        cnpj: '12.345.678/0001-90',
+        razaoSocial: 'Empresa ABC Ltda'
       }
     }));
 
@@ -607,6 +613,26 @@ export const CreateProposal: React.FC = () => {
                 value={formData.client.company}
                 onChange={(e) => handleClientChange('company', e.target.value)}
                 placeholder="Nome da empresa"
+              />
+            </FormGroup>
+          </FormRow>
+          <FormRow>
+            <FormGroup>
+              <Label>CNPJ</Label>
+              <Input
+                type="text"
+                value={formData.client.cnpj}
+                onChange={(e) => handleClientChange('cnpj', e.target.value)}
+                placeholder="00.000.000/0000-00"
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label>Razão Social</Label>
+              <Input
+                type="text"
+                value={formData.client.razaoSocial}
+                onChange={(e) => handleClientChange('razaoSocial', e.target.value)}
+                placeholder="Razão social da empresa"
               />
             </FormGroup>
           </FormRow>
