@@ -632,13 +632,15 @@ export const Proposals: React.FC = () => {
                           >
                             <Download size={16} />
                           </ActionButton>
-                          <ActionButton 
-                            onClick={() => handleDeleteProposal(proposal)}
-                            disabled={isDeleting}
-                            title="Excluir"
-                          >
-                            <Trash2 size={16} />
-                          </ActionButton>
+                          {user?.role === 'admin' && (
+                            <ActionButton 
+                              onClick={() => handleDeleteProposal(proposal)}
+                              disabled={isDeleting}
+                              title="Excluir"
+                            >
+                              <Trash2 size={16} />
+                            </ActionButton>
+                          )}
                           {proposal.status === 'negociacao' && (
                             <>
                               <ActionButton 
