@@ -302,45 +302,123 @@ export const Dashboard: React.FC = () => {
         setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
       } else {
-        // Dashboard para admin
+        // Dashboard para admin - mesmos campos do vendedor mas com dados de todos
         console.log('🔍 Carregando dashboard do admin');
         
-        const [usersResponse, productsResponse, salesResponse, salesStatsResponse, proposalsSalesResponse, proposalsStatsResponse, lossReasonsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getSales(1, 1),
-          apiService.getSalesStats(),
-          apiService.getProposalsDashboardSales(),
-          apiService.getProposalsDashboardStats(),
+          apiService.getProposals(1, 1000), // Buscar todas as propostas
           apiService.getLossReasonsStats()
         ]);
 
-        setData({
+        console.log('📊 Todas as propostas carregadas:', allProposalsResponse.data?.length);
+
+        // Calcular estatísticas de todas as propostas (como no vendedor)
+        const allProposals = allProposalsResponse.data || [];
+        const proposalStats = allProposals.reduce((acc: any, proposal: any) => {
+          const total = proposal.total || 0;
+          
+          acc.totalProposals++;
+          acc.totalValue += total;
+          
+          switch (proposal.status) {
+            case 'negociacao':
+              acc.negociacaoProposals++;
+              acc.negociacaoValue += total;
+              break;
+            case 'venda_fechada':
+              acc.vendaFechadaProposals++;
+              acc.vendaFechadaValue += total;
+              break;
+            case 'venda_perdida':
+              acc.vendaPerdidaProposals++;
+              acc.vendaPerdidaValue += total;
+              break;
+            case 'expirada':
+              acc.expiradaProposals++;
+              acc.expiradaValue += total;
+              break;
+          }
+          
+          return acc;
+        }, {
+          totalProposals: 0,
+          totalValue: 0,
+          negociacaoProposals: 0,
+          negociacaoValue: 0,
+          vendaFechadaProposals: 0,
+          vendaFechadaValue: 0,
+          vendaPerdidaProposals: 0,
+          vendaPerdidaValue: 0,
+          expiradaProposals: 0,
+          expiradaValue: 0
+        });
+
+        // Agrupar propostas por mês (como no vendedor)
+        const monthlyProposals = allProposals.reduce((acc: any, proposal: any) => {
+          const date = new Date(proposal.createdAt);
+          const month = date.getMonth() + 1;
+          const year = date.getFullYear();
+          const key = `${year}-${month}`;
+          
+          if (!acc[key]) {
+            acc[key] = {
+              month,
+              year,
+              totalProposals: 0,
+              approvedProposals: 0,
+              revenue: 0
+            };
+          }
+          
+          acc[key].totalProposals++;
+          if (proposal.status === 'venda_fechada') {
+            acc[key].approvedProposals++;
+            acc[key].revenue += proposal.total || 0;
+          }
+          
+          return acc;
+        }, {});
+
+        const monthlyData = Object.values(monthlyProposals).sort((a: any, b: any) => {
+          if (a.year !== b.year) return a.year - b.year;
+          return a.month - b.month;
+        }) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
+
+        console.log('📊 Dados mensais do admin:', monthlyData);
+
+        const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
-          totalSales: proposalsSalesResponse.data?.salesStats?.totalSales || 0,
-          totalRevenue: proposalsSalesResponse.data?.salesStats?.totalRevenue || 0,
-          salesStats: proposalsSalesResponse.data?.salesStats || {
-            totalSales: 0,
-            totalRevenue: 0,
-            averageSale: 0,
+          totalSales: proposalStats.totalProposals,
+          totalRevenue: proposalStats.vendaFechadaValue,
+          salesStats: {
+            totalSales: proposalStats.vendaFechadaProposals,
+            totalRevenue: proposalStats.vendaFechadaValue,
+            averageSale: proposalStats.vendaFechadaProposals > 0 
+              ? proposalStats.vendaFechadaValue / proposalStats.vendaFechadaProposals 
+              : 0,
             totalItems: 0
           },
           proposalStats: {
-            totalProposals: proposalsStatsResponse.data?.proposalStats?.totalProposals || 0,
-            totalValue: 0, // Será calculado se necessário
-            negociacaoProposals: proposalsStatsResponse.data?.proposalStats?.negociacaoProposals || 0,
-            negociacaoValue: 0, // Será calculado se necessário
-            vendaFechadaProposals: proposalsStatsResponse.data?.proposalStats?.vendaFechadaProposals || 0,
-            vendaFechadaValue: 0, // Será calculado se necessário
-            vendaPerdidaProposals: proposalsStatsResponse.data?.proposalStats?.vendaPerdidaProposals || 0,
-            vendaPerdidaValue: 0, // Será calculado se necessário
-            expiradaProposals: proposalsStatsResponse.data?.proposalStats?.expiradaProposals || 0,
-            expiradaValue: 0 // Será calculado se necessário
+            totalProposals: proposalStats.totalProposals,
+            totalValue: proposalStats.totalValue,
+            negociacaoProposals: proposalStats.negociacaoProposals,
+            negociacaoValue: proposalStats.negociacaoValue,
+            vendaFechadaProposals: proposalStats.vendaFechadaProposals,
+            vendaFechadaValue: proposalStats.vendaFechadaValue,
+            vendaPerdidaProposals: proposalStats.vendaPerdidaProposals,
+            vendaPerdidaValue: proposalStats.vendaPerdidaValue,
+            expiradaProposals: proposalStats.expiradaProposals,
+            expiradaValue: proposalStats.expiradaValue
           },
-          topProducts: proposalsSalesResponse.data?.topProducts || [],
-          monthlyData: proposalsSalesResponse.data?.monthlyData || []
-        });
+          topProducts: [],
+          monthlyData: monthlyData
+        };
+        
+        console.log('📊 Dashboard data para admin:', dashboardData);
+        setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
       }
     } catch (error) {
