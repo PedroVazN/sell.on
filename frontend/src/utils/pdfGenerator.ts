@@ -100,19 +100,23 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`Nome: ${data.client.name}`, 30, yPosition + 24);
-  doc.text(`Email: ${data.client.email}`, 30, yPosition + 34);
+  doc.text(`Nome: ${data.client.name}`, 30, yPosition + 22);
+  doc.text(`Email: ${data.client.email}`, 30, yPosition + 30);
   
-  if (data.client.cnpj) {
-    doc.text(`CNPJ: ${data.client.cnpj}`, 30, yPosition + 44);
-  }
-  
-  if (data.client.razaoSocial) {
-    doc.text(`Razão Social: ${data.client.razaoSocial}`, 30, yPosition + 54);
+  if (data.client.phone) {
+    doc.text(`Telefone: ${data.client.phone}`, 30, yPosition + 38);
   }
   
   if (data.client.company) {
-    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 64);
+    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 46);
+  }
+  
+  if (data.client.cnpj) {
+    doc.text(`CNPJ: ${data.client.cnpj}`, 30, yPosition + 54);
+  }
+  
+  if (data.client.razaoSocial) {
+    doc.text(`Razão Social: ${data.client.razaoSocial}`, 30, yPosition + 62);
   }
   
   // Seção de vendedor e distribuidor (lado direito)
@@ -127,21 +131,22 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`${data.seller.name}`, rightX + 10, yPosition + 24);
+  doc.text(`${data.seller.name}`, rightX + 10, yPosition + 22);
+  doc.text(`${data.seller.email}`, rightX + 10, yPosition + 30);
   
   if (data.distributor.razaoSocial) {
     doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('DISTRIBUIDOR', rightX + 10, yPosition + 40);
+    doc.text('DISTRIBUIDOR', rightX + 10, yPosition + 38);
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-    doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 50);
+    doc.text(`${data.distributor.razaoSocial}`, rightX + 10, yPosition + 46);
   }
   
-  yPosition += 90;
+  yPosition += 70;
   
   // Tabela de produtos compacta
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
@@ -224,7 +229,7 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
     yPosition += 10;
   }
   
-  yPosition += 15;
+  yPosition += 10;
   
   // Condições de pagamento (lado esquerdo)
   drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 50, white, borderColor);
@@ -264,7 +269,7 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFontSize(10);
   doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, rightX + 10, yPosition + 45);
   
-  yPosition += 60;
+  yPosition += 50;
   
   // Observações (se houver)
   if (data.observations && data.observations.trim()) {
