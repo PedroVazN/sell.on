@@ -31,8 +31,8 @@ import { CreatePriceList } from './pages/CreatePriceList';
 import { ClientRegistration } from './pages/ClientRegistration';
 import { DistributorRegistration } from './pages/DistributorRegistration';
 import { UserRegistration } from './pages/UserRegistration';
-import { NoticesAdmin } from './pages/NoticesAdmin';
-import { NoticesViewer } from './pages/NoticesViewer';
+import NoticesAdmin from './pages/NoticesAdmin';
+import NoticesViewer from './pages/NoticesViewer';
 
 function App() {
   return (
