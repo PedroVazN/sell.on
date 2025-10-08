@@ -451,7 +451,7 @@ export const Dashboard: React.FC = () => {
         ) : (
           <>
             <MetricCard>
-              <MetricValue>R$ {data?.totalRevenue.toLocaleString('pt-BR') || '0'}</MetricValue>
+              <MetricValue>R$ {(data?.totalRevenue || 0).toLocaleString('pt-BR')}</MetricValue>
               <MetricLabel>Receita Total</MetricLabel>
               <MetricChange $positive>+0% vs mês anterior</MetricChange>
             </MetricCard>
@@ -580,7 +580,7 @@ export const Dashboard: React.FC = () => {
                 <ProductItem key={index}>
                   <ProductName>{index + 1}. {product.name}</ProductName>
                   <ProductSales>{product.quantity} unidades vendidas</ProductSales>
-                  <ProductRevenue>R$ {product.revenue.toLocaleString('pt-BR')}</ProductRevenue>
+                  <ProductRevenue>R$ {(product.revenue || 0).toLocaleString('pt-BR')}</ProductRevenue>
                 </ProductItem>
               ))
             ) : (
@@ -762,7 +762,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ color: '#ef4444', fontWeight: '600', fontSize: '0.875rem' }}>
-                      R$ {reason.totalValue.toLocaleString('pt-BR')}
+                      R$ {(reason.totalValue || 0).toLocaleString('pt-BR')}
                     </div>
                     <div style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
                       Valor perdido
