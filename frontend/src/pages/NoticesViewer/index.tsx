@@ -158,7 +158,7 @@ const NoticesViewer: React.FC = () => {
                   <S.NoticeInfo>
                     <S.InfoItem>
                       <User size={14} />
-                      <span>{notice.createdBy.name}</span>
+                      <span>{notice.createdBy?.name || 'Usuário não encontrado'}</span>
                     </S.InfoItem>
                     <S.InfoItem>
                       <Calendar size={14} />
