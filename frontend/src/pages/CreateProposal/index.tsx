@@ -817,7 +817,7 @@ export const CreateProposal: React.FC = () => {
                   <Label>Total</Label>
                   <ProductInput
                     type="text"
-                    value={`R$ ${item.total.toFixed(2)}`}
+                    value={`R$ ${(item.total || 0).toFixed(2)}`}
                     readOnly
                   />
                 </FormGroup>
@@ -873,15 +873,15 @@ export const CreateProposal: React.FC = () => {
         <TotalSection>
           <TotalRow>
             <span>Subtotal:</span>
-            <TotalValue>R$ {subtotal.toFixed(2)}</TotalValue>
+            <TotalValue>R$ {(subtotal || 0).toFixed(2)}</TotalValue>
           </TotalRow>
           <TotalRow>
             <span>Desconto:</span>
-            <TotalValue>- R$ {totalDiscount.toFixed(2)}</TotalValue>
+            <TotalValue>- R$ {(totalDiscount || 0).toFixed(2)}</TotalValue>
           </TotalRow>
           <TotalRow>
             <span>Total:</span>
-            <TotalValue>R$ {total.toFixed(2)}</TotalValue>
+            <TotalValue>R$ {(total || 0).toFixed(2)}</TotalValue>
           </TotalRow>
         </TotalSection>
 
@@ -1012,9 +1012,9 @@ export const CreateProposal: React.FC = () => {
                       </p>
                       <p style={{ margin: '4px 0', color: '#6b7280' }}>
                         <strong>Quantidade:</strong> {item.quantity} | 
-                        <strong> Preço:</strong> R$ {item.unitPrice.toFixed(2)} | 
+                        <strong> Preço:</strong> R$ {(item.unitPrice || 0).toFixed(2)} | 
                         <strong> Desconto:</strong> {item.discount}% | 
-                        <strong> Total:</strong> R$ {item.total.toFixed(2)}
+                        <strong> Total:</strong> R$ {(item.total || 0).toFixed(2)}
                       </p>
                     </div>
                   ))}
@@ -1048,13 +1048,13 @@ export const CreateProposal: React.FC = () => {
                 </h3>
                 <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
                   <p style={{ margin: '4px 0', color: '#4b5563' }}>
-                    <strong>Subtotal:</strong> R$ {subtotal.toFixed(2)}
+                    <strong>Subtotal:</strong> R$ {(subtotal || 0).toFixed(2)}
                   </p>
                   <p style={{ margin: '4px 0', color: '#4b5563' }}>
-                    <strong>Desconto:</strong> -R$ {totalDiscount.toFixed(2)}
+                    <strong>Desconto:</strong> -R$ {(totalDiscount || 0).toFixed(2)}
                   </p>
                   <p style={{ margin: '4px 0', color: '#3b82f6', fontSize: '18px', fontWeight: 'bold' }}>
-                    <strong>TOTAL:</strong> R$ {total.toFixed(2)}
+                    <strong>TOTAL:</strong> R$ {(total || 0).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1157,9 +1157,9 @@ export const CreateProposal: React.FC = () => {
                         {item.distributor.apelido || item.distributor.razaoSocial}
                       </p>
                       <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6b7280' }}>
-                        <span>À vista: R$ {item.pricing.aVista.toFixed(2)}</span>
-                        <span>3x Boleto: R$ {item.pricing.tresXBoleto.toFixed(2)}</span>
-                        <span>3x Cartão: R$ {item.pricing.tresXCartao.toFixed(2)}</span>
+                        <span>À vista: R$ {(item.pricing.aVista || 0).toFixed(2)}</span>
+                        <span>3x Boleto: R$ {(item.pricing.tresXBoleto || 0).toFixed(2)}</span>
+                        <span>3x Cartão: R$ {(item.pricing.tresXCartao || 0).toFixed(2)}</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
