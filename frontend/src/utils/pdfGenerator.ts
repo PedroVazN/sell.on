@@ -90,7 +90,7 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   yPosition = 45;
   
   // Seção de informações do cliente (lado esquerdo)
-  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 80, white, borderColor);
+  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
@@ -101,27 +101,22 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
   doc.text(`Nome: ${data.client.name}`, 30, yPosition + 22);
-  doc.text(`Email: ${data.client.email}`, 30, yPosition + 30);
-  
-  if (data.client.phone) {
-    doc.text(`Telefone: ${data.client.phone}`, 30, yPosition + 38);
-  }
   
   if (data.client.company) {
-    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 46);
+    doc.text(`Empresa: ${data.client.company}`, 30, yPosition + 30);
   }
   
   if (data.client.cnpj) {
-    doc.text(`CNPJ: ${data.client.cnpj}`, 30, yPosition + 54);
+    doc.text(`CNPJ: ${data.client.cnpj}`, 30, yPosition + 38);
   }
   
   if (data.client.razaoSocial) {
-    doc.text(`Razão Social: ${data.client.razaoSocial}`, 30, yPosition + 62);
+    doc.text(`Razão Social: ${data.client.razaoSocial}`, 30, yPosition + 46);
   }
   
   // Seção de vendedor e distribuidor (lado direito)
   const rightX = 20 + (pageWidth - 50) / 2 + 10;
-  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 80, white, borderColor);
+  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
   doc.setFontSize(12);
@@ -196,11 +191,8 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
     doc.setFontSize(8);
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
     
-    // Nome do produto (truncado se muito longo)
-    const productName = item.product.name.length > 18 
-      ? item.product.name.substring(0, 18) + '...' 
-      : item.product.name;
-    doc.text(productName, colPositions[0], yPosition + 1);
+    // Nome do produto (completo)
+    doc.text(item.product.name, colPositions[0], yPosition + 1);
     
     // Quantidade
     doc.text(item.quantity.toString(), colPositions[1], yPosition + 1);

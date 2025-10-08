@@ -917,10 +917,6 @@ export const CreateProposal: React.FC = () => {
                 </h3>
                 <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
                   <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Nome:</strong> {formData.client.name}</p>
-                  <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Email:</strong> {formData.client.email}</p>
-                  {formData.client.phone && (
-                    <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Telefone:</strong> {formData.client.phone}</p>
-                  )}
                   {formData.client.company && (
                     <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Empresa:</strong> {formData.client.company}</p>
                   )}
