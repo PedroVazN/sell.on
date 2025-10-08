@@ -137,10 +137,7 @@ router.get('/:id', async (req, res) => {
     console.log('🔍 Buscando proposta com ID:', req.params.id);
     
     const proposal = await Proposal.findById(req.params.id)
-      .populate('createdBy', 'name email')
-      .populate('client', 'name email phone')
-      .populate('distributor', 'razaoSocial apelido')
-      .populate('products.product', 'name description price');
+      .populate('createdBy', 'name email');
 
     if (!proposal) {
       console.log('❌ Proposta não encontrada:', req.params.id);
