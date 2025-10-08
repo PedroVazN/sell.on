@@ -71,6 +71,8 @@ export const CreateProposal: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [selectedProductForPrice, setSelectedProductForPrice] = useState<{product: Product, index: number, priceListItems: any[]} | null>(null);
   
   // Dados para seleção
   const [products, setProducts] = useState<Product[]>([]);
@@ -252,21 +254,53 @@ export const CreateProposal: React.FC = () => {
     }
   };
 
-  const handleProductChange = (index: number, productId: string) => {
+  const handleProductChange = async (index: number, productId: string) => {
     const product = products.find(p => p._id === productId);
     if (product) {
-      const newItems = [...formData.items];
-      const price = product.price || 0; // Usar 0 como padrão se price for undefined
-      newItems[index] = {
-        ...newItems[index],
-        product,
-        unitPrice: price,
-        total: newItems[index].quantity * price * (1 - newItems[index].discount / 100)
-      };
-      setFormData(prev => ({
-        ...prev,
-        items: newItems
-      }));
+      // Verificar se há preços na lista de preços para este produto
+      try {
+        const priceListResponse = await apiService.getPriceListItems(1, 100, undefined, productId, true);
+        const priceListItems = priceListResponse.data || [];
+        
+        if (priceListItems.length > 0) {
+          // Mostrar modal para escolher preço
+          setSelectedProductForPrice({
+            product,
+            index,
+            priceListItems
+          });
+          setShowPriceModal(true);
+        } else {
+          // Usar preço padrão do produto
+          const newItems = [...formData.items];
+          const price = product.price || 0;
+          newItems[index] = {
+            ...newItems[index],
+            product,
+            unitPrice: price,
+            total: newItems[index].quantity * price * (1 - newItems[index].discount / 100)
+          };
+          setFormData(prev => ({
+            ...prev,
+            items: newItems
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar preços da lista:', error);
+        // Em caso de erro, usar preço padrão
+        const newItems = [...formData.items];
+        const price = product.price || 0;
+        newItems[index] = {
+          ...newItems[index],
+          product,
+          unitPrice: price,
+          total: newItems[index].quantity * price * (1 - newItems[index].discount / 100)
+        };
+        setFormData(prev => ({
+          ...prev,
+          items: newItems
+        }));
+      }
     }
   };
 
@@ -467,6 +501,45 @@ export const CreateProposal: React.FC = () => {
 
   const handleShowSummary = () => {
     setShowSummaryModal(true);
+  };
+
+  const handleSelectPrice = (price: number) => {
+    if (selectedProductForPrice) {
+      const newItems = [...formData.items];
+      const { product, index } = selectedProductForPrice;
+      newItems[index] = {
+        ...newItems[index],
+        product,
+        unitPrice: price,
+        total: newItems[index].quantity * price * (1 - newItems[index].discount / 100)
+      };
+      setFormData(prev => ({
+        ...prev,
+        items: newItems
+      }));
+    }
+    setShowPriceModal(false);
+    setSelectedProductForPrice(null);
+  };
+
+  const handleUseDefaultPrice = () => {
+    if (selectedProductForPrice) {
+      const newItems = [...formData.items];
+      const { product, index } = selectedProductForPrice;
+      const price = product.price || 0;
+      newItems[index] = {
+        ...newItems[index],
+        product,
+        unitPrice: price,
+        total: newItems[index].quantity * price * (1 - newItems[index].discount / 100)
+      };
+      setFormData(prev => ({
+        ...prev,
+        items: newItems
+      }));
+    }
+    setShowPriceModal(false);
+    setSelectedProductForPrice(null);
   };
 
   const fillTestData = () => {
@@ -1008,6 +1081,162 @@ export const CreateProposal: React.FC = () => {
               >
                 Fechar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Seleção de Preço */}
+      {showPriceModal && selectedProductForPrice && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '16px'
+            }}>
+              <h2 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 'bold' }}>
+                Escolher Preço - {selectedProductForPrice.product.name}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPriceModal(false);
+                  setSelectedProductForPrice(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>
+                Preços disponíveis na lista de preços:
+              </h3>
+              
+              {selectedProductForPrice.priceListItems.map((item, index) => (
+                <div key={index} style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '6px',
+                  padding: '12px',
+                  marginBottom: '8px',
+                  backgroundColor: '#f9fafb'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#374151' }}>
+                        {item.distributor.apelido || item.distributor.razaoSocial}
+                      </p>
+                      <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6b7280' }}>
+                        <span>À vista: R$ {item.pricing.aVista.toFixed(2)}</span>
+                        <span>3x Boleto: R$ {item.pricing.tresXBoleto.toFixed(2)}</span>
+                        <span>3x Cartão: R$ {item.pricing.tresXCartao.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleSelectPrice(item.pricing.aVista)}
+                        style={{
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        À Vista
+                      </button>
+                      <button
+                        onClick={() => handleSelectPrice(item.pricing.tresXBoleto)}
+                        style={{
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        3x Boleto
+                      </button>
+                      <button
+                        onClick={() => handleSelectPrice(item.pricing.tresXCartao)}
+                        style={{
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        3x Cartão
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <p style={{ margin: '0 0 8px 0', color: '#374151', fontWeight: 'bold' }}>
+                  Preço padrão do produto: R$ {(selectedProductForPrice.product.price || 0).toFixed(2)}
+                </p>
+                <button
+                  onClick={handleUseDefaultPrice}
+                  style={{
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Usar Preço Padrão
+                </button>
+              </div>
             </div>
           </div>
         </div>
