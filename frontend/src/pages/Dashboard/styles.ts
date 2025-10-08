@@ -158,7 +158,7 @@ export const MetricsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
-  margin-bottom: 5rem;
+  margin-bottom: 2rem;
   position: relative;
   z-index: 1;
   animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s both;
@@ -303,6 +303,7 @@ export const ChartsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   gap: ${({ theme }) => theme.spacing.lg};
+  margin-top: 4rem;
   margin-bottom: ${({ theme }) => theme.spacing.xl};
   position: relative;
   z-index: 1;

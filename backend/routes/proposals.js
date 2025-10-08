@@ -134,28 +134,34 @@ router.put('/:id', async (req, res) => {
 // GET /api/proposals/:id - Buscar proposta específica
 router.get('/:id', async (req, res) => {
   try {
-    const proposal = await Proposal.findOne({
-      _id: req.params.id,
-      $or: [
-        { 'createdBy._id': '68c1afbcf906c14a8e7e8ff7' },
-        { createdBy: '68c1afbcf906c14a8e7e8ff7' }
-      ]
-    }).populate('createdBy', 'name email');
+    console.log('🔍 Buscando proposta com ID:', req.params.id);
+    
+    const proposal = await Proposal.findById(req.params.id)
+      .populate('createdBy', 'name email')
+      .populate('client', 'name email phone')
+      .populate('distributor', 'razaoSocial apelido')
+      .populate('products.product', 'name description price');
 
     if (!proposal) {
+      console.log('❌ Proposta não encontrada:', req.params.id);
       return res.status(404).json({ 
         success: false,
         message: 'Proposta não encontrada' 
       });
     }
 
+    console.log('✅ Proposta encontrada:', proposal._id);
     res.json({ 
       success: true,
       data: proposal 
     });
   } catch (error) {
     console.error('Erro ao buscar proposta:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
