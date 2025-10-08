@@ -107,10 +107,15 @@ interface DashboardData {
   };
   proposalStats: {
     totalProposals: number;
+    totalValue: number;
     negociacaoProposals: number;
+    negociacaoValue: number;
     vendaFechadaProposals: number;
+    vendaFechadaValue: number;
     vendaPerdidaProposals: number;
+    vendaPerdidaValue: number;
     expiradaProposals: number;
+    expiradaValue: number;
   };
   topProducts: Array<{
     name: string;
@@ -321,12 +326,17 @@ export const Dashboard: React.FC = () => {
             averageSale: 0,
             totalItems: 0
           },
-          proposalStats: proposalsStatsResponse.data?.proposalStats || {
-            totalProposals: 0,
-            negociacaoProposals: 0,
-            vendaFechadaProposals: 0,
-            vendaPerdidaProposals: 0,
-            expiradaProposals: 0
+          proposalStats: {
+            totalProposals: proposalsStatsResponse.data?.proposalStats?.totalProposals || 0,
+            totalValue: 0, // Será calculado se necessário
+            negociacaoProposals: proposalsStatsResponse.data?.proposalStats?.negociacaoProposals || 0,
+            negociacaoValue: 0, // Será calculado se necessário
+            vendaFechadaProposals: proposalsStatsResponse.data?.proposalStats?.vendaFechadaProposals || 0,
+            vendaFechadaValue: 0, // Será calculado se necessário
+            vendaPerdidaProposals: proposalsStatsResponse.data?.proposalStats?.vendaPerdidaProposals || 0,
+            vendaPerdidaValue: 0, // Será calculado se necessário
+            expiradaProposals: proposalsStatsResponse.data?.proposalStats?.expiradaProposals || 0,
+            expiradaValue: 0 // Será calculado se necessário
           },
           topProducts: proposalsSalesResponse.data?.topProducts || [],
           monthlyData: proposalsSalesResponse.data?.monthlyData || []
