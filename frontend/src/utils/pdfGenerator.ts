@@ -54,38 +54,37 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   
   let yPosition = 20;
   
-  // Cabeçalho elegante com gradiente simulado
+  // Cabeçalho compacto
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(0, 0, pageWidth, 50, 'F');
+  doc.rect(0, 0, pageWidth, 30, 'F');
   
   // Logo/Título
   doc.setTextColor(white[0], white[1], white[2]);
-  doc.setFontSize(28);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('Sell.On', 25, 30);
+  doc.text('Sell.On', 20, 18);
   
-  // Número da proposta
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Proposta #${data.proposalNumber}`, pageWidth - 120, 30);
-  
-  // Data de criação
-  const createdDate = new Date(data.createdAt).toLocaleDateString('pt-BR');
+  // Número da proposta e data
   doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Proposta #${data.proposalNumber}`, pageWidth - 100, 12);
+  
+  const createdDate = new Date(data.createdAt).toLocaleDateString('pt-BR');
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Criada em: ${createdDate}`, pageWidth - 120, 38);
+  doc.text(`Criada em: ${createdDate}`, pageWidth - 100, 22);
   
   // Status badge
   const statusText = getStatusLabel(data.status);
   const statusColor = getStatusColor(data.status);
   doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
-  doc.roundedRect(pageWidth - 120, 42, 60, 8, 2, 2, 'F');
+  doc.roundedRect(pageWidth - 100, 25, 50, 6, 1, 1, 'F');
   doc.setTextColor(white[0], white[1], white[2]);
-  doc.setFontSize(10);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text(statusText, pageWidth - 90, 47);
+  doc.text(statusText, pageWidth - 75, 28);
   
-  yPosition = 70;
+  yPosition = 45;
   
   // Seção de informações do cliente (lado esquerdo)
   drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
@@ -222,64 +221,64 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   yPosition += 15;
   
   // Resumo financeiro (lado esquerdo)
-  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
+  drawCard(doc, 20, yPosition, (pageWidth - 50) / 2, 50, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('RESUMO FINANCEIRO', 30, yPosition + 15);
-  
   doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('RESUMO FINANCEIRO', 30, yPosition + 12);
+  
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
-  doc.text(`Subtotal: R$ ${data.subtotal.toFixed(2)}`, 30, yPosition + 35);
-  doc.text(`Desconto: -R$ ${data.discount.toFixed(2)}`, 30, yPosition + 47);
+  doc.text(`Subtotal: R$ ${data.subtotal.toFixed(2)}`, 30, yPosition + 28);
+  doc.text(`Desconto: -R$ ${data.discount.toFixed(2)}`, 30, yPosition + 38);
   
   // Linha separadora
   doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
   doc.setLineWidth(0.5);
-  doc.line(30, yPosition + 52, 30 + (pageWidth - 50) / 2 - 20, yPosition + 52);
+  doc.line(30, yPosition + 42, 30 + (pageWidth - 50) / 2 - 20, yPosition + 42);
   
   doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, 30, yPosition + 50);
+  doc.setFontSize(11);
+  doc.text(`TOTAL: R$ ${data.total.toFixed(2)}`, 30, yPosition + 40);
   
   // Condições de pagamento (lado direito)
-  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 60, white, borderColor);
+  drawCard(doc, rightX, yPosition, (pageWidth - 50) / 2, 50, white, borderColor);
   
   doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
-  doc.setFontSize(16);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONDIÇÕES', rightX + 10, yPosition + 15);
+  doc.text('CONDIÇÕES', rightX + 10, yPosition + 12);
   
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
   
   // Quebrar texto se muito longo
   const paymentText = doc.splitTextToSize(data.paymentCondition, (pageWidth - 50) / 2 - 20);
-  doc.text(paymentText, rightX + 10, yPosition + 30);
+  doc.text(paymentText, rightX + 10, yPosition + 25);
   
-  doc.text(`Válido até: ${new Date(data.validUntil).toLocaleDateString('pt-BR')}`, rightX + 10, yPosition + 45);
+  doc.text(`Válido até: ${new Date(data.validUntil).toLocaleDateString('pt-BR')}`, rightX + 10, yPosition + 38);
   
-  yPosition += 80;
+  yPosition += 70;
   
   // Observações (se houver)
   if (data.observations && data.observations.trim()) {
-    drawCard(doc, 20, yPosition, pageWidth - 40, 40, white, borderColor);
+    drawCard(doc, 20, yPosition, pageWidth - 40, 35, white, borderColor);
     
     doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('OBSERVAÇÕES', 30, yPosition + 15);
+    doc.setFontSize(11);
+    doc.text('OBSERVAÇÕES', 30, yPosition + 12);
     
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
     
     const splitObservations = doc.splitTextToSize(data.observations, pageWidth - 60);
-    doc.text(splitObservations, 30, yPosition + 28);
+    doc.text(splitObservations, 30, yPosition + 22);
   }
   
   // Salvar o PDF
