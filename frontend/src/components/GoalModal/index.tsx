@@ -27,7 +27,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     type: goal?.type || 'monthly' as Goal['type'],
     category: 'sales' as Goal['category'], // Fixo para vendas
     targetValue: goal?.targetValue || 0,
-    unit: 'quantity' as Goal['unit'], // Fixo para quantidade de propostas
+    unit: 'currency' as Goal['unit'], // Fixo para valor em reais
     priority: goal?.priority || 'medium' as Goal['priority'],
     assignedTo: goal?.assignedTo || '',
     period: {
@@ -458,20 +458,20 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               <h3>Meta e Período</h3>
               <S.FormRow>
                 <div>
-                  <S.Label htmlFor="targetValue">Meta de Propostas Fechadas *</S.Label>
+                  <S.Label htmlFor="targetValue">Meta de Vendas (R$) *</S.Label>
                   <S.Input
                     id="targetValue"
                     type="number"
                     name="targetValue"
                     value={formData.targetValue}
                     onChange={handleInputChange}
-                    placeholder="Ex: 10"
+                    placeholder="Ex: 100000"
                     min="1"
-                    step="1"
+                    step="100"
                     $hasError={!!errors.targetValue}
                     required
                   />
-                  <S.HelpText>Número de propostas que devem ser fechadas no período</S.HelpText>
+                  <S.HelpText>Valor total em reais que deve ser vendido no período</S.HelpText>
                   {errors.targetValue && <S.ErrorMessage>{errors.targetValue}</S.ErrorMessage>}
                 </div>
               </S.FormRow>

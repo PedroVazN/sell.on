@@ -279,7 +279,7 @@ export const Proposals: React.FC = () => {
       // Atualizar metas se a proposta foi fechada
       if (newStatus === 'venda_fechada' && proposal.seller?._id) {
         try {
-          await apiService.updateGoalsOnProposalClose(proposal.seller._id);
+          await apiService.updateGoalsOnProposalClose(proposal.seller._id, proposal.total || 0);
         } catch (error) {
           console.warn('Erro ao atualizar metas:', error);
         }

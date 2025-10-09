@@ -1418,10 +1418,10 @@ class ApiService {
   }
 
   // Atualizar metas automaticamente quando proposta é fechada
-  async updateGoalsOnProposalClose(sellerId: string): Promise<ApiResponse<void>> {
+  async updateGoalsOnProposalClose(sellerId: string, proposalValue: number): Promise<ApiResponse<void>> {
     return this.request<void>(`/goals/update-on-proposal-close`, {
       method: 'POST',
-      body: JSON.stringify({ sellerId }),
+      body: JSON.stringify({ sellerId, proposalValue }),
     });
   }
 

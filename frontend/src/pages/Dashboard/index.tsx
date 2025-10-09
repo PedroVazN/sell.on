@@ -565,7 +565,7 @@ export const Dashboard: React.FC = () => {
                     color: '#9CA3AF'
                   }}>
                     <span>
-                      {goal.currentValue} / {goal.targetValue} propostas
+                      R$ {goal.currentValue.toLocaleString('pt-BR')} / R$ {goal.targetValue.toLocaleString('pt-BR')}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ 
