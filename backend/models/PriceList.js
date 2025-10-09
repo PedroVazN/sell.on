@@ -17,16 +17,30 @@ const priceListSchema = new mongoose.Schema({
       required: true,
       min: 0
     },
-    tresXBoleto: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    tresXCartao: {
-      type: Number,
-      required: true,
-      min: 0
-    }
+    credito: [{
+      parcelas: {
+        type: Number,
+        required: true,
+        min: 1
+      },
+      preco: {
+        type: Number,
+        required: true,
+        min: 0
+      }
+    }],
+    boleto: [{
+      parcelas: {
+        type: Number,
+        required: true,
+        min: 1
+      },
+      preco: {
+        type: Number,
+        required: true,
+        min: 0
+      }
+    }]
   },
   isActive: {
     type: Boolean,

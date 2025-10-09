@@ -232,8 +232,8 @@ router.post('/', auth, async (req, res) => {
           product: productData.productId,
           pricing: {
             aVista: productData.pricing?.aVista || 0,
-            tresXBoleto: productData.pricing?.boleto || 0,
-            tresXCartao: productData.pricing?.cartao || 0
+            credito: productData.pricing?.credito || [],
+            boleto: productData.pricing?.boleto || []
           },
           isActive: productData.isActive !== false,
           validFrom: productData.validFrom ? new Date(productData.validFrom) : new Date(),

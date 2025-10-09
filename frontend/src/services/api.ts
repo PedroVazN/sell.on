@@ -234,14 +234,19 @@ export interface Distributor {
   notes?: string;
 }
 
+export interface PriceOption {
+  parcelas: number;
+  preco: number;
+}
+
 export interface PriceListItem {
   _id: string;
   distributor: Distributor;
   product: Product;
   pricing: {
     aVista: number;
-    tresXBoleto: number;
-    tresXCartao: number;
+    credito: PriceOption[];
+    boleto: PriceOption[];
   };
   isActive: boolean;
   validFrom: string;
@@ -273,8 +278,8 @@ export interface PriceList {
     };
     pricing: {
       aVista: number;
-      cartao: number;
-      boleto: number;
+      credito: PriceOption[];
+      boleto: PriceOption[];
     };
     isActive: boolean;
     validFrom: string;
@@ -933,8 +938,8 @@ class ApiService {
             },
             pricing: {
               aVista: product.pricing.aVista,
-              tresXBoleto: product.pricing.boleto,
-              tresXCartao: product.pricing.cartao
+              credito: product.pricing.credito || [],
+              boleto: product.pricing.boleto || []
             },
             isActive: product.isActive,
             validFrom: product.validFrom,

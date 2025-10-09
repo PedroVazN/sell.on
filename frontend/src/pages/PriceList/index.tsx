@@ -162,8 +162,8 @@ export const PriceList: React.FC = () => {
           await apiService.updatePriceListItem(product._id, {
             pricing: {
               aVista: product.pricing?.aVista || 0,
-              tresXBoleto: product.pricing?.boleto || 0,
-              tresXCartao: product.pricing?.cartao || 0
+              credito: product.pricing?.credito || [],
+              boleto: product.pricing?.boleto || []
             },
             isActive: product.isActive,
             notes: product.notes
@@ -198,8 +198,8 @@ export const PriceList: React.FC = () => {
       },
       pricing: {
         aVista: 0,
-        boleto: 0,
-        cartao: 0
+        credito: [],
+        boleto: []
       },
       isActive: true,
       notes: '',
@@ -242,6 +242,59 @@ export const PriceList: React.FC = () => {
         p._id === productId ? { 
           ...p, 
           pricing: { ...p.pricing, [pricingField]: value }
+        } : p
+      ) || []
+    });
+  };
+
+  const handleAddPriceOption = (productId: string, type: 'credito' | 'boleto') => {
+    if (!editingPriceList) return;
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: editingPriceList.products?.map(p => 
+        p._id === productId ? { 
+          ...p, 
+          pricing: { 
+            ...p.pricing, 
+            [type]: [...(p.pricing?.[type] || []), { parcelas: 1, preco: 0 }]
+          }
+        } : p
+      ) || []
+    });
+  };
+
+  const handleRemovePriceOption = (productId: string, type: 'credito' | 'boleto', optionIndex: number) => {
+    if (!editingPriceList) return;
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: editingPriceList.products?.map(p => 
+        p._id === productId ? { 
+          ...p, 
+          pricing: { 
+            ...p.pricing, 
+            [type]: (p.pricing?.[type] || []).filter((_, idx) => idx !== optionIndex)
+          }
+        } : p
+      ) || []
+    });
+  };
+
+  const handleUpdatePriceOption = (productId: string, type: 'credito' | 'boleto', optionIndex: number, field: 'parcelas' | 'preco', value: any) => {
+    if (!editingPriceList) return;
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: editingPriceList.products?.map(p => 
+        p._id === productId ? { 
+          ...p, 
+          pricing: { 
+            ...p.pricing, 
+            [type]: (p.pricing?.[type] || []).map((option, idx) => 
+              idx === optionIndex ? { ...option, [field]: value } : option
+            )
+          }
         } : p
       ) || []
     });
@@ -646,64 +699,182 @@ export const PriceList: React.FC = () => {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
                       Preços
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                          À Vista
+                    
+                    {/* Preço à Vista */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                        À Vista (R$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={product.pricing?.aVista || 0}
+                        onChange={(e) => handlePricingChange(product._id, 'aVista', parseFloat(e.target.value) || 0)}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    {/* Preços no Crédito */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <label style={{ fontSize: '12px', color: '#6b7280' }}>
+                          Preços no Crédito
                         </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={product.pricing?.aVista || 0}
-                          onChange={(e) => handlePricingChange(product._id, 'aVista', parseFloat(e.target.value) || 0)}
+                        <button
+                          type="button"
+                          onClick={() => handleAddPriceOption(product._id, 'credito')}
                           style={{
-                            width: '100%',
-                            padding: '8px',
-                            border: '1px solid #d1d5db',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
                             borderRadius: '4px',
-                            fontSize: '14px'
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
                           }}
-                        />
+                        >
+                          <Plus size={12} />
+                          Adicionar
+                        </button>
                       </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                          3x Boleto
+                      {(product.pricing?.credito || []).map((option, optionIndex) => (
+                        <div key={optionIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={option.parcelas}
+                            onChange={(e) => handleUpdatePriceOption(product._id, 'credito', optionIndex, 'parcelas', parseInt(e.target.value) || 1)}
+                            placeholder="Parcelas"
+                            style={{
+                              width: '80px',
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <span style={{ fontSize: '12px', color: '#6b7280' }}>x</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={option.preco}
+                            onChange={(e) => handleUpdatePriceOption(product._id, 'credito', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
+                            placeholder="Preço"
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePriceOption(product._id, 'credito', optionIndex)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Preços no Boleto */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <label style={{ fontSize: '12px', color: '#6b7280' }}>
+                          Preços no Boleto
                         </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={product.pricing?.boleto || 0}
-                          onChange={(e) => handlePricingChange(product._id, 'boleto', parseFloat(e.target.value) || 0)}
+                        <button
+                          type="button"
+                          onClick={() => handleAddPriceOption(product._id, 'boleto')}
                           style={{
-                            width: '100%',
-                            padding: '8px',
-                            border: '1px solid #d1d5db',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
                             borderRadius: '4px',
-                            fontSize: '14px'
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
                           }}
-                        />
+                        >
+                          <Plus size={12} />
+                          Adicionar
+                        </button>
                       </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                          3x Cartão
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={product.pricing?.cartao || 0}
-                          onChange={(e) => handlePricingChange(product._id, 'cartao', parseFloat(e.target.value) || 0)}
-                          style={{
-                            width: '100%',
-                            padding: '8px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
+                      {(product.pricing?.boleto || []).map((option, optionIndex) => (
+                        <div key={optionIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={option.parcelas}
+                            onChange={(e) => handleUpdatePriceOption(product._id, 'boleto', optionIndex, 'parcelas', parseInt(e.target.value) || 1)}
+                            placeholder="Parcelas"
+                            style={{
+                              width: '80px',
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <span style={{ fontSize: '12px', color: '#6b7280' }}>x</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={option.preco}
+                            onChange={(e) => handleUpdatePriceOption(product._id, 'boleto', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
+                            placeholder="Preço"
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePriceOption(product._id, 'boleto', optionIndex)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
 

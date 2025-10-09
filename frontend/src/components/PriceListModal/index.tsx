@@ -454,8 +454,12 @@ export const PriceListModal: React.FC<PriceListModalProps> = ({
         product: product.productId,
         pricing: {
           aVista: product.paymentMethods.find(pm => pm.type === 'aVista')?.price || 0,
-          tresXBoleto: product.paymentMethods.find(pm => pm.type === 'boleto')?.price || 0,
-          tresXCartao: product.paymentMethods.find(pm => pm.type === 'cartao')?.price || 0
+          credito: product.paymentMethods
+            .filter(pm => pm.type === 'cartao' && pm.price > 0)
+            .map(pm => ({ parcelas: pm.installments, preco: pm.price })),
+          boleto: product.paymentMethods
+            .filter(pm => pm.type === 'boleto' && pm.price > 0)
+            .map(pm => ({ parcelas: pm.installments, preco: pm.price }))
         },
         isActive: true,
         validFrom: formData.validFrom ? new Date(formData.validFrom).toISOString() : new Date().toISOString(),

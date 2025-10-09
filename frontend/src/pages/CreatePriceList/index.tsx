@@ -28,12 +28,17 @@ import {
   EmptyState
 } from './styles';
 
+interface PriceOption {
+  parcelas: number;
+  preco: number;
+}
+
 interface PriceListProduct {
   productId: string;
   productName: string;
-  price: number;
-  paymentMethod: 'aVista' | 'cartao' | 'boleto';
-  installments?: number;
+  aVista: number;
+  credito: PriceOption[];
+  boleto: PriceOption[];
 }
 
 export const CreatePriceList: React.FC = () => {
@@ -184,11 +189,10 @@ export const CreatePriceList: React.FC = () => {
         products: selectedProducts.map(product => ({
           productId: product.productId,
           pricing: {
-            aVista: product.price,
-            boleto: product.paymentMethod === 'boleto' ? product.price : 0,
-            cartao: product.paymentMethod === 'cartao' ? product.price : 0
-          },
-          installments: product.installments || 1
+            aVista: product.aVista,
+            credito: product.credito,
+            boleto: product.boleto
+          }
         }))
       };
 
@@ -209,9 +213,9 @@ export const CreatePriceList: React.FC = () => {
       setSelectedProducts(prev => [...prev, {
         productId: products[0]._id,
         productName: products[0].name,
-        price: 0,
-        paymentMethod: 'aVista',
-        installments: 1
+        aVista: 0,
+        credito: [],
+        boleto: []
       }]);
     }
   };
@@ -224,6 +228,44 @@ export const CreatePriceList: React.FC = () => {
     setSelectedProducts(prev => prev.map((product, i) => {
       if (i === index) {
         return { ...product, [field]: value };
+      }
+      return product;
+    }));
+  };
+
+  const addPriceOption = (productIndex: number, type: 'credito' | 'boleto') => {
+    setSelectedProducts(prev => prev.map((product, i) => {
+      if (i === productIndex) {
+        return {
+          ...product,
+          [type]: [...product[type], { parcelas: 1, preco: 0 }]
+        };
+      }
+      return product;
+    }));
+  };
+
+  const removePriceOption = (productIndex: number, type: 'credito' | 'boleto', optionIndex: number) => {
+    setSelectedProducts(prev => prev.map((product, i) => {
+      if (i === productIndex) {
+        return {
+          ...product,
+          [type]: product[type].filter((_, idx) => idx !== optionIndex)
+        };
+      }
+      return product;
+    }));
+  };
+
+  const updatePriceOption = (productIndex: number, type: 'credito' | 'boleto', optionIndex: number, field: 'parcelas' | 'preco', value: any) => {
+    setSelectedProducts(prev => prev.map((product, i) => {
+      if (i === productIndex) {
+        return {
+          ...product,
+          [type]: product[type].map((option, idx) => 
+            idx === optionIndex ? { ...option, [field]: value } : option
+          )
+        };
       }
       return product;
     }));
@@ -330,48 +372,169 @@ export const CreatePriceList: React.FC = () => {
                   </ProductHeader>
 
                   <ProductPricing>
+                    {/* Preço à Vista */}
                     <PriceRow>
-                      <PriceLabelInput>Preço:</PriceLabelInput>
+                      <PriceLabelInput>Preço à Vista (R$):</PriceLabelInput>
                       <PriceInput
                         type="number"
                         step="0.01"
-                        value={product.price || 0}
-                        onChange={(e) => updateProduct(index, 'price', parseFloat(e.target.value) || 0)}
+                        min="0"
+                        value={product.aVista || 0}
+                        onChange={(e) => updateProduct(index, 'aVista', parseFloat(e.target.value) || 0)}
                       />
                     </PriceRow>
-                    <PriceRow>
-                      <PriceLabelInput>Forma de Pagamento:</PriceLabelInput>
-                      <Select
-                        value={product.paymentMethod}
-                        onChange={(e) => updateProduct(index, 'paymentMethod', e.target.value)}
-                        style={{
-                          backgroundColor: '#1f2937',
-                          color: '#ffffff'
-                        }}
-                        data-theme="dark"
-                      >
-                        <option value="aVista">À Vista</option>
-                        <option value="cartao">Cartão</option>
-                        <option value="boleto">Boleto</option>
-                      </Select>
-                    </PriceRow>
-                    {(product.paymentMethod === 'cartao' || product.paymentMethod === 'boleto') && (
-                      <PriceRow>
-                        <PriceLabelInput>Parcelas:</PriceLabelInput>
-                        <Select
-                          value={product.installments || 1}
-                          onChange={(e) => updateProduct(index, 'installments', parseInt(e.target.value))}
+
+                    {/* Preços no Crédito */}
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <PriceLabelInput>Preços no Crédito:</PriceLabelInput>
+                        <button
+                          type="button"
+                          onClick={() => addPriceOption(index, 'credito')}
                           style={{
-                            backgroundColor: '#1f2937',
-                            color: '#ffffff'
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
                           }}
                         >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                            <option key={num} value={num}>{num}x</option>
-                          ))}
-                        </Select>
-                      </PriceRow>
-                    )}
+                          <Plus size={12} />
+                          Adicionar
+                        </button>
+                      </div>
+                      {product.credito.map((option, optionIndex) => (
+                        <div key={optionIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={option.parcelas}
+                            onChange={(e) => updatePriceOption(index, 'credito', optionIndex, 'parcelas', parseInt(e.target.value) || 1)}
+                            placeholder="Parcelas"
+                            style={{
+                              width: '80px',
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <span style={{ fontSize: '12px', color: '#6b7280' }}>x</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={option.preco}
+                            onChange={(e) => updatePriceOption(index, 'credito', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
+                            placeholder="Preço"
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePriceOption(index, 'credito', optionIndex)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Preços no Boleto */}
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <PriceLabelInput>Preços no Boleto:</PriceLabelInput>
+                        <button
+                          type="button"
+                          onClick={() => addPriceOption(index, 'boleto')}
+                          style={{
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Plus size={12} />
+                          Adicionar
+                        </button>
+                      </div>
+                      {product.boleto.map((option, optionIndex) => (
+                        <div key={optionIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={option.parcelas}
+                            onChange={(e) => updatePriceOption(index, 'boleto', optionIndex, 'parcelas', parseInt(e.target.value) || 1)}
+                            placeholder="Parcelas"
+                            style={{
+                              width: '80px',
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <span style={{ fontSize: '12px', color: '#6b7280' }}>x</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={option.preco}
+                            onChange={(e) => updatePriceOption(index, 'boleto', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
+                            placeholder="Preço"
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePriceOption(index, 'boleto', optionIndex)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </ProductPricing>
                 </ProductItem>
               ))

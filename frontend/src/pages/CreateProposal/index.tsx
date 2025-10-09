@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { apiService, Product, Distributor, User as UserType } from '../../services/api';
+import { apiService, Product, Distributor, User as UserType, PriceOption } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { 
   Container, 
@@ -833,14 +833,18 @@ export const CreateProposal: React.FC = () => {
                     <PriceLabel>À vista:</PriceLabel>
                     <PriceValue>R$ {(item.pricing?.aVista || 0).toFixed(2)}</PriceValue>
                   </PriceRow>
-                  <PriceRow>
-                    <PriceLabel>3x Boleto:</PriceLabel>
-                    <PriceValue>R$ {(item.pricing?.tresXBoleto || 0).toFixed(2)}</PriceValue>
-                  </PriceRow>
-                  <PriceRow>
-                    <PriceLabel>3x Cartão:</PriceLabel>
-                    <PriceValue>R$ {(item.pricing?.tresXCartao || 0).toFixed(2)}</PriceValue>
-                  </PriceRow>
+                  {item.pricing?.boleto?.map((option: PriceOption, index: number) => (
+                    <PriceRow key={`boleto-${index}`}>
+                      <PriceLabel>{option.parcelas}x Boleto:</PriceLabel>
+                      <PriceValue>R$ {option.preco.toFixed(2)}</PriceValue>
+                    </PriceRow>
+                  ))}
+                  {item.pricing?.credito?.map((option: PriceOption, index: number) => (
+                    <PriceRow key={`credito-${index}`}>
+                      <PriceLabel>{option.parcelas}x Cartão:</PriceLabel>
+                      <PriceValue>R$ {option.preco.toFixed(2)}</PriceValue>
+                    </PriceRow>
+                  ))}
                 </PriceListItem>
               ))
             ) : (
