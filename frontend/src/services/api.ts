@@ -32,6 +32,53 @@ export interface Notice {
   updatedAt: string;
 }
 
+export interface Goal {
+  _id: string;
+  title: string;
+  description?: string;
+  type: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  category: 'sales' | 'revenue' | 'clients' | 'proposals' | 'calls' | 'visits' | 'custom';
+  targetValue: number;
+  currentValue: number;
+  unit: 'quantity' | 'currency' | 'percentage' | 'hours' | 'calls' | 'visits';
+  period: {
+    startDate: string;
+    endDate: string;
+    year: number;
+    month?: number;
+    week?: number;
+    day?: number;
+  };
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  assignedTo: string;
+  createdBy: User;
+  progress: {
+    percentage: number;
+    lastUpdated: string;
+    milestones: Array<{
+      date: string;
+      value: number;
+      description: string;
+    }>;
+  };
+  rewards?: {
+    enabled: boolean;
+    description?: string;
+    points: number;
+  };
+  notifications?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'monthly';
+    threshold: number;
+  };
+  tags?: string[];
+  isRecurring: boolean;
+  parentGoal?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -1361,6 +1408,105 @@ class ApiService {
     return this.request<void>(`/notices/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // ===== METAS =====
+  
+  async getGoals(page: number = 1, limit: number = 50, filters?: {
+    search?: string;
+    type?: string;
+    category?: string;
+    status?: string;
+    assignedTo?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<Goal[]>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters?.search && { search: filters.search }),
+      ...(filters?.type && { type: filters.type }),
+      ...(filters?.category && { category: filters.category }),
+      ...(filters?.status && { status: filters.status }),
+      ...(filters?.assignedTo && { assignedTo: filters.assignedTo }),
+      ...(filters?.startDate && { startDate: filters.startDate }),
+      ...(filters?.endDate && { endDate: filters.endDate }),
+    });
+    
+    return this.request<Goal[]>(`/goals?${params.toString()}`);
+  }
+
+  async getGoal(id: string): Promise<ApiResponse<Goal>> {
+    return this.request<Goal>(`/goals/${id}`);
+  }
+
+  async createGoal(goalData: Partial<Goal>): Promise<ApiResponse<Goal>> {
+    return this.request<Goal>('/goals', {
+      method: 'POST',
+      body: JSON.stringify(goalData),
+    });
+  }
+
+  async updateGoal(id: string, goalData: Partial<Goal>): Promise<ApiResponse<Goal>> {
+    return this.request<Goal>(`/goals/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(goalData),
+    });
+  }
+
+  async deleteGoal(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/goals/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async updateGoalProgress(id: string, value: number, description?: string): Promise<ApiResponse<Goal>> {
+    return this.request<Goal>(`/goals/${id}/progress`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value, description }),
+    });
+  }
+
+  async updateGoalStatus(id: string, status: 'active' | 'completed' | 'paused' | 'cancelled'): Promise<ApiResponse<Goal>> {
+    return this.request<Goal>(`/goals/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getGoalsDashboard(period: 'day' | 'week' | 'month' | 'year' = 'month', userId?: string): Promise<ApiResponse<{
+    stats: {
+      total: number;
+      completed: number;
+      active: number;
+      averageProgress: number;
+      totalTarget: number;
+      totalCurrent: number;
+    };
+    goals: Goal[];
+    byCategory: Record<string, {
+      total: number;
+      completed: number;
+      current: number;
+      target: number;
+    }>;
+    byType: Record<string, {
+      total: number;
+      completed: number;
+      current: number;
+      target: number;
+    }>;
+    period: {
+      start: string;
+      end: string;
+    };
+  }>> {
+    const params = new URLSearchParams({
+      period,
+      ...(userId && { userId }),
+    });
+    
+    return this.request(`/goals/dashboard?${params.toString()}`);
   }
 }
 

@@ -95,6 +95,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { icon: <UsersIcon size={20} />, label: 'Usuários', path: '/users', permission: 'admin' },
         { icon: <UserPlus size={20} />, label: 'Cadastrar Usuário', path: '/users/register', permission: 'admin' },
+        { icon: <Target size={20} />, label: 'Metas', path: '/goals', permission: 'admin' },
       ]
     }] : []),
     {

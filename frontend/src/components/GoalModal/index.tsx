@@ -29,7 +29,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     targetValue: goal?.targetValue || 0,
     unit: goal?.unit || 'quantity' as Goal['unit'],
     priority: goal?.priority || 'medium' as Goal['priority'],
-    assignedTo: goal?.assignedTo?._id || '',
+    assignedTo: goal?.assignedTo || '',
     period: {
       startDate: goal?.period?.startDate || new Date().toISOString().split('T')[0],
       endDate: goal?.period?.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -64,7 +64,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           targetValue: goal.targetValue,
           unit: goal.unit,
           priority: goal.priority,
-          assignedTo: goal.assignedTo._id,
+          assignedTo: goal.assignedTo,
           period: {
             startDate: goal.period.startDate,
             endDate: goal.period.endDate
