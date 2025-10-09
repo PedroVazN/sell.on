@@ -12,6 +12,7 @@ import { Leads } from './pages/Leads';
 import { Sales } from './pages/Sales';
 import { Reports } from './pages/Reports';
 import { Goals } from './pages/Goals';
+import { VendedorDashboard } from './pages/VendedorDashboard';
 import { Users } from './pages/Users';
 import { Profile } from './pages/Profile';
 import { Performance } from './pages/Performance';
@@ -56,6 +57,7 @@ function App() {
           <Route path="sales" element={<ProtectedRoute permission="admin"><Sales /></ProtectedRoute>} />
           <Route path="reports" element={<ProtectedRoute permission="admin"><Reports /></ProtectedRoute>} />
             <Route path="goals" element={<ProtectedRoute permission="admin"><Goals /></ProtectedRoute>} />
+            <Route path="vendedor-dashboard" element={<ProtectedRoute permission="admin"><VendedorDashboard /></ProtectedRoute>} />
             <Route path="users" element={<ProtectedRoute permission="admin"><Users /></ProtectedRoute>} />
             <Route path="users/register" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="users/create-seller" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
