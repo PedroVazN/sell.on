@@ -383,6 +383,85 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+// POST /api/goals/update-on-proposal-close - Atualizar metas quando proposta é fechada
+router.post('/update-on-proposal-close', async (req, res) => {
+  try {
+    const { sellerId, proposalValue } = req.body;
+
+    if (!sellerId || proposalValue === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'sellerId e proposalValue são obrigatórios'
+      });
+    }
+
+    // Buscar metas ativas do vendedor para vendas (category: 'sales')
+    const activeGoals = await Goal.find({
+      assignedTo: sellerId,
+      category: 'sales',
+      status: 'active',
+      unit: 'currency'
+    });
+
+    if (activeGoals.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Nenhuma meta ativa encontrada para o vendedor',
+        updatedGoals: []
+      });
+    }
+
+    const updatedGoals = [];
+
+    // Atualizar cada meta ativa
+    for (const goal of activeGoals) {
+      const newCurrentValue = goal.currentValue + proposalValue;
+      
+      // Adicionar marco de progresso
+      goal.progress.milestones.push({
+        date: new Date().toISOString().split('T')[0],
+        value: newCurrentValue,
+        description: `Proposta fechada: R$ ${proposalValue.toLocaleString('pt-BR')}`
+      });
+
+      // Manter apenas os últimos 10 marcos
+      if (goal.progress.milestones.length > 10) {
+        goal.progress.milestones = goal.progress.milestones.slice(-10);
+      }
+
+      // Atualizar valor atual
+      goal.currentValue = newCurrentValue;
+      
+      // Verificar se a meta foi atingida
+      if (goal.currentValue >= goal.targetValue) {
+        goal.status = 'completed';
+      }
+
+      await goal.save();
+      updatedGoals.push(goal);
+    }
+
+    res.json({
+      success: true,
+      message: `Metas atualizadas com sucesso. Valor adicionado: R$ ${proposalValue.toLocaleString('pt-BR')}`,
+      updatedGoals: updatedGoals.map(goal => ({
+        id: goal._id,
+        title: goal.title,
+        currentValue: goal.currentValue,
+        targetValue: goal.targetValue,
+        percentage: goal.progress.percentage,
+        status: goal.status
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
 // DELETE /api/goals/:id - Excluir meta
 router.delete('/:id', async (req, res) => {
   try {
