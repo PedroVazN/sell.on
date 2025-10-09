@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Plus, Search, Edit, Trash2, Loader2, Download } from 'lucide-react';
+import { DollarSign, Plus, Search, Edit, Trash2, Loader2, Download, Save, X } from 'lucide-react';
 import { apiService, PriceList as PriceListInterface, Distributor, Product } from '../../services/api';
 import { 
   Container, 
@@ -66,6 +66,9 @@ export const PriceList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingItems, setDeletingItems] = useState<string[]>([]);
   const [expandedRows, setExpandedRows] = useState<string | null>(null);
+  const [editingPriceList, setEditingPriceList] = useState<PriceListInterface | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const loadData = async () => {
     try {
@@ -140,6 +143,108 @@ export const PriceList: React.FC = () => {
         setLoading(false);
       }
     }
+  };
+
+  const handleEditPriceList = (priceList: PriceListInterface) => {
+    setEditingPriceList(priceList);
+    setShowEditModal(true);
+  };
+
+  const handleSavePriceList = async () => {
+    if (!editingPriceList) return;
+
+    try {
+      setSaving(true);
+      
+      // Atualizar cada produto da lista
+      for (const product of editingPriceList.products || []) {
+        if (product._id && !product._id.startsWith('temp_')) {
+          await apiService.updatePriceListItem(product._id, {
+            pricing: {
+              aVista: product.pricing?.aVista || 0,
+              tresXBoleto: product.pricing?.boleto || 0,
+              tresXCartao: product.pricing?.cartao || 0
+            },
+            isActive: product.isActive,
+            notes: product.notes
+          });
+        }
+      }
+
+      // Recarregar dados
+      await loadData();
+      setShowEditModal(false);
+      setEditingPriceList(null);
+      alert('Lista de preços atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar lista de preços:', error);
+      alert('Erro ao salvar lista de preços. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddProduct = () => {
+    if (!editingPriceList) return;
+
+    const newProduct = {
+      _id: `temp_${Date.now()}`,
+      product: {
+        _id: '',
+        name: '',
+        description: '',
+        price: 0,
+        category: ''
+      },
+      pricing: {
+        aVista: 0,
+        boleto: 0,
+        cartao: 0
+      },
+      isActive: true,
+      notes: '',
+      validFrom: new Date().toISOString(),
+      validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+    };
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: [...(editingPriceList.products || []), newProduct]
+    });
+  };
+
+  const handleRemoveProduct = (productId: string) => {
+    if (!editingPriceList) return;
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: editingPriceList.products?.filter(p => p._id !== productId) || []
+    });
+  };
+
+  const handleProductChange = (productId: string, field: string, value: any) => {
+    if (!editingPriceList) return;
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: editingPriceList.products?.map(p => 
+        p._id === productId ? { ...p, [field]: value } : p
+      ) || []
+    });
+  };
+
+  const handlePricingChange = (productId: string, pricingField: string, value: number) => {
+    if (!editingPriceList) return;
+
+    setEditingPriceList({
+      ...editingPriceList,
+      products: editingPriceList.products?.map(p => 
+        p._id === productId ? { 
+          ...p, 
+          pricing: { ...p.pricing, [pricingField]: value }
+        } : p
+      ) || []
+    });
   };
 
 
@@ -336,10 +441,26 @@ export const PriceList: React.FC = () => {
                           </SummaryInfo>
                       </TableCell>
                       <TableCell>
-                          <SummaryInfo>{formatDate(priceList.createdAt)}</SummaryInfo>
+                          <SummaryInfo>
+                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                              Criado: {formatDate(priceList.createdAt)}
+                            </div>
+                            {priceList.updatedAt && priceList.updatedAt !== priceList.createdAt && (
+                              <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '500' }}>
+                                Atualizado: {formatDate(priceList.updatedAt)}
+                              </div>
+                            )}
+                          </SummaryInfo>
                       </TableCell>
                       <TableCell>
                           <ActionContainer onClick={(e) => e.stopPropagation()}>
+                            <ActionButton 
+                                onClick={() => handleEditPriceList(priceList)}
+                                title="Editar Lista"
+                                style={{ backgroundColor: '#3b82f6', marginRight: '0.5rem' }}
+                            >
+                              <Edit size={16} />
+                            </ActionButton>
                             <ActionButton 
                                 onClick={() => handleDeletePriceList(priceList)}
                                 title="Excluir Lista"
@@ -382,6 +503,297 @@ export const PriceList: React.FC = () => {
           </TableWrapper>
         )}
       </Content>
+
+      {/* Modal de Edição */}
+      {showEditModal && editingPriceList && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '900px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '16px'
+            }}>
+              <h2 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 'bold' }}>
+                Editar Lista de Preços - {editingPriceList.distributor?.apelido || editingPriceList.distributor?.razaoSocial}
+              </h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                Produtos
+              </h3>
+              
+              {editingPriceList.products?.map((product, index) => (
+                <div key={product._id} style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                  backgroundColor: '#f9fafb'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <h4 style={{ margin: 0, color: '#374151' }}>
+                      {product.product?.name || 'Novo Produto'}
+                    </h4>
+                    <button
+                      onClick={() => handleRemoveProduct(product._id)}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>
+                        Produto
+                      </label>
+                      <select
+                        value={product.product?._id || ''}
+                        onChange={(e) => {
+                          const selectedProduct = products.find(p => p._id === e.target.value);
+                          if (selectedProduct) {
+                            handleProductChange(product._id, 'product', selectedProduct);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          fontSize: '14px'
+                        }}
+                      >
+                        <option value="">Selecione um produto</option>
+                        {products.map(p => (
+                          <option key={p._id} value={p._id}>
+                            {p.name} - R$ {(p.price || 0).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>
+                        Status
+                      </label>
+                      <select
+                        value={product.isActive ? 'true' : 'false'}
+                        onChange={(e) => handleProductChange(product._id, 'isActive', e.target.value === 'true')}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          fontSize: '14px'
+                        }}
+                      >
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+                      Preços
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                          À Vista
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={product.pricing?.aVista || 0}
+                          onChange={(e) => handlePricingChange(product._id, 'aVista', parseFloat(e.target.value) || 0)}
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                          3x Boleto
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={product.pricing?.boleto || 0}
+                          onChange={(e) => handlePricingChange(product._id, 'boleto', parseFloat(e.target.value) || 0)}
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                          3x Cartão
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={product.pricing?.cartao || 0}
+                          onChange={(e) => handlePricingChange(product._id, 'cartao', parseFloat(e.target.value) || 0)}
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>
+                      Observações
+                    </label>
+                    <textarea
+                      value={product.notes || ''}
+                      onChange={(e) => handleProductChange(product._id, 'notes', e.target.value)}
+                      rows={2}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={handleAddProduct}
+                style={{
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Plus size={16} />
+                Adicionar Produto
+              </button>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              marginTop: '20px',
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '16px'
+            }}>
+              <button
+                onClick={() => setShowEditModal(false)}
+                style={{
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSavePriceList}
+                disabled={saving}
+                style={{
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: saving ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {saving ? <Loader2 size={16} /> : <Save size={16} />}
+                {saving ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </Container>
   );
