@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Product, Distributor, User as UserType } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { 
@@ -77,6 +78,7 @@ interface ProposalFormData {
 
 export const CreateProposal: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -86,7 +88,6 @@ export const CreateProposal: React.FC = () => {
   // Dados para seleção
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
-  const [sellers, setSellers] = useState<UserType[]>([]);
   
   // Dados do formulário
   const [formData, setFormData] = useState<ProposalFormData>({
@@ -99,9 +100,9 @@ export const CreateProposal: React.FC = () => {
       razaoSocial: ''
     },
     seller: {
-      _id: '',
-      name: '',
-      email: ''
+      _id: user?._id || '',
+      name: user?.name || '',
+      email: user?.email || ''
     },
     distributor: {
       _id: '',
@@ -159,15 +160,13 @@ export const CreateProposal: React.FC = () => {
       setLoading(true);
       console.log('=== CARREGANDO DADOS ===');
       
-      const [productsResponse, distributorsResponse, sellersResponse] = await Promise.all([
+      const [productsResponse, distributorsResponse] = await Promise.all([
         apiService.getProducts(),
-        apiService.getDistributors(),
-        apiService.getUsers()
+        apiService.getDistributors()
       ]);
 
       console.log('Products response:', productsResponse);
       console.log('Distributors response:', distributorsResponse);
-      console.log('Sellers response:', sellersResponse);
 
       if (productsResponse.success) {
         setProducts(productsResponse.data || []);
@@ -178,15 +177,6 @@ export const CreateProposal: React.FC = () => {
       if (distributorsResponse.success || distributorsResponse.data) {
         setDistributors(distributorsResponse.data || []);
         console.log('Distributors loaded:', distributorsResponse.data?.length || 0);
-      }
-      
-      if (sellersResponse.success) {
-        setSellers(sellersResponse.data || []);
-        console.log('Sellers loaded:', sellersResponse.data?.length || 0);
-        console.log('Sellers data:', sellersResponse.data);
-        console.log('Sellers array after setState:', sellersResponse.data);
-      } else {
-        console.log('Sellers response error:', sellersResponse);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -228,25 +218,6 @@ export const CreateProposal: React.FC = () => {
     }));
   };
 
-  const handleSellerChange = (sellerId: string) => {
-    console.log('🔍 Selecionando vendedor:', sellerId);
-    console.log('🔍 Vendedores disponíveis:', sellers);
-    const seller = sellers.find(s => s._id === sellerId);
-    console.log('🔍 Vendedor encontrado:', seller);
-    if (seller) {
-      setFormData(prev => ({
-        ...prev,
-        seller: {
-          _id: seller._id,
-          name: seller.name,
-          email: seller.email
-        }
-      }));
-      console.log('✅ Vendedor selecionado:', seller.name);
-    } else {
-      console.log('❌ Vendedor não encontrado');
-    }
-  };
 
   const handleDistributorChange = async (distributorId: string) => {
     const distributor = distributors.find(d => d._id === distributorId);
@@ -363,10 +334,6 @@ export const CreateProposal: React.FC = () => {
         return;
       }
       
-      if (!formData.seller._id) {
-        alert('Vendedor é obrigatório');
-        return;
-      }
       
       if (!formData.distributor._id) {
         alert('Distribuidor é obrigatório');
@@ -436,7 +403,7 @@ export const CreateProposal: React.FC = () => {
       setGeneratingPdf(true);
       
       // Validar se há dados suficientes para gerar PDF
-      if (!formData.client.name || !formData.seller.name || !formData.distributor._id) {
+      if (!formData.client.name || !formData.distributor._id) {
         alert('Preencha os dados básicos antes de gerar o PDF');
         return;
       }
@@ -495,7 +462,6 @@ export const CreateProposal: React.FC = () => {
     console.log('=== PREENCHENDO DADOS DE TESTE ===');
     console.log('Distribuidores disponíveis:', distributors.length);
     console.log('Produtos disponíveis:', products.length);
-    console.log('Vendedores disponíveis:', sellers.length);
 
     // Dados de teste para o cliente
     setFormData(prev => ({
@@ -510,13 +476,7 @@ export const CreateProposal: React.FC = () => {
       }
     }));
 
-    // Selecionar primeiro vendedor se existir
-    if (sellers.length > 0) {
-      console.log('Selecionando vendedor:', sellers[0].name);
-      handleSellerChange(sellers[0]._id);
-    } else {
-      console.log('Nenhum vendedor disponível');
-    }
+    // Vendedor já está definido como usuário logado
 
     // Selecionar primeiro distribuidor se existir
     if (distributors.length > 0) {
@@ -659,28 +619,10 @@ export const CreateProposal: React.FC = () => {
           </FormRow>
         </FormSection>
 
-        {/* Vendedor e Distribuidor */}
+        {/* Distribuidor */}
         <FormSection>
-          <SectionTitle>Vendedor e Distribuidor</SectionTitle>
+          <SectionTitle>Distribuidor</SectionTitle>
           <FormRow>
-            <FormGroup>
-              <Label>Vendedor *</Label>
-              <Select
-                value={formData.seller._id}
-                onChange={(e) => handleSellerChange(e.target.value)}
-              >
-                <option value="">Selecione um vendedor</option>
-                {sellers.length > 0 ? (
-                  sellers.map(seller => (
-                    <option key={seller._id} value={seller._id}>
-                      {seller.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>Carregando vendedores...</option>
-                )}
-              </Select>
-            </FormGroup>
             <FormGroup>
               <Label>Distribuidor *</Label>
               <Select

@@ -160,12 +160,59 @@ export const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [progressValue, setProgressValue] = useState('');
+  const [progressDescription, setProgressDescription] = useState('');
   const [lossReasons, setLossReasons] = useState<{
     reason: string;
     label: string;
     count: number;
     totalValue: number;
   }[]>([]);
+
+  const handleUpdateProgress = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setProgressValue(goal.currentValue.toString());
+    setProgressDescription('');
+    setShowProgressModal(true);
+  };
+
+  const handleSaveProgress = async () => {
+    if (!selectedGoal || !progressValue) return;
+
+    try {
+      const value = parseFloat(progressValue);
+      if (isNaN(value) || value < 0) {
+        alert('Valor inválido');
+        return;
+      }
+
+      const response = await apiService.updateGoalProgress(
+        selectedGoal._id, 
+        value, 
+        progressDescription || undefined
+      );
+
+      if (response.success) {
+        // Atualizar a meta na lista local
+        setGoals(prev => prev.map(goal => 
+          goal._id === selectedGoal._id 
+            ? { ...goal, currentValue: value, progress: response.data.progress }
+            : goal
+        ));
+        setShowProgressModal(false);
+        setSelectedGoal(null);
+        setProgressValue('');
+        setProgressDescription('');
+      } else {
+        alert('Erro ao atualizar progresso da meta');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar progresso:', error);
+      alert('Erro ao atualizar progresso da meta');
+    }
+  };
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -628,15 +675,34 @@ export const Dashboard: React.FC = () => {
                     <span>
                       {goal.currentValue} / {goal.targetValue} {goal.unit === 'currency' ? 'R$' : goal.unit}
                     </span>
-                    <span style={{ 
-                      color: goal.status === 'completed' ? '#10B981' : 
-                             goal.status === 'active' ? '#3B82F6' : '#6B7280',
-                      fontWeight: '600'
-                    }}>
-                      {goal.status === 'completed' ? 'Concluída' : 
-                       goal.status === 'active' ? 'Ativa' : 
-                       goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ 
+                        color: goal.status === 'completed' ? '#10B981' : 
+                               goal.status === 'active' ? '#3B82F6' : '#6B7280',
+                        fontWeight: '600'
+                      }}>
+                        {goal.status === 'completed' ? 'Concluída' : 
+                         goal.status === 'active' ? 'Ativa' : 
+                         goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
+                      </span>
+                      {goal.status === 'active' && (
+                        <button
+                          onClick={() => handleUpdateProgress(goal)}
+                          style={{
+                            background: '#3B82F6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Atualizar
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </GoalItem>
               ))}
@@ -941,6 +1007,133 @@ export const Dashboard: React.FC = () => {
             </div>
           </ChartCard>
         </ChartsGrid>
+      )}
+
+      {/* Modal de Atualização de Progresso */}
+      {showProgressModal && selectedGoal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#1F2937',
+            borderRadius: '8px',
+            padding: '2rem',
+            width: '90%',
+            maxWidth: '500px',
+            border: '1px solid #374151'
+          }}>
+            <h3 style={{ color: '#FFFFFF', marginBottom: '1rem', fontSize: '1.25rem' }}>
+              Atualizar Progresso da Meta
+            </h3>
+            <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>
+              <strong>{selectedGoal.title}</strong>
+            </p>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#FFFFFF', 
+                marginBottom: '0.5rem',
+                fontWeight: '500'
+              }}>
+                Valor Atual ({selectedGoal.unit === 'currency' ? 'R$' : selectedGoal.unit})
+              </label>
+              <input
+                type="number"
+                value={progressValue}
+                onChange={(e) => setProgressValue(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  backgroundColor: '#374151',
+                  border: '1px solid #4B5563',
+                  borderRadius: '4px',
+                  color: '#FFFFFF',
+                  fontSize: '1rem'
+                }}
+                placeholder={`Meta: ${selectedGoal.targetValue}`}
+                min="0"
+                step={selectedGoal.unit === 'currency' ? '0.01' : '1'}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ 
+                display: 'block', 
+                color: '#FFFFFF', 
+                marginBottom: '0.5rem',
+                fontWeight: '500'
+              }}>
+                Descrição (opcional)
+              </label>
+              <textarea
+                value={progressDescription}
+                onChange={(e) => setProgressDescription(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  backgroundColor: '#374151',
+                  border: '1px solid #4B5563',
+                  borderRadius: '4px',
+                  color: '#FFFFFF',
+                  fontSize: '1rem',
+                  minHeight: '80px',
+                  resize: 'vertical'
+                }}
+                placeholder="Descreva o que foi realizado..."
+              />
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              gap: '1rem', 
+              justifyContent: 'flex-end' 
+            }}>
+              <button
+                onClick={() => {
+                  setShowProgressModal(false);
+                  setSelectedGoal(null);
+                  setProgressValue('');
+                  setProgressDescription('');
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#6B7280',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveProgress}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#3B82F6',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                Salvar Progresso
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </Container>
   );
