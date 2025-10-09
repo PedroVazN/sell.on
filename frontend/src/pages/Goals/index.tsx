@@ -66,17 +66,12 @@ export const Goals: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.getGoals(
-        1, 
-        100, 
-        searchTerm,
-        filters.type || undefined,
-        filters.category || undefined,
-        filters.status || undefined,
-        undefined,
-        undefined,
-        undefined
-      );
+      const response = await apiService.getGoals(1, 100, {
+        search: searchTerm,
+        type: filters.type,
+        category: filters.category,
+        status: filters.status
+      });
       
       if (response.success) {
         setGoals(response.data);

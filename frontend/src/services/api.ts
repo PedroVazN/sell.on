@@ -393,7 +393,7 @@ export interface Goal {
   };
   status: 'active' | 'completed' | 'paused' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'critical';
-  assignedTo: User;
+  assignedTo: string;
   createdBy: User;
   progress: {
     percentage: number;
@@ -1187,63 +1187,6 @@ class ApiService {
     });
   }
 
-  // Metas
-  async getGoals(page = 1, limit = 50, search = '', type?: string, category?: string, status?: string, assignedTo?: string, startDate?: string, endDate?: string): Promise<ApiResponse<Goal[]>> {
-    let url = `/goals?page=${page}&limit=${limit}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    if (type) url += `&type=${type}`;
-    if (category) url += `&category=${category}`;
-    if (status) url += `&status=${status}`;
-    if (assignedTo) url += `&assignedTo=${assignedTo}`;
-    if (startDate) url += `&startDate=${startDate}`;
-    if (endDate) url += `&endDate=${endDate}`;
-    
-    return this.request<Goal[]>(url);
-  }
-
-  async getGoal(id: string): Promise<ApiResponse<Goal>> {
-    return this.request<Goal>(`/goals/${id}`);
-  }
-
-  async createGoal(goalData: CreateGoalData): Promise<ApiResponse<Goal>> {
-    return this.request<Goal>('/goals', {
-      method: 'POST',
-      body: JSON.stringify(goalData),
-    });
-  }
-
-  async updateGoal(id: string, goalData: UpdateGoalData): Promise<ApiResponse<Goal>> {
-    return this.request<Goal>(`/goals/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(goalData),
-    });
-  }
-
-  async deleteGoal(id: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/goals/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async getGoalsDashboard(period: 'day' | 'week' | 'month' | 'year' = 'month', userId?: string): Promise<ApiResponse<any>> {
-    let url = `/goals/dashboard?period=${period}`;
-    if (userId) url += `&userId=${userId}`;
-    return this.request<any>(url);
-  }
-
-  async updateGoalProgress(id: string, value: number, description?: string): Promise<ApiResponse<Goal>> {
-    return this.request<Goal>(`/goals/${id}/progress`, {
-      method: 'PATCH',
-      body: JSON.stringify({ value, description }),
-    });
-  }
-
-  async updateGoalStatus(id: string, status: Goal['status']): Promise<ApiResponse<Goal>> {
-    return this.request<Goal>(`/goals/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-  }
 
   // ===== NOTIFICAÇÕES =====
   async getNotifications(page = 1, limit = 20, unreadOnly = false, type?: string): Promise<ApiResponse<Notification[]>> {
