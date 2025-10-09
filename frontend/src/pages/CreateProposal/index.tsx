@@ -161,7 +161,7 @@ export const CreateProposal: React.FC = () => {
       console.log('=== CARREGANDO DADOS ===');
       
       const [productsResponse, distributorsResponse] = await Promise.all([
-        apiService.getProducts(),
+        apiService.getProducts(1, 1000),
         apiService.getDistributors()
       ]);
 

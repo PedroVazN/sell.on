@@ -76,7 +76,7 @@ export const PriceList: React.FC = () => {
       
       const [distributorsResponse, productsResponse, priceListsResponse] = await Promise.all([
         apiService.getDistributors(1, 100),
-        apiService.getProducts(1, 100),
+        apiService.getProducts(1, 1000),
         apiService.getPriceLists(1, 100)
       ]);
       

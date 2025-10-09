@@ -200,7 +200,7 @@ export const EditProposal: React.FC = () => {
       
       // Carregar dados para seleção
       const [productsResponse, distributorsResponse, sellersResponse] = await Promise.all([
-        apiService.getProducts(),
+        apiService.getProducts(1, 1000),
         apiService.getDistributors(),
         apiService.getUsers()
       ]);
