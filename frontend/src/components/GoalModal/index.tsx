@@ -25,9 +25,9 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     title: goal?.title || '',
     description: goal?.description || '',
     type: goal?.type || 'monthly' as Goal['type'],
-    category: goal?.category || 'sales' as Goal['category'],
+    category: 'sales' as Goal['category'], // Fixo para vendas
     targetValue: goal?.targetValue || 0,
-    unit: goal?.unit || 'quantity' as Goal['unit'],
+    unit: 'quantity' as Goal['unit'], // Fixo para quantidade de propostas
     priority: goal?.priority || 'medium' as Goal['priority'],
     assignedTo: goal?.assignedTo || '',
     period: {
@@ -408,7 +408,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               
               <S.FormRow>
                 <div>
-                  <S.Label htmlFor="type">Tipo *</S.Label>
+                  <S.Label htmlFor="type">Período *</S.Label>
                   <S.Select
                     id="type"
                     name="type"
@@ -424,21 +424,18 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                   </S.Select>
                 </div>
                 <div>
-                  <S.Label htmlFor="category">Categoria *</S.Label>
+                  <S.Label htmlFor="priority">Prioridade *</S.Label>
                   <S.Select
-                    id="category"
-                    name="category"
-                    value={formData.category}
+                    id="priority"
+                    name="priority"
+                    value={formData.priority}
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="sales">Vendas</option>
-                    <option value="revenue">Receita</option>
-                    <option value="clients">Clientes</option>
-                    <option value="proposals">Propostas</option>
-                    <option value="calls">Ligações</option>
-                    <option value="visits">Visitas</option>
-                    <option value="custom">Personalizada</option>
+                    <option value="low">Baixa</option>
+                    <option value="medium">Média</option>
+                    <option value="high">Alta</option>
+                    <option value="critical">Crítica</option>
                   </S.Select>
                 </div>
               </S.FormRow>
@@ -461,37 +458,21 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               <h3>Meta e Período</h3>
               <S.FormRow>
                 <div>
-                  <S.Label htmlFor="targetValue">Valor da Meta *</S.Label>
+                  <S.Label htmlFor="targetValue">Meta de Propostas Fechadas *</S.Label>
                   <S.Input
                     id="targetValue"
                     type="number"
                     name="targetValue"
                     value={formData.targetValue}
                     onChange={handleInputChange}
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
+                    placeholder="Ex: 10"
+                    min="1"
+                    step="1"
                     $hasError={!!errors.targetValue}
                     required
                   />
+                  <S.HelpText>Número de propostas que devem ser fechadas no período</S.HelpText>
                   {errors.targetValue && <S.ErrorMessage>{errors.targetValue}</S.ErrorMessage>}
-                </div>
-                <div>
-                  <S.Label htmlFor="unit">Unidade *</S.Label>
-                  <S.Select
-                    id="unit"
-                    name="unit"
-                    value={formData.unit}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="quantity">Quantidade</option>
-                    <option value="currency">Moeda (R$)</option>
-                    <option value="percentage">Porcentagem (%)</option>
-                    <option value="hours">Horas</option>
-                    <option value="calls">Ligações</option>
-                    <option value="visits">Visitas</option>
-                  </S.Select>
                 </div>
               </S.FormRow>
               
@@ -526,20 +507,6 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
               <S.FormRow>
                 <div>
-                  <S.Label htmlFor="priority">Prioridade</S.Label>
-                  <S.Select
-                    id="priority"
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleInputChange}
-                  >
-                    <option value="low">Baixa</option>
-                    <option value="medium">Média</option>
-                    <option value="high">Alta</option>
-                    <option value="critical">Crítica</option>
-                  </S.Select>
-                </div>
-                <div>
                   <S.CheckboxContainer>
                     <input
                       type="checkbox"
@@ -554,129 +521,6 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               </S.FormRow>
             </S.FormGroup>
 
-            {/* Tags */}
-            <S.FormGroup>
-              <h3>Tags</h3>
-              <S.TagContainer>
-                <S.TagInput>
-                  <S.Input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Adicionar tag..."
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                  />
-                  <S.TagButton type="button" onClick={handleAddTag}>
-                    Adicionar
-                  </S.TagButton>
-                </S.TagInput>
-                {formData.tags.length > 0 && (
-                  <S.TagList>
-                    {formData.tags.map((tag, index) => (
-                      <S.TagItem key={index}>
-                        {tag}
-                        <S.TagRemove onClick={() => handleRemoveTag(tag)}>
-                          ×
-                        </S.TagRemove>
-                      </S.TagItem>
-                    ))}
-                  </S.TagList>
-                )}
-              </S.TagContainer>
-            </S.FormGroup>
-
-            {/* Recompensas */}
-            <S.FormGroup>
-              <h3>Recompensas</h3>
-              <S.RewardSettings>
-                <S.CheckboxContainer>
-                  <input
-                    type="checkbox"
-                    id="rewards.enabled"
-                    name="rewards.enabled"
-                    checked={formData.rewards.enabled}
-                    onChange={handleInputChange}
-                  />
-                  <S.Label htmlFor="rewards.enabled">Ativar recompensas</S.Label>
-                </S.CheckboxContainer>
-                
-                {formData.rewards.enabled && (
-                  <S.FormRow>
-                    <div>
-                      <S.Label htmlFor="rewards.description">Descrição da recompensa</S.Label>
-                      <S.Input
-                        id="rewards.description"
-                        type="text"
-                        name="rewards.description"
-                        value={formData.rewards.description}
-                        onChange={handleInputChange}
-                        placeholder="Ex: Bônus de R$ 500"
-                      />
-                    </div>
-                    <div>
-                      <S.Label htmlFor="rewards.points">Pontos</S.Label>
-                      <S.Input
-                        id="rewards.points"
-                        type="number"
-                        name="rewards.points"
-                        value={formData.rewards.points}
-                        onChange={handleInputChange}
-                        placeholder="0"
-                        min="0"
-                      />
-                    </div>
-                  </S.FormRow>
-                )}
-              </S.RewardSettings>
-            </S.FormGroup>
-
-            {/* Notificações */}
-            <S.FormGroup>
-              <h3>Notificações</h3>
-              <S.NotificationSettings>
-                <S.CheckboxContainer>
-                  <input
-                    type="checkbox"
-                    id="notifications.enabled"
-                    name="notifications.enabled"
-                    checked={formData.notifications.enabled}
-                    onChange={handleInputChange}
-                  />
-                  <S.Label htmlFor="notifications.enabled">Ativar notificações</S.Label>
-                </S.CheckboxContainer>
-                
-                {formData.notifications.enabled && (
-                  <S.FormRow>
-                    <div>
-                      <S.Label htmlFor="notifications.frequency">Frequência</S.Label>
-                      <S.Select
-                        id="notifications.frequency"
-                        name="notifications.frequency"
-                        value={formData.notifications.frequency}
-                        onChange={handleInputChange}
-                      >
-                        <option value="daily">Diária</option>
-                        <option value="weekly">Semanal</option>
-                        <option value="monthly">Mensal</option>
-                      </S.Select>
-                    </div>
-                    <div>
-                      <S.Label htmlFor="notifications.threshold">Limiar de alerta (%)</S.Label>
-                      <S.Input
-                        id="notifications.threshold"
-                        type="number"
-                        name="notifications.threshold"
-                        value={formData.notifications.threshold}
-                        onChange={handleInputChange}
-                        placeholder="80"
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                  </S.FormRow>
-                )}
-              </S.NotificationSettings>
-            </S.FormGroup>
 
             <S.ModalFooter>
               <S.Button type="button" variant="secondary" onClick={onClose}>

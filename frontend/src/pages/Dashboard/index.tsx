@@ -523,6 +523,86 @@ export const Dashboard: React.FC = () => {
         </Subtitle>
       </Header>
 
+      {/* Seção de Metas - Apenas para vendedores - MOVIDA PARA O TOPO */}
+      {user?.role === 'vendedor' && goals.length > 0 && (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>Suas Metas Ativas</ChartTitle>
+            <ChartSubtitle>Acompanhe o progresso das suas metas</ChartSubtitle>
+            <GoalsList>
+              {goals.slice(0, 3).map((goal) => (
+                <GoalItem key={goal._id}>
+                  <GoalName>{goal.title}</GoalName>
+                  <GoalProgress>
+                    <GoalBar 
+                      $color={goal.progress.percentage >= 100 ? '#10B981' : 
+                             goal.progress.percentage >= 80 ? '#3B82F6' : 
+                             goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444'}
+                      $width={Math.min(100, goal.progress.percentage)}
+                    >
+                      <div 
+                        style={{
+                          width: `${Math.min(100, goal.progress.percentage)}%`,
+                          height: '100%',
+                          backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
+                                         goal.progress.percentage >= 80 ? '#3B82F6' : 
+                                         goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
+                          borderRadius: '4px',
+                          transition: 'width 0.3s ease'
+                        }}
+                      />
+                    </GoalBar>
+                    <GoalPercentage>
+                      {goal.progress.percentage}%
+                    </GoalPercentage>
+                  </GoalProgress>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginTop: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#9CA3AF'
+                  }}>
+                    <span>
+                      {goal.currentValue} / {goal.targetValue} propostas
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ 
+                        color: goal.status === 'completed' ? '#10B981' : 
+                               goal.status === 'active' ? '#3B82F6' : '#6B7280',
+                        fontWeight: '600'
+                      }}>
+                        {goal.status === 'completed' ? 'Concluída' : 
+                         goal.status === 'active' ? 'Ativa' : 
+                         goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
+                      </span>
+                      {goal.status === 'active' && (
+                        <button
+                          onClick={() => handleUpdateProgress(goal)}
+                          style={{
+                            background: '#3B82F6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Atualizar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </GoalItem>
+              ))}
+            </GoalsList>
+          </ChartCard>
+        </ChartsGrid>
+      )}
+
       <MetricsGrid>
         {user?.role === 'vendedor' ? (
           <>
@@ -631,85 +711,6 @@ export const Dashboard: React.FC = () => {
         )}
       </MetricsGrid>
 
-      {/* Seção de Metas - Apenas para vendedores */}
-      {user?.role === 'vendedor' && goals.length > 0 && (
-        <ChartsGrid>
-          <ChartCard>
-            <ChartTitle>Suas Metas Ativas</ChartTitle>
-            <ChartSubtitle>Acompanhe o progresso das suas metas</ChartSubtitle>
-            <GoalsList>
-              {goals.slice(0, 3).map((goal) => (
-                <GoalItem key={goal._id}>
-                  <GoalName>{goal.title}</GoalName>
-                  <GoalProgress>
-                    <GoalBar 
-                      $color={goal.progress.percentage >= 100 ? '#10B981' : 
-                             goal.progress.percentage >= 80 ? '#3B82F6' : 
-                             goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444'}
-                      $width={Math.min(100, goal.progress.percentage)}
-                    >
-                      <div 
-                        style={{
-                          width: `${Math.min(100, goal.progress.percentage)}%`,
-                          height: '100%',
-                          backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
-                                         goal.progress.percentage >= 80 ? '#3B82F6' : 
-                                         goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
-                          borderRadius: '4px',
-                          transition: 'width 0.3s ease'
-                        }}
-                      />
-                    </GoalBar>
-                    <GoalPercentage>
-                      {goal.progress.percentage}%
-                    </GoalPercentage>
-                  </GoalProgress>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginTop: '0.5rem',
-                    fontSize: '0.875rem',
-                    color: '#9CA3AF'
-                  }}>
-                    <span>
-                      {goal.currentValue} / {goal.targetValue} {goal.unit === 'currency' ? 'R$' : goal.unit}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ 
-                        color: goal.status === 'completed' ? '#10B981' : 
-                               goal.status === 'active' ? '#3B82F6' : '#6B7280',
-                        fontWeight: '600'
-                      }}>
-                        {goal.status === 'completed' ? 'Concluída' : 
-                         goal.status === 'active' ? 'Ativa' : 
-                         goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
-                      </span>
-                      {goal.status === 'active' && (
-                        <button
-                          onClick={() => handleUpdateProgress(goal)}
-                          style={{
-                            background: '#3B82F6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            fontWeight: '500'
-                          }}
-                        >
-                          Atualizar
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </GoalItem>
-              ))}
-            </GoalsList>
-          </ChartCard>
-        </ChartsGrid>
-      )}
 
       <ChartsGrid>
         <ChartCard>

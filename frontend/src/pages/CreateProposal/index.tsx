@@ -385,6 +385,15 @@ export const CreateProposal: React.FC = () => {
       const response = await apiService.createProposal(proposalData);
       
       if (response.success) {
+        // Atualizar metas se a proposta foi fechada
+        if (proposalData.status === 'venda_fechada' && formData.seller._id) {
+          try {
+            await apiService.updateGoalsOnProposalClose(formData.seller._id);
+          } catch (error) {
+            console.warn('Erro ao atualizar metas:', error);
+          }
+        }
+        
         alert('Proposta criada com sucesso!');
         navigate('/proposals');
       } else {
