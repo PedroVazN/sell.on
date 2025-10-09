@@ -209,12 +209,68 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     setSuccess(null);
 
     try {
-      const selectedUser = users.find(u => u._id === formData.assignedTo);
+      let selectedUser = null;
       
-      if (!selectedUser) {
-        setError('Usuário selecionado não encontrado');
+      if (formData.assignedTo === 'all') {
+        // Para "Todos os usuários", vamos criar uma meta para cada vendedor
+        const vendedores = users.filter(u => u.role === 'vendedor');
+        
+        if (vendedores.length === 0) {
+          setError('Nenhum vendedor encontrado para atribuir a meta');
+          setLoading(false);
+          return;
+        }
+        
+        // Criar meta para cada vendedor
+        const promises = vendedores.map(vendedor => {
+          const goalData = {
+            title: formData.title,
+            description: formData.description,
+            type: formData.type,
+            category: formData.category,
+            targetValue: formData.targetValue,
+            currentValue: goal?.currentValue || 0,
+            unit: formData.unit,
+            priority: formData.priority,
+            status: goal?.status || 'active' as Goal['status'],
+            assignedTo: vendedor._id,
+            period: {
+              ...formData.period,
+              year: new Date(formData.period.startDate).getFullYear(),
+              month: new Date(formData.period.startDate).getMonth() + 1,
+              week: Math.ceil((new Date(formData.period.startDate).getTime() - new Date(new Date(formData.period.startDate).getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)),
+              day: new Date(formData.period.startDate).getDate()
+            },
+            tags: formData.tags,
+            isRecurring: formData.isRecurring,
+            rewards: formData.rewards,
+            notifications: formData.notifications
+          };
+          
+          return goal ? apiService.updateGoal(goal._id, goalData) : apiService.createGoal(goalData);
+        });
+        
+        const responses = await Promise.all(promises);
+        const failedResponses = responses.filter(r => !r.success);
+        
+        if (failedResponses.length > 0) {
+          setError(`Erro ao criar metas para ${failedResponses.length} vendedores`);
+          setLoading(false);
+          return;
+        }
+        
+        setSuccess(`Meta criada com sucesso para ${vendedores.length} vendedores!`);
+        onSave();
         setLoading(false);
         return;
+      } else {
+        selectedUser = users.find(u => u._id === formData.assignedTo);
+        
+        if (!selectedUser) {
+          setError('Usuário selecionado não encontrado');
+          setLoading(false);
+          return;
+        }
       }
       
       const baseGoalData = {
@@ -339,6 +395,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                     required
                   >
                     <option value="">Selecione um usuário</option>
+                    <option value="all">Todos os usuários</option>
                     {users.map(user => (
                       <option key={user._id} value={user._id}>
                         {user.name} ({user.role})
