@@ -437,3 +437,11 @@ export const SuccessMessage = styled.div`
     font-weight: bold;
   }
 `;
+
+export const HelpText = styled.span`
+  color: ${theme.colors.text.muted};
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+  display: block;
+`;
