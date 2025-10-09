@@ -75,7 +75,13 @@ const connectDB = async () => {
 };
 
 // Conectar ao MongoDB
-connectDB();
+(async () => {
+  try {
+    await connectDB();
+  } catch (error) {
+    console.error('❌ Erro ao conectar com MongoDB:', error);
+  }
+})();
 
 // Middleware para garantir conexão com MongoDB em cada requisição
 app.use(async (req, res, next) => {

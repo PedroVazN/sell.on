@@ -144,17 +144,27 @@ export const VendedorDashboard: React.FC = () => {
 
       console.log('🔍 Carregando dashboard do vendedor:', vendedorId);
       
-      const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse, proposalsResponse, goalsResponse] = await Promise.all([
+      // Carregar dados básicos primeiro
+      const [usersResponse, productsResponse, proposalsResponse] = await Promise.all([
         apiService.getUsers(1, 1),
         apiService.getProducts(1, 1),
+        apiService.getProposals(1, 100)
+      ]);
+
+      // Carregar dados específicos do vendedor
+      const [vendedorProposalsResponse, lossReasonsResponse, goalsResponse] = await Promise.allSettled([
         apiService.getVendedorProposals(vendedorId, 1, 100),
         apiService.getLossReasonsStats(),
-        apiService.getProposals(1, 100),
         apiService.getGoals(1, 50, { assignedTo: vendedorId, status: 'active' })
       ]);
 
-      console.log('📊 Resposta completa do vendedor:', vendedorProposalsResponse);
-      const vendedorStats = vendedorProposalsResponse.stats;
+      // Processar resultados do Promise.allSettled
+      const vendedorProposalsData = vendedorProposalsResponse.status === 'fulfilled' ? vendedorProposalsResponse.value : { success: false, data: [], stats: {} };
+      const lossReasonsData = lossReasonsResponse.status === 'fulfilled' ? lossReasonsResponse.value : { success: false, data: [] };
+      const goalsData = goalsResponse.status === 'fulfilled' ? goalsResponse.value : { success: false, data: [] };
+
+      console.log('📊 Resposta completa do vendedor:', vendedorProposalsData);
+      const vendedorStats = vendedorProposalsData.stats || {};
       console.log('📊 Stats do vendedor:', vendedorStats);
 
       // Processar dados mensais das propostas do vendedor
@@ -268,8 +278,8 @@ export const VendedorDashboard: React.FC = () => {
       
       console.log('📊 Dashboard data para vendedor:', dashboardData);
       setData(dashboardData);
-      setLossReasons(lossReasonsResponse.data || []);
-      setGoals(goalsResponse.data || []);
+      setLossReasons(lossReasonsData.data || []);
+      setGoals(goalsData.data || []);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
       setError('Erro ao carregar dados do dashboard');

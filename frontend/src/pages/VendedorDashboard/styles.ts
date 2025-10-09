@@ -2,11 +2,12 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
   padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
   min-height: 100vh;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
   color: #ffffff;
+  margin-left: 0;
+  margin-right: 0;
 `;
 
 export const Header = styled.div`
@@ -77,9 +78,10 @@ export const SelectorSelect = styled.select`
 
 export const MetricsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
 `;
 
 export const MetricCard = styled.div`
@@ -134,9 +136,14 @@ export const MetricChange = styled.div`
 
 export const ChartsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -231,9 +238,10 @@ export const GoalPercentage = styled.span`
 
 export const PerformanceMetrics = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
 `;
 
 export const MetricItem = styled.div`
