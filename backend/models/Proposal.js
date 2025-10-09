@@ -74,6 +74,14 @@ const proposalSchema = new mongoose.Schema({
     company: {
       type: String,
       trim: true
+    },
+    cnpj: {
+      type: String,
+      trim: true
+    },
+    razaoSocial: {
+      type: String,
+      trim: true
     }
   },
   seller: {
@@ -102,6 +110,10 @@ const proposalSchema = new mongoose.Schema({
       trim: true
     },
     razaoSocial: {
+      type: String,
+      trim: true
+    },
+    cnpj: {
       type: String,
       trim: true
     }

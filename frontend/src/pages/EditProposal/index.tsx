@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiService, Product, Distributor, User as UserType, Proposal } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
-import { testPdf } from '../../utils/testPdf';
 import { 
   Container, 
   Header, 
@@ -72,6 +71,7 @@ export const EditProposal: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   
   // Dados para seleção
@@ -500,6 +500,10 @@ export const EditProposal: React.FC = () => {
     }
   };
 
+  const handleShowSummary = () => {
+    setShowSummaryModal(true);
+  };
+
   if (loading) {
     return (
       <Container>
@@ -795,14 +799,185 @@ export const EditProposal: React.FC = () => {
           
           <Button
             type="button"
-            onClick={() => testPdf()}
+            onClick={handleShowSummary}
             variant="secondary"
           >
-            <FileText size={16} />
-            Testar PDF
+            <Eye size={16} />
+            Resumo
           </Button>
         </ActionButtons>
       </FormContainer>
+
+      {/* Modal de Resumo */}
+      {showSummaryModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '16px'
+            }}>
+              <h2 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 'bold' }}>
+                Resumo da Proposta
+              </h2>
+              <button
+                onClick={() => setShowSummaryModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {/* Dados do Cliente */}
+              <div>
+                <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                  Dados do Cliente
+                </h3>
+                <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Nome:</strong> {formData.client.name}</p>
+                  {formData.client.company && (
+                    <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Empresa:</strong> {formData.client.company}</p>
+                  )}
+                  {formData.client.cnpj && (
+                    <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>CNPJ:</strong> {formData.client.cnpj}</p>
+                  )}
+                  {formData.client.razaoSocial && (
+                    <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Razão Social:</strong> {formData.client.razaoSocial}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Vendedor e Distribuidor */}
+              <div>
+                <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                  Vendedor e Distribuidor
+                </h3>
+                <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Vendedor:</strong> {formData.seller.name}</p>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Distribuidor:</strong> {formData.distributor.apelido || formData.distributor.razaoSocial || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Produtos */}
+              <div>
+                <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                  Produtos
+                </h3>
+                <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
+                  {formData.items.map((item, index) => (
+                    <div key={index} style={{ 
+                      borderBottom: index < formData.items.length - 1 ? '1px solid #e5e7eb' : 'none',
+                      paddingBottom: index < formData.items.length - 1 ? '8px' : '0',
+                      marginBottom: index < formData.items.length - 1 ? '8px' : '0'
+                    }}>
+                      <p style={{ margin: '4px 0', color: '#4b5563', fontWeight: 'bold' }}>
+                        {item.product?.name || 'Produto não selecionado'}
+                      </p>
+                      <p style={{ margin: '4px 0', color: '#6b7280' }}>
+                        <strong>Quantidade:</strong> {item.quantity} | 
+                        <strong> Preço:</strong> R$ {(item.unitPrice || 0).toFixed(2)} | 
+                        <strong> Desconto:</strong> {item.discount}% | 
+                        <strong> Total:</strong> R$ {(item.total || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Condições e Observações */}
+              <div>
+                <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                  Condições e Observações
+                </h3>
+                <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}>
+                    <strong>Condição de Pagamento:</strong> {formData.paymentCondition || 'Não informado'}
+                  </p>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}>
+                    <strong>Válido até:</strong> {formData.validUntil ? new Date(formData.validUntil).toLocaleDateString('pt-BR') : 'Não informado'}
+                  </p>
+                  {formData.observations && (
+                    <p style={{ margin: '4px 0', color: '#4b5563' }}>
+                      <strong>Observações:</strong> {formData.observations}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Resumo Financeiro */}
+              <div>
+                <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                  Resumo Financeiro
+                </h3>
+                <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}>
+                    <strong>Subtotal:</strong> R$ {(subtotal || 0).toFixed(2)}
+                  </p>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}>
+                    <strong>Desconto:</strong> -R$ {(totalDiscount || 0).toFixed(2)}
+                  </p>
+                  <p style={{ margin: '4px 0', color: '#3b82f6', fontSize: '18px', fontWeight: 'bold' }}>
+                    <strong>TOTAL:</strong> R$ {(total || 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginTop: '20px',
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '16px'
+            }}>
+              <button
+                onClick={() => setShowSummaryModal(false)}
+                style={{
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Container>
   );
 };
