@@ -123,7 +123,7 @@ export const MarkAllButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover {
-    background: ${({ theme }) => theme.colors.successDark};
+    background: ${({ theme }) => theme.colors.status.success};
     transform: translateY(-1px);
   }
 `;
@@ -142,7 +142,7 @@ export const ClearAllButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover {
-    background: ${({ theme }) => theme.colors.warningDark};
+    background: ${({ theme }) => theme.colors.status.warning};
     transform: translateY(-1px);
   }
 `;
