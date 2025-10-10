@@ -97,28 +97,56 @@ router.post('/', async (req, res) => {
       
       console.log(`Criando notificações para ${targetUsers.length} usuários`);
       
-      // Criar notificações para cada usuário
-      console.log(`Criando notificações individuais para ${targetUsers.length} usuários`);
+      // Criar notificações INDIVIDUAIS para cada usuário - UMA POR VEZ
+      console.log(`=== CRIANDO NOTIFICAÇÕES INDIVIDUAIS ===`);
       
-      const notificationPromises = targetUsers.map(async (user, index) => {
-        console.log(`Criando notificação ${index + 1} para usuário ${user._id}`);
-        const notification = await Notification.createNoticeNotification(notice, user._id);
-        console.log(`Notificação criada com ID: ${notification._id} para usuário: ${notification.recipient}`);
-        return notification;
-      });
+      const createdNotifications = [];
       
-      const createdNotifications = await Promise.all(notificationPromises);
-      console.log(`Total de notificações criadas: ${createdNotifications.length}`);
+      for (let i = 0; i < targetUsers.length; i++) {
+        const user = targetUsers[i];
+        console.log(`Criando notificação ${i + 1}/${targetUsers.length} para usuário ${user._id}`);
+        
+        // Criar notificação completamente individual
+        const notificationData = {
+          title: `${notice.priority === 'urgent' ? '🚨' : notice.priority === 'high' ? '⚠️' : '📢'} Novo Aviso`,
+          message: notice.title,
+          type: 'notice',
+          priority: notice.priority || 'medium',
+          recipient: user._id.toString(),
+          sender: notice.createdBy.toString(),
+          relatedEntity: notice._id.toString(),
+          relatedEntityType: 'notice',
+          data: {
+            noticeTitle: notice.title,
+            noticeContent: notice.content,
+            noticePriority: notice.priority,
+            expiresAt: notice.expiresAt
+          },
+          expiresAt: notice.expiresAt,
+          isRead: false,
+          isActive: true
+        };
+        
+        const notification = new Notification(notificationData);
+        await notification.save();
+        
+        createdNotifications.push(notification);
+        console.log(`✅ Notificação ${i + 1} criada - ID: ${notification._id}, Recipient: ${notification.recipient}`);
+        
+        // Pequena pausa para garantir IDs únicos
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
       
-      // Verificar se todas têm IDs únicos
-      const notificationIds = createdNotifications.map(n => n._id.toString());
-      const uniqueIds = [...new Set(notificationIds)];
+      console.log(`✅ SUCESSO: ${createdNotifications.length} notificações INDIVIDUAIS criadas`);
       
-      if (notificationIds.length === uniqueIds.length) {
-        console.log('✅ Todas as notificações têm IDs únicos');
-      } else {
-        console.log('❌ ERRO: Algumas notificações têm IDs duplicados!');
-        console.log('IDs:', notificationIds);
+      // Verificar IDs únicos
+      const ids = createdNotifications.map(n => n._id.toString());
+      const uniqueIds = [...new Set(ids)];
+      console.log(`IDs únicos: ${uniqueIds.length}/${ids.length}`);
+      
+      if (ids.length !== uniqueIds.length) {
+        console.log('❌ ERRO: IDs duplicados encontrados!');
+        console.log('IDs:', ids);
       }
       
     } catch (notificationError) {

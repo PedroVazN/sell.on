@@ -18,7 +18,6 @@ import { Profile } from './pages/Profile';
 import { Performance } from './pages/Performance';
 import { Analysis } from './pages/Analysis';
 import { Calendar } from './pages/Calendar';
-import { Notifications } from './pages/Notifications';
 import { Configurations } from './pages/Configurations';
 import { Products } from './pages/Products';
 import { Clients } from './pages/Clients';
@@ -65,7 +64,6 @@ function App() {
           <Route path="performance" element={<ProtectedRoute permission="admin"><Performance /></ProtectedRoute>} />
           <Route path="analysis" element={<ProtectedRoute permission="admin"><Analysis /></ProtectedRoute>} />
           <Route path="calendar" element={<ProtectedRoute permission="admin"><Calendar /></ProtectedRoute>} />
-          <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="configurations" element={<ProtectedRoute permission="admin"><Configurations /></ProtectedRoute>} />
           <Route path="products" element={<ProtectedRoute permission="admin"><Products /></ProtectedRoute>} />
           <Route path="products/create" element={<ProtectedRoute permission="admin"><CreateProduct /></ProtectedRoute>} />

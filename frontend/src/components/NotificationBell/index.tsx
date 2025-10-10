@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, Trash2, Loader2, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { apiService, Notification } from '../../services/api';
 import * as S from './styles';
 
@@ -9,7 +8,6 @@ interface NotificationBellProps {
 }
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
-  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -117,11 +115,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     setIsOpen(!isOpen);
   };
 
-  // Navegar para página de notificações
-  const handleViewAll = () => {
-    navigate('/notifications');
-    setIsOpen(false);
-  };
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -194,7 +187,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       {isOpen && (
         <S.Dropdown ref={dropdownRef}>
           <S.DropdownHeader>
-            <S.Title onClick={handleViewAll} style={{ cursor: 'pointer' }}>
+            <S.Title>
               <Bell size={20} style={{ marginRight: '8px' }} />
               Notificações
             </S.Title>
