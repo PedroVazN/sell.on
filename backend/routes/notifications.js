@@ -27,6 +27,8 @@ router.get('/', async (req, res) => {
 
     console.log(`=== LISTAR NOTIFICAÇÕES ===`);
     console.log(`Usuário: ${req.user.id}`);
+    console.log(`Tipo do usuário: ${typeof req.user.id}`);
+    console.log(`req.user completo:`, req.user);
     console.log(`Filtro:`, filter);
 
     const notifications = await Notification.find(filter)
@@ -88,6 +90,15 @@ router.patch('/:id/read', async (req, res) => {
     console.log(`=== MARCAR COMO LIDA ===`);
     console.log(`Notificação ID: ${req.params.id}`);
     console.log(`Usuário logado: ${req.user.id}`);
+    console.log(`Tipo do req.user.id: ${typeof req.user.id}`);
+    console.log(`req.user completo:`, req.user);
+    
+    // Buscar TODAS as notificações com esse ID para debug
+    const allNotificationsWithId = await Notification.find({ _id: req.params.id });
+    console.log(`🔍 Todas as notificações com ID ${req.params.id}:`, allNotificationsWithId.length);
+    allNotificationsWithId.forEach((notif, index) => {
+      console.log(`  ${index + 1}. ID: ${notif._id}, Recipient: ${notif.recipient}, Recipient Type: ${typeof notif.recipient}`);
+    });
     
     const notification = await Notification.findOne({
       _id: req.params.id,

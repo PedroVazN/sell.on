@@ -127,6 +127,13 @@ router.post('/', async (req, res) => {
           isActive: true
         };
         
+        console.log(`📝 Dados da notificação ${i + 1}:`, {
+          recipient: notificationData.recipient,
+          recipientType: typeof notificationData.recipient,
+          title: notificationData.title,
+          message: notificationData.message
+        });
+        
         const notification = new Notification(notificationData);
         await notification.save();
         
