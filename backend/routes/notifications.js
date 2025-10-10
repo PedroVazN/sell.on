@@ -29,7 +29,16 @@ router.get('/', async (req, res) => {
     console.log(`Usuário: ${req.user.id}`);
     console.log(`Tipo do usuário: ${typeof req.user.id}`);
     console.log(`req.user completo:`, req.user);
-    console.log(`Filtro:`, filter);
+    console.log(`Filtro ANTES:`, filter);
+
+    // Verificar se há notificações com esse recipient
+    const allNotificationsForUser = await Notification.find({ recipient: req.user.id });
+    console.log(`🔍 Todas as notificações para usuário ${req.user.id}:`, allNotificationsForUser.length);
+    allNotificationsForUser.forEach((notif, index) => {
+      console.log(`  ${index + 1}. ID: ${notif._id}, Recipient: ${notif.recipient}, Recipient Type: ${typeof notif.recipient}, Title: ${notif.title}`);
+    });
+
+    console.log(`Filtro FINAL:`, filter);
 
     const notifications = await Notification.find(filter)
       .sort({ createdAt: -1 })
