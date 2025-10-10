@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { apiService, Product, Distributor, User as UserType, Proposal } from '../../services/api';
+import { apiService, Product, Distributor, User as UserType, Proposal, PriceOption, PriceListItem } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { 
   Container, 
@@ -9,6 +9,16 @@ import {
   Title, 
   BackButton,
   FormContainer,
+  TwoColumnLayout,
+  LeftColumn,
+  RightColumn,
+  PriceListTitle,
+  PriceListItem,
+  ProductName,
+  PriceRow,
+  PriceLabel,
+  PriceValue,
+  NoPricesMessage,
   FormSection,
   SectionTitle,
   FormRow,
@@ -73,6 +83,7 @@ export const EditProposal: React.FC = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [distributorPriceList, setDistributorPriceList] = useState<PriceListItem[]>([]);
   
   // Dados para seleção
   const [products, setProducts] = useState<Product[]>([]);
@@ -225,6 +236,24 @@ export const EditProposal: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  // Carregar lista de preços quando o distribuidor for definido
+  useEffect(() => {
+    const loadDistributorPriceList = async () => {
+      if (formData.distributor._id) {
+        try {
+          const priceListResponse = await apiService.getPriceListByDistributor(formData.distributor._id, 1, 100);
+          setDistributorPriceList(priceListResponse.data || []);
+          console.log('Lista de preços do distribuidor carregada:', priceListResponse.data);
+        } catch (error) {
+          console.error('Erro ao carregar lista de preços:', error);
+          setDistributorPriceList([]);
+        }
+      }
+    };
+
+    loadDistributorPriceList();
+  }, [formData.distributor._id]);
+
   // Calcular totais
   useEffect(() => {
     const newSubtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
@@ -268,7 +297,7 @@ export const EditProposal: React.FC = () => {
     }
   };
 
-  const handleDistributorChange = (distributorId: string) => {
+  const handleDistributorChange = async (distributorId: string) => {
     const distributor = distributors.find(d => d._id === distributorId);
     if (distributor) {
       setFormData(prev => ({
@@ -276,9 +305,20 @@ export const EditProposal: React.FC = () => {
         distributor: {
           _id: distributor._id,
           apelido: distributor.apelido || '',
-          razaoSocial: distributor.razaoSocial || ''
+          razaoSocial: distributor.razaoSocial || '',
+          cnpj: distributor.cnpj || ''
         }
       }));
+
+      // Carregar lista de preços do distribuidor
+      try {
+        const priceListResponse = await apiService.getPriceListByDistributor(distributorId, 1, 100);
+        setDistributorPriceList(priceListResponse.data || []);
+        console.log('Lista de preços do distribuidor:', priceListResponse.data);
+      } catch (error) {
+        console.error('Erro ao carregar lista de preços:', error);
+        setDistributorPriceList([]);
+      }
     }
   };
 
@@ -539,6 +579,8 @@ export const EditProposal: React.FC = () => {
       </Header>
 
       <FormContainer>
+        <TwoColumnLayout>
+          <LeftColumn>
         {/* Dados do Cliente */}
         <FormSection>
           <SectionTitle>Dados do Cliente</SectionTitle>
@@ -806,6 +848,42 @@ export const EditProposal: React.FC = () => {
             Resumo
           </Button>
         </ActionButtons>
+          </LeftColumn>
+
+          <RightColumn>
+            <PriceListTitle>Lista de Preços - {formData.distributor.apelido || formData.distributor.razaoSocial || 'Distribuidor'}</PriceListTitle>
+            {distributorPriceList.length > 0 ? (
+              distributorPriceList.map((item, index) => (
+                <PriceListItem key={index}>
+                  <ProductName>{item.product?.name || 'Produto'}</ProductName>
+                  <PriceRow>
+                    <PriceLabel>À vista:</PriceLabel>
+                    <PriceValue>R$ {(item.pricing?.aVista || 0).toFixed(2)}</PriceValue>
+                  </PriceRow>
+                  {item.pricing?.boleto?.map((option: PriceOption, index: number) => (
+                    <PriceRow key={`boleto-${index}`}>
+                      <PriceLabel>{option.parcelas}x Boleto:</PriceLabel>
+                      <PriceValue>R$ {option.preco.toFixed(2)}</PriceValue>
+                    </PriceRow>
+                  ))}
+                  {item.pricing?.credito?.map((option: PriceOption, index: number) => (
+                    <PriceRow key={`credito-${index}`}>
+                      <PriceLabel>{option.parcelas}x Cartão:</PriceLabel>
+                      <PriceValue>R$ {option.preco.toFixed(2)}</PriceValue>
+                    </PriceRow>
+                  ))}
+                </PriceListItem>
+              ))
+            ) : (
+              <NoPricesMessage>
+                {formData.distributor._id 
+                  ? 'Nenhum produto com preços cadastrados para este distribuidor'
+                  : 'Selecione um distribuidor para ver a lista de preços'
+                }
+              </NoPricesMessage>
+            )}
+          </RightColumn>
+        </TwoColumnLayout>
       </FormContainer>
 
       {/* Modal de Resumo */}
