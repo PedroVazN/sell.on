@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiService, Notification } from '../../services/api';
 import * as S from './styles';
 
@@ -8,6 +9,7 @@ interface NotificationBellProps {
 }
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -115,6 +117,12 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     setIsOpen(!isOpen);
   };
 
+  // Navegar para página de notificações
+  const handleViewAll = () => {
+    navigate('/notifications');
+    setIsOpen(false);
+  };
+
   // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -154,6 +162,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         return '⚠️';
       case 'info':
         return 'ℹ️';
+      case 'notice':
+        return '📢';
       default:
         return '🔔';
     }
@@ -184,7 +194,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       {isOpen && (
         <S.Dropdown ref={dropdownRef}>
           <S.DropdownHeader>
-            <S.Title>
+            <S.Title onClick={handleViewAll} style={{ cursor: 'pointer' }}>
               <Bell size={20} style={{ marginRight: '8px' }} />
               Notificações
             </S.Title>
@@ -220,7 +230,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
                 <Bell size={48} style={{ opacity: 0.3, marginBottom: '8px' }} />
                 <S.EmptyText>Nenhuma notificação</S.EmptyText>
                 <S.EmptyText style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>
-                  Você receberá notificações quando bater metas!
+                  Você receberá notificações quando bater metas ou houver avisos!
                 </S.EmptyText>
               </S.EmptyContainer>
             ) : (

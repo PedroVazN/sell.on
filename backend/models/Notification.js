@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['goal_achieved', 'goal_milestone', 'goal_created', 'goal_updated', 'goal_completed', 'system', 'warning', 'info'],
+    enum: ['goal_achieved', 'goal_milestone', 'goal_created', 'goal_updated', 'goal_completed', 'system', 'warning', 'info', 'notice'],
     required: true
   },
   priority: {
@@ -37,7 +37,7 @@ const notificationSchema = new mongoose.Schema({
   },
   relatedEntityType: {
     type: String,
-    enum: ['goal', 'sale', 'proposal', 'client', 'distributor'],
+    enum: ['goal', 'sale', 'proposal', 'client', 'distributor', 'notice'],
     required: false
   },
   isRead: {
@@ -136,6 +136,41 @@ notificationSchema.statics.createGoalCompletedNotification = function(goal, user
       targetValue: goal.targetValue,
       currentValue: goal.currentValue
     }
+  });
+};
+
+// Método estático para criar notificação de aviso
+notificationSchema.statics.createNoticeNotification = function(notice, userId) {
+  const priorityMap = {
+    'low': 'low',
+    'medium': 'medium', 
+    'high': 'high',
+    'urgent': 'urgent'
+  };
+
+  const iconMap = {
+    'low': '📢',
+    'medium': '📢',
+    'high': '⚠️',
+    'urgent': '🚨'
+  };
+
+  return this.create({
+    title: `${iconMap[notice.priority]} Novo Aviso`,
+    message: notice.title,
+    type: 'notice',
+    priority: priorityMap[notice.priority] || 'medium',
+    recipient: userId,
+    sender: notice.createdBy,
+    relatedEntity: notice._id,
+    relatedEntityType: 'notice',
+    data: {
+      noticeTitle: notice.title,
+      noticeContent: notice.content,
+      noticePriority: notice.priority,
+      expiresAt: notice.expiresAt
+    },
+    expiresAt: notice.expiresAt
   });
 };
 

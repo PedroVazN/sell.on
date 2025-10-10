@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Notice = require('../models/Notice');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 // GET /api/notices - Listar avisos (todos os avisos ativos)
 router.get('/', async (req, res) => {
@@ -77,6 +79,36 @@ router.post('/', async (req, res) => {
     await notice.populate('createdBy', 'name email');
     
     console.log('Aviso criado:', notice._id);
+    
+    // Criar notificações para usuários baseado nos targetRoles
+    try {
+      let targetUsers = [];
+      
+      if (targetRoles.includes('all')) {
+        // Buscar todos os usuários ativos
+        targetUsers = await User.find({ isActive: true }).select('_id role');
+      } else {
+        // Buscar usuários específicos baseado nos roles
+        targetUsers = await User.find({ 
+          role: { $in: targetRoles },
+          isActive: true 
+        }).select('_id role');
+      }
+      
+      console.log(`Criando notificações para ${targetUsers.length} usuários`);
+      
+      // Criar notificações para cada usuário
+      const notificationPromises = targetUsers.map(user => 
+        Notification.createNoticeNotification(notice, user._id)
+      );
+      
+      await Promise.all(notificationPromises);
+      console.log('Notificações criadas com sucesso');
+      
+    } catch (notificationError) {
+      console.error('Erro ao criar notificações:', notificationError);
+      // Não falhar a criação do aviso se houver erro nas notificações
+    }
     
     res.status(201).json({
       success: true,

@@ -430,12 +430,12 @@ export interface Notification {
   _id: string;
   title: string;
   message: string;
-  type: 'goal_achieved' | 'goal_milestone' | 'goal_created' | 'goal_updated' | 'goal_completed' | 'system' | 'warning' | 'info';
+  type: 'goal_achieved' | 'goal_milestone' | 'goal_created' | 'goal_updated' | 'goal_completed' | 'system' | 'warning' | 'info' | 'notice';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   recipient: string;
   sender: string;
   relatedEntity?: string;
-  relatedEntityType?: 'goal' | 'sale' | 'proposal' | 'client' | 'distributor';
+  relatedEntityType?: 'goal' | 'sale' | 'proposal' | 'client' | 'distributor' | 'notice';
   isRead: boolean;
   readAt?: string;
   data: any;

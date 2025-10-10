@@ -76,6 +76,7 @@ export const Sidebar: React.FC = () => {
           path: user?.role === 'admin' ? '/notices-admin' : '/notices', 
           permission: 'notices' 
         },
+        { icon: <Bell size={20} />, label: 'Notificações', path: '/notifications', permission: 'notifications' },
       ]
     },
     {
