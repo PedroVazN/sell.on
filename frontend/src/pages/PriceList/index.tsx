@@ -156,9 +156,10 @@ export const PriceList: React.FC = () => {
     try {
       setSaving(true);
       
-      // Atualizar cada produto da lista
+      // Processar cada produto da lista
       for (const product of editingPriceList.products || []) {
         if (product._id && !product._id.startsWith('temp_')) {
+          // Atualizar produto existente
           await apiService.updatePriceListItem(product._id, {
             pricing: {
               aVista: product.pricing?.aVista || 0,
@@ -167,6 +168,21 @@ export const PriceList: React.FC = () => {
             },
             isActive: product.isActive,
             notes: product.notes
+          });
+        } else if (product._id && product._id.startsWith('temp_') && product.product._id) {
+          // Criar novo produto
+          await apiService.createPriceListItem({
+            distributor: editingPriceList.distributor._id,
+            product: product.product._id,
+            pricing: {
+              aVista: product.pricing?.aVista || 0,
+              credito: product.pricing?.credito || [],
+              boleto: product.pricing?.boleto || []
+            },
+            isActive: product.isActive,
+            validFrom: product.validFrom || new Date().toISOString(),
+            validUntil: product.validUntil || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            notes: product.notes || ''
           });
         }
       }
