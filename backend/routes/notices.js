@@ -96,6 +96,10 @@ router.post('/', async (req, res) => {
       }
       
       console.log(`Criando notificações para ${targetUsers.length} usuários`);
+      console.log(`🔍 Usuários encontrados:`, targetUsers.map(u => ({
+        id: u._id.toString(),
+        role: u.role
+      })));
       
       // Criar notificações INDIVIDUAIS para cada usuário - UMA POR VEZ
       console.log(`=== CRIANDO NOTIFICAÇÕES INDIVIDUAIS ===`);
@@ -131,14 +135,16 @@ router.post('/', async (req, res) => {
           recipient: notificationData.recipient,
           recipientType: typeof notificationData.recipient,
           title: notificationData.title,
-          message: notificationData.message
+          message: notificationData.message,
+          userOriginalId: user._id,
+          userOriginalIdType: typeof user._id
         });
         
         const notification = new Notification(notificationData);
         await notification.save();
         
         createdNotifications.push(notification);
-        console.log(`✅ Notificação ${i + 1} criada - ID: ${notification._id}, Recipient: ${notification.recipient}`);
+        console.log(`✅ Notificação ${i + 1} criada - ID: ${notification._id}, Recipient: ${notification.recipient}, Recipient Type: ${typeof notification.recipient}`);
         
         // Pequena pausa para garantir IDs únicos
         await new Promise(resolve => setTimeout(resolve, 10));
