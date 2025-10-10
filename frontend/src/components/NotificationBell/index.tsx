@@ -18,12 +18,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   // Carregar notificações não lidas
   const loadUnreadCount = async () => {
     try {
+      console.log('🔔 Carregando contador de notificações não lidas...');
       const response = await apiService.getUnreadNotificationCount();
       if (response.success) {
+        console.log(`🔔 Contador carregado: ${response.data.count} notificações não lidas`);
         setUnreadCount(response.data.count);
       }
     } catch (err) {
       console.error('Erro ao carregar contador de notificações:', err);
+      setUnreadCount(0);
     }
   };
 
@@ -32,13 +35,22 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     setLoading(true);
     setError(null);
     try {
+      console.log('🔔 Carregando notificações do usuário...');
       const response = await apiService.getNotifications(1, 10, false);
       if (response.success) {
+        console.log(`🔔 Notificações carregadas: ${response.data.length} notificações`);
+        console.log('🔔 Notificações:', response.data.map(n => ({
+          id: n._id,
+          recipient: n.recipient,
+          title: n.title,
+          isRead: n.isRead
+        })));
         setNotifications(response.data);
       } else {
         setError('Erro ao carregar notificações');
       }
     } catch (err: any) {
+      console.error('Erro ao carregar notificações:', err);
       setError(err.message || 'Erro ao carregar notificações');
     } finally {
       setLoading(false);
@@ -48,8 +60,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   // Marcar notificação como lida
   const markAsRead = async (notification: Notification) => {
     try {
+      console.log(`🔔 Marcando notificação como lida:`, {
+        id: notification._id,
+        recipient: notification.recipient,
+        title: notification.title
+      });
+      
       const response = await apiService.markNotificationAsRead(notification._id);
       if (response.success) {
+        console.log('✅ Notificação marcada como lida com sucesso');
         setNotifications(prev => 
           prev.map(n => 
             n._id === notification._id 
@@ -82,8 +101,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   // Deletar notificação
   const deleteNotification = async (notification: Notification) => {
     try {
+      console.log(`🗑️ Deletando notificação:`, {
+        id: notification._id,
+        recipient: notification.recipient,
+        title: notification.title
+      });
+      
       const response = await apiService.deleteNotification(notification._id);
       if (response.success) {
+        console.log('✅ Notificação deletada com sucesso');
         setNotifications(prev => prev.filter(n => n._id !== notification._id));
         if (!notification.isRead) {
           setUnreadCount(prev => Math.max(0, prev - 1));
