@@ -98,12 +98,28 @@ router.post('/', async (req, res) => {
       console.log(`Criando notificações para ${targetUsers.length} usuários`);
       
       // Criar notificações para cada usuário
-      const notificationPromises = targetUsers.map(user => 
-        Notification.createNoticeNotification(notice, user._id)
-      );
+      console.log(`Criando notificações individuais para ${targetUsers.length} usuários`);
       
-      await Promise.all(notificationPromises);
-      console.log('Notificações criadas com sucesso');
+      const notificationPromises = targetUsers.map(async (user, index) => {
+        console.log(`Criando notificação ${index + 1} para usuário ${user._id}`);
+        const notification = await Notification.createNoticeNotification(notice, user._id);
+        console.log(`Notificação criada com ID: ${notification._id} para usuário: ${notification.recipient}`);
+        return notification;
+      });
+      
+      const createdNotifications = await Promise.all(notificationPromises);
+      console.log(`Total de notificações criadas: ${createdNotifications.length}`);
+      
+      // Verificar se todas têm IDs únicos
+      const notificationIds = createdNotifications.map(n => n._id.toString());
+      const uniqueIds = [...new Set(notificationIds)];
+      
+      if (notificationIds.length === uniqueIds.length) {
+        console.log('✅ Todas as notificações têm IDs únicos');
+      } else {
+        console.log('❌ ERRO: Algumas notificações têm IDs duplicados!');
+        console.log('IDs:', notificationIds);
+      }
       
     } catch (notificationError) {
       console.error('Erro ao criar notificações:', notificationError);

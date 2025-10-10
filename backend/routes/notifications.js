@@ -25,6 +25,10 @@ router.get('/', async (req, res) => {
       filter.type = type;
     }
 
+    console.log(`=== LISTAR NOTIFICAÇÕES ===`);
+    console.log(`Usuário: ${req.user.id}`);
+    console.log(`Filtro:`, filter);
+
     const notifications = await Notification.find(filter)
       .sort({ createdAt: -1 })
       .limit(limit * 1)
@@ -32,6 +36,11 @@ router.get('/', async (req, res) => {
       .lean();
 
     const total = await Notification.countDocuments(filter);
+
+    console.log(`Notificações encontradas: ${notifications.length}`);
+    notifications.forEach((notification, index) => {
+      console.log(`  ${index + 1}. ID: ${notification._id}, Recipient: ${notification.recipient}, Lida: ${notification.isRead}`);
+    });
 
     res.json({
       success: true,
@@ -76,19 +85,31 @@ router.get('/unread-count', async (req, res) => {
 // PATCH /api/notifications/:id/read - Marcar notificação como lida
 router.patch('/:id/read', async (req, res) => {
   try {
+    console.log(`=== MARCAR COMO LIDA ===`);
+    console.log(`Notificação ID: ${req.params.id}`);
+    console.log(`Usuário logado: ${req.user.id}`);
+    
     const notification = await Notification.findOne({
       _id: req.params.id,
       recipient: req.user.id
     });
 
     if (!notification) {
+      console.log('❌ Notificação não encontrada para este usuário');
       return res.status(404).json({
         success: false,
         message: 'Notificação não encontrada'
       });
     }
 
+    console.log(`✅ Notificação encontrada: ${notification._id}`);
+    console.log(`Recipient: ${notification.recipient}`);
+    console.log(`Título: ${notification.title}`);
+    console.log(`Atualmente lida: ${notification.isRead}`);
+
     await notification.markAsRead();
+    
+    console.log(`✅ Notificação ${notification._id} marcada como lida`);
 
     res.json({
       success: true,

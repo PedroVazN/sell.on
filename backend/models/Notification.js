@@ -155,14 +155,15 @@ notificationSchema.statics.createNoticeNotification = function(notice, userId) {
     'urgent': '🚨'
   };
 
-  return this.create({
+  // Criar uma nova instância para cada usuário
+  const notification = new this({
     title: `${iconMap[notice.priority]} Novo Aviso`,
     message: notice.title,
     type: 'notice',
     priority: priorityMap[notice.priority] || 'medium',
     recipient: userId,
     sender: notice.createdBy,
-    relatedEntity: notice._id,
+    relatedEntity: notice._id.toString(), // Converter para string para evitar problemas
     relatedEntityType: 'notice',
     data: {
       noticeTitle: notice.title,
@@ -172,6 +173,8 @@ notificationSchema.statics.createNoticeNotification = function(notice, userId) {
     },
     expiresAt: notice.expiresAt
   });
+
+  return notification.save();
 };
 
 module.exports = mongoose.model('Notification', notificationSchema);
