@@ -268,9 +268,9 @@ router.post('/', auth, async (req, res) => {
         });
       }
 
-      if (!pricing.aVista || !pricing.tresXBoleto || !pricing.tresXCartao) {
+      if (!pricing.aVista) {
         return res.status(400).json({ 
-          error: 'Todos os valores de preço são obrigatórios' 
+          error: 'Preço à vista é obrigatório' 
         });
       }
 
