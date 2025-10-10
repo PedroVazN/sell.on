@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { apiService, Product, Distributor, User as UserType, Proposal, PriceOption, PriceListItem } from '../../services/api';
+import { apiService, Product, Distributor, User as UserType, Proposal, PriceOption, PriceListItem as PriceListItemType } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { 
   Container, 
@@ -83,7 +83,7 @@ export const EditProposal: React.FC = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
-  const [distributorPriceList, setDistributorPriceList] = useState<PriceListItem[]>([]);
+  const [distributorPriceList, setDistributorPriceList] = useState<PriceListItemType[]>([]);
   
   // Dados para seleção
   const [products, setProducts] = useState<Product[]>([]);
