@@ -74,11 +74,17 @@ router.get('/', async (req, res) => {
 // GET /api/notifications/unread-count - Contar notificações não lidas
 router.get('/unread-count', async (req, res) => {
   try {
+    console.log('=== CONTAR NOTIFICAÇÕES NÃO LIDAS ===');
+    console.log('Usuário:', req.user ? req.user.id : 'NENHUM');
+    console.log('Tipo do usuário ID:', typeof req.user?.id);
+    
     const count = await Notification.countDocuments({
       recipient: req.user.id,
       isRead: false,
       isActive: true
     });
+
+    console.log('Contagem encontrada:', count);
 
     res.json({
       success: true,
@@ -86,6 +92,7 @@ router.get('/unread-count', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao contar notificações não lidas:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
