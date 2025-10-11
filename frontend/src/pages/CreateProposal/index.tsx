@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Product, Distributor, User as UserType, PriceOption } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
+import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { 
   Container, 
   Header, 
@@ -668,7 +669,7 @@ export const CreateProposal: React.FC = () => {
                     <option value="">Selecione um produto</option>
                     {products.map(product => (
                       <option key={product._id} value={product._id}>
-                        {product.name} - R$ {(product.price || 0).toFixed(2)}
+                        {product.name} - {formatCurrency(product.price)}
                       </option>
                     ))}
                   </Select>
@@ -714,7 +715,7 @@ export const CreateProposal: React.FC = () => {
                   <Label>Total</Label>
                   <ProductInput
                     type="text"
-                    value={`R$ ${(item.total || 0).toFixed(2)}`}
+                    value={formatCurrency(item.total)}
                     readOnly
                   />
                 </FormGroup>
@@ -770,15 +771,15 @@ export const CreateProposal: React.FC = () => {
         <TotalSection>
           <TotalRow>
             <span>Subtotal:</span>
-            <TotalValue>R$ {(subtotal || 0).toFixed(2)}</TotalValue>
+            <TotalValue>{formatCurrency(subtotal)}</TotalValue>
           </TotalRow>
           <TotalRow>
             <span>Desconto:</span>
-            <TotalValue>- R$ {(totalDiscount || 0).toFixed(2)}</TotalValue>
+            <TotalValue>- {formatCurrency(totalDiscount)}</TotalValue>
           </TotalRow>
           <TotalRow>
             <span>Total:</span>
-            <TotalValue>R$ {(total || 0).toFixed(2)}</TotalValue>
+            <TotalValue>{formatCurrency(total)}</TotalValue>
           </TotalRow>
         </TotalSection>
 
@@ -831,18 +832,18 @@ export const CreateProposal: React.FC = () => {
                   <ProductName>{item.product?.name || 'Produto'}</ProductName>
                   <PriceRow>
                     <PriceLabel>À vista:</PriceLabel>
-                    <PriceValue>R$ {(item.pricing?.aVista || 0).toFixed(2)}</PriceValue>
+                    <PriceValue>{formatCurrency(item.pricing?.aVista)}</PriceValue>
                   </PriceRow>
                   {item.pricing?.boleto?.map((option: PriceOption, index: number) => (
                     <PriceRow key={`boleto-${index}`}>
                       <PriceLabel>{option.parcelas}x Boleto:</PriceLabel>
-                      <PriceValue>R$ {option.preco.toFixed(2)}</PriceValue>
+                      <PriceValue>{formatCurrency(option.preco)}</PriceValue>
                     </PriceRow>
                   ))}
                   {item.pricing?.credito?.map((option: PriceOption, index: number) => (
                     <PriceRow key={`credito-${index}`}>
                       <PriceLabel>{option.parcelas}x Cartão:</PriceLabel>
-                      <PriceValue>R$ {option.preco.toFixed(2)}</PriceValue>
+                      <PriceValue>{formatCurrency(option.preco)}</PriceValue>
                     </PriceRow>
                   ))}
                 </PriceListItem>
@@ -945,9 +946,9 @@ export const CreateProposal: React.FC = () => {
                       </p>
                       <p style={{ margin: '4px 0', color: '#6b7280' }}>
                         <strong>Quantidade:</strong> {item.quantity} | 
-                        <strong> Preço:</strong> R$ {(item.unitPrice || 0).toFixed(2)} | 
+                        <strong> Preço:</strong> {formatCurrency(item.unitPrice)} | 
                         <strong> Desconto:</strong> {item.discount}% | 
-                        <strong> Total:</strong> R$ {(item.total || 0).toFixed(2)}
+                        <strong> Total:</strong> {formatCurrency(item.total)}
                       </p>
                     </div>
                   ))}
@@ -981,13 +982,13 @@ export const CreateProposal: React.FC = () => {
                 </h3>
                 <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
                   <p style={{ margin: '4px 0', color: '#4b5563' }}>
-                    <strong>Subtotal:</strong> R$ {(subtotal || 0).toFixed(2)}
+                    <strong>Subtotal:</strong> {formatCurrency(subtotal)}
                   </p>
                   <p style={{ margin: '4px 0', color: '#4b5563' }}>
-                    <strong>Desconto:</strong> -R$ {(totalDiscount || 0).toFixed(2)}
+                    <strong>Desconto:</strong> -{formatCurrency(totalDiscount)}
                   </p>
                   <p style={{ margin: '4px 0', color: '#3b82f6', fontSize: '18px', fontWeight: 'bold' }}>
-                    <strong>TOTAL:</strong> R$ {(total || 0).toFixed(2)}
+                    <strong>TOTAL:</strong> {formatCurrency(total)}
                   </p>
                 </div>
               </div>

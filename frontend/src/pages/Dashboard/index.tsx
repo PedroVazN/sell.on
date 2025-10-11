@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Goal } from '../../services/api';
+import { formatCurrency, formatInteger } from '../../utils/formatters';
 import { 
   Container, 
   Header, 
@@ -519,7 +520,7 @@ export const Dashboard: React.FC = () => {
                     color: '#9CA3AF'
                   }}>
                     <span>
-                      R$ {goal.currentValue.toLocaleString('pt-BR')} / R$ {goal.targetValue.toLocaleString('pt-BR')}
+                      {formatCurrency(goal.currentValue)} / {formatCurrency(goal.targetValue)}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ 
@@ -545,25 +546,25 @@ export const Dashboard: React.FC = () => {
           <>
             {/* Valores */}
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.vendaFechadaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
               <MetricChange>Propostas fechadas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.vendaPerdidaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
               <MetricChange>Propostas perdidas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.totalValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.negociacaoValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
             </MetricCard>
@@ -597,25 +598,25 @@ export const Dashboard: React.FC = () => {
           <>
             {/* Valores - Admin */}
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.vendaFechadaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
               <MetricChange>Propostas fechadas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.vendaPerdidaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
               <MetricChange>Propostas perdidas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.totalValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.negociacaoValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
             </MetricCard>
@@ -752,7 +753,7 @@ export const Dashboard: React.FC = () => {
                 <ProductItem key={index}>
                   <ProductName>{index + 1}. {product.name}</ProductName>
                   <ProductSales>{product.quantity} unidades vendidas</ProductSales>
-                  <ProductRevenue>R$ {(product.revenue || 0).toLocaleString('pt-BR')}</ProductRevenue>
+                  <ProductRevenue>{formatCurrency(product.revenue)}</ProductRevenue>
                 </ProductItem>
               ))
             ) : (
@@ -830,7 +831,7 @@ export const Dashboard: React.FC = () => {
               </MetricItemIcon>
               <MetricItemLabel>Valor Médio Proposta</MetricItemLabel>
               <MetricItemValue $negative={!data?.salesStats?.averageSale || data?.salesStats?.averageSale === 0}>
-                R$ {data?.salesStats?.averageSale?.toLocaleString('pt-BR') || '0'}
+                {formatCurrency(data?.salesStats?.averageSale)}
               </MetricItemValue>
               <MetricItemDescription>
                 Valor médio das suas propostas criadas
@@ -876,7 +877,7 @@ export const Dashboard: React.FC = () => {
                 <DollarSign size={24} color="#10B981" />
               </MetricItemIcon>
               <MetricItemLabel>Ticket Médio</MetricItemLabel>
-              <MetricItemValue $negative>R$ {data?.salesStats?.averageSale?.toLocaleString('pt-BR') || '0'}</MetricItemValue>
+              <MetricItemValue $negative>{formatCurrency(data?.salesStats?.averageSale)}</MetricItemValue>
               <MetricItemDescription>
                 Valor médio por venda fechada
               </MetricItemDescription>
@@ -934,7 +935,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ color: '#ef4444', fontWeight: '600', fontSize: '0.875rem' }}>
-                      R$ {(reason.totalValue || 0).toLocaleString('pt-BR')}
+                      {formatCurrency(reason.totalValue)}
                     </div>
                     <div style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
                       Valor perdido
