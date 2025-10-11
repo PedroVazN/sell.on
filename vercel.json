@@ -4,6 +4,13 @@
     {
       "src": "backend/api/index.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
     }
   ],
   "routes": [
@@ -12,16 +19,28 @@
       "dest": "/backend/api/index.js"
     },
     {
-      "src": "/api",
-      "dest": "/backend/api/index.js"
-    },
-    {
       "src": "/health",
       "dest": "/backend/api/index.js"
     },
     {
-      "src": "/",
-      "dest": "/backend/api/index.js"
+      "src": "/favicon-32x32.png",
+      "dest": "/frontend/public/favicon-32x32.png"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/frontend/public/manifest.json"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/frontend/build/static/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|json))",
+      "dest": "/frontend/build/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/build/index.html"
     }
   ],
   "env": {
