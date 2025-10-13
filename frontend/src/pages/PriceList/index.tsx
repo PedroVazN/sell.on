@@ -127,15 +127,20 @@ export const PriceList: React.FC = () => {
   };
 
   const handleDeletePriceList = async (priceList: PriceListInterface) => {
-    if (window.confirm(`Tem certeza que deseja excluir esta lista de preços?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir esta lista de preços do distribuidor "${priceList.distributor?.apelido || priceList.distributor?.razaoSocial}"?`)) {
       try {
         setLoading(true);
-        // Aqui você pode implementar a chamada para a API de delete se necessário
-        // await apiService.deletePriceList(priceList._id);
         
-        const updatedLists = priceLists.filter(list => list._id !== priceList._id);
-        setPriceLists(updatedLists);
-        alert('Lista de preços excluída com sucesso!');
+        // Deletar a lista de preços via API
+        const response = await apiService.deletePriceList(priceList._id);
+        
+        if (response.success) {
+          // Recarregar os dados para refletir a exclusão
+          await loadData();
+          alert('Lista de preços excluída com sucesso!');
+        } else {
+          throw new Error('Falha ao excluir lista de preços');
+        }
       } catch (error) {
         console.error('Erro ao excluir lista de preços:', error);
         alert('Erro ao excluir lista de preços. Tente novamente.');
