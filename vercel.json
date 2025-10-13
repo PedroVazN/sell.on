@@ -24,11 +24,15 @@
     },
     {
       "src": "/favicon-32x32.png",
-      "dest": "/frontend/public/favicon-32x32.png"
+      "dest": "/frontend/build/favicon-32x32.png"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/frontend/build/favicon-32x32.png"
     },
     {
       "src": "/manifest.json",
-      "dest": "/frontend/public/manifest.json"
+      "dest": "/frontend/build/manifest.json"
     },
     {
       "src": "/static/(.*)",
