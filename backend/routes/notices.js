@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     console.log('=== CRIANDO AVISO ===');
     console.log('Body:', req.body);
     
-    const { title, content, priority, expiresAt, targetRoles } = req.body;
+    const { title, content, imageUrl, priority, expiresAt, targetRoles } = req.body;
     
     if (!title || !content) {
       return res.status(400).json({
@@ -69,6 +69,7 @@ router.post('/', async (req, res) => {
     const notice = new Notice({
       title,
       content,
+      imageUrl: imageUrl || undefined,
       priority: priority || 'medium',
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       createdBy: adminUser._id,
@@ -188,11 +189,12 @@ router.put('/:id', async (req, res) => {
     console.log('=== ATUALIZANDO AVISO ===');
     console.log('ID:', req.params.id);
     
-    const { title, content, priority, expiresAt, targetRoles, isActive } = req.body;
+    const { title, content, imageUrl, priority, expiresAt, targetRoles, isActive } = req.body;
     
     const updateData = {};
     if (title) updateData.title = title;
     if (content) updateData.content = content;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (priority) updateData.priority = priority;
     if (expiresAt !== undefined) updateData.expiresAt = expiresAt ? new Date(expiresAt) : null;
     if (targetRoles) updateData.targetRoles = targetRoles;
