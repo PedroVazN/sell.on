@@ -173,47 +173,28 @@ const NoticesAdmin: React.FC = () => {
     try {
       setUploadingImage(true);
       
-      // Converter para base64
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
+      // Usar FormData diretamente com o arquivo
+      const uploadFormData = new FormData();
+      uploadFormData.append('image', file);
       
-      reader.onload = async () => {
-        try {
-          const base64Image = reader.result as string;
-          const base64Data = base64Image.split(',')[1];
+      const response = await fetch('https://api.imgbb.com/1/upload?key=82c0d0b492dbf0f5e9d0ec3d24b8c5e5', {
+        method: 'POST',
+        body: uploadFormData
+      });
 
-          // Upload para ImgBB (API gratuita)
-          const formData = new FormData();
-          formData.append('image', base64Data);
-          
-          const response = await fetch('https://api.imgbb.com/1/upload?key=82c0d0b492dbf0f5e9d0ec3d24b8c5e5', {
-            method: 'POST',
-            body: formData
-          });
-
-          const data = await response.json();
-          
-          if (data.success) {
-            setFormData(prev => ({ ...prev, imageUrl: data.data.url }));
-            success('Sucesso!', 'Imagem enviada com sucesso!');
-          } else {
-            throw new Error('Falha no upload');
-          }
-        } catch (err) {
-          console.error('Erro ao fazer upload:', err);
-          error('Erro!', 'Erro ao fazer upload da imagem');
-        } finally {
-          setUploadingImage(false);
-        }
-      };
-
-      reader.onerror = () => {
-        error('Erro!', 'Erro ao ler arquivo');
-        setUploadingImage(false);
-      };
-    } catch (err) {
-      console.error('Erro ao processar imagem:', err);
-      error('Erro!', 'Erro ao processar imagem');
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.url) {
+        setFormData(prev => ({ ...prev, imageUrl: data.data.url }));
+        success('Sucesso!', 'Imagem enviada com sucesso!');
+      } else {
+        console.error('Resposta da API:', data);
+        throw new Error(data.error?.message || 'Falha no upload');
+      }
+    } catch (err: any) {
+      console.error('Erro ao fazer upload:', err);
+      error('Erro!', err.message || 'Erro ao fazer upload da imagem');
+    } finally {
       setUploadingImage(false);
     }
   };
