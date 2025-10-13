@@ -152,6 +152,16 @@ const NoticesViewer: React.FC = () => {
                   </S.PriorityBadge>
                 </S.NoticeHeader>
 
+                {notice.imageUrl && (
+                  <S.NoticeImage 
+                    src={notice.imageUrl} 
+                    alt={notice.title}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+
                 <S.NoticeContent>{notice.content}</S.NoticeContent>
 
                 <S.NoticeFooter>

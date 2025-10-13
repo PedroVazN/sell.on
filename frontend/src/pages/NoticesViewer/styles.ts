@@ -76,9 +76,21 @@ export const FilterButton = styled.button<{ $active: boolean }>`
 `;
 
 export const NoticesList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+
+  @media (max-width: 1400px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const NoticeCard = styled.div<{ 
@@ -153,11 +165,25 @@ export const PriorityBadge = styled.div<{ $priority: string }>`
   white-space: nowrap;
 `;
 
+export const NoticeImage = styled.img`
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #334155;
+`;
+
 export const NoticeContent = styled.p`
   color: #cbd5e1;
   line-height: 1.6;
   margin: 0 0 1rem 0;
   white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export const NoticeFooter = styled.div`
