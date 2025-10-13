@@ -39,6 +39,7 @@ interface PriceListProduct {
   aVista: number;
   credito: PriceOption[];
   boleto: PriceOption[];
+  isActive: boolean;
 }
 
 export const CreatePriceList: React.FC = () => {
@@ -161,6 +162,18 @@ export const CreatePriceList: React.FC = () => {
       
       setDistributors(distributorsResponse.data || []);
       setProducts(productsResponse.data || []);
+      
+      // Inicializar todos os produtos como inativos
+      const allProductsInactive = (productsResponse.data || []).map(product => ({
+        productId: product._id,
+        productName: product.name,
+        aVista: 0,
+        credito: [],
+        boleto: [],
+        isActive: false
+      }));
+      
+      setSelectedProducts(allProductsInactive);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       alert('Erro ao carregar dados. Tente novamente.');
@@ -170,8 +183,10 @@ export const CreatePriceList: React.FC = () => {
   };
 
   const handleSavePriceList = async () => {
-    if (!selectedDistributor || selectedProducts.length === 0) {
-      alert('Selecione um distribuidor e pelo menos um produto');
+    const activeProducts = selectedProducts.filter(p => p.isActive);
+    
+    if (!selectedDistributor || activeProducts.length === 0) {
+      alert('Selecione um distribuidor e ative pelo menos um produto');
       return;
     }
 
@@ -186,7 +201,7 @@ export const CreatePriceList: React.FC = () => {
       
       const priceListData = {
         distributorId: selectedDistributor,
-        products: selectedProducts.map(product => ({
+        products: activeProducts.map(product => ({
           productId: product.productId,
           pricing: {
             aVista: product.aVista,
@@ -208,20 +223,13 @@ export const CreatePriceList: React.FC = () => {
     }
   };
 
-  const addProduct = () => {
-    if (products.length > 0) {
-      setSelectedProducts(prev => [...prev, {
-        productId: products[0]._id,
-        productName: products[0].name,
-        aVista: 0,
-        credito: [],
-        boleto: []
-      }]);
-    }
-  };
-
-  const removeProduct = (index: number) => {
-    setSelectedProducts(prev => prev.filter((_, i) => i !== index));
+  const toggleProductActive = (index: number) => {
+    setSelectedProducts(prev => prev.map((product, i) => {
+      if (i === index) {
+        return { ...product, isActive: !product.isActive };
+      }
+      return product;
+    }));
   };
 
   const updateProduct = (index: number, field: string, value: any) => {
@@ -329,60 +337,70 @@ export const CreatePriceList: React.FC = () => {
             </Select>
           </FormGroup>
 
-          <SectionTitle>Produtos e Preços *</SectionTitle>
+          <SectionTitle>
+            Produtos e Preços * 
+            <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
+              ({selectedProducts.filter(p => p.isActive).length} ativos de {selectedProducts.length})
+            </span>
+          </SectionTitle>
           
           <ProductList>
             {selectedProducts.length === 0 ? (
               <EmptyState>
-                <p>Nenhum produto adicionado</p>
-                <AddProductButton onClick={addProduct}>
-                  <Plus size={16} />
-                  Adicionar Primeiro Produto
-                </AddProductButton>
+                <p>Carregando produtos...</p>
               </EmptyState>
             ) : (
               selectedProducts.map((product, index) => (
-                <ProductItem key={index}>
+                <ProductItem key={index} style={{ 
+                  opacity: product.isActive ? 1 : 0.6,
+                  border: product.isActive ? '2px solid #10b981' : '1px solid #e5e7eb'
+                }}>
                   <ProductHeader>
                     <ProductNameContainer>
-                      <Select
-                        value={product.productId}
-                        onChange={(e) => {
-                          const selectedProduct = products.find(p => p._id === e.target.value);
-                          if (selectedProduct) {
-                            updateProduct(index, 'productId', selectedProduct._id);
-                            updateProduct(index, 'productName', selectedProduct.name);
-                          }
-                        }}
-                        style={{
-                          backgroundColor: '#1f2937',
-                          color: '#ffffff'
-                        }}
-                        data-theme="dark"
-                      >
-                        <option value="">Selecione um produto</option>
-                        {products.map(p => (
-                          <option key={p._id} value={p._id}>{p.name}</option>
-                        ))}
-                      </Select>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                        <button
+                          type="button"
+                          onClick={() => toggleProductActive(index)}
+                          style={{
+                            background: product.isActive ? '#10b981' : '#6b7280',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            minWidth: '80px',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {product.isActive ? 'ATIVO' : 'Ativar'}
+                        </button>
+                        <span style={{ 
+                          fontSize: '15px', 
+                          fontWeight: product.isActive ? 'bold' : 'normal',
+                          color: product.isActive ? '#111827' : '#6b7280',
+                          flex: 1
+                        }}>
+                          {product.productName}
+                        </span>
+                      </div>
                     </ProductNameContainer>
-                    <RemoveButton onClick={() => removeProduct(index)}>
-                      <Trash2 size={16} />
-                    </RemoveButton>
                   </ProductHeader>
 
-                  <ProductPricing>
-                    {/* Preço à Vista */}
-                    <PriceRow>
-                      <PriceLabelInput>Preço à Vista (R$):</PriceLabelInput>
-                      <PriceInput
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={product.aVista || 0}
-                        onChange={(e) => updateProduct(index, 'aVista', parseFloat(e.target.value) || 0)}
-                      />
-                    </PriceRow>
+                  {product.isActive && (
+                    <ProductPricing>
+                      {/* Preço à Vista */}
+                      <PriceRow>
+                        <PriceLabelInput>Preço à Vista (R$):</PriceLabelInput>
+                        <PriceInput
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={product.aVista || 0}
+                          onChange={(e) => updateProduct(index, 'aVista', parseFloat(e.target.value) || 0)}
+                        />
+                      </PriceRow>
 
                     {/* Preços no Crédito */}
                     <div style={{ marginTop: '16px' }}>
@@ -535,18 +553,12 @@ export const CreatePriceList: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  </ProductPricing>
+                    </ProductPricing>
+                  )}
                 </ProductItem>
               ))
             )}
           </ProductList>
-
-          <ButtonGroup>
-            <AddProductButton onClick={addProduct}>
-              <Plus size={16} />
-              Adicionar Produto
-            </AddProductButton>
-          </ButtonGroup>
 
           <ButtonGroup style={{ marginTop: '2rem', justifyContent: 'flex-end' }}>
             <Button 
@@ -558,7 +570,7 @@ export const CreatePriceList: React.FC = () => {
             </Button>
             <Button 
               onClick={handleSavePriceList}
-              disabled={saving || !selectedDistributor || selectedProducts.length === 0}
+              disabled={saving || !selectedDistributor || selectedProducts.filter(p => p.isActive).length === 0}
               style={{ backgroundColor: '#10b981' }}
             >
               <Save size={16} />
