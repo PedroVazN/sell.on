@@ -929,6 +929,17 @@ export const CreateProposal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Vendedor e Distribuidor */}
+              <div>
+                <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                  Vendedor e Distribuidor
+                </h3>
+                <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px' }}>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Vendedor:</strong> {formData.seller.name || 'Não selecionado'}</p>
+                  <p style={{ margin: '4px 0', color: '#4b5563' }}><strong>Distribuidor:</strong> {formData.distributor.apelido || formData.distributor.razaoSocial || 'Não selecionado'}</p>
+                </div>
+              </div>
+
               {/* Produtos */}
               <div>
                 <h3 style={{ color: '#374151', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
