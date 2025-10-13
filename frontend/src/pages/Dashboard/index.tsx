@@ -180,13 +180,14 @@ export const Dashboard: React.FC = () => {
         console.log('🔍 User role:', user.role);
         console.log('🔍 User ID:', user._id);
         
-        const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse, proposalsResponse, goalsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse, proposalsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getVendedorProposals(user._id, 1, 100),
           apiService.getLossReasonsStats(),
           apiService.getProposals(1, 100),
-          apiService.getGoals(1, 50, { assignedTo: user._id, status: 'active' })
+          apiService.getGoals(1, 50, { assignedTo: user._id, status: 'active' }),
+          apiService.getProposalsDashboardSales()
         ]);
 
         console.log('📊 Resposta completa do vendedor:', vendedorProposalsResponse);
@@ -298,11 +299,12 @@ export const Dashboard: React.FC = () => {
             expiradaProposals: proposalStats.expiradaProposals,
             expiradaValue: proposalStats.expiradaValue
           },
-          topProducts: [],
+          topProducts: salesDataResponse.data?.topProducts || [],
           monthlyData: monthlyData
         };
         
         console.log('📊 Dashboard data para vendedor:', dashboardData);
+        console.log('📊 Top Products:', salesDataResponse.data?.topProducts);
         setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
         setGoals(goalsResponse.data || []);
@@ -310,12 +312,13 @@ export const Dashboard: React.FC = () => {
         // Dashboard para admin - mesmos campos do vendedor mas com dados de todos
         console.log('🔍 Carregando dashboard do admin');
         
-        const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse, goalsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getProposals(1, 1000), // Buscar todas as propostas
           apiService.getLossReasonsStats(),
-          apiService.getGoals(1, 100, { status: 'active' }) // Buscar todas as metas ativas
+          apiService.getGoals(1, 100, { status: 'active' }), // Buscar todas as metas ativas
+          apiService.getProposalsDashboardSales()
         ]);
 
         console.log('📊 Todas as propostas carregadas:', allProposalsResponse.data?.length);
@@ -419,11 +422,12 @@ export const Dashboard: React.FC = () => {
             expiradaProposals: proposalStats.expiradaProposals,
             expiradaValue: proposalStats.expiradaValue
           },
-          topProducts: [],
+          topProducts: salesDataResponse.data?.topProducts || [],
           monthlyData: monthlyData
         };
         
         console.log('📊 Dashboard data para admin:', dashboardData);
+        console.log('📊 Top Products Admin:', salesDataResponse.data?.topProducts);
         setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
         setGoals(goalsResponse.data || []);
@@ -480,86 +484,6 @@ export const Dashboard: React.FC = () => {
         </Subtitle>
       </Header>
 
-      {/* Seção de Metas - MOVIDA PARA O TOPO */}
-      {goals.length > 0 && (
-        <ChartsGrid>
-          <ChartCard style={{ gridColumn: user?.role === 'admin' ? 'span 2' : 'span 1' }}>
-            <ChartTitle>
-              {user?.role === 'vendedor' ? 'Suas Metas Ativas' : 'Todas as Metas Ativas'}
-            </ChartTitle>
-            <ChartSubtitle>
-              {user?.role === 'vendedor' 
-                ? 'Acompanhe o progresso das suas metas' 
-                : 'Progresso de todas as metas da equipe'}
-            </ChartSubtitle>
-            <GoalsList>
-              {goals.map((goal) => (
-                <GoalItem key={goal._id}>
-                  <GoalName>
-                    {goal.title}
-                    {user?.role === 'admin' && goal.assignedTo && (
-                      <span style={{ 
-                        fontSize: '0.75rem', 
-                        color: '#6B7280', 
-                        marginLeft: '0.5rem',
-                        fontWeight: 'normal'
-                      }}>
-                        ({typeof goal.assignedTo === 'string' ? goal.assignedTo : (goal.assignedTo as any).name})
-                      </span>
-                    )}
-                  </GoalName>
-                  <GoalProgress>
-                    <GoalBar 
-                      $color={goal.progress.percentage >= 100 ? '#10B981' : 
-                             goal.progress.percentage >= 80 ? '#3B82F6' : 
-                             goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444'}
-                      $width={Math.min(100, goal.progress.percentage)}
-                    >
-                      <div 
-                        style={{
-                          width: `${Math.min(100, goal.progress.percentage)}%`,
-                          height: '100%',
-                          backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
-                                         goal.progress.percentage >= 80 ? '#3B82F6' : 
-                                         goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
-                          borderRadius: '4px',
-                          transition: 'width 0.3s ease'
-                        }}
-                      />
-                    </GoalBar>
-                    <GoalPercentage>
-                      {goal.progress.percentage}%
-                    </GoalPercentage>
-                  </GoalProgress>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginTop: '0.5rem',
-                    fontSize: '0.875rem',
-                    color: '#9CA3AF'
-                  }}>
-                    <span>
-                      {formatCurrency(goal.currentValue)} / {formatCurrency(goal.targetValue)}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ 
-                        color: goal.status === 'completed' ? '#10B981' : 
-                               goal.status === 'active' ? '#3B82F6' : '#6B7280',
-                        fontWeight: '600'
-                      }}>
-                        {goal.status === 'completed' ? 'Concluída' : 
-                         goal.status === 'active' ? 'Ativa' : 
-                         goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
-                      </span>
-                    </div>
-                  </div>
-                </GoalItem>
-              ))}
-            </GoalsList>
-          </ChartCard>
-        </ChartsGrid>
-      )}
 
       <MetricsGrid>
         {user?.role === 'vendedor' ? (
@@ -788,24 +712,87 @@ export const Dashboard: React.FC = () => {
 
         <ChartCard>
           <ChartTitle>
-            {user?.role === 'vendedor' ? 'Metas de Propostas' : 'Metas de Vendas'}
+            {user?.role === 'vendedor' ? 'Suas Metas Ativas' : 'Metas de Vendas da Equipe'}
           </ChartTitle>
           <ChartSubtitle>
             {user?.role === 'vendedor' 
-              ? 'Progresso das suas metas de propostas' 
-              : 'Progresso das metas mensais'
-            }
+              ? 'Acompanhe o progresso das suas metas' 
+              : 'Progresso de todas as metas ativas'}
           </ChartSubtitle>
           <GoalsList>
-            {(user?.role === 'vendedor' ? vendedorGoals : adminGoals).map((goal, index) => (
-              <GoalItem key={index}>
-                <GoalName>{goal.name}</GoalName>
+            {goals.length > 0 ? (
+              goals.map((goal) => (
+                <GoalItem key={goal._id}>
+                  <GoalName>
+                    {goal.title}
+                    {user?.role === 'admin' && goal.assignedTo && (
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        color: '#6B7280', 
+                        marginLeft: '0.5rem',
+                        fontWeight: 'normal'
+                      }}>
+                        ({typeof goal.assignedTo === 'string' ? goal.assignedTo : (goal.assignedTo as any).name})
+                      </span>
+                    )}
+                  </GoalName>
+                  <GoalProgress>
+                    <GoalBar 
+                      $color={goal.progress.percentage >= 100 ? '#10B981' : 
+                             goal.progress.percentage >= 80 ? '#3B82F6' : 
+                             goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444'}
+                      $width={Math.min(100, goal.progress.percentage)}
+                    >
+                      <div 
+                        style={{
+                          width: `${Math.min(100, goal.progress.percentage)}%`,
+                          height: '100%',
+                          backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
+                                         goal.progress.percentage >= 80 ? '#3B82F6' : 
+                                         goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
+                          borderRadius: '4px',
+                          transition: 'width 0.3s ease'
+                        }}
+                      />
+                    </GoalBar>
+                    <GoalPercentage>
+                      {goal.progress.percentage}%
+                    </GoalPercentage>
+                  </GoalProgress>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginTop: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#9CA3AF'
+                  }}>
+                    <span>
+                      {formatCurrency(goal.currentValue)} / {formatCurrency(goal.targetValue)}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ 
+                        color: goal.status === 'completed' ? '#10B981' : 
+                               goal.status === 'active' ? '#3B82F6' : '#6B7280',
+                        fontWeight: '600'
+                      }}>
+                        {goal.status === 'completed' ? 'Concluída' : 
+                         goal.status === 'active' ? 'Ativa' : 
+                         goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
+                      </span>
+                    </div>
+                  </div>
+                </GoalItem>
+              ))
+            ) : (
+              <GoalItem>
+                <GoalName>Nenhuma meta ativa</GoalName>
                 <GoalProgress>
-                  <GoalBar $color={goal.color} $width={goal.progress} />
-                  <GoalPercentage>{goal.progress}%</GoalPercentage>
+                  <GoalBar $color="#6B7280" $width={0} />
+                  <GoalPercentage>0%</GoalPercentage>
                 </GoalProgress>
               </GoalItem>
-            ))}
+            )}
           </GoalsList>
         </ChartCard>
       </ChartsGrid>
