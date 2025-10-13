@@ -391,97 +391,25 @@ export const CreatePriceList: React.FC = () => {
                   {product.isActive && (
                     <ProductPricing>
                       {/* Preço à Vista */}
-                      <PriceRow>
-                        <PriceLabelInput>Preço à Vista (R$):</PriceLabelInput>
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <PriceLabelInput>À Vista:</PriceLabelInput>
+                        </div>
                         <PriceInput
                           type="number"
                           step="0.01"
                           min="0"
                           value={product.aVista || 0}
                           onChange={(e) => updateProduct(index, 'aVista', parseFloat(e.target.value) || 0)}
+                          placeholder="Preço à vista (R$)"
+                          style={{ width: '100%' }}
                         />
-                      </PriceRow>
-
-                    {/* Preços no Crédito */}
-                    <div style={{ marginTop: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <PriceLabelInput>Preços no Crédito:</PriceLabelInput>
-                        <button
-                          type="button"
-                          onClick={() => addPriceOption(index, 'credito')}
-                          style={{
-                            background: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '4px 8px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <Plus size={12} />
-                          Adicionar
-                        </button>
                       </div>
-                      {product.credito.map((option, optionIndex) => (
-                        <div key={optionIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                          <input
-                            type="number"
-                            min="1"
-                            max="24"
-                            value={option.parcelas}
-                            onChange={(e) => updatePriceOption(index, 'credito', optionIndex, 'parcelas', parseInt(e.target.value) || 1)}
-                            placeholder="Parcelas"
-                            style={{
-                              width: '80px',
-                              padding: '4px 8px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '12px'
-                            }}
-                          />
-                          <span style={{ fontSize: '12px', color: '#6b7280' }}>x</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={option.preco}
-                            onChange={(e) => updatePriceOption(index, 'credito', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
-                            placeholder="Preço"
-                            style={{
-                              flex: 1,
-                              padding: '4px 8px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '12px'
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removePriceOption(index, 'credito', optionIndex)}
-                            style={{
-                              background: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              padding: '4px 8px',
-                              cursor: 'pointer',
-                              fontSize: '12px'
-                            }}
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
 
                     {/* Preços no Boleto */}
-                    <div style={{ marginTop: '16px' }}>
+                    <div style={{ marginBottom: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <PriceLabelInput>Preços no Boleto:</PriceLabelInput>
+                        <PriceLabelInput>Boleto:</PriceLabelInput>
                         <button
                           type="button"
                           onClick={() => addPriceOption(index, 'boleto')}
@@ -526,7 +454,7 @@ export const CreatePriceList: React.FC = () => {
                             min="0"
                             value={option.preco}
                             onChange={(e) => updatePriceOption(index, 'boleto', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
-                            placeholder="Preço"
+                            placeholder="Preço (R$)"
                             style={{
                               flex: 1,
                               padding: '4px 8px',
@@ -538,6 +466,82 @@ export const CreatePriceList: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => removePriceOption(index, 'boleto', optionIndex)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Preços no Crédito */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <PriceLabelInput>Crédito:</PriceLabelInput>
+                        <button
+                          type="button"
+                          onClick={() => addPriceOption(index, 'credito')}
+                          style={{
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Plus size={12} />
+                          Adicionar
+                        </button>
+                      </div>
+                      {product.credito.map((option, optionIndex) => (
+                        <div key={optionIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={option.parcelas}
+                            onChange={(e) => updatePriceOption(index, 'credito', optionIndex, 'parcelas', parseInt(e.target.value) || 1)}
+                            placeholder="Parcelas"
+                            style={{
+                              width: '80px',
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <span style={{ fontSize: '12px', color: '#6b7280' }}>x</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={option.preco}
+                            onChange={(e) => updatePriceOption(index, 'credito', optionIndex, 'preco', parseFloat(e.target.value) || 0)}
+                            placeholder="Preço (R$)"
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePriceOption(index, 'credito', optionIndex)}
                             style={{
                               background: '#ef4444',
                               color: 'white',
