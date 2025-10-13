@@ -163,13 +163,13 @@ export const CreatePriceList: React.FC = () => {
       setDistributors(distributorsResponse.data || []);
       setProducts(productsResponse.data || []);
       
-      // Inicializar todos os produtos como inativos
+      // Inicializar todos os produtos como inativos com boleto padrão
       const allProductsInactive = (productsResponse.data || []).map(product => ({
         productId: product._id,
         productName: product.name,
         aVista: 0,
         credito: [],
-        boleto: [],
+        boleto: [{ parcelas: 1, preco: 0 }], // Boleto começa com 1 opção por padrão
         isActive: false
       }));
       
