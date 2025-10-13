@@ -32,6 +32,7 @@ const NoticesAdmin: React.FC = () => {
     isActive: true,
     imageUrl: ''
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     loadNotices();
@@ -153,6 +154,70 @@ const NoticesAdmin: React.FC = () => {
     });
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamanho (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      error('Erro!', 'Imagem muito grande! Máximo 5MB');
+      return;
+    }
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      error('Erro!', 'Arquivo deve ser uma imagem');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      
+      // Converter para base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        try {
+          const base64Image = reader.result as string;
+          const base64Data = base64Image.split(',')[1];
+
+          // Upload para ImgBB (API gratuita)
+          const formData = new FormData();
+          formData.append('image', base64Data);
+          
+          const response = await fetch('https://api.imgbb.com/1/upload?key=82c0d0b492dbf0f5e9d0ec3d24b8c5e5', {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await response.json();
+          
+          if (data.success) {
+            setFormData(prev => ({ ...prev, imageUrl: data.data.url }));
+            success('Sucesso!', 'Imagem enviada com sucesso!');
+          } else {
+            throw new Error('Falha no upload');
+          }
+        } catch (err) {
+          console.error('Erro ao fazer upload:', err);
+          error('Erro!', 'Erro ao fazer upload da imagem');
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+
+      reader.onerror = () => {
+        error('Erro!', 'Erro ao ler arquivo');
+        setUploadingImage(false);
+      };
+    } catch (err) {
+      console.error('Erro ao processar imagem:', err);
+      error('Erro!', 'Erro ao processar imagem');
+      setUploadingImage(false);
+    }
+  };
+
   if (user?.role !== 'admin') {
     return (
       <S.Container>
@@ -218,28 +283,96 @@ const NoticesAdmin: React.FC = () => {
               </S.FormGroup>
 
               <S.FormGroup>
-                <S.Label>URL da Imagem (opcional)</S.Label>
+                <S.Label>Imagem (opcional)</S.Label>
+                
+                {/* Botão de Upload */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <label 
+                    htmlFor="image-upload" 
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem',
+                      background: uploadingImage ? '#6b7280' : '#10b981',
+                      color: 'white',
+                      borderRadius: '6px',
+                      cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {uploadingImage ? '⏳ Enviando...' : '📤 Enviar do Computador'}
+                  </label>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+                {/* OU usar URL */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  margin: '0.5rem 0',
+                  color: '#94a3b8',
+                  fontSize: '0.875rem',
+                  fontWeight: 600
+                }}>
+                  <div style={{ flex: 1, height: '1px', background: '#334155' }} />
+                  <span>OU</span>
+                  <div style={{ flex: 1, height: '1px', background: '#334155' }} />
+                </div>
+
                 <S.Input
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://exemplo.com/imagem.jpg"
+                  placeholder="Cole a URL da imagem aqui"
+                  disabled={uploadingImage}
                 />
+                
+                {/* Preview da Imagem */}
                 {formData.imageUrl && (
-                  <div style={{ marginTop: '0.5rem' }}>
+                  <div style={{ marginTop: '0.75rem' }}>
                     <img 
                       src={formData.imageUrl} 
                       alt="Preview" 
                       style={{ 
-                        maxWidth: '100%', 
+                        width: '100%',
                         maxHeight: '200px', 
                         borderRadius: '8px',
-                        objectFit: 'cover'
+                        objectFit: 'cover',
+                        border: '2px solid #334155'
                       }}
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                      style={{
+                        marginTop: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      🗑️ Remover Imagem
+                    </button>
                   </div>
                 )}
               </S.FormGroup>
