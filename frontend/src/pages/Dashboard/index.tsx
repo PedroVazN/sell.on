@@ -545,50 +545,50 @@ export const Dashboard: React.FC = () => {
         {user?.role === 'vendedor' ? (
           <>
             {/* Valores */}
-            <MetricCard>
+            <MetricCard $variant="success">
               <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
               <MetricChange>Propostas fechadas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="danger">
               <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
               <MetricChange>Propostas perdidas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="neutral">
               <MetricValue>{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="warning">
               <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
             </MetricCard>
 
             {/* Quantidades */}
-            <MetricCard>
+            <MetricCard $variant="success">
               <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Ganhas</MetricLabel>
               <MetricChange>Fechadas com sucesso</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="danger">
               <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Perdidas</MetricLabel>
               <MetricChange>Não convertidas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="neutral">
               <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="warning">
               <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
@@ -597,50 +597,50 @@ export const Dashboard: React.FC = () => {
         ) : (
           <>
             {/* Valores - Admin */}
-            <MetricCard>
+            <MetricCard $variant="success">
               <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
               <MetricChange>Propostas fechadas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="danger">
               <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
               <MetricChange>Propostas perdidas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="neutral">
               <MetricValue>{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="warning">
               <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
             </MetricCard>
 
             {/* Quantidades - Admin */}
-            <MetricCard>
+            <MetricCard $variant="success">
               <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Ganhas</MetricLabel>
               <MetricChange>Fechadas com sucesso</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="danger">
               <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Perdidas</MetricLabel>
               <MetricChange>Não convertidas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="neutral">
               <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard>
+            <MetricCard $variant="warning">
               <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>

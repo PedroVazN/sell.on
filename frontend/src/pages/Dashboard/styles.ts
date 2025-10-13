@@ -172,9 +172,16 @@ export const MetricsGrid = styled.div`
   }
 `;
 
-export const MetricCard = styled.div`
+export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
   background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  border: 1px solid ${props => {
+    switch (props.$variant) {
+      case 'success': return 'rgba(16, 185, 129, 0.3)';
+      case 'warning': return 'rgba(245, 158, 11, 0.3)';
+      case 'danger': return 'rgba(239, 68, 68, 0.3)';
+      default: return 'rgba(71, 85, 105, 0.3)';
+    }
+  }};
   border-radius: 20px;
   padding: 28px;
   backdrop-filter: blur(25px);

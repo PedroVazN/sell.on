@@ -232,6 +232,20 @@ export const CreatePriceList: React.FC = () => {
     }));
   };
 
+  const activateAllProducts = () => {
+    setSelectedProducts(prev => prev.map(product => ({
+      ...product,
+      isActive: true
+    })));
+  };
+
+  const deactivateAllProducts = () => {
+    setSelectedProducts(prev => prev.map(product => ({
+      ...product,
+      isActive: false
+    })));
+  };
+
   const updateProduct = (index: number, field: string, value: any) => {
     setSelectedProducts(prev => prev.map((product, i) => {
       if (i === index) {
@@ -337,12 +351,56 @@ export const CreatePriceList: React.FC = () => {
             </Select>
           </FormGroup>
 
-          <SectionTitle>
-            Produtos e Preços * 
-            <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
-              ({selectedProducts.filter(p => p.isActive).length} ativos de {selectedProducts.length})
-            </span>
-          </SectionTitle>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <SectionTitle style={{ margin: 0 }}>
+              Produtos e Preços * 
+              <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
+                ({selectedProducts.filter(p => p.isActive).length} ativos de {selectedProducts.length})
+              </span>
+            </SectionTitle>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={activateAllProducts}
+                style={{
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Plus size={16} />
+                Ativar Todos
+              </button>
+              <button
+                type="button"
+                onClick={deactivateAllProducts}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <X size={16} />
+                Desativar Todos
+              </button>
+            </div>
+          </div>
           
           <ProductList>
             {selectedProducts.length === 0 ? (
@@ -361,7 +419,7 @@ export const CreatePriceList: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => toggleProductActive(index)}
-                          style={{
+                        style={{
                             background: product.isActive ? '#10b981' : '#6b7280',
                             color: 'white',
                             border: 'none',
@@ -389,15 +447,15 @@ export const CreatePriceList: React.FC = () => {
                   </ProductHeader>
 
                   {product.isActive && (
-                    <ProductPricing>
+                  <ProductPricing>
                       {/* Preço à Vista */}
                       <div style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <PriceLabelInput>À Vista:</PriceLabelInput>
                         </div>
-                        <PriceInput
-                          type="number"
-                          step="0.01"
+                      <PriceInput
+                        type="number"
+                        step="0.01"
                           min="0"
                           value={product.aVista || 0}
                           onChange={(e) => updateProduct(index, 'aVista', parseFloat(e.target.value) || 0)}
@@ -489,7 +547,7 @@ export const CreatePriceList: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => addPriceOption(index, 'credito')}
-                          style={{
+                        style={{
                             background: '#10b981',
                             color: 'white',
                             border: 'none',
@@ -542,7 +600,7 @@ export const CreatePriceList: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => removePriceOption(index, 'credito', optionIndex)}
-                            style={{
+                          style={{
                               background: '#ef4444',
                               color: 'white',
                               border: 'none',
