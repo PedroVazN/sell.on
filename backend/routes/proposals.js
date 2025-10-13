@@ -616,14 +616,17 @@ router.get('/dashboard/sales', async (req, res) => {
       { $unwind: '$items' },
       {
         $group: {
-          _id: '$items.product.name',
+          _id: {
+            productId: '$items.product._id',
+            productName: '$items.product.name'
+          },
           totalQuantity: { $sum: '$items.quantity' },
           totalRevenue: { $sum: '$items.total' },
           sales: { $sum: 1 }
         }
       },
-      { $sort: { totalRevenue: -1 } },
-      { $limit: 5 }
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 10 }
     ]);
 
     // Buscar dados mensais para gráficos
@@ -654,7 +657,8 @@ router.get('/dashboard/sales', async (req, res) => {
         totalItems: 0
       },
       topProducts: topProducts.map(product => ({
-        name: product._id,
+        name: product._id.productName || 'Produto sem nome',
+        productId: product._id.productId,
         sales: product.sales,
         revenue: product.totalRevenue,
         quantity: product.totalQuantity

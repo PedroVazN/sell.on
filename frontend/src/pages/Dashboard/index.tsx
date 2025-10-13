@@ -310,11 +310,12 @@ export const Dashboard: React.FC = () => {
         // Dashboard para admin - mesmos campos do vendedor mas com dados de todos
         console.log('🔍 Carregando dashboard do admin');
         
-        const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse] = await Promise.all([
+        const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse, goalsResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getProposals(1, 1000), // Buscar todas as propostas
-          apiService.getLossReasonsStats()
+          apiService.getLossReasonsStats(),
+          apiService.getGoals(1, 100, { status: 'active' }) // Buscar todas as metas ativas
         ]);
 
         console.log('📊 Todas as propostas carregadas:', allProposalsResponse.data?.length);
@@ -425,6 +426,7 @@ export const Dashboard: React.FC = () => {
         console.log('📊 Dashboard data para admin:', dashboardData);
         setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
+        setGoals(goalsResponse.data || []);
       }
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
@@ -478,16 +480,34 @@ export const Dashboard: React.FC = () => {
         </Subtitle>
       </Header>
 
-      {/* Seção de Metas - Apenas para vendedores - MOVIDA PARA O TOPO */}
-      {user?.role === 'vendedor' && goals.length > 0 && (
+      {/* Seção de Metas - MOVIDA PARA O TOPO */}
+      {goals.length > 0 && (
         <ChartsGrid>
-          <ChartCard>
-            <ChartTitle>Suas Metas Ativas</ChartTitle>
-            <ChartSubtitle>Acompanhe o progresso das suas metas</ChartSubtitle>
+          <ChartCard style={{ gridColumn: user?.role === 'admin' ? 'span 2' : 'span 1' }}>
+            <ChartTitle>
+              {user?.role === 'vendedor' ? 'Suas Metas Ativas' : 'Todas as Metas Ativas'}
+            </ChartTitle>
+            <ChartSubtitle>
+              {user?.role === 'vendedor' 
+                ? 'Acompanhe o progresso das suas metas' 
+                : 'Progresso de todas as metas da equipe'}
+            </ChartSubtitle>
             <GoalsList>
-              {goals.slice(0, 3).map((goal) => (
+              {goals.map((goal) => (
                 <GoalItem key={goal._id}>
-                  <GoalName>{goal.title}</GoalName>
+                  <GoalName>
+                    {goal.title}
+                    {user?.role === 'admin' && goal.assignedTo && (
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        color: '#6B7280', 
+                        marginLeft: '0.5rem',
+                        fontWeight: 'normal'
+                      }}>
+                        ({typeof goal.assignedTo === 'string' ? goal.assignedTo : (goal.assignedTo as any).name})
+                      </span>
+                    )}
+                  </GoalName>
                   <GoalProgress>
                     <GoalBar 
                       $color={goal.progress.percentage >= 100 ? '#10B981' : 
