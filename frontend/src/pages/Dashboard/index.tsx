@@ -167,6 +167,14 @@ export const Dashboard: React.FC = () => {
     count: number;
     totalValue: number;
   }[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [dailyProposalsData, setDailyProposalsData] = useState<{
+    day: number;
+    ganhas: number;
+    perdidas: number;
+    geradas: number;
+  }[]>([]);
 
 
   const loadDashboardData = useCallback(async () => {
@@ -443,6 +451,53 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  // Processar dados diários quando mudar o mês
+  useEffect(() => {
+    const processDailyData = async () => {
+      try {
+        const response = await apiService.getProposals(1, 1000);
+        const proposals = response.data || [];
+
+        // Filtrar propostas do mês/ano selecionado
+        const filteredProposals = proposals.filter((p: any) => {
+          const date = new Date(p.createdAt);
+          return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
+        });
+
+        // Obter número de dias do mês
+        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+        
+        // Inicializar dados para todos os dias
+        const dailyData = Array.from({ length: daysInMonth }, (_, i) => ({
+          day: i + 1,
+          ganhas: 0,
+          perdidas: 0,
+          geradas: 0
+        }));
+
+        // Contar propostas por dia
+        filteredProposals.forEach((p: any) => {
+          const day = new Date(p.createdAt).getDate();
+          const dayIndex = day - 1;
+          
+          dailyData[dayIndex].geradas++;
+          
+          if (p.status === 'venda_fechada') {
+            dailyData[dayIndex].ganhas++;
+          } else if (p.status === 'venda_perdida') {
+            dailyData[dayIndex].perdidas++;
+          }
+        });
+
+        setDailyProposalsData(dailyData);
+      } catch (error) {
+        console.error('Erro ao processar dados diários:', error);
+      }
+    };
+
+    processDailyData();
+  }, [selectedMonth, selectedYear]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
   const salesData = useMemo(() => {
@@ -794,6 +849,179 @@ export const Dashboard: React.FC = () => {
               </GoalItem>
             )}
           </GoalsList>
+        </ChartCard>
+      </ChartsGrid>
+
+      {/* Gráfico de Propostas Diárias */}
+      <ChartsGrid>
+        <ChartCard style={{ gridColumn: 'span 2' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <ChartTitle>Propostas Diárias</ChartTitle>
+              <ChartSubtitle>Ganhas, Perdidas e Geradas por dia do mês</ChartSubtitle>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid #334155',
+                  background: '#1e293b',
+                  color: '#e2e8f0',
+                  fontSize: '0.875rem'
+                }}
+              >
+                <option value={1}>Janeiro</option>
+                <option value={2}>Fevereiro</option>
+                <option value={3}>Março</option>
+                <option value={4}>Abril</option>
+                <option value={5}>Maio</option>
+                <option value={6}>Junho</option>
+                <option value={7}>Julho</option>
+                <option value={8}>Agosto</option>
+                <option value={9}>Setembro</option>
+                <option value={10}>Outubro</option>
+                <option value={11}>Novembro</option>
+                <option value={12}>Dezembro</option>
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid #334155',
+                  background: '#1e293b',
+                  color: '#e2e8f0',
+                  fontSize: '0.875rem'
+                }}
+              >
+                {[2023, 2024, 2025, 2026].map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Legenda */}
+          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: '16px', height: '3px', background: '#10b981', borderRadius: '2px' }} />
+              <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Ganhas</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: '16px', height: '3px', background: '#ef4444', borderRadius: '2px' }} />
+              <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Perdidas</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: '16px', height: '3px', background: '#3b82f6', borderRadius: '2px' }} />
+              <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Geradas</span>
+            </div>
+          </div>
+
+          {/* Container do Gráfico */}
+          <div style={{ 
+            position: 'relative', 
+            width: '100%', 
+            height: '300px',
+            background: '#0f172a',
+            borderRadius: '0.5rem',
+            padding: '1rem',
+            overflow: 'hidden'
+          }}>
+            <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="none">
+              {/* Grid lines */}
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <line
+                  key={i}
+                  x1="0"
+                  y1={i * 60}
+                  x2="1000"
+                  y2={i * 60}
+                  stroke="#1e293b"
+                  strokeWidth="1"
+                />
+              ))}
+
+              {/* Linhas do gráfico */}
+              {dailyProposalsData.length > 0 && (() => {
+                const maxValue = Math.max(...dailyProposalsData.flatMap(d => [d.ganhas, d.perdidas, d.geradas]), 1);
+                const xStep = 1000 / (dailyProposalsData.length - 1 || 1);
+
+                // Linha de Ganhas (Verde)
+                const ganhasPath = dailyProposalsData.map((d, i) => {
+                  const x = i * xStep;
+                  const y = 300 - (d.ganhas / maxValue) * 280;
+                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                }).join(' ');
+
+                // Linha de Perdidas (Vermelha)
+                const perdidasPath = dailyProposalsData.map((d, i) => {
+                  const x = i * xStep;
+                  const y = 300 - (d.perdidas / maxValue) * 280;
+                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                }).join(' ');
+
+                // Linha de Geradas (Azul)
+                const geradasPath = dailyProposalsData.map((d, i) => {
+                  const x = i * xStep;
+                  const y = 300 - (d.geradas / maxValue) * 280;
+                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                }).join(' ');
+
+                return (
+                  <>
+                    <path d={geradasPath} fill="none" stroke="#3b82f6" strokeWidth="2" />
+                    <path d={perdidasPath} fill="none" stroke="#ef4444" strokeWidth="2" />
+                    <path d={ganhasPath} fill="none" stroke="#10b981" strokeWidth="2" />
+                  </>
+                );
+              })()}
+            </svg>
+
+            {/* Labels dos dias (abaixo do gráfico) */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              marginTop: '0.5rem',
+              fontSize: '0.75rem',
+              color: '#64748b'
+            }}>
+              {[1, 5, 10, 15, 20, 25, 30].map(day => (
+                <span key={day}>{day}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Resumo */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '1.5rem', 
+            marginTop: '1.5rem',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                {dailyProposalsData.reduce((sum, d) => sum + d.ganhas, 0)}
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Total Ganhas</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                {dailyProposalsData.reduce((sum, d) => sum + d.perdidas, 0)}
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Total Perdidas</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+                {dailyProposalsData.reduce((sum, d) => sum + d.geradas, 0)}
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Total Geradas</div>
+            </div>
+          </div>
         </ChartCard>
       </ChartsGrid>
 
