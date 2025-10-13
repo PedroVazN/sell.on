@@ -23,6 +23,7 @@ export interface Notice {
   _id: string;
   title: string;
   content: string;
+  imageUrl?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   isActive: boolean;
   expiresAt?: string;

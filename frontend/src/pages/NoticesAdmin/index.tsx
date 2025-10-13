@@ -29,7 +29,8 @@ const NoticesAdmin: React.FC = () => {
     priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
     targetRoles: ['all'] as ('admin' | 'vendedor' | 'all')[],
     expiresAt: '',
-    isActive: true
+    isActive: true,
+    imageUrl: ''
   });
 
   useEffect(() => {
@@ -91,7 +92,8 @@ const NoticesAdmin: React.FC = () => {
       priority: notice.priority,
       targetRoles: notice.targetRoles,
       expiresAt: notice.expiresAt ? new Date(notice.expiresAt).toISOString().split('T')[0] : '',
-      isActive: notice.isActive
+      isActive: notice.isActive,
+      imageUrl: notice.imageUrl || ''
     });
     setShowForm(true);
   };
@@ -116,7 +118,8 @@ const NoticesAdmin: React.FC = () => {
       priority: 'medium',
       targetRoles: ['all'],
       expiresAt: '',
-      isActive: true
+      isActive: true,
+      imageUrl: ''
     });
   };
 
@@ -214,6 +217,33 @@ const NoticesAdmin: React.FC = () => {
                 />
               </S.FormGroup>
 
+              <S.FormGroup>
+                <S.Label>URL da Imagem (opcional)</S.Label>
+                <S.Input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="https://exemplo.com/imagem.jpg"
+                />
+                {formData.imageUrl && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '200px', 
+                        borderRadius: '8px',
+                        objectFit: 'cover'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </S.FormGroup>
+
               <S.FormRow>
                 <S.FormGroup>
                   <S.Label>Prioridade</S.Label>
@@ -305,6 +335,16 @@ const NoticesAdmin: React.FC = () => {
                   </S.ActionButton>
                 </S.NoticeActions>
               </S.NoticeHeader>
+
+              {notice.imageUrl && (
+                <S.NoticeImage 
+                  src={notice.imageUrl} 
+                  alt={notice.title}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
 
               <S.NoticeContent>{notice.content}</S.NoticeContent>
 

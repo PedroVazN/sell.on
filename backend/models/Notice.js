@@ -13,6 +13,11 @@ const noticeSchema = new mongoose.Schema({
     trim: true,
     maxlength: 2000
   },
+  imageUrl: {
+    type: String,
+    required: false,
+    trim: true
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
