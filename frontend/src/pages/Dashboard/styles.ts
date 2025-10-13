@@ -173,12 +173,19 @@ export const MetricsGrid = styled.div`
 `;
 
 export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid ${props => {
+  background: ${props => {
     switch (props.$variant) {
-      case 'success': return 'rgba(16, 185, 129, 0.3)';
-      case 'warning': return 'rgba(245, 158, 11, 0.3)';
-      case 'danger': return 'rgba(239, 68, 68, 0.3)';
+      case 'success': return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(16, 185, 129, 0.15))';
+      case 'warning': return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(245, 158, 11, 0.15))';
+      case 'danger': return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(239, 68, 68, 0.15))';
+      default: return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(71, 85, 105, 0.15))';
+    }
+  }};
+  border: 2px solid ${props => {
+    switch (props.$variant) {
+      case 'success': return 'rgba(16, 185, 129, 0.5)';
+      case 'warning': return 'rgba(245, 158, 11, 0.5)';
+      case 'danger': return 'rgba(239, 68, 68, 0.5)';
       default: return 'rgba(71, 85, 105, 0.3)';
     }
   }};
@@ -187,6 +194,14 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
   backdrop-filter: blur(25px);
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.2),
+    ${props => {
+      switch (props.$variant) {
+        case 'success': return '0 0 20px rgba(16, 185, 129, 0.2)';
+        case 'warning': return '0 0 20px rgba(245, 158, 11, 0.2)';
+        case 'danger': return '0 0 20px rgba(239, 68, 68, 0.2)';
+        default: return '0 0 0 rgba(0, 0, 0, 0)';
+      }
+    }},
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -201,10 +216,17 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08));
+    background: ${props => {
+      switch (props.$variant) {
+        case 'success': return 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))';
+        case 'warning': return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))';
+        case 'danger': return 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))';
+        default: return 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08))';
+      }
+    }};
     border-radius: 20px;
     z-index: -1;
-    opacity: 0;
+    opacity: 1;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
