@@ -238,3 +238,95 @@ export const EmptyState = styled.div`
     margin: 0;
   }
 `;
+
+export const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+export const ModalContent = styled.div`
+  background: #1e293b;
+  border-radius: 1rem;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #334155;
+`;
+
+export const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #334155;
+  gap: 1rem;
+`;
+
+export const ModalTitle = styled.h2`
+  color: #f8fafc;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+`;
+
+export const ModalImage = styled.img`
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  background: #0f172a;
+`;
+
+export const ModalBody = styled.div`
+  padding: 1.5rem;
+`;
+
+export const ModalText = styled.p`
+  color: #e2e8f0;
+  line-height: 1.8;
+  margin: 0 0 1.5rem 0;
+  white-space: pre-wrap;
+  font-size: 1rem;
+`;
+
+export const ModalInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #0f172a;
+  border-radius: 0.5rem;
+  border: 1px solid #334155;
+`;
+
+export const ModalFooter = styled.div`
+  padding: 1.5rem;
+  border-top: 1px solid #334155;
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    background: #2563eb;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #1d4ed8;
+    }
+  }
+`;

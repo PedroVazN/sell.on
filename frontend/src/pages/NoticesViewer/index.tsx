@@ -19,6 +19,7 @@ const NoticesViewer: React.FC = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
+  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
   useEffect(() => {
     loadNotices();
@@ -144,6 +145,8 @@ const NoticesViewer: React.FC = () => {
                 $priority={notice.priority}
                 $expired={expired}
                 $inactive={!notice.isActive}
+                onClick={() => setSelectedNotice(notice)}
+                style={{ cursor: 'pointer' }}
               >
                 <S.NoticeHeader>
                   <S.NoticeTitle>{notice.title}</S.NoticeTitle>
@@ -208,6 +211,58 @@ const NoticesViewer: React.FC = () => {
           })
         )}
       </S.NoticesList>
+
+      {selectedNotice && (
+        <S.Modal onClick={() => setSelectedNotice(null)}>
+          <S.ModalContent onClick={(e) => e.stopPropagation()}>
+            <S.ModalHeader>
+              <S.ModalTitle>{selectedNotice.title}</S.ModalTitle>
+              <S.PriorityBadge $priority={selectedNotice.priority}>
+                {getPriorityLabel(selectedNotice.priority)}
+              </S.PriorityBadge>
+            </S.ModalHeader>
+
+            {selectedNotice.imageUrl && (
+              <S.ModalImage 
+                src={selectedNotice.imageUrl} 
+                alt={selectedNotice.title}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+
+            <S.ModalBody>
+              <S.ModalText>{selectedNotice.content}</S.ModalText>
+
+              <S.ModalInfo>
+                <S.InfoItem>
+                  <User size={16} />
+                  <span>{selectedNotice.createdBy?.name || 'Usuário não encontrado'}</span>
+                </S.InfoItem>
+                <S.InfoItem>
+                  <Calendar size={16} />
+                  <span>{formatDate(selectedNotice.createdAt)}</span>
+                </S.InfoItem>
+                {selectedNotice.expiresAt && (
+                  <S.InfoItem $expired={isExpired(selectedNotice)}>
+                    <Clock size={16} />
+                    <span>
+                      {isExpired(selectedNotice) ? 'Expirado em' : 'Expira em'}: {formatDate(selectedNotice.expiresAt)}
+                    </span>
+                  </S.InfoItem>
+                )}
+              </S.ModalInfo>
+            </S.ModalBody>
+
+            <S.ModalFooter>
+              <button onClick={() => setSelectedNotice(null)}>
+                Fechar
+              </button>
+            </S.ModalFooter>
+          </S.ModalContent>
+        </S.Modal>
+      )}
     </S.Container>
   );
 };
