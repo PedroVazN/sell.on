@@ -158,9 +158,9 @@ const NoticesAdmin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tamanho (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      error('Erro!', 'Imagem muito grande! Máximo 5MB');
+    // Validar tamanho (máximo 2MB para base64)
+    if (file.size > 2 * 1024 * 1024) {
+      error('Erro!', 'Imagem muito grande! Máximo 2MB');
       return;
     }
 
@@ -173,28 +173,33 @@ const NoticesAdmin: React.FC = () => {
     try {
       setUploadingImage(true);
       
-      // Usar FormData diretamente com o arquivo
-      const uploadFormData = new FormData();
-      uploadFormData.append('image', file);
+      // Converter para base64
+      const reader = new FileReader();
       
-      const response = await fetch('https://api.imgbb.com/1/upload?key=82c0d0b492dbf0f5e9d0ec3d24b8c5e5', {
-        method: 'POST',
-        body: uploadFormData
-      });
+      reader.onload = () => {
+        try {
+          const base64String = reader.result as string;
+          
+          // Salvar a imagem como data URL (base64 embutido)
+          setFormData(prev => ({ ...prev, imageUrl: base64String }));
+          success('Sucesso!', 'Imagem carregada com sucesso!');
+        } catch (err: any) {
+          console.error('Erro ao processar imagem:', err);
+          error('Erro!', 'Erro ao processar imagem');
+        } finally {
+          setUploadingImage(false);
+        }
+      };
 
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.url) {
-        setFormData(prev => ({ ...prev, imageUrl: data.data.url }));
-        success('Sucesso!', 'Imagem enviada com sucesso!');
-      } else {
-        console.error('Resposta da API:', data);
-        throw new Error(data.error?.message || 'Falha no upload');
-      }
+      reader.onerror = () => {
+        error('Erro!', 'Erro ao ler arquivo');
+        setUploadingImage(false);
+      };
+
+      reader.readAsDataURL(file);
     } catch (err: any) {
       console.error('Erro ao fazer upload:', err);
-      error('Erro!', err.message || 'Erro ao fazer upload da imagem');
-    } finally {
+      error('Erro!', 'Erro ao carregar imagem');
       setUploadingImage(false);
     }
   };
