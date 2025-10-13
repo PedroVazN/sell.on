@@ -173,35 +173,13 @@ export const MetricsGrid = styled.div`
 `;
 
 export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
-  background: ${props => {
-    switch (props.$variant) {
-      case 'success': return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(16, 185, 129, 0.15))';
-      case 'warning': return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(245, 158, 11, 0.15))';
-      case 'danger': return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(239, 68, 68, 0.15))';
-      default: return 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(71, 85, 105, 0.15))';
-    }
-  }};
-  border: 2px solid ${props => {
-    switch (props.$variant) {
-      case 'success': return 'rgba(16, 185, 129, 0.5)';
-      case 'warning': return 'rgba(245, 158, 11, 0.5)';
-      case 'danger': return 'rgba(239, 68, 68, 0.5)';
-      default: return 'rgba(71, 85, 105, 0.3)';
-    }
-  }};
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 20px;
   padding: 28px;
   backdrop-filter: blur(25px);
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.2),
-    ${props => {
-      switch (props.$variant) {
-        case 'success': return '0 0 20px rgba(16, 185, 129, 0.2)';
-        case 'warning': return '0 0 20px rgba(245, 158, 11, 0.2)';
-        case 'danger': return '0 0 20px rgba(239, 68, 68, 0.2)';
-        default: return '0 0 0 rgba(0, 0, 0, 0)';
-      }
-    }},
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -216,17 +194,10 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     left: 0;
     right: 0;
     bottom: 0;
-    background: ${props => {
-      switch (props.$variant) {
-        case 'success': return 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))';
-        case 'warning': return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))';
-        case 'danger': return 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))';
-        default: return 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08))';
-      }
-    }};
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08));
     border-radius: 20px;
     z-index: -1;
-    opacity: 1;
+    opacity: 0;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -280,11 +251,18 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
   &:nth-child(4) { animation-delay: 0.4s; }
 `;
 
-export const MetricValue = styled.div`
+export const MetricValue = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
   font-size: 2.5rem;
   font-weight: 800;
-  color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  color: ${({ $variant }) => {
+    switch ($variant) {
+      case 'success': return '#10b981';
+      case 'warning': return '#f59e0b';
+      case 'danger': return '#ef4444';
+      default: return '#e2e8f0';
+    }
+  }};
+  margin-bottom: 0.5rem;
   position: relative;
 `;
 
@@ -310,20 +288,38 @@ export const MetricLabel = styled.div`
   }
 `;
 
-export const MetricChange = styled.div<{ $positive?: boolean }>`
+export const MetricChange = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
   font-size: 0.875rem;
   font-weight: 600;
-  color: ${({ $positive, theme }) => 
-    $positive ? theme.colors.success : theme.colors.error};
+  color: ${({ $variant }) => {
+    switch ($variant) {
+      case 'success': return '#10b981';
+      case 'warning': return '#f59e0b';
+      case 'danger': return '#ef4444';
+      default: return '#94a3b8';
+    }
+  }};
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.xs};
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
-  background: ${({ $positive, theme }) => 
-    $positive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  border: 1px solid ${({ $positive, theme }) => 
-    $positive ? theme.colors.success : theme.colors.error};
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: ${({ $variant }) => {
+    switch ($variant) {
+      case 'success': return 'rgba(16, 185, 129, 0.1)';
+      case 'warning': return 'rgba(245, 158, 11, 0.1)';
+      case 'danger': return 'rgba(239, 68, 68, 0.1)';
+      default: return 'rgba(148, 163, 184, 0.1)';
+    }
+  }};
+  border-radius: 8px;
+  border: 1px solid ${({ $variant }) => {
+    switch ($variant) {
+      case 'success': return 'rgba(16, 185, 129, 0.3)';
+      case 'warning': return 'rgba(245, 158, 11, 0.3)';
+      case 'danger': return 'rgba(239, 68, 68, 0.3)';
+      default: return 'rgba(148, 163, 184, 0.2)';
+    }
+  }};
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.6s ease-out 1.2s both;
 `;

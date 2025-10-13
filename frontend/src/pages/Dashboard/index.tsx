@@ -545,105 +545,105 @@ export const Dashboard: React.FC = () => {
         {user?.role === 'vendedor' ? (
           <>
             {/* Valores */}
-            <MetricCard $variant="success">
-              <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="success">{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
-              <MetricChange>Propostas fechadas</MetricChange>
+              <MetricChange $variant="success">Propostas fechadas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="danger">
-              <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="danger">{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
-              <MetricChange>Propostas perdidas</MetricChange>
+              <MetricChange $variant="danger">Propostas perdidas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="neutral">
-              <MetricValue>{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="neutral">{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
-              <MetricChange>Todas as propostas</MetricChange>
+              <MetricChange $variant="neutral">Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="warning">
-              <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="warning">{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
-              <MetricChange>Em andamento</MetricChange>
+              <MetricChange $variant="warning">Em andamento</MetricChange>
             </MetricCard>
 
             {/* Quantidades */}
-            <MetricCard $variant="success">
-              <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="success">{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Ganhas</MetricLabel>
-              <MetricChange>Fechadas com sucesso</MetricChange>
+              <MetricChange $variant="success">Fechadas com sucesso</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="danger">
-              <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="danger">{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Perdidas</MetricLabel>
-              <MetricChange>Não convertidas</MetricChange>
+              <MetricChange $variant="danger">Não convertidas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="neutral">
-              <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="neutral">{data?.proposalStats?.totalProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Geradas</MetricLabel>
-              <MetricChange>Todas as propostas</MetricChange>
+              <MetricChange $variant="neutral">Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="warning">
-              <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="warning">{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
-              <MetricChange>Em andamento</MetricChange>
+              <MetricChange $variant="warning">Em andamento</MetricChange>
             </MetricCard>
           </>
         ) : (
           <>
             {/* Valores - Admin */}
-            <MetricCard $variant="success">
-              <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="success">{formatCurrency(data?.proposalStats?.vendaFechadaValue)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
-              <MetricChange>Propostas fechadas</MetricChange>
+              <MetricChange $variant="success">Propostas fechadas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="danger">
-              <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="danger">{formatCurrency(data?.proposalStats?.vendaPerdidaValue)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
-              <MetricChange>Propostas perdidas</MetricChange>
+              <MetricChange $variant="danger">Propostas perdidas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="neutral">
-              <MetricValue>{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="neutral">{formatCurrency(data?.proposalStats?.totalValue)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
-              <MetricChange>Todas as propostas</MetricChange>
+              <MetricChange $variant="neutral">Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="warning">
-              <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="warning">{formatCurrency(data?.proposalStats?.negociacaoValue)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
-              <MetricChange>Em andamento</MetricChange>
+              <MetricChange $variant="warning">Em andamento</MetricChange>
             </MetricCard>
 
             {/* Quantidades - Admin */}
-            <MetricCard $variant="success">
-              <MetricValue>{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="success">{data?.proposalStats?.vendaFechadaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Ganhas</MetricLabel>
-              <MetricChange>Fechadas com sucesso</MetricChange>
+              <MetricChange $variant="success">Fechadas com sucesso</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="danger">
-              <MetricValue>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="danger">{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Perdidas</MetricLabel>
-              <MetricChange>Não convertidas</MetricChange>
+              <MetricChange $variant="danger">Não convertidas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="neutral">
-              <MetricValue>{data?.proposalStats?.totalProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="neutral">{data?.proposalStats?.totalProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas Geradas</MetricLabel>
-              <MetricChange>Todas as propostas</MetricChange>
+              <MetricChange $variant="neutral">Todas as propostas</MetricChange>
             </MetricCard>
 
-            <MetricCard $variant="warning">
-              <MetricValue>{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
+            <MetricCard>
+              <MetricValue $variant="warning">{data?.proposalStats?.negociacaoProposals || 0}</MetricValue>
               <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
-              <MetricChange>Em andamento</MetricChange>
+              <MetricChange $variant="warning">Em andamento</MetricChange>
             </MetricCard>
           </>
         )}
