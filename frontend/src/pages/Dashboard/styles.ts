@@ -527,7 +527,7 @@ export const PerformanceMetrics = styled.div`
 export const MetricItem = styled.div`
   display: flex;
   flex-direction: column;
-  padding: ${({ theme }) => theme.spacing.xl};
+  padding: 1.25rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: ${({ theme }) => theme.borderRadius.xl};
@@ -553,36 +553,60 @@ export const MetricItem = styled.div`
     transform: translateY(-4px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   }
+
+  @media (max-width: 1600px) {
+    padding: 1rem;
+  }
 `;
 
 export const MetricItemLabel = styled.div`
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #A3A3A3;
   text-align: left;
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
+  line-height: 1.3;
+
+  @media (max-width: 1600px) {
+    font-size: 0.7rem;
+  }
 `;
 
 export const MetricItemValue = styled.div<{ $negative?: boolean }>`
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: ${({ $negative }) => $negative ? '#EF4444' : '#10B981'};
   margin-bottom: ${({ theme }) => theme.spacing.sm};
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  word-break: break-word;
+  line-height: 1.2;
+
+  @media (max-width: 1600px) {
+    font-size: 1.5rem;
+  }
+
+  @media (max-width: 1200px) {
+    font-size: 1.75rem;
+  }
 `;
 
 export const MetricItemIcon = styled.div<{ $color: string }>`
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: ${({ $color }) => $color}20;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
+  margin-bottom: 0.75rem;
   position: relative;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+  }
   
   &::before {
     content: '';
