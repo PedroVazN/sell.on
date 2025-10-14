@@ -175,6 +175,16 @@ export const Dashboard: React.FC = () => {
     perdidas: number;
     geradas: number;
   }[]>([]);
+  const [todayStats, setTodayStats] = useState({
+    geradas: 0,
+    ganhas: 0,
+    perdidas: 0,
+    negociacao: 0,
+    valorGeradas: 0,
+    valorGanhas: 0,
+    valorPerdidas: 0,
+    valorNegociacao: 0
+  });
 
 
   const loadDashboardData = useCallback(async () => {
@@ -491,6 +501,43 @@ export const Dashboard: React.FC = () => {
         });
 
         setDailyProposalsData(dailyData);
+
+        // Calcular estatísticas de hoje
+        const today = new Date();
+        const todayProposals = proposals.filter((p: any) => {
+          const pDate = new Date(p.createdAt);
+          return pDate.toDateString() === today.toDateString();
+        });
+
+        const todayStatsCalc = todayProposals.reduce((acc: any, p: any) => {
+          const valor = p.total || 0;
+          acc.geradas++;
+          acc.valorGeradas += valor;
+
+          if (p.status === 'venda_fechada') {
+            acc.ganhas++;
+            acc.valorGanhas += valor;
+          } else if (p.status === 'venda_perdida') {
+            acc.perdidas++;
+            acc.valorPerdidas += valor;
+          } else if (p.status === 'negociacao') {
+            acc.negociacao++;
+            acc.valorNegociacao += valor;
+          }
+
+          return acc;
+        }, {
+          geradas: 0,
+          ganhas: 0,
+          perdidas: 0,
+          negociacao: 0,
+          valorGeradas: 0,
+          valorGanhas: 0,
+          valorPerdidas: 0,
+          valorNegociacao: 0
+        });
+
+        setTodayStats(todayStatsCalc);
       } catch (error) {
         console.error('Erro ao processar dados diários:', error);
       }
@@ -1122,6 +1169,62 @@ export const Dashboard: React.FC = () => {
           </>
         ) : (
           <>
+            <MetricItem>
+              <MetricItemIcon $color="#3b82f6">
+                <Target size={24} color="#3b82f6" />
+              </MetricItemIcon>
+              <MetricItemLabel>Propostas Geradas Hoje</MetricItemLabel>
+              <MetricItemValue $negative={false}>{formatCurrency(todayStats.valorGeradas)}</MetricItemValue>
+              <MetricItemDescription>
+                {todayStats.geradas} proposta{todayStats.geradas !== 1 ? 's' : ''} criada{todayStats.geradas !== 1 ? 's' : ''} hoje
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                Hoje
+              </MetricItemTrend>
+            </MetricItem>
+            <MetricItem>
+              <MetricItemIcon $color="#10b981">
+                <DollarSign size={24} color="#10b981" />
+              </MetricItemIcon>
+              <MetricItemLabel>Propostas Ganhas Hoje</MetricItemLabel>
+              <MetricItemValue $negative={false}>{formatCurrency(todayStats.valorGanhas)}</MetricItemValue>
+              <MetricItemDescription>
+                {todayStats.ganhas} proposta{todayStats.ganhas !== 1 ? 's' : ''} fechada{todayStats.ganhas !== 1 ? 's' : ''} hoje
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                Hoje
+              </MetricItemTrend>
+            </MetricItem>
+            <MetricItem>
+              <MetricItemIcon $color="#ef4444">
+                <TrendingDown size={24} color="#ef4444" />
+              </MetricItemIcon>
+              <MetricItemLabel>Propostas Perdidas Hoje</MetricItemLabel>
+              <MetricItemValue $negative={false}>{formatCurrency(todayStats.valorPerdidas)}</MetricItemValue>
+              <MetricItemDescription>
+                {todayStats.perdidas} proposta{todayStats.perdidas !== 1 ? 's' : ''} perdida{todayStats.perdidas !== 1 ? 's' : ''} hoje
+              </MetricItemDescription>
+              <MetricItemTrend $positive={false}>
+                <TrendingDown size={12} />
+                Hoje
+              </MetricItemTrend>
+            </MetricItem>
+            <MetricItem>
+              <MetricItemIcon $color="#f59e0b">
+                <BarChart3 size={24} color="#f59e0b" />
+              </MetricItemIcon>
+              <MetricItemLabel>Em Negociação Hoje</MetricItemLabel>
+              <MetricItemValue $negative={false}>{formatCurrency(todayStats.valorNegociacao)}</MetricItemValue>
+              <MetricItemDescription>
+                {todayStats.negociacao} proposta{todayStats.negociacao !== 1 ? 's' : ''} em negociação hoje
+              </MetricItemDescription>
+              <MetricItemTrend $positive>
+                <TrendingUp size={12} />
+                Hoje
+              </MetricItemTrend>
+            </MetricItem>
             <MetricItem>
               <MetricItemIcon $color="#10B981">
                 <DollarSign size={24} color="#10B981" />
