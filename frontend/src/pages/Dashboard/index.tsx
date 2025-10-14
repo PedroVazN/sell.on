@@ -1080,34 +1080,6 @@ export const Dashboard: React.FC = () => {
         ) : (
           <>
             <MetricItem>
-              <MetricItemIcon $color="#EF4444">
-                <TrendingDown size={24} color="#EF4444" />
-              </MetricItemIcon>
-              <MetricItemLabel>Propostas Perdidas</MetricItemLabel>
-              <MetricItemValue $negative>{data?.proposalStats?.vendaPerdidaProposals || 0}</MetricItemValue>
-              <MetricItemDescription>
-                Propostas que não foram convertidas em vendas
-              </MetricItemDescription>
-              <MetricItemTrend $positive>
-                <TrendingDown size={12} />
-                -0% este mês
-              </MetricItemTrend>
-            </MetricItem>
-            <MetricItem>
-              <MetricItemIcon $color="#F59E0B">
-                <BarChart3 size={24} color="#F59E0B" />
-              </MetricItemIcon>
-              <MetricItemLabel>Vendas Abertas</MetricItemLabel>
-              <MetricItemValue $negative>{data?.proposalStats?.negociacaoProposals || 0}</MetricItemValue>
-              <MetricItemDescription>
-                Propostas em processo de negociação
-              </MetricItemDescription>
-              <MetricItemTrend $positive>
-                <TrendingUp size={12} />
-                +0% este mês
-              </MetricItemTrend>
-            </MetricItem>
-            <MetricItem>
               <MetricItemIcon $color="#10B981">
                 <DollarSign size={24} color="#10B981" />
               </MetricItemIcon>
