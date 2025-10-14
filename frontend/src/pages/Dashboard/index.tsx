@@ -925,73 +925,116 @@ export const Dashboard: React.FC = () => {
           <div style={{ 
             position: 'relative', 
             width: '100%', 
-            height: '300px',
+            height: '340px',
             background: '#0f172a',
             borderRadius: '0.5rem',
             padding: '1rem',
-            overflow: 'hidden'
+            display: 'flex',
+            gap: '0.5rem'
           }}>
-            <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="none">
-              {/* Grid lines */}
-              {[0, 1, 2, 3, 4, 5].map(i => (
-                <line
-                  key={i}
-                  x1="0"
-                  y1={i * 60}
-                  x2="1000"
-                  y2={i * 60}
-                  stroke="#1e293b"
-                  strokeWidth="1"
-                />
-              ))}
+            {/* Eixo Y (números à esquerda) */}
+            {dailyProposalsData.length > 0 && (() => {
+              const maxValue = Math.max(...dailyProposalsData.flatMap(d => [d.ganhas, d.perdidas, d.geradas]), 1);
+              const ySteps = 5;
+              
+              return (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between',
+                  paddingTop: '0.5rem',
+                  paddingBottom: '2rem',
+                  minWidth: '35px',
+                  textAlign: 'right'
+                }}>
+                  {Array.from({ length: ySteps + 1 }, (_, i) => {
+                    const value = Math.round(maxValue * (1 - i / ySteps));
+                    return (
+                      <span key={i} style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                        {value}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
-              {/* Linhas do gráfico */}
-              {dailyProposalsData.length > 0 && (() => {
-                const maxValue = Math.max(...dailyProposalsData.flatMap(d => [d.ganhas, d.perdidas, d.geradas]), 1);
-                const xStep = 1000 / (dailyProposalsData.length - 1 || 1);
+            {/* Container do SVG */}
+            <div style={{ flex: 1, position: 'relative' }}>
+              <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                {/* Grid lines */}
+                {[0, 1, 2, 3, 4, 5].map(i => (
+                  <line
+                    key={i}
+                    x1="0"
+                    y1={i * 60}
+                    x2="1000"
+                    y2={i * 60}
+                    stroke="#1e293b"
+                    strokeWidth="1"
+                  />
+                ))}
 
-                // Linha de Ganhas (Verde)
-                const ganhasPath = dailyProposalsData.map((d, i) => {
-                  const x = i * xStep;
-                  const y = 300 - (d.ganhas / maxValue) * 280;
-                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                }).join(' ');
+                {/* Linhas do gráfico */}
+                {dailyProposalsData.length > 0 && (() => {
+                  const maxValue = Math.max(...dailyProposalsData.flatMap(d => [d.ganhas, d.perdidas, d.geradas]), 1);
+                  const xStep = 1000 / (dailyProposalsData.length - 1 || 1);
 
-                // Linha de Perdidas (Vermelha)
-                const perdidasPath = dailyProposalsData.map((d, i) => {
-                  const x = i * xStep;
-                  const y = 300 - (d.perdidas / maxValue) * 280;
-                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                }).join(' ');
+                  // Linha de Ganhas (Verde)
+                  const ganhasPath = dailyProposalsData.map((d, i) => {
+                    const x = i * xStep;
+                    const y = 300 - (d.ganhas / maxValue) * 280;
+                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                  }).join(' ');
 
-                // Linha de Geradas (Azul)
-                const geradasPath = dailyProposalsData.map((d, i) => {
-                  const x = i * xStep;
-                  const y = 300 - (d.geradas / maxValue) * 280;
-                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                }).join(' ');
+                  // Linha de Perdidas (Vermelha)
+                  const perdidasPath = dailyProposalsData.map((d, i) => {
+                    const x = i * xStep;
+                    const y = 300 - (d.perdidas / maxValue) * 280;
+                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                  }).join(' ');
 
-                return (
-                  <>
-                    <path d={geradasPath} fill="none" stroke="#3b82f6" strokeWidth="2" />
-                    <path d={perdidasPath} fill="none" stroke="#ef4444" strokeWidth="2" />
-                    <path d={ganhasPath} fill="none" stroke="#10b981" strokeWidth="2" />
-                  </>
-                );
-              })()}
-            </svg>
+                  // Linha de Geradas (Azul)
+                  const geradasPath = dailyProposalsData.map((d, i) => {
+                    const x = i * xStep;
+                    const y = 300 - (d.geradas / maxValue) * 280;
+                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                  }).join(' ');
 
-            {/* Labels dos dias (abaixo do gráfico) */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginTop: '0.5rem',
-              fontSize: '0.75rem',
-              color: '#64748b'
-            }}>
-              {[1, 5, 10, 15, 20, 25, 30].map(day => (
-                <span key={day}>{day}</span>
-              ))}
+                  return (
+                    <>
+                      <path d={geradasPath} fill="none" stroke="#3b82f6" strokeWidth="2" />
+                      <path d={perdidasPath} fill="none" stroke="#ef4444" strokeWidth="2" />
+                      <path d={ganhasPath} fill="none" stroke="#10b981" strokeWidth="2" />
+                    </>
+                  );
+                })()}
+              </svg>
+
+              {/* Labels dos dias (abaixo do gráfico) */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginTop: '0.5rem',
+                fontSize: '0.75rem',
+                color: '#64748b',
+                paddingRight: '0.5rem'
+              }}>
+                {dailyProposalsData.length > 0 && (() => {
+                  const daysInMonth = dailyProposalsData.length;
+                  const showDays = daysInMonth <= 28 
+                    ? [1, 5, 10, 15, 20, 25, daysInMonth]
+                    : daysInMonth <= 30
+                    ? [1, 5, 10, 15, 20, 25, 30]
+                    : [1, 5, 10, 15, 20, 25, 31];
+                    
+                  return showDays
+                    .filter(day => day <= daysInMonth)
+                    .map(day => (
+                      <span key={day}>{day}</span>
+                    ));
+                })()}
+              </div>
             </div>
           </div>
 
