@@ -145,6 +145,7 @@ export const Proposals: React.FC = () => {
   const [paymentCondition, setPaymentCondition] = useState('');
   const [observations, setObservations] = useState('');
   const [validUntil, setValidUntil] = useState('');
+  const [availablePriceList, setAvailablePriceList] = useState<any[]>([]);
 
   const loadData = useCallback(async () => {
     try {
@@ -186,6 +187,29 @@ export const Proposals: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Carregar lista de preços quando o distribuidor for selecionado
+  useEffect(() => {
+    const loadPriceList = async () => {
+      if (selectedDistributor) {
+        try {
+          console.log('📋 Carregando lista de preços para distribuidor:', selectedDistributor);
+          const response = await apiService.getPriceListByDistributor(selectedDistributor, 1, 1000);
+          if (response.success && response.data) {
+            setAvailablePriceList(response.data);
+            console.log('✅ Lista de preços carregada:', response.data.length, 'itens');
+          }
+        } catch (error) {
+          console.error('❌ Erro ao carregar lista de preços:', error);
+          setAvailablePriceList([]);
+        }
+      } else {
+        setAvailablePriceList([]);
+      }
+    };
+
+    loadPriceList();
+  }, [selectedDistributor]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -335,7 +359,35 @@ export const Proposals: React.FC = () => {
     setSelectedProducts(prev => prev.map((product, i) => {
       if (i === index) {
         const updated = { ...product, [field]: value };
-        if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
+        
+        // Se mudou o produto, buscar o preço da lista de preços
+        if (field === 'productId') {
+          const selectedProduct = products.find(p => p._id === value);
+          if (selectedProduct) {
+            updated.productName = selectedProduct.name;
+            
+            // Buscar preço da lista de preços do distribuidor
+            const priceListItem = availablePriceList.find(item => item.product._id === value);
+            if (priceListItem) {
+              // Usar preço da lista conforme condição de pagamento selecionada
+              let price = selectedProduct.price || 0;
+              if (paymentCondition === 'À vista' && priceListItem.pricing.aVista) {
+                price = priceListItem.pricing.aVista;
+              } else if (paymentCondition.startsWith('Crédito') && priceListItem.pricing.credito) {
+                price = priceListItem.pricing.credito;
+              } else if (paymentCondition.startsWith('Boleto') && priceListItem.pricing.boleto) {
+                price = priceListItem.pricing.boleto;
+              }
+              updated.unitPrice = price;
+              console.log(`💰 Preço aplicado da lista: ${price} para produto ${selectedProduct.name}`);
+            } else {
+              updated.unitPrice = selectedProduct.price || 0;
+              console.log(`⚠️ Produto não encontrado na lista de preços, usando preço padrão`);
+            }
+          }
+        }
+        
+        if (field === 'quantity' || field === 'unitPrice' || field === 'discount' || field === 'productId') {
           updated.total = updated.quantity * updated.unitPrice * (1 - updated.discount / 100);
         }
         return updated;
