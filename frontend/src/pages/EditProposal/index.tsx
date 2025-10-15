@@ -213,8 +213,8 @@ export const EditProposal: React.FC = () => {
       // Carregar dados para seleção
       const [productsResponse, distributorsResponse, sellersResponse] = await Promise.all([
         apiService.getProducts(1, 1000),
-        apiService.getDistributors(),
-        apiService.getUsers()
+        apiService.getDistributors(1, 1000), // Aumentado para mostrar todos os distribuidores
+        apiService.getUsers(1, 1000) // Aumentado para mostrar todos os usuários
       ]);
 
       if (productsResponse.success) {

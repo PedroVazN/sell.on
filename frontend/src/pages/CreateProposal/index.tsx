@@ -163,7 +163,7 @@ export const CreateProposal: React.FC = () => {
       
       const [productsResponse, distributorsResponse] = await Promise.all([
         apiService.getProducts(1, 1000),
-        apiService.getDistributors()
+        apiService.getDistributors(1, 1000) // Aumentado para mostrar todos os distribuidores
       ]);
 
       console.log('Products response:', productsResponse);
