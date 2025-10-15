@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LogIn, Loader2, Sparkles, Shield, Zap, Star } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, Sparkles, Shield, Zap, Star, Lock, Mail, ArrowRight, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Container, 
   Background,
+  GradientOverlay,
   AbstractShapes,
   Shape1,
   Shape2,
   Shape3,
   Shape4,
   Shape5,
+  FloatingParticles,
+  Particle,
   LoginCard, 
   Logo,
+  LogoIcon,
+  LogoText,
+  Subtitle,
   Form, 
   InputGroup, 
   Label,
@@ -22,7 +28,11 @@ import {
   LoginIcon,
   Footer,
   ErrorMessage,
-  SuccessMessage
+  SuccessMessage,
+  FeaturesList,
+  FeatureItem,
+  FeatureIcon,
+  FeatureText
 } from './styles';
 
 export const Login: React.FC = () => {
@@ -89,6 +99,7 @@ export const Login: React.FC = () => {
   return (
     <Container>
       <Background />
+      <GradientOverlay />
       
       <AbstractShapes>
         <Shape1 />
@@ -98,17 +109,40 @@ export const Login: React.FC = () => {
         <Shape5 />
       </AbstractShapes>
 
+      <FloatingParticles>
+        {particles.map(particle => (
+          <Particle
+            key={particle.id}
+            style={{
+              left: particle.x,
+              top: particle.y,
+              width: particle.size,
+              height: particle.size,
+              animationDelay: `${particle.id * 0.1}s`
+            }}
+          />
+        ))}
+      </FloatingParticles>
+
       <LoginCard>
         <Logo>
-          <h1>Sell.On™</h1>
+          <LogoIcon>
+            <Shield size={32} />
+          </LogoIcon>
+          <LogoText>Sell.On™</LogoText>
         </Logo>
+        
+        <Subtitle>Gestão Comercial Inteligente</Subtitle>
         
         <Form onSubmit={handleSubmit}>
           {error && <ErrorMessage>{error}</ErrorMessage>}
           {success && <SuccessMessage>{success}</SuccessMessage>}
           
           <InputGroup>
-            <Label>EMAIL ADDRESS</Label>
+            <Label>
+              <Mail size={14} />
+              EMAIL ADDRESS
+            </Label>
             <Input
               type="email"
               placeholder="seu@email.com"
@@ -120,7 +154,10 @@ export const Login: React.FC = () => {
           </InputGroup>
           
           <InputGroup>
-            <Label>PASSWORD</Label>
+            <Label>
+              <Lock size={14} />
+              PASSWORD
+            </Label>
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
@@ -139,15 +176,36 @@ export const Login: React.FC = () => {
           </InputGroup>
           
           <LoginButton type="submit" disabled={isLoading}>
-            <span>LOG IN</span>
+            <span>{isLoading ? 'ENTRANDO...' : 'ACESSAR SISTEMA'}</span>
             <LoginIcon>
-              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
             </LoginIcon>
           </LoginButton>
         </Form>
         
+        <FeaturesList>
+          <FeatureItem>
+            <FeatureIcon>
+              <Shield size={16} />
+            </FeatureIcon>
+            <FeatureText>Segurança Empresarial</FeatureText>
+          </FeatureItem>
+          <FeatureItem>
+            <FeatureIcon>
+              <Zap size={16} />
+            </FeatureIcon>
+            <FeatureText>Performance Otimizada</FeatureText>
+          </FeatureItem>
+          <FeatureItem>
+            <FeatureIcon>
+              <Star size={16} />
+            </FeatureIcon>
+            <FeatureText>Interface Moderna</FeatureText>
+          </FeatureItem>
+        </FeaturesList>
+        
         <Footer>
-          <a href="#">FORGOT YOUR PASSWORD?</a>
+          <a href="#">Esqueceu sua senha?</a>
         </Footer>
       </LoginCard>
     </Container>
