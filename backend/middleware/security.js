@@ -11,7 +11,7 @@ const securityHeaders = helmet({
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://backend-sable-eta-89.vercel.app"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -138,6 +138,7 @@ const corsConfig = (req, res, next) => {
     'http://localhost:3001',
     'https://sellon-novo.vercel.app',
     'https://sellon-novo-git-main-pedrovazn.vercel.app',
+    'https://sell-on-dt.vercel.app',
     process.env.FRONTEND_URL
   ].filter(Boolean);
 
