@@ -1,20 +1,29 @@
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
+const { 
+  securityHeaders, 
+  generalLimiter, 
+  corsConfig, 
+  additionalSecurityHeaders, 
+  securityLogger 
+} = require('../middleware/security');
 
 const app = express();
 
-// Middleware CORS
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  optionsSuccessStatus: 200
-}));
+// Middleware de segurança (aplicar primeiro)
+app.use(securityHeaders);
+app.use(securityLogger);
+app.use(additionalSecurityHeaders);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Rate limiting geral
+app.use('/api', generalLimiter);
+
+// CORS configurado adequadamente
+app.use(corsConfig);
+
+// Parsers de body
+app.use(express.json({ limit: '10mb' })); // Limite de 10MB para uploads
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Carregar variáveis de ambiente
 require('dotenv').config();

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Notice = require('../models/Notice');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { uploadLimiter } = require('../middleware/security');
 
 // GET /api/notices - Listar avisos (todos os avisos ativos)
 router.get('/', async (req, res) => {
@@ -41,7 +42,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/notices - Criar novo aviso
-router.post('/', async (req, res) => {
+router.post('/', uploadLimiter, async (req, res) => {
   try {
     console.log('=== CRIANDO AVISO ===');
     console.log('Body:', req.body);

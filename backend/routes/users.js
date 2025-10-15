@@ -4,6 +4,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { auth } = require('../middleware/auth');
 const { validateUser, validateLogin, validateMongoId, validatePagination } = require('../middleware/validation');
+const { loginLimiter, adminLimiter } = require('../middleware/security');
 
 // Middleware de autenticação será aplicado individualmente nas rotas
 
@@ -122,7 +123,7 @@ router.post('/fix-vendedor', async (req, res) => {
 });
 
 // POST /api/users/login - Login de usuário
-router.post('/login', validateLogin, async (req, res) => {
+router.post('/login', loginLimiter, validateLogin, async (req, res) => {
   try {
     console.log('🔐 Tentativa de login:', { 
       email: req.body.email, 

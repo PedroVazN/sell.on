@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
 const { auth } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
+const { proposalLimiter } = require('../middleware/security');
 
 // GET /api/proposals - Listar todas as propostas do usuário
 router.get('/', async (req, res) => {
@@ -183,7 +184,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/proposals - Criar nova proposta
-router.post('/', validateProposal, async (req, res) => {
+router.post('/', proposalLimiter, validateProposal, async (req, res) => {
   try {
     console.log('=== CRIANDO PROPOSTA ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
