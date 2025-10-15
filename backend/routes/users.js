@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { auth } = require('../middleware/auth');
+const { validateUser, validateLogin, validateMongoId, validatePagination } = require('../middleware/validation');
 
 // Middleware de autenticação será aplicado individualmente nas rotas
 
@@ -121,7 +122,7 @@ router.post('/fix-vendedor', async (req, res) => {
 });
 
 // POST /api/users/login - Login de usuário
-router.post('/login', async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
   try {
     console.log('🔐 Tentativa de login:', { 
       email: req.body.email, 
@@ -250,17 +251,11 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/users/register - Registro de usuário
-router.post('/register', async (req, res) => {
+router.post('/register', validateUser, async (req, res) => {
   try {
     const { name, email, password, role = 'vendedor', phone, address } = req.body;
 
-    // Validar dados obrigatórios
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Nome, email e senha são obrigatórios'
-      });
-    }
+    // Dados já validados pelo middleware validateUser
 
     // Verificar se email já existe
     const existingUser = await User.findOne({ email });

@@ -4,6 +4,7 @@ const PriceList = require('../models/PriceList');
 const Distributor = require('../models/DistributorNew');
 const Product = require('../models/Product');
 const { auth } = require('../middleware/auth');
+const { validatePriceList, validateMongoId, validatePagination } = require('../middleware/validation');
 
 // GET /api/price-list - Listar lista de preços agrupada por distribuidor
 router.get('/', async (req, res) => {
@@ -184,7 +185,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // POST /api/price-list - Criar novo item na lista de preços
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, validatePriceList, async (req, res) => {
   try {
     console.log('=== CRIANDO NOVA LISTA DE PREÇOS ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
