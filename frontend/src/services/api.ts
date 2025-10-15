@@ -493,7 +493,10 @@ export interface LoginRequest {
 export interface LoginResponse {
   success: boolean;
   message: string;
-  data: User;
+  data: {
+    user: User;
+    token: string;
+  };
 }
 
 export interface RegisterRequest {
@@ -572,16 +575,16 @@ class ApiService {
 
   // Autenticação
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await this.request<User>('/users/login', {
+    const response = await this.request<{ user: User; token: string }>('/users/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
 
-    if (response.success) {
-      this.token = 'temp-token-' + Date.now(); // Token temporário único
+    if (response.success && response.data) {
+      this.token = response.data.token;
       localStorage.setItem('authToken', this.token);
       localStorage.setItem('token', this.token);
-      localStorage.setItem('currentUser', JSON.stringify(response.data));
+      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
     }
 
     return response as LoginResponse;
