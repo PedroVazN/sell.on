@@ -284,6 +284,56 @@ export const EditProposal: React.FC = () => {
     }));
   };
 
+  // Formatar CNPJ
+  const handleCnpjChange = (value: string) => {
+    const onlyNumbers = value.replace(/\D/g, '');
+    let formatted = onlyNumbers;
+    
+    if (onlyNumbers.length <= 14) {
+      formatted = onlyNumbers
+        .replace(/(\d{2})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    
+    handleClientChange('cnpj', formatted);
+  };
+
+  // Buscar cliente por CNPJ
+  const searchClientByCnpj = async (cnpj: string) => {
+    if (!cnpj || cnpj.replace(/\D/g, '').length < 14) return;
+    
+    try {
+      const response = await apiService.getClients(1, 1000);
+      if (response.success && response.data) {
+        const cleanCnpj = cnpj.replace(/\D/g, '');
+        const existingClient = response.data.find((c: any) => 
+          c.cnpj?.replace(/\D/g, '') === cleanCnpj
+        );
+        
+        if (existingClient) {
+          console.log('Cliente encontrado:', existingClient);
+          setFormData(prev => ({
+            ...prev,
+            client: {
+              name: existingClient.contato?.nome || '',
+              email: existingClient.contato?.email || '',
+              phone: existingClient.contato?.telefone || '',
+              company: existingClient.nomeFantasia || '',
+              cnpj: existingClient.cnpj || '',
+              razaoSocial: existingClient.razaoSocial || ''
+            }
+          }));
+        } else {
+          console.log('Cliente não encontrado. Novo cliente será criado ao salvar.');
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cliente:', error);
+    }
+  };
+
   const handleSellerChange = (sellerId: string) => {
     const seller = sellers.find(s => s._id === sellerId);
     if (seller) {
@@ -587,12 +637,34 @@ export const EditProposal: React.FC = () => {
           <SectionTitle>Dados do Cliente</SectionTitle>
           <FormRow>
             <FormGroup>
-              <Label>Nome *</Label>
+              <Label>CNPJ *</Label>
               <Input
                 type="text"
-                value={formData.client.name}
-                onChange={(e) => handleClientChange('name', e.target.value)}
-                placeholder="Nome completo do cliente"
+                value={formData.client.cnpj}
+                onChange={(e) => handleCnpjChange(e.target.value)}
+                onBlur={(e) => searchClientByCnpj(e.target.value)}
+                placeholder="00.000.000/0000-00"
+                maxLength={18}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label>Razão Social *</Label>
+              <Input
+                type="text"
+                value={formData.client.razaoSocial}
+                onChange={(e) => handleClientChange('razaoSocial', e.target.value)}
+                placeholder="Razão social da empresa"
+              />
+            </FormGroup>
+          </FormRow>
+          <FormRow>
+            <FormGroup>
+              <Label>Nome Fantasia</Label>
+              <Input
+                type="text"
+                value={formData.client.company}
+                onChange={(e) => handleClientChange('company', e.target.value)}
+                placeholder="Nome fantasia da empresa"
               />
             </FormGroup>
             <FormGroup>
@@ -607,41 +679,21 @@ export const EditProposal: React.FC = () => {
           </FormRow>
           <FormRow>
             <FormGroup>
+              <Label>Nome do Contato *</Label>
+              <Input
+                type="text"
+                value={formData.client.name}
+                onChange={(e) => handleClientChange('name', e.target.value)}
+                placeholder="Nome completo do contato"
+              />
+            </FormGroup>
+            <FormGroup>
               <Label>Telefone</Label>
               <Input
                 type="text"
                 value={formData.client.phone}
                 onChange={(e) => handleClientChange('phone', e.target.value)}
                 placeholder="(11) 99999-9999"
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Empresa</Label>
-              <Input
-                type="text"
-                value={formData.client.company}
-                onChange={(e) => handleClientChange('company', e.target.value)}
-                placeholder="Nome da empresa"
-              />
-            </FormGroup>
-          </FormRow>
-          <FormRow>
-            <FormGroup>
-              <Label>CNPJ</Label>
-              <Input
-                type="text"
-                value={formData.client.cnpj}
-                onChange={(e) => handleClientChange('cnpj', e.target.value)}
-                placeholder="00.000.000/0000-00"
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Razão Social</Label>
-              <Input
-                type="text"
-                value={formData.client.razaoSocial}
-                onChange={(e) => handleClientChange('razaoSocial', e.target.value)}
-                placeholder="Razão social da empresa"
               />
             </FormGroup>
           </FormRow>
