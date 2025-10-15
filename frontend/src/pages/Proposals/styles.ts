@@ -132,6 +132,19 @@ export const TableCell = styled.td`
   &:last-child {
     border-right: none;
   }
+
+  /* Coluna de data mais compacta */
+  &:nth-child(8) {
+    max-width: 100px;
+    white-space: normal;
+    font-size: 0.75rem;
+  }
+
+  /* Coluna de ações com grid 3x3 */
+  &:nth-child(9) {
+    width: 120px;
+    max-width: 120px;
+  }
 `;
 
 export const TableBody = styled.tbody``;

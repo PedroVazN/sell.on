@@ -671,13 +671,18 @@ export const Proposals: React.FC = () => {
                         <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>
                       </TableCell>
                       <TableCell>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(3, 1fr)', 
+                          gap: '0.25rem',
+                          width: '110px'
+                        }}>
                           <ActionButton 
                             onClick={() => handleEditProposal(proposal)}
                             disabled={isDeleting}
                             title="Editar"
                           >
-                            <Edit size={16} />
+                            <Edit size={14} />
                           </ActionButton>
                           <ActionButton 
                             onClick={() => handleGeneratePdf(proposal)}
@@ -685,7 +690,7 @@ export const Proposals: React.FC = () => {
                             title="Gerar PDF"
                             style={{ backgroundColor: '#059669' }}
                           >
-                            <Download size={16} />
+                            <Download size={14} />
                           </ActionButton>
                           {user?.role === 'admin' && (
                             <ActionButton 
@@ -693,7 +698,7 @@ export const Proposals: React.FC = () => {
                               disabled={isDeleting}
                               title="Excluir"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={14} />
                             </ActionButton>
                           )}
                           {proposal.status === 'negociacao' && (
@@ -704,7 +709,7 @@ export const Proposals: React.FC = () => {
                                 title="Venda Fechada"
                                 style={{ backgroundColor: '#059669' }}
                               >
-                                <CheckCircle size={16} />
+                                <CheckCircle size={14} />
                               </ActionButton>
                               <ActionButton 
                                 onClick={() => handleUpdateStatus(proposal, 'venda_perdida')}
@@ -712,7 +717,7 @@ export const Proposals: React.FC = () => {
                                 title="Venda Perdida"
                                 style={{ backgroundColor: '#dc2626' }}
                               >
-                                <XCircle size={16} />
+                                <XCircle size={14} />
                               </ActionButton>
                               <ActionButton 
                                 onClick={() => handleUpdateStatus(proposal, 'expirada')}
@@ -720,7 +725,7 @@ export const Proposals: React.FC = () => {
                                 title="Marcar como Expirada"
                                 style={{ backgroundColor: '#6b7280' }}
                               >
-                                <Clock size={16} />
+                                <Clock size={14} />
                               </ActionButton>
                             </>
                           )}
