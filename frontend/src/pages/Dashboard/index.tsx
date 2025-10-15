@@ -171,6 +171,7 @@ export const Dashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dailyProposalsData, setDailyProposalsData] = useState<{
     day: number;
+    date: string;
     ganhas: number;
     perdidas: number;
     geradas: number;
