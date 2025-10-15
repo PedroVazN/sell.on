@@ -501,23 +501,33 @@ export const Dashboard: React.FC = () => {
 
         // Calcular estatísticas de hoje
         const today = new Date();
-        const todayProposals = proposals.filter((p: any) => {
-          const pDate = new Date(p.createdAt);
-          return pDate.toDateString() === today.toDateString();
-        });
-
-        const todayStatsCalc = todayProposals.reduce((acc: any, p: any) => {
+        
+        const todayStatsCalc = proposals.reduce((acc: any, p: any) => {
           const valor = p.total || 0;
-          acc.geradas++;
-          acc.valorGeradas += valor;
+          const createdDate = new Date(p.createdAt);
+          const updatedDate = new Date(p.updatedAt);
+          const todayStr = today.toDateString();
 
-          if (p.status === 'venda_fechada') {
+          // Propostas geradas hoje (usa createdAt)
+          if (createdDate.toDateString() === todayStr) {
+            acc.geradas++;
+            acc.valorGeradas += valor;
+          }
+
+          // Propostas ganhas hoje (usa updatedAt)
+          if (p.status === 'venda_fechada' && updatedDate.toDateString() === todayStr) {
             acc.ganhas++;
             acc.valorGanhas += valor;
-          } else if (p.status === 'venda_perdida') {
+          }
+
+          // Propostas perdidas hoje (usa updatedAt)
+          if (p.status === 'venda_perdida' && updatedDate.toDateString() === todayStr) {
             acc.perdidas++;
             acc.valorPerdidas += valor;
-          } else if (p.status === 'negociacao') {
+          }
+
+          // Propostas em negociação (status atual, não importa a data)
+          if (p.status === 'negociacao') {
             acc.negociacao++;
             acc.valorNegociacao += valor;
           }
