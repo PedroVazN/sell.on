@@ -94,95 +94,77 @@ const writeLogFile = (logEntry) => {
   }
 };
 
-// Middleware de logging seguro
+// Middleware de logging seguro - OTIMIZADO
 const secureLogger = (req, res, next) => {
-  const startTime = Date.now();
-  req.startTime = startTime;
-
-  // Log da requisição
-  const requestLog = createLogEntry('info', 'Request received', {
-    body: req.body,
-    query: req.query,
-    params: req.params
-  }, req);
-
-  console.log('📥 Request:', JSON.stringify(requestLog, null, 2));
-
-  // Interceptar resposta para logging
-  const originalSend = res.send;
-  res.send = function(data) {
-    const duration = Date.now() - startTime;
+  // Apenas em desenvolvimento logar tudo
+  if (process.env.NODE_ENV === 'development') {
+    const startTime = Date.now();
     
-    // Log da resposta
-    const responseLog = createLogEntry('info', 'Response sent', {
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      responseSize: data ? data.length : 0
-    }, req);
-
-    console.log('📤 Response:', JSON.stringify(responseLog, null, 2));
-
-    // Log de segurança para status de erro
-    if (res.statusCode >= 400) {
-      const errorLog = createLogEntry('warn', 'Error response', {
-        statusCode: res.statusCode,
-        error: data,
-        duration: `${duration}ms`
-      }, req);
+    // Interceptar resposta apenas para logging de erros
+    const originalSend = res.send;
+    res.send = function(data) {
+      const duration = Date.now() - startTime;
       
-      writeLogFile(errorLog);
-    }
+      // Log apenas erros e requisições lentas (> 1s)
+      if (res.statusCode >= 400 || duration > 1000) {
+        const errorLog = createLogEntry('warn', res.statusCode >= 400 ? 'Error response' : 'Slow response', {
+          statusCode: res.statusCode,
+          duration: `${duration}ms`,
+          url: req.url,
+          method: req.method
+        }, req);
+        
+        console.log('⚠️ Issue:', JSON.stringify(errorLog, null, 2));
+        writeLogFile(errorLog);
+      }
 
-    originalSend.call(this, data);
-  };
+      originalSend.call(this, data);
+    };
+  } else {
+    // Em produção, logar apenas erros críticos
+    const originalSend = res.send;
+    res.send = function(data) {
+      if (res.statusCode >= 500) {
+        const errorLog = createLogEntry('error', 'Critical error', {
+          statusCode: res.statusCode,
+          url: req.url,
+          method: req.method
+        }, req);
+        
+        writeLogFile(errorLog);
+      }
+
+      originalSend.call(this, data);
+    };
+  }
 
   next();
 };
 
-// Middleware para detectar tentativas de ataque
+// Middleware para detectar tentativas de ataque - OTIMIZADO
 const securityMonitor = (req, res, next) => {
+  // Apenas monitorar em desenvolvimento ou rotas críticas
+  const criticalRoutes = ['/api/users/login', '/api/users/register', '/api/proposals', '/api/clients'];
+  const shouldMonitor = process.env.NODE_ENV === 'development' || criticalRoutes.some(route => req.url.includes(route));
+  
+  if (!shouldMonitor) {
+    return next();
+  }
+
+  // Padrões mais críticos apenas
   const attackPatterns = [
     // SQL Injection
     { pattern: /union.*select/i, type: 'SQL_INJECTION', severity: 'HIGH' },
     { pattern: /drop.*table/i, type: 'SQL_INJECTION', severity: 'HIGH' },
-    { pattern: /insert.*into/i, type: 'SQL_INJECTION', severity: 'HIGH' },
-    { pattern: /delete.*from/i, type: 'SQL_INJECTION', severity: 'HIGH' },
     
     // XSS
     { pattern: /<script[^>]*>.*?<\/script>/i, type: 'XSS', severity: 'HIGH' },
-    { pattern: /javascript:/i, type: 'XSS', severity: 'HIGH' },
-    { pattern: /onload\s*=/i, type: 'XSS', severity: 'HIGH' },
-    { pattern: /onerror\s*=/i, type: 'XSS', severity: 'HIGH' },
-    
-    // Path Traversal
-    { pattern: /\.\./, type: 'PATH_TRAVERSAL', severity: 'HIGH' },
-    { pattern: /\.\.%2f/i, type: 'PATH_TRAVERSAL', severity: 'HIGH' },
-    { pattern: /\.\.%5c/i, type: 'PATH_TRAVERSAL', severity: 'HIGH' },
     
     // Command Injection
-    { pattern: /;.*ls/i, type: 'COMMAND_INJECTION', severity: 'CRITICAL' },
-    { pattern: /;.*cat/i, type: 'COMMAND_INJECTION', severity: 'CRITICAL' },
     { pattern: /;.*rm/i, type: 'COMMAND_INJECTION', severity: 'CRITICAL' },
-    { pattern: /\|.*ls/i, type: 'COMMAND_INJECTION', severity: 'CRITICAL' },
     
     // NoSQL Injection
-    { pattern: /\$where/i, type: 'NOSQL_INJECTION', severity: 'HIGH' },
-    { pattern: /\$ne/i, type: 'NOSQL_INJECTION', severity: 'HIGH' },
-    { pattern: /\$gt/i, type: 'NOSQL_INJECTION', severity: 'HIGH' },
-    { pattern: /\$regex/i, type: 'NOSQL_INJECTION', severity: 'HIGH' },
-    
-    // LDAP Injection
-    { pattern: /\(.*=.*\)/i, type: 'LDAP_INJECTION', severity: 'HIGH' },
-    
-    // XML Injection
-    { pattern: /<!DOCTYPE/i, type: 'XML_INJECTION', severity: 'HIGH' },
-    { pattern: /<!ENTITY/i, type: 'XML_INJECTION', severity: 'HIGH' },
-    
-    // SSRF
-    { pattern: /localhost/i, type: 'SSRF', severity: 'MEDIUM' },
-    { pattern: /127\.0\.0\.1/i, type: 'SSRF', severity: 'MEDIUM' },
-    { pattern: /192\.168\./i, type: 'SSRF', severity: 'MEDIUM' },
-    { pattern: /10\./i, type: 'SSRF', severity: 'MEDIUM' }
+    { pattern: /\$where/i, type: 'NOSQL_INJECTION', severity: 'HIGH' }
   ];
 
   const checkForAttacks = (data, context) => {
@@ -211,75 +193,38 @@ const securityMonitor = (req, res, next) => {
     });
   };
 
-  // Verificar URL
-  checkForAttacks({ url: req.url }, 'URL');
-  
-  // Verificar query parameters
-  if (Object.keys(req.query).length > 0) {
-    checkForAttacks({ query: req.query }, 'QUERY_PARAMS');
-  }
-  
-  // Verificar body
-  if (req.body && Object.keys(req.body).length > 0) {
+  // Verificar apenas body em POST/PUT (mais crítico)
+  if ((req.method === 'POST' || req.method === 'PUT') && req.body && Object.keys(req.body).length > 0) {
     checkForAttacks({ body: req.body }, 'REQUEST_BODY');
-  }
-  
-  // Verificar headers suspeitos
-  const suspiciousHeaders = ['x-forwarded-for', 'x-real-ip', 'x-originating-ip'];
-  const headerData = {};
-  suspiciousHeaders.forEach(header => {
-    if (req.headers[header]) {
-      headerData[header] = req.headers[header];
-    }
-  });
-  
-  if (Object.keys(headerData).length > 0) {
-    checkForAttacks({ headers: headerData }, 'HEADERS');
   }
 
   next();
 };
 
-// Middleware para logging de autenticação
+// Middleware para logging de autenticação - OTIMIZADO
 const authLogger = (req, res, next) => {
-  const originalSend = res.send;
-  
-  res.send = function(data) {
-    // Log tentativas de login
-    if (req.path === '/api/users/login' && req.method === 'POST') {
+  // Apenas logar tentativas de login
+  if (req.path === '/api/users/login' && req.method === 'POST') {
+    const originalSend = res.send;
+    
+    res.send = function(data) {
       const isSuccess = res.statusCode === 200;
-      const authLog = createLogEntry(
-        isSuccess ? 'info' : 'warn',
-        isSuccess ? 'Login successful' : 'Login failed',
-        {
+      
+      // Logar apenas falhas de login
+      if (!isSuccess) {
+        const authLog = createLogEntry('warn', 'Login failed', {
           email: req.body?.email,
-          success: isSuccess,
           statusCode: res.statusCode,
-          userAgent: req.headers['user-agent'],
           ip: req.ip
-        },
-        req
-      );
-      
-      writeLogFile(authLog);
-      console.log('🔐 Auth:', JSON.stringify(authLog, null, 2));
-    }
+        }, req);
+        
+        writeLogFile(authLog);
+        console.log('🔐 Failed Auth:', JSON.stringify(authLog, null, 2));
+      }
 
-    // Log tentativas de acesso a rotas protegidas
-    if (req.path.startsWith('/api/') && req.method !== 'GET') {
-      const accessLog = createLogEntry('info', 'Protected route accessed', {
-        path: req.path,
-        method: req.method,
-        statusCode: res.statusCode,
-        userId: req.user?._id,
-        userRole: req.user?.role
-      }, req);
-      
-      writeLogFile(accessLog);
-    }
-
-    originalSend.call(this, data);
-  };
+      originalSend.call(this, data);
+    };
+  }
 
   next();
 };

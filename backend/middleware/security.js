@@ -61,10 +61,10 @@ const securityHeaders = helmet({
   }
 });
 
-// Rate limiting geral
+// Rate limiting geral - OTIMIZADO (mais permissivo)
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por IP
+  max: 500, // aumentado de 100 para 500 requests por IP
   message: {
     success: false,
     message: 'Muitas tentativas, tente novamente em 15 minutos'
@@ -72,32 +72,30 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Pular rate limiting para health checks
-    return req.path === '/health' || req.path === '/api/health';
+    // Pular rate limiting para rotas de leitura (GET) e health checks
+    return req.path === '/health' || 
+           req.path === '/api/health' || 
+           req.method === 'GET';
   }
 });
 
-// Rate limiting para login (mais restritivo)
+// Rate limiting para login - OTIMIZADO
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 tentativas de login por IP
+  max: 10, // aumentado de 5 para 10 tentativas de login por IP
   message: {
     success: false,
     message: 'Muitas tentativas de login, tente novamente em 15 minutos'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Não contar requests bem-sucedidos
-  keyGenerator: (req) => {
-    // Usar IP + email para rate limiting mais específico
-    return `${req.ip}-${req.body?.email || 'unknown'}`;
-  }
+  skipSuccessfulRequests: true // Não contar requests bem-sucedidos
 });
 
-// Rate limiting para criação de propostas
+// Rate limiting para criação de propostas - OTIMIZADO
 const proposalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 10, // máximo 10 propostas por minuto por IP
+  max: 30, // aumentado de 10 para 30 propostas por minuto por IP
   message: {
     success: false,
     message: 'Muitas propostas criadas, aguarde um momento'
