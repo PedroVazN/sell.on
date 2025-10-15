@@ -605,7 +605,7 @@ export const Proposals: React.FC = () => {
                   <TableCell>Produtos</TableCell>
                   <TableCell>Total</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Válido Até</TableCell>
+                  <TableCell>Data de Criação</TableCell>
                   <TableCell>Ações</TableCell>
                 </TableRow>
               </TableHeader>
@@ -668,7 +668,7 @@ export const Proposals: React.FC = () => {
                         </StatusBadge>
                       </TableCell>
                       <TableCell>
-                        <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.validUntil)}</div>
+                        <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>
                       </TableCell>
                       <TableCell>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
