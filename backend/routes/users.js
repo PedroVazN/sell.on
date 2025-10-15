@@ -8,8 +8,17 @@ const { loginLimiter, adminLimiter } = require('../middleware/security');
 
 // Middleware de autenticação será aplicado individualmente nas rotas
 
-// POST /api/users/test-login - Criar usuários de teste para debug
-router.post('/test-login', async (req, res) => {
+// POST /api/users/test-login - Criar usuários de teste para debug (APENAS DESENVOLVIMENTO)
+router.post('/test-login', (req, res, next) => {
+  // Bloquear em produção
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      message: 'Esta rota está desabilitada em produção'
+    });
+  }
+  next();
+}, async (req, res) => {
   try {
     const testUsers = [
       {

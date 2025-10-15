@@ -63,7 +63,7 @@ const connectDB = async () => {
       return;
     }
     
-    console.log('🔍 String de conexão (primeiros 50 chars):', atlasUri.substring(0, 50) + '...');
+    console.log('🔍 String de conexão configurada:', !!atlasUri);
     
     // Fechar conexão existente se houver
     if (mongoose.connection.readyState !== 0) {
@@ -170,8 +170,17 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Rota de teste para verificar conexão com MongoDB
-app.get('/api/test-db', async (req, res) => {
+// Rota de teste para verificar conexão com MongoDB (APENAS DESENVOLVIMENTO)
+app.get('/api/test-db', (req, res, next) => {
+  // Bloquear em produção
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      message: 'Esta rota está desabilitada em produção'
+    });
+  }
+  next();
+}, async (req, res) => {
   try {
     const isConnected = mongoose.connection.readyState === 1;
     
@@ -180,9 +189,9 @@ app.get('/api/test-db', async (req, res) => {
       message: 'Teste de conexão com MongoDB',
       connected: isConnected,
       state: mongoose.connection.readyState,
-      host: mongoose.connection.host || 'N/A',
-      database: mongoose.connection.name || 'N/A',
-      mongodbUri: process.env.MONGODB_URI ? 'Configurada' : 'Não configurada',
+      host: '***',
+      database: '***',
+      mongodbUri: '***',
       environment: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
     });
@@ -196,12 +205,19 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// Rota para forçar reconexão com MongoDB
-app.get('/api/force-connect', async (req, res) => {
+// Rota para forçar reconexão com MongoDB (APENAS DESENVOLVIMENTO)
+app.get('/api/force-connect', (req, res, next) => {
+  // Bloquear em produção
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      message: 'Esta rota está desabilitada em produção'
+    });
+  }
+  next();
+}, async (req, res) => {
   try {
     console.log('🔄 Forçando conexão MongoDB...');
-    console.log('🔍 MONGODB_URI existe:', !!process.env.MONGODB_URI);
-    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
     console.log('🔍 Estado atual:', mongoose.connection.readyState);
     
     if (!process.env.MONGODB_URI) {
@@ -241,8 +257,8 @@ app.get('/api/force-connect', async (req, res) => {
       success: true,
       message: 'Conexão MongoDB estabelecida com sucesso!',
       connected: true,
-      host: conn.connection.host,
-      database: conn.connection.name,
+      host: '***',
+      database: '***',
       state: mongoose.connection.readyState,
       userCount: userCount
     });
