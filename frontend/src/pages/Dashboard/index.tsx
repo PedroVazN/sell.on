@@ -187,6 +187,11 @@ export const Dashboard: React.FC = () => {
   });
 
   const [isDailyDataLoading, setIsDailyDataLoading] = useState(false);
+  const [topQuotedProducts, setTopQuotedProducts] = useState<Array<{
+    name: string;
+    quantity: number;
+    timesQuoted: number;
+  }>>([]);
 
 
   const loadDashboardData = useCallback(async () => {
@@ -526,6 +531,38 @@ export const Dashboard: React.FC = () => {
 
         if (!isMounted) return;
         setTodayStats(todayStatsCalc);
+
+        // Calcular produtos mais cotados (todos os produtos em todas as propostas)
+        const productCount: { [key: string]: { name: string; quantity: number; timesQuoted: number } } = {};
+        
+        proposals.forEach((proposal: any) => {
+          if (proposal.items && Array.isArray(proposal.items)) {
+            proposal.items.forEach((item: any) => {
+              const productName = item.product?.name || 'Produto';
+              const productId = item.product?._id || productName;
+              
+              if (!productCount[productId]) {
+                productCount[productId] = {
+                  name: productName,
+                  quantity: 0,
+                  timesQuoted: 0
+                };
+              }
+              
+              productCount[productId].quantity += item.quantity || 0;
+              productCount[productId].timesQuoted += 1;
+            });
+          }
+        });
+
+        // Ordenar por vezes cotado e pegar top 5
+        const sortedProducts = Object.values(productCount)
+          .sort((a, b) => b.timesQuoted - a.timesQuoted)
+          .slice(0, 5);
+        
+        if (!isMounted) return;
+        setTopQuotedProducts(sortedProducts);
+
       } catch (error) {
         console.error('Erro ao processar dados diários:', error);
       } finally {
@@ -775,7 +812,7 @@ export const Dashboard: React.FC = () => {
         </ChartCard>
       </ChartsGrid>
 
-      <ChartsGrid>
+      <ChartsGrid style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <ChartCard>
           <ChartTitle>
             {user?.role === 'vendedor' ? 'Propostas Recentes' : 'Produtos Mais Vendidos'}
@@ -800,6 +837,28 @@ export const Dashboard: React.FC = () => {
                 <ProductName>Nenhum produto vendido ainda</ProductName>
                 <ProductSales>0 unidades</ProductSales>
                 <ProductRevenue>R$ 0</ProductRevenue>
+              </ProductItem>
+            )}
+          </ProductsList>
+        </ChartCard>
+
+        <ChartCard>
+          <ChartTitle>Produtos Mais Cotados</ChartTitle>
+          <ChartSubtitle>Top 5 produtos em propostas</ChartSubtitle>
+          <ProductsList>
+            {topQuotedProducts.length > 0 ? (
+              topQuotedProducts.map((product, index) => (
+                <ProductItem key={index}>
+                  <ProductName>{index + 1}. {product.name}</ProductName>
+                  <ProductSales>{product.timesQuoted} {product.timesQuoted === 1 ? 'proposta' : 'propostas'}</ProductSales>
+                  <ProductRevenue>{product.quantity} unidades cotadas</ProductRevenue>
+                </ProductItem>
+              ))
+            ) : (
+              <ProductItem>
+                <ProductName>Nenhum produto cotado ainda</ProductName>
+                <ProductSales>0 propostas</ProductSales>
+                <ProductRevenue>0 unidades</ProductRevenue>
               </ProductItem>
             )}
           </ProductsList>
