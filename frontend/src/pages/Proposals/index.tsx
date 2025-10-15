@@ -166,8 +166,8 @@ export const Proposals: React.FC = () => {
       
       const [productsRes, distributorsRes, sellersRes] = await Promise.all([
         apiService.getProducts(1, 1000),
-        apiService.getDistributors(1, 100),
-        apiService.getUsers(1, 100)
+        apiService.getDistributors(1, 1000), // Aumentado para garantir que todos apareçam
+        apiService.getUsers(1, 1000)
       ]);
 
       setProposals(proposalsRes.data || []);
