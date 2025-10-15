@@ -186,8 +186,6 @@ export const Dashboard: React.FC = () => {
     valorNegociacao: 0
   });
 
-  // Cache para propostas para evitar requisições repetidas
-  const [proposalsCache, setProposalsCache] = useState<any[]>([]);
   const [isDailyDataLoading, setIsDailyDataLoading] = useState(false);
 
 
@@ -202,13 +200,15 @@ export const Dashboard: React.FC = () => {
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getLossReasonsStats(),
-          apiService.getProposals(1, 200, { createdBy: user._id }), // Filtro no backend
+          apiService.getProposals(1, 200), // Buscar propostas e filtrar no frontend
           apiService.getGoals(1, 20, { assignedTo: user._id, status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
 
-        // Processar dados mensais das propostas do vendedor (já filtrado no backend)
-        const vendedorProposals = proposalsResponse.data || [];
+        // Processar dados mensais das propostas do vendedor - filtrar no frontend
+        const vendedorProposals = (proposalsResponse.data || []).filter((proposal: any) => 
+          proposal.createdBy?._id === user._id || proposal.createdBy === user._id
+        );
 
         // Calcular estatísticas detalhadas das propostas do vendedor
         const proposalStats = vendedorProposals.reduce((acc: any, proposal: any) => {
@@ -443,16 +443,18 @@ export const Dashboard: React.FC = () => {
 
   // Processar dados diários quando mudar o mês - OTIMIZADO COM CACHE
   useEffect(() => {
+    let isMounted = true;
+    
     const processDailyData = async () => {
       try {
+        if (!isMounted) return;
         setIsDailyDataLoading(true);
-        // Usar cache se disponível, senão buscar
-        let proposals = proposalsCache;
-        if (proposals.length === 0) {
-          const response = await apiService.getProposals(1, 300);
-          proposals = response.data || [];
-          setProposalsCache(proposals);
-        }
+        
+        // Buscar propostas
+        const response = await apiService.getProposals(1, 300);
+        const proposals = response.data || [];
+        
+        if (!isMounted) return;
 
         // Filtrar propostas do mês/ano selecionado
         const filteredProposals = proposals.filter((p: any) => {
@@ -522,16 +524,23 @@ export const Dashboard: React.FC = () => {
           valorNegociacao: 0
         });
 
+        if (!isMounted) return;
         setTodayStats(todayStatsCalc);
       } catch (error) {
         console.error('Erro ao processar dados diários:', error);
       } finally {
-        setIsDailyDataLoading(false);
+        if (isMounted) {
+          setIsDailyDataLoading(false);
+        }
       }
     };
 
     processDailyData();
-  }, [selectedMonth, selectedYear]); // eslint-disable-line react-hooks/exhaustive-deps
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedMonth, selectedYear]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
   const salesData = useMemo(() => {
