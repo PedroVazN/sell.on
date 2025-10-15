@@ -87,15 +87,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔐 Resposta do login:', response);
       
       if (response.success && response.data) {
-        const userData = response.data;
+        const { user: userData, token } = response.data;
         console.log('✅ Usuário logado com sucesso:', userData.email, 'Role:', userData.role);
+        
+        // Salvar token e usuário no localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('currentUser', JSON.stringify(userData));
         
         setUser(userData);
         setIsAuthenticated(true);
         
-        // Verificar se o usuário foi salvo no localStorage
-        const storedUser = localStorage.getItem('currentUser');
-        console.log('💾 Usuário salvo no localStorage:', storedUser ? 'Sim' : 'Não');
+        console.log('💾 Token e usuário salvos no localStorage');
         
         return true;
       } else {

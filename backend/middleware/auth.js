@@ -5,55 +5,69 @@ const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
-    // Se não há token, usar usuário temporário (para desenvolvimento e produção sem auth)
+    // Se não há token, retornar erro
     if (!token) {
-      req.user = {
-        _id: '68c1afbcf906c14a8e7e8ff7', // ObjectId válido do MongoDB
-        id: '68c1afbcf906c14a8e7e8ff7', // Compatibilidade
-        name: 'Usuário Temporário',
-        email: 'temp@example.com',
-        role: 'admin'
-      };
-      return next();
+      return res.status(401).json({
+        success: false,
+        message: 'Token de acesso obrigatório'
+      });
     }
 
-    // Verificar se é um token temporário válido
+    // Verificar se é um token temporário (manter para compatibilidade temporária)
     if (token === 'dummy-token' || token === 'fake-token' || token.startsWith('temp-token-')) {
-      req.user = {
-        _id: '68c1afbcf906c14a8e7e8ff7', // ObjectId válido do MongoDB
-        id: '68c1afbcf906c14a8e7e8ff7', // Compatibilidade
-        name: 'Usuário Temporário',
-        email: 'temp@example.com',
-        role: 'admin'
-      };
-      return next();
-    }
-
-    // Tentar verificar como JWT
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-      const user = await User.findById(decoded.id).select('-password');
-      
-      if (!user || !user.isActive) {
+      // Apenas para desenvolvimento - remover em produção
+      if (process.env.NODE_ENV === 'development') {
+        req.user = {
+          _id: '68c1afbcf906c14a8e7e8ff7',
+          id: '68c1afbcf906c14a8e7e8ff7',
+          name: 'Usuário Temporário',
+          email: 'temp@example.com',
+          role: 'admin'
+        };
+        return next();
+      } else {
         return res.status(401).json({
           success: false,
-          message: 'Token inválido ou usuário inativo'
+          message: 'Token temporário não permitido em produção'
+        });
+      }
+    }
+
+    // Verificar JWT válido
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      
+      if (!decoded.id) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token inválido - ID do usuário não encontrado'
+        });
+      }
+
+      const user = await User.findById(decoded.id).select('-password');
+      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuário não encontrado'
+        });
+      }
+
+      if (!user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuário inativo'
         });
       }
 
       req.user = user;
       next();
     } catch (jwtError) {
-      // Se não for um JWT válido, usar usuário temporário
-      console.log('Token não é JWT válido, usando usuário temporário:', jwtError.message);
-      req.user = {
-        _id: '68c1afbcf906c14a8e7e8ff7',
-        id: '68c1afbcf906c14a8e7e8ff7',
-        name: 'Usuário Temporário',
-        email: 'temp@example.com',
-        role: 'admin'
-      };
-      next();
+      console.log('Erro na validação JWT:', jwtError.message);
+      return res.status(401).json({
+        success: false,
+        message: 'Token inválido ou expirado'
+      });
     }
   } catch (error) {
     console.error('Erro na autenticação:', error);

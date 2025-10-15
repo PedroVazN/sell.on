@@ -216,6 +216,18 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
+    // Gerar token JWT
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: user.email, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+
     // Retornar usuário sem senha
     const userResponse = await User.findById(user._id).select('-password');
     console.log('✅ Login bem-sucedido para:', userResponse.email);
@@ -223,7 +235,10 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       message: 'Login realizado com sucesso',
-      data: userResponse
+      data: {
+        user: userResponse,
+        token: token
+      }
     });
   } catch (error) {
     console.error('❌ Erro no login:', error);
