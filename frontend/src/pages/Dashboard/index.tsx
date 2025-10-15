@@ -471,12 +471,16 @@ export const Dashboard: React.FC = () => {
         const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
         
         // Inicializar dados para todos os dias
-        const dailyData = Array.from({ length: daysInMonth }, (_, i) => ({
-          day: i + 1,
-          ganhas: 0,
-          perdidas: 0,
-          geradas: 0
-        }));
+        const dailyData = Array.from({ length: daysInMonth }, (_, i) => {
+          const dayDate = new Date(selectedYear, selectedMonth - 1, i + 1);
+          return {
+            day: i + 1,
+            date: dayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            ganhas: 0,
+            perdidas: 0,
+            geradas: 0
+          };
+        });
 
         // Contar propostas por dia
         filteredProposals.forEach((p: any) => {
@@ -1117,7 +1121,7 @@ export const Dashboard: React.FC = () => {
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 marginTop: '0.5rem',
-                fontSize: '0.75rem',
+                fontSize: '0.7rem',
                 color: '#64748b',
                 paddingRight: '0.5rem'
               }}>
@@ -1131,9 +1135,12 @@ export const Dashboard: React.FC = () => {
                     
                   return showDays
                     .filter(day => day <= daysInMonth)
-                    .map(day => (
-                      <span key={day}>{day}</span>
-                    ));
+                    .map(day => {
+                      const dataItem = dailyProposalsData[day - 1];
+                      return (
+                        <span key={day}>{dataItem?.date || day}</span>
+                      );
+                    });
                 })()}
               </div>
             </div>
