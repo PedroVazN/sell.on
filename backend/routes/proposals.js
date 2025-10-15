@@ -187,8 +187,9 @@ router.get('/:id', async (req, res) => {
 router.post('/', proposalLimiter, validateProposal, async (req, res) => {
   try {
     console.log('=== CRIANDO PROPOSTA ===');
-    console.log('Body recebido:', JSON.stringify(req.body, null, 2));
-    console.log('Seller ID que será usado como createdBy:', req.body.seller?._id);
+    console.log('Cliente:', req.body.client?.name);
+    console.log('Vendedor:', req.body.seller?.name);
+    console.log('Itens:', req.body.items?.length || 0);
 
     const {
       client,

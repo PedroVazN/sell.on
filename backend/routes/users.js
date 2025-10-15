@@ -125,10 +125,7 @@ router.post('/fix-vendedor', async (req, res) => {
 // POST /api/users/login - Login de usuário
 router.post('/login', loginLimiter, validateLogin, async (req, res) => {
   try {
-    console.log('🔐 Tentativa de login:', { 
-      email: req.body.email, 
-      passwordLength: req.body.password ? req.body.password.length : 0 
-    });
+    console.log('🔐 Tentativa de login para:', req.body.email);
     
     const { email, password } = req.body;
 
@@ -162,9 +159,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
     });
 
     // Verificar senha
-    console.log('🔑 Comparando senhas...');
-    console.log('🔑 Senha recebida:', password);
-    console.log('🔑 Hash no banco:', user.password);
+    console.log('🔑 Verificando credenciais...');
     
     const isPasswordValid = await user.comparePassword(password);
     console.log('🔑 Senha válida:', isPasswordValid);

@@ -7,6 +7,11 @@ const {
   additionalSecurityHeaders, 
   securityLogger 
 } = require('../middleware/security');
+const { 
+  secureLogger, 
+  securityMonitor, 
+  authLogger 
+} = require('../middleware/secureLogging');
 
 const app = express();
 
@@ -14,6 +19,11 @@ const app = express();
 app.use(securityHeaders);
 app.use(securityLogger);
 app.use(additionalSecurityHeaders);
+
+// Middleware de logging seguro
+app.use(secureLogger);
+app.use(securityMonitor);
+app.use(authLogger);
 
 // Rate limiting geral
 app.use('/api', generalLimiter);
