@@ -756,7 +756,7 @@ export const Dashboard: React.FC = () => {
                 stroke="#3B82F6" 
                 strokeWidth={3}
                 dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                animationDuration={1000}
+                isAnimationActive={false}
                 name={user?.role === 'vendedor' ? 'Propostas' : 'Vendas'}
               />
               <Line 
@@ -765,7 +765,7 @@ export const Dashboard: React.FC = () => {
                 stroke="#EC4899" 
                 strokeWidth={3}
                 dot={{ fill: '#EC4899', strokeWidth: 2, r: 4 }}
-                animationDuration={1000}
+                isAnimationActive={false}
                 name={user?.role === 'vendedor' ? 'Aprovadas' : 'Receita'}
               />
             </LineChart>
@@ -799,7 +799,7 @@ export const Dashboard: React.FC = () => {
                 dataKey="receita" 
                 fill="url(#colorGradient)"
                 radius={[4, 4, 0, 0]}
-                animationDuration={1000}
+                isAnimationActive={false}
               />
               <defs>
                 <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
