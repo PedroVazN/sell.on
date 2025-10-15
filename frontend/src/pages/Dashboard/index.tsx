@@ -531,7 +531,7 @@ export const Dashboard: React.FC = () => {
     };
 
     processDailyData();
-  }, [selectedMonth, selectedYear, proposalsCache]);
+  }, [selectedMonth, selectedYear]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
   const salesData = useMemo(() => {
