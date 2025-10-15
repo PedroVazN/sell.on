@@ -186,6 +186,10 @@ export const Dashboard: React.FC = () => {
     valorNegociacao: 0
   });
 
+  // Cache para propostas para evitar requisições repetidas
+  const [proposalsCache, setProposalsCache] = useState<any[]>([]);
+  const [isDailyDataLoading, setIsDailyDataLoading] = useState(false);
+
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -193,31 +197,18 @@ export const Dashboard: React.FC = () => {
       setError(null);
 
       if (user?.role === 'vendedor' && user?._id) {
-        // Dashboard específico para vendedor
-        console.log('🔍 Carregando dashboard do vendedor:', user._id);
-        console.log('🔍 User role:', user.role);
-        console.log('🔍 User ID:', user._id);
-        
-        const [usersResponse, productsResponse, vendedorProposalsResponse, lossReasonsResponse, proposalsResponse, goalsResponse, salesDataResponse] = await Promise.all([
+        // Dashboard específico para vendedor - OTIMIZADO
+        const [usersResponse, productsResponse, lossReasonsResponse, proposalsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getVendedorProposals(user._id, 1, 100),
           apiService.getLossReasonsStats(),
-          apiService.getProposals(1, 100),
-          apiService.getGoals(1, 50, { assignedTo: user._id, status: 'active' }),
+          apiService.getProposals(1, 200, { createdBy: user._id }), // Filtro no backend
+          apiService.getGoals(1, 20, { assignedTo: user._id, status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
 
-        console.log('📊 Resposta completa do vendedor:', vendedorProposalsResponse);
-        const vendedorStats = vendedorProposalsResponse.stats;
-        console.log('📊 Stats do vendedor:', vendedorStats);
-
-        // Processar dados mensais das propostas do vendedor
-        const vendedorProposals = proposalsResponse.data?.filter((proposal: any) => 
-          proposal.createdBy?._id === user._id || proposal.createdBy === user._id
-        ) || [];
-
-        console.log('📊 Propostas do vendedor:', vendedorProposals);
+        // Processar dados mensais das propostas do vendedor (já filtrado no backend)
+        const vendedorProposals = proposalsResponse.data || [];
 
         // Calcular estatísticas detalhadas das propostas do vendedor
         const proposalStats = vendedorProposals.reduce((acc: any, proposal: any) => {
@@ -290,8 +281,6 @@ export const Dashboard: React.FC = () => {
           return a.month - b.month;
         }) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
 
-        console.log('📊 Dados mensais do vendedor:', monthlyData);
-
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
@@ -321,25 +310,19 @@ export const Dashboard: React.FC = () => {
           monthlyData: monthlyData
         };
         
-        console.log('📊 Dashboard data para vendedor:', dashboardData);
-        console.log('📊 Top Products:', salesDataResponse.data?.topProducts);
         setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
         setGoals(goalsResponse.data || []);
       } else {
-        // Dashboard para admin - mesmos campos do vendedor mas com dados de todos
-        console.log('🔍 Carregando dashboard do admin');
-        
+        // Dashboard para admin - OTIMIZADO
         const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getProposals(1, 1000), // Buscar todas as propostas
+          apiService.getProposals(1, 500), // Reduzido de 1000 para 500
           apiService.getLossReasonsStats(),
-          apiService.getGoals(1, 100, { status: 'active' }), // Buscar todas as metas ativas
+          apiService.getGoals(1, 50, { status: 'active' }), // Reduzido de 100 para 50
           apiService.getProposalsDashboardSales()
         ]);
-
-        console.log('📊 Todas as propostas carregadas:', allProposalsResponse.data?.length);
 
         // Calcular estatísticas de todas as propostas (como no vendedor)
         const allProposals = allProposalsResponse.data || [];
@@ -413,8 +396,6 @@ export const Dashboard: React.FC = () => {
           return a.month - b.month;
         }) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
 
-        console.log('📊 Dados mensais do admin:', monthlyData);
-
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
@@ -444,8 +425,6 @@ export const Dashboard: React.FC = () => {
           monthlyData: monthlyData
         };
         
-        console.log('📊 Dashboard data para admin:', dashboardData);
-        console.log('📊 Top Products Admin:', salesDataResponse.data?.topProducts);
         setData(dashboardData);
         setLossReasons(lossReasonsResponse.data || []);
         setGoals(goalsResponse.data || []);
@@ -456,18 +435,24 @@ export const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user?.role, user?._id]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  // Processar dados diários quando mudar o mês
+  // Processar dados diários quando mudar o mês - OTIMIZADO COM CACHE
   useEffect(() => {
     const processDailyData = async () => {
       try {
-        const response = await apiService.getProposals(1, 1000);
-        const proposals = response.data || [];
+        setIsDailyDataLoading(true);
+        // Usar cache se disponível, senão buscar
+        let proposals = proposalsCache;
+        if (proposals.length === 0) {
+          const response = await apiService.getProposals(1, 300);
+          proposals = response.data || [];
+          setProposalsCache(proposals);
+        }
 
         // Filtrar propostas do mês/ano selecionado
         const filteredProposals = proposals.filter((p: any) => {
@@ -540,11 +525,13 @@ export const Dashboard: React.FC = () => {
         setTodayStats(todayStatsCalc);
       } catch (error) {
         console.error('Erro ao processar dados diários:', error);
+      } finally {
+        setIsDailyDataLoading(false);
       }
     };
 
     processDailyData();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, proposalsCache]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
   const salesData = useMemo(() => {
@@ -555,9 +542,6 @@ export const Dashboard: React.FC = () => {
   }, [data?.monthlyData, user?.role]);
   
   const revenueData = useMemo(() => getRevenueData(data?.monthlyData || []), [data?.monthlyData]);
-
-  // Debug: verificar role do usuário
-  console.log('🔍 User role no dashboard:', user?.role);
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -977,7 +961,9 @@ export const Dashboard: React.FC = () => {
             borderRadius: '0.5rem',
             padding: '1rem',
             display: 'flex',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            opacity: isDailyDataLoading ? 0.5 : 1,
+            transition: 'opacity 0.3s ease'
           }}>
             {/* Eixo Y (números à esquerda) */}
             {dailyProposalsData.length > 0 && (() => {
