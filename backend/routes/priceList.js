@@ -418,9 +418,9 @@ router.get('/distributor/:distributorId', auth, async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
+    // Vendedores podem ver todas as listas de preços (não filtrar por createdBy)
     const priceList = await PriceList.find({
       distributor: distributorId,
-      createdBy: req.user ? req.user.id : 'temp-user',
       isActive: true
     })
     .populate('product', 'name description price category')
@@ -430,7 +430,6 @@ router.get('/distributor/:distributorId', auth, async (req, res) => {
 
     const total = await PriceList.countDocuments({
       distributor: distributorId,
-      createdBy: req.user ? req.user.id : 'temp-user',
       isActive: true
     });
 
