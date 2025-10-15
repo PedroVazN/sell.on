@@ -430,7 +430,7 @@ export const CreateProposal: React.FC = () => {
             complemento: '',
             bairro: '',
             cidade: '',
-            uf: ''
+            uf: 'SP' // Valor padrão - pode ser alterado posteriormente no cadastro do cliente
           },
           classificacao: 'OUTROS' as const,
           observacoes: `Cliente criado automaticamente via proposta em ${new Date().toLocaleDateString()}`,
