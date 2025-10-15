@@ -219,6 +219,54 @@ export const CreateProposal: React.FC = () => {
     }));
   };
 
+  const handleCnpjChange = (value: string) => {
+    // Formatar CNPJ: 00.000.000/0000-00
+    let formatted = value.replace(/\D/g, '');
+    if (formatted.length <= 14) {
+      formatted = formatted.replace(/^(\d{2})(\d)/, '$1.$2');
+      formatted = formatted.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      formatted = formatted.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      formatted = formatted.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    handleClientChange('cnpj', formatted);
+  };
+
+  const searchClientByCnpj = async (cnpj: string) => {
+    if (!cnpj || cnpj.length < 14) return;
+
+    try {
+      console.log('🔍 Buscando cliente por CNPJ:', cnpj);
+      const cleanCnpj = cnpj.replace(/\D/g, ''); // Remove formatação
+      
+      // Buscar cliente na API
+      const response = await apiService.getClients(1, 100);
+      const existingClient = response.data?.find((client: any) => 
+        client.cnpj?.replace(/\D/g, '') === cleanCnpj
+      );
+
+      if (existingClient) {
+        console.log('✅ Cliente encontrado:', existingClient);
+        // Preencher todos os dados do cliente
+        setFormData(prev => ({
+          ...prev,
+          client: {
+            name: existingClient.contato?.nome || '',
+            email: existingClient.contato?.email || '',
+            phone: existingClient.contato?.telefone || '',
+            company: existingClient.nomeFantasia || '',
+            cnpj: existingClient.cnpj || '',
+            razaoSocial: existingClient.razaoSocial || ''
+          }
+        }));
+        alert('Cliente encontrado! Dados preenchidos automaticamente.');
+      } else {
+        console.log('ℹ️ Cliente não encontrado. Novo cliente será criado.');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar cliente:', error);
+    }
+  };
+
 
   const handleDistributorChange = async (distributorId: string) => {
     const distributor = distributors.find(d => d._id === distributorId);
@@ -330,11 +378,10 @@ export const CreateProposal: React.FC = () => {
       setSaving(true);
       
       // Validar dados obrigatórios
-      if (!formData.client.name || !formData.client.email) {
-        alert('Nome e email do cliente são obrigatórios');
+      if (!formData.client.cnpj || !formData.client.name || !formData.client.email || !formData.client.razaoSocial) {
+        alert('CNPJ, nome do contato, email e razão social são obrigatórios');
         return;
       }
-      
       
       if (!formData.distributor._id) {
         alert('Distribuidor é obrigatório');
@@ -354,6 +401,52 @@ export const CreateProposal: React.FC = () => {
       if (!formData.validUntil) {
         alert('Data de validade é obrigatória');
         return;
+      }
+
+      // Verificar se cliente existe e criar se necessário
+      const cleanCnpj = formData.client.cnpj.replace(/\D/g, '');
+      const clientsResponse = await apiService.getClients(1, 100);
+      let existingClient = clientsResponse.data?.find((client: any) => 
+        client.cnpj?.replace(/\D/g, '') === cleanCnpj
+      );
+
+      // Se cliente não existe, criar novo
+      if (!existingClient) {
+        console.log('📝 Criando novo cliente...');
+        const newClientData = {
+          cnpj: formData.client.cnpj,
+          razaoSocial: formData.client.razaoSocial,
+          nomeFantasia: formData.client.company || formData.client.razaoSocial,
+          contato: {
+            nome: formData.client.name,
+            email: formData.client.email,
+            telefone: formData.client.phone || '',
+            cargo: 'Contato'
+          },
+          endereco: {
+            cep: '',
+            logradouro: '',
+            numero: '',
+            complemento: '',
+            bairro: '',
+            cidade: '',
+            uf: ''
+          },
+          classificacao: 'OUTROS' as const,
+          observacoes: `Cliente criado automaticamente via proposta em ${new Date().toLocaleDateString()}`,
+          isActive: true
+        };
+        
+        const createResponse = await apiService.createClient(newClientData);
+        if (createResponse.success) {
+          console.log('✅ Cliente criado com sucesso:', createResponse.data);
+          existingClient = createResponse.data;
+        } else {
+          alert('Erro ao criar cliente. Tente novamente.');
+          return;
+        }
+      } else {
+        console.log('✅ Cliente já existe:', existingClient);
       }
 
       // Preparar dados para envio
@@ -560,12 +653,36 @@ export const CreateProposal: React.FC = () => {
           <SectionTitle>Dados do Cliente</SectionTitle>
           <FormRow>
             <FormGroup>
-              <Label>Nome *</Label>
+              <Label>CNPJ *</Label>
+              <Input
+                type="text"
+                value={formData.client.cnpj}
+                onChange={(e) => handleCnpjChange(e.target.value)}
+                onBlur={() => searchClientByCnpj(formData.client.cnpj)}
+                placeholder="00.000.000/0000-00"
+              />
+              <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                Digite o CNPJ para buscar cliente existente ou criar novo
+              </small>
+            </FormGroup>
+            <FormGroup>
+              <Label>Razão Social *</Label>
+              <Input
+                type="text"
+                value={formData.client.razaoSocial}
+                onChange={(e) => handleClientChange('razaoSocial', e.target.value)}
+                placeholder="Razão social da empresa"
+              />
+            </FormGroup>
+          </FormRow>
+          <FormRow>
+            <FormGroup>
+              <Label>Nome do Contato *</Label>
               <Input
                 type="text"
                 value={formData.client.name}
                 onChange={(e) => handleClientChange('name', e.target.value)}
-                placeholder="Nome completo do cliente"
+                placeholder="Nome completo do contato"
               />
             </FormGroup>
             <FormGroup>
@@ -589,32 +706,12 @@ export const CreateProposal: React.FC = () => {
               />
             </FormGroup>
             <FormGroup>
-              <Label>Empresa</Label>
+              <Label>Nome Fantasia</Label>
               <Input
                 type="text"
                 value={formData.client.company}
                 onChange={(e) => handleClientChange('company', e.target.value)}
-                placeholder="Nome da empresa"
-              />
-            </FormGroup>
-          </FormRow>
-          <FormRow>
-            <FormGroup>
-              <Label>CNPJ</Label>
-              <Input
-                type="text"
-                value={formData.client.cnpj}
-                onChange={(e) => handleClientChange('cnpj', e.target.value)}
-                placeholder="00.000.000/0000-00"
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Razão Social</Label>
-              <Input
-                type="text"
-                value={formData.client.razaoSocial}
-                onChange={(e) => handleClientChange('razaoSocial', e.target.value)}
-                placeholder="Razão social da empresa"
+                placeholder="Nome fantasia da empresa"
               />
             </FormGroup>
           </FormRow>
