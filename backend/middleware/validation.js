@@ -243,27 +243,18 @@ const validateProposal = [
 // Validações para listas de preços
 const validatePriceList = [
   body('distributorId')
-    .optional()
     .isMongoId()
     .withMessage('ID do distribuidor inválido'),
 
   body('products')
-    .optional()
     .isArray({ min: 1 })
     .withMessage('Pelo menos um produto é obrigatório'),
 
-  body('products.*.productId')
-    .optional()
-    .isMongoId()
-    .withMessage('ID do produto inválido'),
-
   body('products.*.product')
-    .optional()
     .isMongoId()
     .withMessage('ID do produto inválido'),
 
   body('products.*.pricing.aVista')
-    .optional()
     .isFloat({ min: 0 })
     .withMessage('Preço à vista deve ser um número positivo'),
 

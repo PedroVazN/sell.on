@@ -67,6 +67,7 @@ export const PriceList: React.FC = () => {
   const [deletingItems, setDeletingItems] = useState<string[]>([]);
   const [expandedRows, setExpandedRows] = useState<string | null>(null);
   const [editingPriceList, setEditingPriceList] = useState<PriceListInterface | null>(null);
+  const [originalPriceList, setOriginalPriceList] = useState<PriceListInterface | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -151,17 +152,43 @@ export const PriceList: React.FC = () => {
   };
 
   const handleEditPriceList = (priceList: PriceListInterface) => {
+    // Fazer uma cópia profunda da lista original para comparação posterior
+    setOriginalPriceList(JSON.parse(JSON.stringify(priceList)));
     setEditingPriceList(priceList);
     setShowEditModal(true);
   };
 
   const handleSavePriceList = async () => {
-    if (!editingPriceList) return;
+    if (!editingPriceList || !originalPriceList) return;
 
     try {
       setSaving(true);
       
-      // Processar cada produto da lista
+      // 1. Identificar produtos removidos (que estavam na lista original mas não estão na editada)
+      const originalProductIds = (originalPriceList.products || [])
+        .map(p => p._id)
+        .filter(id => id && !id.startsWith('temp_'));
+      
+      const currentProductIds = (editingPriceList.products || [])
+        .map(p => p._id)
+        .filter(id => id && !id.startsWith('temp_'));
+      
+      const removedProductIds = originalProductIds.filter(id => !currentProductIds.includes(id));
+      
+      console.log('🗑️ Produtos removidos:', removedProductIds);
+      
+      // 2. Deletar produtos removidos
+      for (const productId of removedProductIds) {
+        try {
+          console.log(`🗑️ Deletando produto ${productId}...`);
+          await apiService.deletePriceListItem(productId);
+          console.log(`✅ Produto ${productId} deletado com sucesso`);
+        } catch (error) {
+          console.error(`❌ Erro ao deletar produto ${productId}:`, error);
+        }
+      }
+      
+      // 3. Processar cada produto da lista editada (atualizar ou criar)
       for (const product of editingPriceList.products || []) {
         if (product._id && !product._id.startsWith('temp_')) {
           // Atualizar produto existente
@@ -192,10 +219,11 @@ export const PriceList: React.FC = () => {
         }
       }
 
-      // Recarregar dados
+      // 4. Recarregar dados
       await loadData();
       setShowEditModal(false);
       setEditingPriceList(null);
+      setOriginalPriceList(null);
       alert('Lista de preços atualizada com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar lista de preços:', error);
