@@ -190,6 +190,12 @@ export const PriceList: React.FC = () => {
       
       // 3. Processar cada produto da lista editada (atualizar ou criar)
       for (const product of editingPriceList.products || []) {
+        // Pular produtos que não têm um ID de produto válido (ainda não selecionados)
+        if (!product.product || !product.product._id) {
+          console.log('⚠️ Pulando produto sem ID válido:', product);
+          continue;
+        }
+
         if (product._id && !product._id.startsWith('temp_')) {
           // Atualizar produto existente
           await apiService.updatePriceListItem(product._id, {
@@ -201,8 +207,9 @@ export const PriceList: React.FC = () => {
             isActive: product.isActive,
             notes: product.notes
           });
-        } else if (product._id && product._id.startsWith('temp_') && product.product._id) {
-          // Criar novo produto
+        } else if (product._id && product._id.startsWith('temp_')) {
+          // Criar novo produto (apenas se tiver um produto válido selecionado)
+          console.log('➕ Criando novo item para produto:', product.product._id);
           await apiService.createPriceListItem({
             distributor: editingPriceList.distributor._id,
             product: product.product._id,
