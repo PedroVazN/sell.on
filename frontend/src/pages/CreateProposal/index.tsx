@@ -83,7 +83,7 @@ export const CreateProposal: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successModalType, setSuccessModalType] = useState<'win' | 'loss'>('win');
+  const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('created');
   const [proposalNumber, setProposalNumber] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -486,13 +486,13 @@ export const CreateProposal: React.FC = () => {
         // Pegar o número da proposta da resposta
         const propNumber = response.data?.proposalNumber || 'N/A';
         setProposalNumber(propNumber);
-        setSuccessModalType('win');
+        setSuccessModalType('created'); // Tipo 'created' para proposta criada
         setShowSuccessModal(true);
         
         // Aguardar um pouco e navegar
         setTimeout(() => {
           navigate('/proposals');
-        }, 4000);
+        }, 3000);
       } else {
         alert('Erro ao criar proposta');
       }

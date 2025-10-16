@@ -83,7 +83,7 @@ export const Proposals: React.FC = () => {
   const [lossReason, setLossReason] = useState('');
   const [lossDescription, setLossDescription] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successModalType, setSuccessModalType] = useState<'win' | 'loss'>('win');
+  const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('win');
   const [proposalNumber, setProposalNumber] = useState<string>('');
 
   // Opções de motivo da perda

@@ -90,20 +90,23 @@ export const Overlay = styled.div<OverlayProps>`
 
 interface ModalProps {
   $isClosing: boolean;
-  $type: 'win' | 'loss';
+  $type: 'created' | 'win' | 'loss';
 }
 
 export const Modal = styled.div<ModalProps>`
   background: linear-gradient(135deg, 
-    ${props => props.$type === 'win' 
-      ? 'rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%'
-      : 'rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%'
-    });
+    ${props => {
+      if (props.$type === 'created') return 'rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%';
+      if (props.$type === 'win') return 'rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%';
+      return 'rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%';
+    }}
+  );
   backdrop-filter: blur(20px);
-  border: 2px solid ${props => props.$type === 'win' 
-    ? 'rgba(16, 185, 129, 0.3)'
-    : 'rgba(245, 158, 11, 0.3)'
-  };
+  border: 2px solid ${props => {
+    if (props.$type === 'created') return 'rgba(59, 130, 246, 0.3)';
+    if (props.$type === 'win') return 'rgba(16, 185, 129, 0.3)';
+    return 'rgba(245, 158, 11, 0.3)';
+  }};
   border-radius: 24px;
   padding: 3rem 2rem 2rem;
   max-width: 500px;
@@ -127,7 +130,7 @@ export const Modal = styled.div<ModalProps>`
 `;
 
 interface IconContainerProps {
-  $type: 'win' | 'loss';
+  $type: 'created' | 'win' | 'loss';
 }
 
 export const IconContainer = styled.div<IconContainerProps>`
@@ -146,7 +149,7 @@ export const Icon = styled.div`
 `;
 
 interface IconRingProps {
-  $type: 'win' | 'loss';
+  $type: 'created' | 'win' | 'loss';
   $delay?: number;
 }
 
@@ -157,10 +160,11 @@ export const IconRing = styled.div<IconRingProps>`
   transform: translate(-50%, -50%);
   width: 100px;
   height: 100px;
-  border: 3px solid ${props => props.$type === 'win' 
-    ? 'rgba(16, 185, 129, 0.5)'
-    : 'rgba(245, 158, 11, 0.5)'
-  };
+  border: 3px solid ${props => {
+    if (props.$type === 'created') return 'rgba(59, 130, 246, 0.5)';
+    if (props.$type === 'win') return 'rgba(16, 185, 129, 0.5)';
+    return 'rgba(245, 158, 11, 0.5)';
+  }};
   border-radius: 50%;
   animation: ${rotate} 2s linear infinite;
   animation-delay: ${props => props.$delay || 0}s;
