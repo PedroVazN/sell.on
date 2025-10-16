@@ -100,7 +100,6 @@ export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
-  min-width: 1600px;
   background: ${({ theme }) => theme.colors.background.card};
   border-radius: 12px;
   overflow: hidden;
@@ -121,85 +120,15 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: 0.75rem 0.5rem;
+  padding: 1rem;
   text-align: left;
   vertical-align: middle;
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.875rem;
-  border-right: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  white-space: nowrap;
   
   &:last-child {
-    border-right: none;
-  }
-
-  /* Coluna #ID (1) */
-  &:nth-child(1) {
-    min-width: 100px;
-    max-width: 120px;
-    white-space: nowrap;
-  }
-
-  /* Coluna Cliente (2) */
-  &:nth-child(2) {
-    min-width: 180px;
-    max-width: 220px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Coluna Vendedor (3) */
-  &:nth-child(3) {
-    min-width: 150px;
-    max-width: 180px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Coluna Distribuidor (4) */
-  &:nth-child(4) {
-    min-width: 180px;
-    max-width: 220px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Coluna Produtos (5) */
-  &:nth-child(5) {
-    min-width: 100px;
-    max-width: 120px;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  /* Coluna Total (6) */
-  &:nth-child(6) {
-    min-width: 120px;
-    max-width: 150px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* Coluna Status (7) */
-  &:nth-child(7) {
-    min-width: 130px;
-    max-width: 150px;
-  }
-
-  /* Coluna Data (8) */
-  &:nth-child(8) {
-    min-width: 110px;
-    max-width: 130px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-  }
-
-  /* Coluna Ações (9) */
-  &:nth-child(9) {
-    min-width: 250px;
-    padding: 0.5rem;
+    white-space: normal;
   }
 `;
 
