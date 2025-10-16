@@ -51,13 +51,25 @@ interface LossStats {
 }
 
 const lossReasonLabels: { [key: string]: string } = {
-  preco_concorrente: 'Preço Concorrente',
-  condicao_pagamento: 'Condição de Pagamento',
-  prazo_entrega: 'Prazo de Entrega',
-  qualidade_produto: 'Qualidade do Produto',
-  atendimento: 'Atendimento',
-  cliente_desistiu: 'Cliente Desistiu',
-  outro: 'Outro'
+  // Motivos do sistema
+  'preco_concorrente': 'Preço Concorrente',
+  'condicao_pagamento': 'Condição de Pagamento',
+  'sem_retorno': 'Sem Retorno',
+  'credito_negado': 'Crédito Negado',
+  'concorrencia_marca': 'Concorrência (Marca)',
+  'adiamento_compra': 'Adiamento de Compra',
+  'cotacao_preco': 'Cotação de Preço',
+  'perca_preco': 'Perda de Preço',
+  'perda_preco': 'Perda de Preço', // Variação do nome
+  'urgencia_comprou_local': 'Urgência / Comprou Localmente',
+  'golpe': 'Golpe',
+  'licitacao': 'Licitação',
+  'fechado_outro_parceiro': 'Fechado com Outro Parceiro',
+  'prazo_entrega': 'Prazo de Entrega',
+  'qualidade_produto': 'Qualidade do Produto',
+  'atendimento': 'Atendimento',
+  'cliente_desistiu': 'Cliente Desistiu',
+  'outro': 'Outro'
 };
 
 export const Reports: React.FC = () => {
