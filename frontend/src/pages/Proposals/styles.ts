@@ -94,10 +94,30 @@ export const Content = styled.div`
 export const TableWrapper = styled.div`
   overflow-x: auto;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
+  
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background.secondary};
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.primary};
+    border-radius: 4px;
+    
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
 `;
 
 export const Table = styled.table`
   width: 100%;
+  min-width: 1200px;
   border-collapse: collapse;
   font-size: 0.875rem;
   background: ${({ theme }) => theme.colors.background.card};
@@ -120,15 +140,27 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: left;
   vertical-align: middle;
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.875rem;
   white-space: nowrap;
   
+  /* Coluna de ações permite quebra */
   &:last-child {
     white-space: normal;
+    min-width: 140px;
+  }
+  
+  /* Coluna de produtos centralizada */
+  &:nth-child(5) {
+    text-align: center;
+  }
+  
+  /* Coluna de total em negrito */
+  &:nth-child(6) {
+    font-weight: 600;
   }
 `;
 
