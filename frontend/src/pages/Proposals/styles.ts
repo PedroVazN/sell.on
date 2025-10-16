@@ -95,6 +95,7 @@ export const TableWrapper = styled.div`
   overflow-x: auto;
   width: 100%;
   -webkit-overflow-scrolling: touch;
+  zoom: 0.9;
   
   &::-webkit-scrollbar {
     height: 8px;
