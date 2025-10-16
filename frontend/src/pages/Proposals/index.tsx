@@ -5,6 +5,7 @@ import { apiService, Proposal, Product, Distributor, User as UserType } from '..
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
+import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
 import { 
   Container, 
   Header, 
@@ -81,6 +82,9 @@ export const Proposals: React.FC = () => {
   const [proposalToLose, setProposalToLose] = useState<Proposal | null>(null);
   const [lossReason, setLossReason] = useState('');
   const [lossDescription, setLossDescription] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalType, setSuccessModalType] = useState<'win' | 'loss'>('win');
+  const [proposalNumber, setProposalNumber] = useState<string>('');
 
   // Opções de motivo da perda
   const lossReasons = [
@@ -310,7 +314,15 @@ export const Proposals: React.FC = () => {
       }
       
       await loadData();
-      success('Status Atualizado!', 'Status da proposta atualizado com sucesso!');
+      
+      // Mostrar modal de sucesso se venda foi fechada
+      if (newStatus === 'venda_fechada') {
+        setProposalNumber(proposal.proposalNumber || 'N/A');
+        setSuccessModalType('win');
+        setShowSuccessModal(true);
+      } else {
+        success('Status Atualizado!', 'Status da proposta atualizado com sucesso!');
+      }
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
       showError('Erro!', `Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
@@ -332,10 +344,15 @@ export const Proposals: React.FC = () => {
       );
       await loadData();
       setShowLossModal(false);
+      
+      // Mostrar modal de perda
+      setProposalNumber(proposalToLose.proposalNumber || 'N/A');
+      setSuccessModalType('loss');
+      setShowSuccessModal(true);
+      
       setProposalToLose(null);
       setLossReason('');
       setLossDescription('');
-      success('Venda Perdida!', 'Proposta marcada como venda perdida com sucesso!');
     } catch (err) {
       console.error('Erro ao marcar como venda perdida:', err);
       showError('Erro!', `Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
@@ -1059,6 +1076,13 @@ export const Proposals: React.FC = () => {
           </ModalContent>
         </Modal>
       )}
+
+      <ProposalSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        type={successModalType}
+        proposalNumber={proposalNumber}
+      />
     </Container>
   );
 };

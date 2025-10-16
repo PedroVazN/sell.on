@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Product, Distributor, User as UserType, PriceOption } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
+import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
 import { 
   Container, 
   Header, 
@@ -81,6 +82,9 @@ export const CreateProposal: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalType, setSuccessModalType] = useState<'win' | 'loss'>('win');
+  const [proposalNumber, setProposalNumber] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -479,8 +483,16 @@ export const CreateProposal: React.FC = () => {
       const response = await apiService.createProposal(proposalData);
       
       if (response.success) {
-        alert('Proposta criada com sucesso!');
-        navigate('/proposals');
+        // Pegar o número da proposta da resposta
+        const propNumber = response.data?.proposalNumber || 'N/A';
+        setProposalNumber(propNumber);
+        setSuccessModalType('win');
+        setShowSuccessModal(true);
+        
+        // Aguardar um pouco e navegar
+        setTimeout(() => {
+          navigate('/proposals');
+        }, 4000);
       } else {
         alert('Erro ao criar proposta');
       }
@@ -1127,6 +1139,16 @@ export const CreateProposal: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ProposalSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          navigate('/proposals');
+        }}
+        type={successModalType}
+        proposalNumber={proposalNumber}
+      />
 
     </Container>
   );
