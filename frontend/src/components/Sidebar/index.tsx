@@ -20,7 +20,8 @@ import {
   LogOut,
   Megaphone,
   Menu,
-  X
+  X,
+  FileBarChart
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -102,6 +103,9 @@ export const Sidebar: React.FC = () => {
           { icon: <DollarSign size={20} />, label: 'Lista de Preços', path: '/price-list', permission: 'admin' },
         ] : []),
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
+        ...(hasPermission('admin') ? [
+          { icon: <FileBarChart size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
+        ] : []),
       ]
     },
     ...(hasPermission('admin') ? [{
