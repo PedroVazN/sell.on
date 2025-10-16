@@ -185,7 +185,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // POST /api/price-list - Criar novo item na lista de preços
-router.post('/', auth, validatePriceList, async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     console.log('=== CRIANDO NOVA LISTA DE PREÇOS ===');
     console.log('Body recebido:', JSON.stringify(req.body, null, 2));
@@ -208,7 +208,8 @@ router.post('/', auth, validatePriceList, async (req, res) => {
       
       if (!distributorId || !products || products.length === 0) {
         return res.status(400).json({ 
-          error: 'Distribuidor e produtos são obrigatórios' 
+          success: false,
+          message: 'Distribuidor e produtos são obrigatórios' 
         });
       }
 
@@ -265,13 +266,15 @@ router.post('/', auth, validatePriceList, async (req, res) => {
       // Validações básicas
       if (!distributor || !product || !pricing) {
         return res.status(400).json({ 
-          error: 'Distribuidor, produto e preços são obrigatórios' 
+          success: false,
+          message: 'Distribuidor, produto e preços são obrigatórios' 
         });
       }
 
-      if (!pricing.aVista) {
+      if (pricing.aVista === undefined || pricing.aVista === null) {
         return res.status(400).json({ 
-          error: 'Preço à vista é obrigatório' 
+          success: false,
+          message: 'Preço à vista é obrigatório' 
         });
       }
 
@@ -284,7 +287,8 @@ router.post('/', auth, validatePriceList, async (req, res) => {
 
       if (existingItem) {
         return res.status(400).json({ 
-          error: 'Já existe um preço cadastrado para este distribuidor e produto' 
+          success: false,
+          message: 'Já existe um preço cadastrado para este distribuidor e produto' 
         });
       }
 
@@ -303,11 +307,19 @@ router.post('/', auth, validatePriceList, async (req, res) => {
       await priceItem.populate('product', 'name description price category');
       await priceItem.populate('createdBy', 'name email');
 
-      res.status(201).json({ data: priceItem });
+      res.status(201).json({ 
+        success: true,
+        data: priceItem,
+        message: 'Item criado com sucesso'
+      });
     }
   } catch (error) {
     console.error('Erro ao criar item da lista de preços:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message 
+    });
   }
 });
 
