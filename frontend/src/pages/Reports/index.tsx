@@ -1,34 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, TrendingDown, Calendar, AlertCircle, Download, Filter, BarChart3, PieChart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import apiService from '../../services/api';
+import { apiService } from '../../services/api';
 import * as S from './styles';
 
 interface LossReport {
   _id: string;
-  proposalNumber: string;
-  client: {
+  proposalNumber?: string;
+  client?: {
     nome: string;
     empresa?: string;
   };
-  distributor: {
+  distributor?: {
     apelido: string;
   };
-  totalValue: number;
-  lossReason: string;
-  lossDescription: string;
-  lossDate: string;
+  totalValue?: number;
+  total?: number;
+  lossReason?: string;
+  lossDescription?: string;
+  lossDate?: string;
   createdAt: string;
-  createdBy: {
+  createdBy?: {
+    _id?: string;
     name: string;
   };
-  products: Array<{
+  products?: Array<{
     product: {
       name: string;
     };
     quantity: number;
     unitPrice: number;
   }>;
+  status?: string;
 }
 
 interface LossStats {
@@ -60,9 +63,9 @@ const lossReasonLabels: { [key: string]: string } = {
 export const Reports: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [lostProposals, setLostProposals] = useState<LossReport[]>([]);
+  const [lostProposals, setLostProposals] = useState<any[]>([]);
   const [stats, setStats] = useState<LossStats | null>(null);
-  const [filteredProposals, setFilteredProposals] = useState<LossReport[]>([]);
+  const [filteredProposals, setFilteredProposals] = useState<any[]>([]);
   
   // Filtros
   const [dateFrom, setDateFrom] = useState('');
@@ -100,9 +103,9 @@ export const Reports: React.FC = () => {
     }
   };
 
-  const calculateStats = (proposals: LossReport[]) => {
+  const calculateStats = (proposals: any[]) => {
     const totalLost = proposals.length;
-    const totalValue = proposals.reduce((sum, p) => sum + (p.totalValue || 0), 0);
+    const totalValue = proposals.reduce((sum, p) => sum + (p.totalValue || p.total || 0), 0);
 
     // Agrupar por motivo
     const reasonsMap = new Map<string, { count: number; value: number }>();
@@ -112,7 +115,7 @@ export const Reports: React.FC = () => {
       const current = reasonsMap.get(reason) || { count: 0, value: 0 };
       reasonsMap.set(reason, {
         count: current.count + 1,
-        value: current.value + (p.totalValue || 0)
+        value: current.value + (p.totalValue || p.total || 0)
       });
     });
 
@@ -132,7 +135,7 @@ export const Reports: React.FC = () => {
       const current = monthsMap.get(monthKey) || { count: 0, value: 0 };
       monthsMap.set(monthKey, {
         count: current.count + 1,
-        value: current.value + (p.totalValue || 0)
+        value: current.value + (p.totalValue || p.total || 0)
       });
     });
 
@@ -206,7 +209,7 @@ export const Reports: React.FC = () => {
       p.client?.nome || '-',
       p.distributor?.apelido || '-',
       p.createdBy?.name || '-',
-      p.totalValue || 0,
+      p.totalValue || p.total || 0,
       lossReasonLabels[p.lossReason] || p.lossReason,
       (p.lossDescription || '-').replace(/,/g, ';'),
       formatDate(p.lossDate || p.createdAt),
@@ -319,8 +322,8 @@ export const Reports: React.FC = () => {
       {/* Filtros */}
       <S.FiltersSection>
         <S.FiltersTitle>
-          <Filter size={20} />
-          Filtros
+            <Filter size={20} />
+            Filtros
         </S.FiltersTitle>
         
         <S.FiltersGrid>
@@ -463,7 +466,7 @@ export const Reports: React.FC = () => {
                   <S.TableCell>{proposal.distributor?.apelido || '-'}</S.TableCell>
                   <S.TableCell>{proposal.createdBy?.name || '-'}</S.TableCell>
                   <S.TableCell>
-                    <S.ValueBadge>{formatCurrency(proposal.totalValue || 0)}</S.ValueBadge>
+                    <S.ValueBadge>{formatCurrency(proposal.totalValue || proposal.total || 0)}</S.ValueBadge>
                   </S.TableCell>
                   <S.TableCell>
                     <S.ReasonBadge>
