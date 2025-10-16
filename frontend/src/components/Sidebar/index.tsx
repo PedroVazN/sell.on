@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
@@ -18,7 +18,9 @@ import {
   UserPlus,
   User,
   LogOut,
-  Megaphone
+  Megaphone,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -28,7 +30,10 @@ import {
   MenuItem, 
   MenuIcon, 
   MenuText,
-  MenuTitle
+  MenuTitle,
+  Overlay,
+  MenuToggle,
+  CloseButton
 } from './styles';
 
 interface MenuItemProps {
@@ -64,6 +69,10 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActiv
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, hasPermission, logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleMenu = () => setIsOpen(!isOpen);
+  const closeMenu = () => setIsOpen(false);
 
   const menuItems = [
     {
@@ -108,27 +117,43 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <Container>
-      <Logo>
-        <h1>Sell.On</h1>
-        <span>CRM</span>
-      </Logo>
-      
-      {menuItems.map((section, index) => (
-        <MenuSection key={index}>
-          <MenuTitle>{section.title}</MenuTitle>
-          {section.items.map((item, itemIndex) => (
-            <MenuItemComponent
-              key={itemIndex}
-              icon={item.icon}
-              label={item.label}
-              path={item.path}
-              isActive={location.pathname === item.path}
-              onClick={'onClick' in item ? item.onClick : undefined}
-            />
-          ))}
-        </MenuSection>
-      ))}
-    </Container>
+    <>
+      {/* Botão hambúrguer para abrir o menu em mobile */}
+      <MenuToggle onClick={toggleMenu}>
+        <Menu size={24} />
+      </MenuToggle>
+
+      {/* Overlay escuro para fechar o menu */}
+      <Overlay $isOpen={isOpen} onClick={closeMenu} />
+
+      {/* Sidebar */}
+      <Container $isOpen={isOpen}>
+        {/* Botão de fechar dentro do sidebar (mobile) */}
+        <CloseButton onClick={closeMenu}>
+          <X size={20} />
+        </CloseButton>
+
+        <Logo>
+          <h1>Sell.On</h1>
+          <span>CRM</span>
+        </Logo>
+        
+        {menuItems.map((section, index) => (
+          <MenuSection key={index}>
+            <MenuTitle>{section.title}</MenuTitle>
+            {section.items.map((item, itemIndex) => (
+              <MenuItemComponent
+                key={itemIndex}
+                icon={item.icon}
+                label={item.label}
+                path={item.path}
+                isActive={location.pathname === item.path}
+                onClick={'onClick' in item ? () => { item.onClick?.(); closeMenu(); } : () => closeMenu()}
+              />
+            ))}
+          </MenuSection>
+        ))}
+      </Container>
+    </>
   );
 };

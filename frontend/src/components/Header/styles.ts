@@ -16,6 +16,12 @@ export const Container = styled.header`
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.md};
+    padding-left: 80px; /* Espaço para o botão hambúrguer */
+  }
   
   &::before {
     content: '';
@@ -50,6 +56,11 @@ export const SearchContainer = styled.div`
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    display: none; /* Ocultar busca em mobile por enquanto */
+  }
   
   &::before {
     content: '';
@@ -201,6 +212,16 @@ export const UserButton = styled.button<{ $isOpen?: boolean }>`
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
   overflow: visible;
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    gap: 8px;
+    
+    span {
+      display: none; /* Ocultar nome do usuário em mobile */
+    }
+  }
   
   &::before {
     content: '';

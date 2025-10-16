@@ -1,6 +1,10 @@
 import styled from 'styled-components';
 
-export const Container = styled.aside`
+interface ContainerProps {
+  $isOpen?: boolean;
+}
+
+export const Container = styled.aside<ContainerProps>`
   position: fixed;
   left: 0;
   top: 0;
@@ -16,6 +20,15 @@ export const Container = styled.aside`
     4px 0 20px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    transform: translateX(${({ $isOpen }) => $isOpen ? '0' : '-100%'});
+    box-shadow: ${({ $isOpen }) => $isOpen 
+      ? '4px 0 30px rgba(0, 0, 0, 0.3)' 
+      : 'none'
+    };
+  }
   
   &::before {
     content: '';
@@ -236,4 +249,101 @@ export const MenuText = styled.span`
   position: relative;
   z-index: 1;
   letter-spacing: 0.025em;
+`;
+
+/* Overlay para fechar o menu em mobile */
+export const Overlay = styled.div<{ $isOpen: boolean }>`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: ${({ $isOpen }) => $isOpen ? 'block' : 'none'};
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    animation: fadeIn 0.3s ease;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+`;
+
+/* Botão hambúrguer para mobile */
+export const MenuToggle = styled.button`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    background: rgba(59, 130, 246, 0.9);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:hover {
+      background: rgba(59, 130, 246, 1);
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+    
+    svg {
+      color: white;
+      transition: all 0.3s ease;
+    }
+  }
+`;
+
+/* Botão de fechar dentro do sidebar em mobile */
+export const CloseButton = styled.button`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 1002;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    
+    svg {
+      color: #ef4444;
+      transition: all 0.3s ease;
+    }
+  }
 `;

@@ -12,4 +12,10 @@ export const MainContent = styled.main`
   flex-direction: column;
   margin-left: 280px;
   background: ${({ theme }) => theme.colors.background.primary};
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    margin-left: 0;
+    width: 100%;
+  }
 `;

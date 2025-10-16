@@ -7,6 +7,15 @@ export const Container = styled.div`
   position: relative;
   animation: fadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    padding: ${({ theme }) => theme.spacing.lg};
+  }
+
+  @media (max-width: 480px) {
+    padding: ${({ theme }) => theme.spacing.md};
+  }
   
   &::before {
     content: '';
@@ -82,6 +91,15 @@ export const Title = styled.h1`
   position: relative;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   animation: titleGlow 4s ease-in-out infinite alternate, titleSlide 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.75rem;
+  }
   
   &::after {
     content: '';
@@ -333,6 +351,17 @@ export const ChartsGrid = styled.div`
   position: relative;
   z-index: 1;
   animation: fadeInUp 0.8s ease-out 0.8s both;
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 1.5rem;
+    gap: ${({ theme }) => theme.spacing.md};
+  }
 `;
 
 export const ChartCard = styled.div`
