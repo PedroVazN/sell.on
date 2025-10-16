@@ -379,6 +379,16 @@ export const ChartCard = styled.div`
   overflow: hidden;
   animation: scaleIn 0.6s ease-out both;
 
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    padding: ${({ theme }) => theme.spacing.md};
+    overflow-x: auto;
+  }
+
+  @media (max-width: 480px) {
+    padding: ${({ theme }) => theme.spacing.sm};
+  }
+
   &:hover {
     transform: translateY(-4px) scale(1.005);
     box-shadow: 
@@ -433,6 +443,11 @@ export const ChartTitle = styled.h3`
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: fadeInUp 0.6s ease-out 1s both;
+
+  /* Responsivo para mobile */
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+  }
 `;
 
 export const ChartSubtitle = styled.p`
@@ -449,6 +464,11 @@ export const ProductsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.md};
+
+  /* Responsivo para mobile */
+  @media (max-width: 480px) {
+    gap: ${({ theme }) => theme.spacing.sm};
+  }
 `;
 
 export const ProductItem = styled.div`
@@ -459,6 +479,15 @@ export const ProductItem = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   border: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  gap: ${({ theme }) => theme.spacing.sm};
+  flex-wrap: wrap;
+
+  /* Responsivo para mobile */
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: ${({ theme }) => theme.spacing.xs};
+  }
 `;
 
 export const ProductName = styled.div`
@@ -482,12 +511,22 @@ export const GoalsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.lg};
+
+  /* Responsivo para mobile */
+  @media (max-width: 480px) {
+    gap: ${({ theme }) => theme.spacing.md};
+  }
 `;
 
 export const GoalItem = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.sm};
+
+  /* Responsivo para mobile */
+  @media (max-width: 480px) {
+    gap: ${({ theme }) => theme.spacing.xs};
+  }
 `;
 
 export const GoalName = styled.div`
@@ -500,6 +539,12 @@ export const GoalProgress = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
+  width: 100%;
+
+  /* Responsivo para mobile */
+  @media (max-width: 480px) {
+    gap: ${({ theme }) => theme.spacing.xs};
+  }
 `;
 
 export const GoalBar = styled.div<{ $color: string; $width: number }>`

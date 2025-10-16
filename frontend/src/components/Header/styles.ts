@@ -139,6 +139,11 @@ export const ActionsContainer = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.md};
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    gap: ${({ theme }) => theme.spacing.sm};
+  }
 `;
 
 export const NotificationButton = styled.button`
@@ -152,6 +157,12 @@ export const NotificationButton = styled.button`
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
   overflow: hidden;
+  flex-shrink: 0;
+
+  /* Responsivo para mobile */
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
   
   &::before {
     content: '';
@@ -217,10 +228,16 @@ export const UserButton = styled.button<{ $isOpen?: boolean }>`
   @media (max-width: 768px) {
     padding: 10px 12px;
     gap: 8px;
+    flex-shrink: 0;
+    min-width: auto;
     
     span {
       display: none; /* Ocultar nome do usuário em mobile */
     }
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
   }
   
   &::before {
