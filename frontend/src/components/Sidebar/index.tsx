@@ -42,9 +42,10 @@ interface MenuItemProps {
   path: string;
   isActive?: boolean;
   onClick?: () => void;
+  onAfterClick?: () => void; // Callback após o click (para fechar menu em mobile)
 }
 
-const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActive, onClick }) => {
+const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActive, onClick, onAfterClick }) => {
   const navigate = useNavigate();
   
   const handleClick = () => {
@@ -52,6 +53,10 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActiv
       onClick();
     } else {
       navigate(path);
+    }
+    // Chamar callback após navegação (para fechar menu em mobile)
+    if (onAfterClick) {
+      onAfterClick();
     }
   };
   
@@ -148,7 +153,8 @@ export const Sidebar: React.FC = () => {
                 label={item.label}
                 path={item.path}
                 isActive={location.pathname === item.path}
-                onClick={'onClick' in item ? () => { item.onClick?.(); closeMenu(); } : () => closeMenu()}
+                onClick={'onClick' in item ? item.onClick : undefined}
+                onAfterClick={closeMenu}
               />
             ))}
           </MenuSection>
