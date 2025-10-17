@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, TrendingDown, Calendar, AlertCircle, Download, Filter, BarChart3, PieChart } from 'lucide-react';
+import { FileText, TrendingDown, Calendar, AlertCircle, Download, Filter, BarChart3, PieChart, Edit2, Save, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { useToast } from '../../hooks/useToast';
 import * as S from './styles';
 
 interface LossReport {
@@ -74,6 +75,7 @@ const lossReasonLabels: { [key: string]: string } = {
 
 export const Reports: React.FC = () => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [lostProposals, setLostProposals] = useState<any[]>([]);
   const [stats, setStats] = useState<LossStats | null>(null);
@@ -84,6 +86,12 @@ export const Reports: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
   const [selectedReason, setSelectedReason] = useState('');
   const [selectedSeller, setSelectedSeller] = useState('');
+
+  // Edição
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editReason, setEditReason] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editLossDate, setEditLossDate] = useState('');
 
   useEffect(() => {
     loadData();
@@ -201,6 +209,44 @@ export const Reports: React.FC = () => {
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  const handleStartEdit = (proposal: any) => {
+    setEditingId(proposal._id);
+    setEditReason(proposal.lossReason || '');
+    setEditDescription(proposal.lossDescription || '');
+    // Formatar a data para o formato do input (YYYY-MM-DD)
+    const lossDate = proposal.lossDate || proposal.createdAt;
+    const dateObj = new Date(lossDate);
+    const formattedDate = dateObj.toISOString().split('T')[0];
+    setEditLossDate(formattedDate);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditReason('');
+    setEditDescription('');
+    setEditLossDate('');
+  };
+
+  const handleSaveEdit = async (proposalId: string) => {
+    try {
+      // Atualizar a proposta
+      await apiService.updateProposal(proposalId, {
+        lossReason: editReason as any,
+        lossDescription: editDescription,
+        lossDate: editLossDate ? new Date(editLossDate).toISOString() : undefined
+      });
+
+      addToast('success', 'Proposta Atualizada', 'Os dados da perda foram atualizados com sucesso!');
+
+      // Recarregar os dados
+      await loadData();
+      handleCancelEdit();
+    } catch (error) {
+      console.error('Erro ao atualizar proposta:', error);
+      addToast('error', 'Erro ao Atualizar', 'Não foi possível atualizar os dados da proposta.');
+    }
   };
 
   const exportToCSV = () => {
@@ -457,44 +503,103 @@ export const Reports: React.FC = () => {
                 <S.TableHeader>Motivo</S.TableHeader>
                 <S.TableHeader>Descrição</S.TableHeader>
                 <S.TableHeader>Data Perda</S.TableHeader>
+                <S.TableHeader>Ações</S.TableHeader>
               </S.TableRow>
             </S.TableHead>
             <S.TableBody>
-              {filteredProposals.map((proposal) => (
-                <S.TableRow key={proposal._id}>
-                  <S.TableCell>
-                    <S.ProposalBadge>{proposal.proposalNumber || '-'}</S.ProposalBadge>
-                  </S.TableCell>
-                  <S.TableCell>
-                    <div>
-                      <strong>{proposal.client?.nome || '-'}</strong>
-                      {proposal.client?.empresa && (
-                        <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-                          {proposal.client.empresa}
-                        </div>
+              {filteredProposals.map((proposal) => {
+                const isEditing = editingId === proposal._id;
+                
+                return (
+                  <S.TableRow key={proposal._id}>
+                    <S.TableCell>
+                      <S.ProposalBadge>{proposal.proposalNumber || '-'}</S.ProposalBadge>
+                    </S.TableCell>
+                    <S.TableCell>
+                      <div>
+                        <strong>{proposal.client?.nome || '-'}</strong>
+                        {proposal.client?.empresa && (
+                          <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                            {proposal.client.empresa}
+                          </div>
+                        )}
+                      </div>
+                    </S.TableCell>
+                    <S.TableCell>{proposal.distributor?.apelido || '-'}</S.TableCell>
+                    <S.TableCell>{proposal.createdBy?.name || '-'}</S.TableCell>
+                    <S.TableCell>
+                      <S.ValueBadge>{formatCurrency(proposal.totalValue || proposal.total || 0)}</S.ValueBadge>
+                    </S.TableCell>
+                    <S.TableCell>
+                      {isEditing ? (
+                        <S.EditSelect
+                          value={editReason}
+                          onChange={(e) => setEditReason(e.target.value)}
+                        >
+                          <option value="">Selecione um motivo</option>
+                          {Object.entries(lossReasonLabels).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </S.EditSelect>
+                      ) : (
+                        <S.ReasonBadge>
+                          {lossReasonLabels[proposal.lossReason] || proposal.lossReason}
+                        </S.ReasonBadge>
                       )}
-                    </div>
-                  </S.TableCell>
-                  <S.TableCell>{proposal.distributor?.apelido || '-'}</S.TableCell>
-                  <S.TableCell>{proposal.createdBy?.name || '-'}</S.TableCell>
-                  <S.TableCell>
-                    <S.ValueBadge>{formatCurrency(proposal.totalValue || proposal.total || 0)}</S.ValueBadge>
-                  </S.TableCell>
-                  <S.TableCell>
-                    <S.ReasonBadge>
-                      {lossReasonLabels[proposal.lossReason] || proposal.lossReason}
-                    </S.ReasonBadge>
-                  </S.TableCell>
-                  <S.TableCell>
-                    <S.Description title={proposal.lossDescription}>
-                      {proposal.lossDescription || '-'}
-                    </S.Description>
-                  </S.TableCell>
-                  <S.TableCell>
-                    {formatDate(proposal.lossDate || proposal.createdAt)}
-                  </S.TableCell>
-                </S.TableRow>
-              ))}
+                    </S.TableCell>
+                    <S.TableCell>
+                      {isEditing ? (
+                        <S.EditTextarea
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          placeholder="Descrição do motivo da perda..."
+                          rows={2}
+                        />
+                      ) : (
+                        <S.Description title={proposal.lossDescription}>
+                          {proposal.lossDescription || '-'}
+                        </S.Description>
+                      )}
+                    </S.TableCell>
+                    <S.TableCell>
+                      {isEditing ? (
+                        <S.EditInput
+                          type="date"
+                          value={editLossDate}
+                          onChange={(e) => setEditLossDate(e.target.value)}
+                        />
+                      ) : (
+                        formatDate(proposal.lossDate || proposal.createdAt)
+                      )}
+                    </S.TableCell>
+                    <S.TableCell>
+                      {isEditing ? (
+                        <S.ActionButtons>
+                          <S.SaveButton
+                            onClick={() => handleSaveEdit(proposal._id)}
+                            title="Salvar alterações"
+                          >
+                            <Save size={16} />
+                          </S.SaveButton>
+                          <S.CancelButton
+                            onClick={handleCancelEdit}
+                            title="Cancelar edição"
+                          >
+                            <X size={16} />
+                          </S.CancelButton>
+                        </S.ActionButtons>
+                      ) : (
+                        <S.EditButton
+                          onClick={() => handleStartEdit(proposal)}
+                          title="Editar dados da perda"
+                        >
+                          <Edit2 size={16} />
+                        </S.EditButton>
+                      )}
+                    </S.TableCell>
+                  </S.TableRow>
+                );
+              })}
             </S.TableBody>
           </S.Table>
         </S.TableWrapper>

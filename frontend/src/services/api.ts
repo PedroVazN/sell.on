@@ -339,8 +339,9 @@ export interface Proposal {
   paymentCondition: string;
   observations?: string;
   status: 'negociacao' | 'venda_fechada' | 'venda_perdida' | 'expirada';
-  lossReason?: 'preco_concorrente' | 'condicao_pagamento' | 'sem_retorno' | 'credito_negado' | 'concorrencia_marca' | 'adiamento_compra' | 'cotacao_preco' | 'perca_preco' | 'urgencia_comprou_local' | 'golpe' | 'licitacao' | 'fechado_outro_parceiro';
+  lossReason?: 'preco_concorrente' | 'condicao_pagamento' | 'sem_retorno' | 'credito_negado' | 'concorrencia_marca' | 'adiamento_compra' | 'cotacao_preco' | 'perca_preco' | 'perda_preco' | 'urgencia_comprou_local' | 'golpe' | 'licitacao' | 'fechado_outro_parceiro' | 'prazo_entrega' | 'qualidade_produto' | 'atendimento' | 'cliente_desistiu' | 'outro';
   lossDescription?: string;
+  lossDate?: string;
   validUntil: string;
   createdBy: User;
   createdAt: string;
