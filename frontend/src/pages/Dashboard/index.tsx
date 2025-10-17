@@ -175,6 +175,11 @@ export const Dashboard: React.FC = () => {
     ganhas: number;
     perdidas: number;
     geradas: number;
+    negociacao: number;
+    valorGanhas: number;
+    valorPerdidas: number;
+    valorGeradas: number;
+    valorNegociacao: number;
   }[]>([]);
   const [todayStats, setTodayStats] = useState({
     geradas: 0,
@@ -193,6 +198,31 @@ export const Dashboard: React.FC = () => {
     quantity: number;
     timesQuoted: number;
   }>>([]);
+
+  // Modal de detalhes do dia
+  const [selectedDayData, setSelectedDayData] = useState<{
+    day: number;
+    date: string;
+    ganhas: number;
+    perdidas: number;
+    geradas: number;
+    negociacao: number;
+    valorGanhas: number;
+    valorPerdidas: number;
+    valorGeradas: number;
+    valorNegociacao: number;
+  } | null>(null);
+  const [showDayModal, setShowDayModal] = useState(false);
+
+  const handleDayClick = (dayData: typeof dailyProposalsData[0]) => {
+    setSelectedDayData(dayData);
+    setShowDayModal(true);
+  };
+
+  const closeDayModal = () => {
+    setShowDayModal(false);
+    setTimeout(() => setSelectedDayData(null), 300);
+  };
 
 
   const loadDashboardData = useCallback(async () => {
@@ -479,7 +509,12 @@ export const Dashboard: React.FC = () => {
             date: dayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
             ganhas: 0,
             perdidas: 0,
-            geradas: 0
+            geradas: 0,
+            negociacao: 0,
+            valorGanhas: 0,
+            valorPerdidas: 0,
+            valorGeradas: 0,
+            valorNegociacao: 0
           };
         });
 
@@ -487,13 +522,20 @@ export const Dashboard: React.FC = () => {
         filteredProposals.forEach((p: any) => {
           const day = new Date(p.createdAt).getDate();
           const dayIndex = day - 1;
+          const valor = p.total || 0;
           
           dailyData[dayIndex].geradas++;
+          dailyData[dayIndex].valorGeradas += valor;
           
           if (p.status === 'venda_fechada') {
             dailyData[dayIndex].ganhas++;
+            dailyData[dayIndex].valorGanhas += valor;
           } else if (p.status === 'venda_perdida') {
             dailyData[dayIndex].perdidas++;
+            dailyData[dayIndex].valorPerdidas += valor;
+          } else if (p.status === 'negociacao') {
+            dailyData[dayIndex].negociacao++;
+            dailyData[dayIndex].valorNegociacao += valor;
           }
         });
 
@@ -1185,6 +1227,27 @@ export const Dashboard: React.FC = () => {
                       <path d={geradasPath} fill="none" stroke="#3b82f6" strokeWidth="2" />
                       <path d={perdidasPath} fill="none" stroke="#ef4444" strokeWidth="2" />
                       <path d={ganhasPath} fill="none" stroke="#10b981" strokeWidth="2" />
+                      
+                      {/* Pontos clicáveis em cada dia */}
+                      {dailyProposalsData.map((d, i) => {
+                        const x = i * xStep;
+                        const yGeradas = 300 - (d.geradas / maxValue) * 280;
+                        return (
+                          <circle
+                            key={i}
+                            cx={x}
+                            cy={yGeradas}
+                            r="6"
+                            fill="#3b82f6"
+                            stroke="#0f172a"
+                            strokeWidth="2"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleDayClick(d)}
+                          >
+                            <title>{`Dia ${d.day}: ${d.geradas} propostas`}</title>
+                          </circle>
+                        );
+                      })}
                     </>
                   );
                 })()}
@@ -1434,6 +1497,293 @@ export const Dashboard: React.FC = () => {
             </div>
           </ChartCard>
         </ChartsGrid>
+      )}
+
+      {/* Modal de Detalhes do Dia */}
+      {showDayModal && selectedDayData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.3s ease'
+        }} onClick={closeDayModal}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            animation: 'slideUp 0.3s ease'
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Header do Modal */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem',
+              paddingBottom: '1rem',
+              borderBottom: '1px solid rgba(71, 85, 105, 0.3)'
+            }}>
+              <div>
+                <h2 style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '800',
+                  color: '#f8fafc',
+                  margin: '0 0 0.5rem 0'
+                }}>
+                  Detalhes do Dia {selectedDayData.day}
+                </h2>
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: '#94a3b8',
+                  margin: 0
+                }}>
+                  {selectedDayData.date}
+                </p>
+              </div>
+              <button
+                onClick={closeDayModal}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '0.5rem',
+                  padding: '0.5rem',
+                  cursor: 'pointer',
+                  color: '#ef4444',
+                  fontSize: '1.5rem',
+                  lineHeight: '1',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Grid de Estatísticas */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              {/* Propostas Geradas */}
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '0.75rem',
+                padding: '1.25rem'
+              }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#94a3b8',
+                  marginBottom: '0.5rem',
+                  fontWeight: '600'
+                }}>
+                  📝 Propostas Geradas
+                </div>
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: '800',
+                  color: '#3b82f6',
+                  marginBottom: '0.25rem'
+                }}>
+                  {selectedDayData.geradas}
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#10b981',
+                  fontWeight: '600'
+                }}>
+                  {formatCurrency(selectedDayData.valorGeradas)}
+                </div>
+              </div>
+
+              {/* Propostas Ganhas */}
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '0.75rem',
+                padding: '1.25rem'
+              }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#94a3b8',
+                  marginBottom: '0.5rem',
+                  fontWeight: '600'
+                }}>
+                  ✅ Vendas Fechadas
+                </div>
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: '800',
+                  color: '#10b981',
+                  marginBottom: '0.25rem'
+                }}>
+                  {selectedDayData.ganhas}
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#10b981',
+                  fontWeight: '600'
+                }}>
+                  {formatCurrency(selectedDayData.valorGanhas)}
+                </div>
+              </div>
+
+              {/* Propostas Perdidas */}
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '0.75rem',
+                padding: '1.25rem'
+              }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#94a3b8',
+                  marginBottom: '0.5rem',
+                  fontWeight: '600'
+                }}>
+                  ❌ Vendas Perdidas
+                </div>
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: '800',
+                  color: '#ef4444',
+                  marginBottom: '0.25rem'
+                }}>
+                  {selectedDayData.perdidas}
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#ef4444',
+                  fontWeight: '600'
+                }}>
+                  {formatCurrency(selectedDayData.valorPerdidas)}
+                </div>
+              </div>
+
+              {/* Propostas em Negociação */}
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '0.75rem',
+                padding: '1.25rem'
+              }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#94a3b8',
+                  marginBottom: '0.5rem',
+                  fontWeight: '600'
+                }}>
+                  ⏳ Em Negociação
+                </div>
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: '800',
+                  color: '#f59e0b',
+                  marginBottom: '0.25rem'
+                }}>
+                  {selectedDayData.negociacao}
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#f59e0b',
+                  fontWeight: '600'
+                }}>
+                  {formatCurrency(selectedDayData.valorNegociacao)}
+                </div>
+              </div>
+            </div>
+
+            {/* Resumo Total */}
+            <div style={{
+              background: 'rgba(100, 116, 139, 0.1)',
+              border: '1px solid rgba(100, 116, 139, 0.3)',
+              borderRadius: '0.75rem',
+              padding: '1.25rem',
+              marginTop: '1rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: '#94a3b8',
+                    marginBottom: '0.5rem',
+                    fontWeight: '600'
+                  }}>
+                    💰 Valor Total do Dia
+                  </div>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '800',
+                    color: '#f8fafc'
+                  }}>
+                    {formatCurrency(
+                      selectedDayData.valorGeradas + 
+                      selectedDayData.valorGanhas + 
+                      selectedDayData.valorPerdidas + 
+                      selectedDayData.valorNegociacao
+                    )}
+                  </div>
+                </div>
+                <div style={{
+                  textAlign: 'right'
+                }}>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: '#94a3b8',
+                    marginBottom: '0.5rem',
+                    fontWeight: '600'
+                  }}>
+                    Taxa de Conversão
+                  </div>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '800',
+                    color: selectedDayData.geradas > 0
+                      ? ((selectedDayData.ganhas / selectedDayData.geradas) * 100) >= 50
+                        ? '#10b981'
+                        : '#f59e0b'
+                      : '#64748b'
+                  }}>
+                    {selectedDayData.geradas > 0
+                      ? `${((selectedDayData.ganhas / selectedDayData.geradas) * 100).toFixed(1)}%`
+                      : '0%'
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </Container>
