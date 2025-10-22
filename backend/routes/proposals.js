@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
+const Goal = require('../models/Goal');
 const { auth } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
 const { proposalLimiter } = require('../middleware/security');
@@ -138,6 +139,60 @@ router.put('/:id', async (req, res) => {
     console.log('Status:', proposal.status);
     console.log('Loss Reason:', proposal.lossReason);
     console.log('Loss Description:', proposal.lossDescription);
+
+    // Se a proposta foi fechada (venda_fechada), atualizar as metas do vendedor
+    if (status === 'venda_fechada') {
+      console.log('🎯 Proposta fechada! Atualizando metas do vendedor...');
+      console.log('Vendedor ID:', proposal.createdBy._id);
+      console.log('Valor da proposta:', proposal.total);
+      
+      try {
+        // Buscar metas ativas do vendedor
+        const activeGoals = await Goal.find({
+          assignedTo: proposal.createdBy._id,
+          category: 'sales',
+          status: 'active',
+          unit: 'currency'
+        });
+
+        console.log(`📊 Encontradas ${activeGoals.length} metas ativas para atualizar`);
+
+        // Atualizar cada meta ativa
+        for (const goal of activeGoals) {
+          const newCurrentValue = goal.currentValue + proposal.total;
+          
+          // Adicionar marco de progresso
+          goal.progress.milestones.push({
+            date: new Date().toISOString().split('T')[0],
+            value: newCurrentValue,
+            description: `Proposta ${proposal.proposalNumber} fechada: R$ ${proposal.total.toLocaleString('pt-BR')}`
+          });
+
+          // Manter apenas os últimos 10 marcos
+          if (goal.progress.milestones.length > 10) {
+            goal.progress.milestones = goal.progress.milestones.slice(-10);
+          }
+
+          // Atualizar valor atual
+          goal.currentValue = newCurrentValue;
+          
+          // Atualizar porcentagem
+          goal.progress.percentage = Math.min(100, (newCurrentValue / goal.targetValue) * 100);
+          
+          // Verificar se a meta foi atingida
+          if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
+            goal.status = 'completed';
+            console.log(`✅ Meta "${goal.title}" atingida!`);
+          }
+
+          await goal.save();
+          console.log(`✅ Meta "${goal.title}" atualizada: ${goal.currentValue}/${goal.targetValue} (${goal.progress.percentage.toFixed(1)}%)`);
+        }
+      } catch (goalError) {
+        console.error('⚠️ Erro ao atualizar metas, mas proposta foi salva:', goalError);
+        // Não retornar erro, pois a proposta foi atualizada com sucesso
+      }
+    }
 
     res.json({
       success: true,
