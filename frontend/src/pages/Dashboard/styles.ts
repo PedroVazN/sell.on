@@ -1,14 +1,82 @@
 import styled from 'styled-components';
 
+// ==================== ANIMAÇÕES ELEGANTES ====================
+
+const fadeIn = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const slideIn = `
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+`;
+
+const scaleIn = `
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+`;
+
+const glow = `
+  @keyframes glow {
+    0%, 100% {
+      filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4));
+    }
+    50% {
+      filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+    }
+  }
+`;
+
+const shimmer = `
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+`;
+
 export const Container = styled.div`
+  ${fadeIn}
+  ${slideIn}
+  ${scaleIn}
+  ${glow}
+  ${shimmer}
+  
   padding: ${({ theme }) => theme.spacing.xxl};
-  background: #0f172a;
+  background: #0a0a0f;
   min-height: 100vh;
   position: relative;
-  animation: fadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
 
-  /* Responsivo para mobile */
   @media (max-width: 768px) {
     padding: ${({ theme }) => theme.spacing.lg};
   }
@@ -17,6 +85,7 @@ export const Container = styled.div`
     padding: ${({ theme }) => theme.spacing.md};
   }
   
+  /* Background animado com orbs */
   &::before {
     content: '';
     position: absolute;
@@ -25,41 +94,39 @@ export const Container = styled.div`
     right: 0;
     bottom: 0;
     background: 
-      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
-      radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
-      radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
-      radial-gradient(circle at 60% 60%, rgba(245, 158, 11, 0.06) 0%, transparent 50%);
+      radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
     pointer-events: none;
-    animation: backgroundShift 25s ease-in-out infinite;
+    animation: orbitAnimation 20s ease-in-out infinite;
+    z-index: 0;
   }
 
-  @keyframes backgroundShift {
+  /* Grid pattern */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes orbitAnimation {
     0%, 100% {
-      transform: translateX(0) translateY(0) scale(1);
+      transform: scale(1) rotate(0deg);
       opacity: 1;
-    }
-    25% {
-      transform: translateX(-15px) translateY(-8px) scale(1.02);
-      opacity: 0.8;
     }
     50% {
-      transform: translateX(8px) translateY(-12px) scale(0.98);
-      opacity: 0.9;
-    }
-    75% {
-      transform: translateX(-8px) translateY(6px) scale(1.01);
-      opacity: 0.85;
-    }
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+      transform: scale(1.1) rotate(10deg);
+      opacity: 0.8;
     }
   }
 `;
@@ -68,107 +135,49 @@ export const Header = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xxl};
   position: relative;
   z-index: 1;
-  animation: slideIn 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  animation: slideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 `;
 
 export const Title = styled.h1`
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 800;
-  color: #f8fafc;
+  color: #ffffff;
   margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
-  letter-spacing: -1px;
+  letter-spacing: -2px;
   position: relative;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  animation: titleGlow 4s ease-in-out infinite alternate, titleSlide 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
+  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
 
-  /* Responsivo para mobile */
   @media (max-width: 768px) {
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
 
   @media (max-width: 480px) {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
   
   &::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -12px;
     left: 0;
-    width: 80px;
-    height: 3px;
-    background: linear-gradient(135deg, #3b82f6, #10b981);
-    border-radius: 3px;
-    animation: underlineGlow 3s ease-in-out infinite alternate, underlineExpand 1s cubic-bezier(0.4, 0, 0.2, 1) 1s both;
-  }
-  
-  @keyframes titleGlow {
-    0% {
-      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
-    }
-    100% {
-      filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
-    }
-  }
-  
-  @keyframes titleSlide {
-    from {
-      opacity: 0;
-      transform: translateX(-50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  @keyframes underlineGlow {
-    0% {
-      box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
-    }
-    100% {
-      box-shadow: 0 0 20px rgba(59, 130, 246, 1);
-    }
-  }
-  
-  @keyframes underlineExpand {
-    from {
-      width: 0;
-    }
-    to {
-      width: 80px;
-    }
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
   }
 `;
 
 export const Subtitle = styled.p`
   font-size: 1.1rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
-  font-weight: 500;
-  animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.7s both;
-  line-height: 1.5;
+  font-weight: 400;
+  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+  line-height: 1.6;
   
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @media (max-width: 768px) {
+    font-size: 1rem;
   }
 `;
 
@@ -191,19 +200,20 @@ export const MetricsGrid = styled.div`
 `;
 
 export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 28px;
-  backdrop-filter: blur(25px);
+  padding: 32px;
+  backdrop-filter: blur(30px);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    0 24px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  animation: scaleIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 1;
 
   &::before {
     content: '';
@@ -212,61 +222,33 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08));
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
     border-radius: 20px;
-    z-index: -1;
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
-    border-radius: 20px;
-    z-index: -2;
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: scale(0.9);
+    transition: opacity 0.3s ease;
   }
 
   &:hover {
-    transform: translateY(-12px) scale(1.03);
-    border-color: rgba(71, 85, 105, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(59, 130, 246, 0.4);
     box-shadow: 
-      0 32px 64px rgba(0, 0, 0, 0.25),
-      0 0 0 1px rgba(255, 255, 255, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      0 28px 70px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(59, 130, 246, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
     
     &::before {
       opacity: 1;
     }
-    
-    &::after {
-      opacity: 0.4;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.8) translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
   }
 
   &:nth-child(1) { animation-delay: 0.1s; }
-  &:nth-child(2) { animation-delay: 0.2s; }
-  &:nth-child(3) { animation-delay: 0.3s; }
-  &:nth-child(4) { animation-delay: 0.4s; }
+  &:nth-child(2) { animation-delay: 0.15s; }
+  &:nth-child(3) { animation-delay: 0.2s; }
+  &:nth-child(4) { animation-delay: 0.25s; }
+  &:nth-child(5) { animation-delay: 0.3s; }
+  &:nth-child(6) { animation-delay: 0.35s; }
+  &:nth-child(7) { animation-delay: 0.4s; }
+  &:nth-child(8) { animation-delay: 0.45s; }
 `;
 
 export const MetricValue = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
@@ -277,33 +259,25 @@ export const MetricValue = styled.div<{ $variant?: 'success' | 'warning' | 'dang
       case 'success': return '#10b981';
       case 'warning': return '#f59e0b';
       case 'danger': return '#ef4444';
-      default: return '#e2e8f0';
+      default: return '#ffffff';
     }
   }};
-  margin-bottom: 0.5rem;
-  position: relative;
+  margin-bottom: 12px;
+  letter-spacing: -1.5px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
 `;
 
 export const MetricLabel = styled.div`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-weight: 600;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 0;
-    width: 30px;
-    height: 2px;
-    background: ${({ theme }) => theme.colors.gradients.primary};
-    border-radius: 2px;
-    animation: expand 0.8s ease-out 1s both;
-  }
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
 `;
 
 export const MetricChange = styled.div<{ $variant?: 'success' | 'warning' | 'danger' | 'neutral' }>`
@@ -365,38 +339,30 @@ export const ChartsGrid = styled.div`
 `;
 
 export const ChartCard = styled.div`
-  background: ${({ theme }) => theme.colors.background.card};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  padding: ${({ theme }) => theme.spacing.lg};
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 32px;
+  backdrop-filter: blur(30px);
   box-shadow: 
-    ${({ theme }) => theme.shadows.medium},
-    0 0 0 1px ${({ theme }) => theme.colors.border.primary},
+    0 24px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all ${({ theme }) => theme.transitions.normal};
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  animation: scaleIn 0.6s ease-out both;
+  animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 1;
 
-  /* Responsivo para mobile */
   @media (max-width: 768px) {
-    padding: ${({ theme }) => theme.spacing.md};
+    padding: 24px;
     overflow-x: auto;
   }
 
   @media (max-width: 480px) {
-    padding: ${({ theme }) => theme.spacing.sm};
+    padding: 20px;
   }
 
-  &:hover {
-    transform: translateY(-4px) scale(1.005);
-    box-shadow: 
-      ${({ theme }) => theme.shadows.glow},
-      0 0 0 1px ${({ theme }) => theme.colors.border.secondary},
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  }
-  
   &::before {
     content: '';
     position: absolute;
@@ -404,60 +370,52 @@ export const ChartCard = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.card};
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    z-index: -1;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: ${({ theme }) => theme.colors.gradients.primary};
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    z-index: -2;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.08));
+    border-radius: 24px;
     opacity: 0;
-    transition: opacity ${({ theme }) => theme.transitions.normal};
+    transition: opacity 0.3s ease;
   }
 
-  &:hover::after {
-    opacity: 0.05;
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 
+      0 28px 70px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(59, 130, 246, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    
+    &::before {
+      opacity: 1;
+    }
   }
 
   &:nth-child(1) { animation-delay: 0.1s; }
   &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.3s; }
 `;
 
 export const ChartTitle = styled.h3`
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.text.primary};
-  margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
-  position: relative;
-  z-index: 1;
-  background: ${({ theme }) => theme.colors.gradients.primary};
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: fadeInUp 0.6s ease-out 1s both;
-
-  /* Responsivo para mobile */
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+  
   @media (max-width: 480px) {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
 `;
 
 export const ChartSubtitle = styled.p`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  margin: 0 0 ${({ theme }) => theme.spacing.lg} 0;
-  position: relative;
-  z-index: 1;
-  font-weight: 500;
-  animation: fadeInUp 0.6s ease-out 1.1s both;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 24px 0;
+  font-weight: 400;
+  line-height: 1.5;
+  
+  @media (max-width: 480px) {
+    font-size: 0.875rem;
+  }
 `;
 
 export const ProductsList = styled.div`
@@ -606,7 +564,7 @@ export const MetricItem = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: ${({ theme }) => theme.borderRadius.xl};
   backdrop-filter: blur(20px);
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 
@@ -624,7 +582,6 @@ export const MetricItem = styled.div`
   &:hover {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
     border-color: rgba(255, 255, 255, 0.25);
-    transform: translateY(-4px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   }
 
