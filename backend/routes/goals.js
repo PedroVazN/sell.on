@@ -462,6 +462,95 @@ router.post('/update-on-proposal-close', async (req, res) => {
   }
 });
 
+// POST /api/goals/recalculate - Recalcular valores das metas baseado em propostas reais
+router.post('/recalculate', async (req, res) => {
+  try {
+    const Proposal = require('../models/Proposal');
+    
+    console.log('🔄 Iniciando recálculo de metas...');
+    
+    // Buscar todas as metas ativas de vendas
+    const goals = await Goal.find({
+      category: 'sales',
+      unit: 'currency'
+    });
+
+    console.log(`📊 Encontradas ${goals.length} metas para recalcular`);
+
+    const results = [];
+
+    for (const goal of goals) {
+      const vendorId = goal.assignedTo;
+      
+      // Buscar todas as propostas fechadas do vendedor no período da meta
+      const closedProposals = await Proposal.find({
+        $or: [
+          { 'createdBy._id': vendorId },
+          { createdBy: vendorId }
+        ],
+        status: 'venda_fechada',
+        createdAt: {
+          $gte: new Date(goal.period.startDate),
+          $lte: new Date(goal.period.endDate)
+        }
+      });
+
+      console.log(`Vendedor ${vendorId}: ${closedProposals.length} vendas fechadas`);
+
+      // Calcular valor total
+      const totalValue = closedProposals.reduce((sum, p) => sum + (p.total || 0), 0);
+      
+      // Coletar IDs das propostas
+      const proposalIds = closedProposals.map(p => p._id.toString());
+
+      // Atualizar meta
+      const oldValue = goal.currentValue;
+      goal.currentValue = totalValue;
+      goal.progress.percentage = Math.min(100, (totalValue / goal.targetValue) * 100);
+      goal.progress.countedProposals = proposalIds;
+      
+      // Adicionar marco de recálculo
+      goal.progress.milestones.push({
+        date: new Date().toISOString().split('T')[0],
+        value: totalValue,
+        description: `Recálculo: ${closedProposals.length} vendas totalizando R$ ${totalValue.toLocaleString('pt-BR')}`
+      });
+
+      // Verificar se atingiu a meta
+      if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
+        goal.status = 'completed';
+      }
+
+      await goal.save();
+
+      results.push({
+        goalId: goal._id,
+        title: goal.title,
+        vendorId,
+        oldValue,
+        newValue: totalValue,
+        proposalsCount: closedProposals.length,
+        percentage: goal.progress.percentage
+      });
+
+      console.log(`✅ Meta "${goal.title}": R$ ${oldValue} → R$ ${totalValue} (${closedProposals.length} vendas)`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Metas recalculadas com sucesso',
+      data: results
+    });
+  } catch (error) {
+    console.error('Erro ao recalcular metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao recalcular metas',
+      error: error.message
+    });
+  }
+});
+
 // DELETE /api/goals/:id - Excluir meta
 router.delete('/:id', async (req, res) => {
   try {

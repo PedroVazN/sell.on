@@ -145,6 +145,7 @@ router.put('/:id', async (req, res) => {
       console.log('🎯 Proposta fechada! Atualizando metas do vendedor...');
       console.log('Vendedor ID:', proposal.createdBy._id);
       console.log('Valor da proposta:', proposal.total);
+      console.log('ID da proposta:', proposal._id.toString());
       
       try {
         // Buscar metas ativas do vendedor
@@ -159,6 +160,21 @@ router.put('/:id', async (req, res) => {
 
         // Atualizar cada meta ativa
         for (const goal of activeGoals) {
+          // Inicializar array se não existir
+          if (!goal.progress.countedProposals) {
+            goal.progress.countedProposals = [];
+          }
+
+          // Verificar se esta proposta já foi contabilizada
+          const proposalId = proposal._id.toString();
+          if (goal.progress.countedProposals.includes(proposalId)) {
+            console.log(`⚠️ Proposta ${proposal.proposalNumber} já foi contabilizada na meta "${goal.title}". Pulando...`);
+            continue;
+          }
+
+          // Adicionar proposta à lista de contabilizadas
+          goal.progress.countedProposals.push(proposalId);
+
           const newCurrentValue = goal.currentValue + proposal.total;
           
           // Adicionar marco de progresso

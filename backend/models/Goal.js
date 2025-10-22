@@ -98,6 +98,9 @@ const goalSchema = new mongoose.Schema({
       date: String,
       value: Number,
       description: String
+    }],
+    countedProposals: [{
+      type: String
     }]
   },
   rewards: {
