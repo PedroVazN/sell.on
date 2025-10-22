@@ -1435,6 +1435,21 @@ class ApiService {
     });
   }
 
+  // Recalcular todas as metas baseado em vendas reais
+  async recalculateAllGoals(): Promise<ApiResponse<{
+    goalId: string;
+    title: string;
+    vendorId: string;
+    oldValue: number;
+    newValue: number;
+    proposalsCount: number;
+    percentage: number;
+  }[]>> {
+    return this.request(`/goals/recalculate`, {
+      method: 'POST',
+    });
+  }
+
   async getGoalsDashboard(period: 'day' | 'week' | 'month' | 'year' = 'month', userId?: string): Promise<ApiResponse<{
     stats: {
       total: number;

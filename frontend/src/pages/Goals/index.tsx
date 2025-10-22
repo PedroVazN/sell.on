@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Target, Plus, Search, Filter, Edit, Trash2, Loader2, TrendingUp, Calendar, Users, DollarSign, Phone, MapPin, FileText, Award } from 'lucide-react';
+import { Target, Plus, Search, Filter, Edit, Trash2, Loader2, TrendingUp, Calendar, Users, DollarSign, Phone, MapPin, FileText, Award, RefreshCw } from 'lucide-react';
 import { apiService, Goal } from '../../services/api';
 import { GoalModal } from '../../components/GoalModal';
 import { ProgressModal } from '../../components/ProgressModal';
+import { useToast } from '../../hooks/useToast';
 import { 
   Container, 
   Header, 
@@ -43,6 +44,7 @@ import {
 } from './styles';
 
 export const Goals: React.FC = () => {
+  const { addToast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export const Goals: React.FC = () => {
   const [progressGoal, setProgressGoal] = useState<Goal | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [recalculating, setRecalculating] = useState(false);
   const [filters, setFilters] = useState({
     type: '',
     category: '',
@@ -128,6 +131,51 @@ export const Goals: React.FC = () => {
     } catch (err) {
       console.error('Erro ao excluir meta:', err);
       alert('Erro ao excluir meta');
+    }
+  };
+
+  const handleRecalculateGoals = async () => {
+    if (!window.confirm('Deseja recalcular TODAS as metas baseado nas vendas reais? Isso corrigirá valores duplicados.')) {
+      return;
+    }
+
+    try {
+      setRecalculating(true);
+      addToast('info', 'Recalculando Metas', 'Aguarde, estamos recalculando todas as metas...');
+      
+      const response = await apiService.recalculateAllGoals();
+      
+      if (response.success && response.data) {
+        const results = response.data;
+        const totalGoals = results.length;
+        const totalCorrected = results.filter(r => r.oldValue !== r.newValue).length;
+        
+        addToast(
+          'success',
+          'Metas Recalculadas!',
+          `${totalGoals} metas recalculadas. ${totalCorrected} correções aplicadas.`,
+          6000
+        );
+
+        // Log detalhado no console
+        console.log('📊 Resultado do Recálculo:');
+        results.forEach(r => {
+          if (r.oldValue !== r.newValue) {
+            console.log(`✅ ${r.title}: R$ ${r.oldValue} → R$ ${r.newValue} (${r.proposalsCount} vendas)`);
+          }
+        });
+
+        // Recarregar dados
+        await loadGoals();
+        await loadDashboard();
+      } else {
+        addToast('error', 'Erro', 'Não foi possível recalcular as metas');
+      }
+    } catch (err: any) {
+      console.error('Erro ao recalcular metas:', err);
+      addToast('error', 'Erro', err.message || 'Erro ao recalcular metas');
+    } finally {
+      setRecalculating(false);
     }
   };
 
@@ -323,6 +371,28 @@ export const Goals: React.FC = () => {
           >
             <Filter size={16} />
             Filtros
+          </FilterButton>
+          <FilterButton
+            onClick={handleRecalculateGoals}
+            disabled={recalculating}
+            $active={false}
+            style={{
+              background: recalculating ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+              borderColor: 'rgba(16, 185, 129, 0.3)',
+              color: '#10b981'
+            }}
+          >
+            {recalculating ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Recalculando...
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} />
+                Recalcular Metas
+              </>
+            )}
           </FilterButton>
           <CreateButton onClick={handleCreateGoal}>
             <Plus size={16} />
