@@ -108,6 +108,86 @@ app.use('/api/clients', clientsRouter);
 const eventsRouter = require('./routes/events');
 app.use('/api/events', eventsRouter);
 
+// Rota especial de recálculo de metas SEM autenticação
+app.post('/api/goals/recalculate', async (req, res) => {
+  try {
+    const Goal = require('./models/Goal');
+    const Proposal = require('./models/Proposal');
+    
+    console.log('🔄 Iniciando recálculo de metas...');
+    
+    const goals = await Goal.find({
+      category: 'sales',
+      unit: 'currency'
+    });
+
+    console.log(`📊 Encontradas ${goals.length} metas para recalcular`);
+
+    const results = [];
+
+    for (const goal of goals) {
+      const vendorId = goal.assignedTo;
+      
+      const closedProposals = await Proposal.find({
+        $or: [
+          { 'createdBy._id': vendorId },
+          { createdBy: vendorId }
+        ],
+        status: 'venda_fechada',
+        createdAt: {
+          $gte: new Date(goal.period.startDate),
+          $lte: new Date(goal.period.endDate)
+        }
+      });
+
+      const totalValue = closedProposals.reduce((sum, p) => sum + (p.total || 0), 0);
+      const proposalIds = closedProposals.map(p => p._id.toString());
+
+      const oldValue = goal.currentValue;
+      goal.currentValue = totalValue;
+      goal.progress.percentage = Math.min(100, (totalValue / goal.targetValue) * 100);
+      goal.progress.countedProposals = proposalIds;
+      
+      goal.progress.milestones.push({
+        date: new Date().toISOString().split('T')[0],
+        value: totalValue,
+        description: `Recálculo: ${closedProposals.length} vendas totalizando R$ ${totalValue.toLocaleString('pt-BR')}`
+      });
+
+      if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
+        goal.status = 'completed';
+      }
+
+      await goal.save();
+
+      results.push({
+        goalId: goal._id,
+        title: goal.title,
+        vendorId,
+        oldValue,
+        newValue: totalValue,
+        proposalsCount: closedProposals.length,
+        percentage: goal.progress.percentage
+      });
+
+      console.log(`✅ Meta "${goal.title}": R$ ${oldValue} → R$ ${totalValue} (${closedProposals.length} vendas)`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Metas recalculadas com sucesso',
+      data: results
+    });
+  } catch (error) {
+    console.error('Erro ao recalcular metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao recalcular metas',
+      error: error.message
+    });
+  }
+});
+
 const goalsRouter = require('./routes/goals');
 app.use('/api/goals', goalsRouter);
 
