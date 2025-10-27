@@ -231,12 +231,12 @@ export const Dashboard: React.FC = () => {
       setError(null);
 
       if (user?.role === 'vendedor' && user?._id) {
-        // Dashboard específico para vendedor - OTIMIZADO
+        // Dashboard específico para vendedor - Buscar TODAS as propostas
         const [usersResponse, productsResponse, lossReasonsResponse, proposalsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getLossReasonsStats(),
-          apiService.getProposals(1, 200), // Buscar propostas e filtrar no frontend
+          apiService.getProposals(1, 10000), // Buscar todas as propostas do vendedor
           apiService.getGoals(1, 20, { assignedTo: user._id, status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
@@ -350,13 +350,13 @@ export const Dashboard: React.FC = () => {
         setLossReasons(lossReasonsResponse.data || []);
         setGoals(goalsResponse.data || []);
       } else {
-        // Dashboard para admin - OTIMIZADO
+        // Dashboard para admin - Buscar TODAS as propostas
         const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getProposals(1, 500), // Reduzido de 1000 para 500
+          apiService.getProposals(1, 10000), // Buscar todas as propostas (limite alto)
           apiService.getLossReasonsStats(),
-          apiService.getGoals(1, 50, { status: 'active' }), // Reduzido de 100 para 50
+          apiService.getGoals(1, 50, { status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
 
@@ -486,8 +486,8 @@ export const Dashboard: React.FC = () => {
         if (!isMounted) return;
         setIsDailyDataLoading(true);
         
-        // Buscar propostas
-        const response = await apiService.getProposals(1, 300);
+        // Buscar TODAS as propostas para cálculo correto
+        const response = await apiService.getProposals(1, 10000);
         const proposals = response.data || [];
         
         if (!isMounted) return;
