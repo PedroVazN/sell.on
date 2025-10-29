@@ -121,8 +121,17 @@ router.get('/dashboard', async (req, res) => {
       }
     }
 
+    // Calcular peso (market share) de cada vendedor
+    const totalValueAllSellers = Object.values(sellerStats).reduce((sum, s) => sum + s.totalValue, 0);
+    
     const topSellers = Object.values(sellerStats)
-      .map(s => ({ ...s, avgScore: s.totalScore / s.proposals }))
+      .map(s => ({
+        ...s,
+        avgScore: s.totalScore / s.proposals,
+        weight: totalValueAllSellers > 0 
+          ? (s.totalValue / totalValueAllSellers) * 100 
+          : 0 // Peso em porcentagem (market share)
+      }))
       .sort((a, b) => b.avgScore - a.avgScore)
       .slice(0, 5);
 
@@ -349,20 +358,35 @@ router.get('/dashboard', async (req, res) => {
           muito_baixo: scoreDistribution.muito_baixo.count,
           totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
         },
-        topProposals: proposalsWithScores.map(item => ({
-          proposalId: item.proposal._id,
-          proposalNumber: item.proposal.proposalNumber,
-          client: item.proposal.client.name,
-          value: item.proposal.total,
-          score: item.score.score,
-          percentual: item.score.percentual,
-          level: item.score.level,
-          action: item.score.action
-        })),
+        topProposals: proposalsWithScores.map(item => {
+          // Formatar fatores para o formato esperado pelo frontend
+          const formattedFactors = item.score.factors ? Object.entries(item.score.factors).map(([key, factor]: [string, any]) => ({
+            name: getFactorDisplayName(key),
+            value: factor.score || factor.value || 0,
+            impact: calculateFactorImpact(factor, key),
+            description: factor.description || getFactorDefaultDescription(key, factor)
+          })) : [];
+
+          return {
+            proposalId: item.proposal._id,
+            proposalNumber: item.proposal.proposalNumber,
+            client: item.proposal.client.name,
+            value: item.proposal.total,
+            score: item.score.score,
+            percentual: item.score.percentual,
+            level: item.score.level,
+            action: item.score.action,
+            factors: formattedFactors,
+            confidence: item.score.confidence,
+            breakdown: item.score
+          };
+        }),
         atRiskProposals: atRiskProposals.map(item => ({
           proposalId: item.proposal._id,
           proposalNumber: item.proposal.proposalNumber,
           client: item.proposal.client.name,
+          seller: item.proposal.seller?.name || item.proposal.createdBy?.name || 'N/A',
+          sellerEmail: item.proposal.seller?.email || item.proposal.createdBy?.email || '',
           value: item.proposal.total,
           score: item.score.score,
           percentual: item.score.percentual,
@@ -543,6 +567,63 @@ router.get('/recommendations/popular', async (req, res) => {
     });
   }
 });
+
+// Funções auxiliares para formatação de fatores
+function getFactorDisplayName(key) {
+  const names = {
+    sellerConversion: 'Taxa de Conversão do Vendedor',
+    clientHistory: 'Histórico do Cliente',
+    value: 'Valor da Proposta',
+    time: 'Tempo de Negociação',
+    products: 'Produtos',
+    paymentCondition: 'Condição de Pagamento',
+    discount: 'Desconto',
+    seasonality: 'Sazonalidade',
+    engagement: 'Engajamento',
+    patterns: 'Padrões Históricos'
+  };
+  return names[key] || key;
+}
+
+function calculateFactorImpact(factor, key) {
+  // Calcular impacto baseado no score e peso
+  const score = factor.score || factor.value || 0;
+  const weight = factor.weight || 0;
+  
+  // Impacto é o score normalizado pelo peso
+  // Se o score está acima de 50, é positivo, abaixo é negativo
+  const baseImpact = (score - 50) * (weight / 100);
+  
+  // Ajustar baseado no tipo de fator
+  if (key === 'sellerConversion' && factor.rate) {
+    return (factor.rate - 0.5) * 100; // Taxa de conversão como impacto
+  }
+  if (key === 'clientHistory' && factor.previousWins && factor.previousProposals) {
+    const winRate = factor.previousWins / factor.previousProposals;
+    return (winRate - 0.5) * 100;
+  }
+  
+  return baseImpact;
+}
+
+function getFactorDefaultDescription(key, factor) {
+  if (key === 'sellerConversion') {
+    return `Taxa de conversão: ${((factor.rate || 0) * 100).toFixed(1)}% | Score: ${(factor.score || 0).toFixed(1)}%`;
+  }
+  if (key === 'clientHistory') {
+    return `Histórico: ${factor.previousWins || 0}/${factor.previousProposals || 0} propostas fechadas`;
+  }
+  if (key === 'value') {
+    return `Valor da proposta analisado em relação ao histórico`;
+  }
+  if (key === 'time') {
+    return `${factor.daysSinceCreation || 0} dias em negociação`;
+  }
+  if (factor.description) {
+    return factor.description;
+  }
+  return `Fator ${key}: Score ${(factor.score || 0).toFixed(1)}%`;
+}
 
 module.exports = router;
 

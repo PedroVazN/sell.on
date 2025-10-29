@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, TrendingDown, AlertTriangle, Target, Sparkles, Zap, BarChart3, PieChart, LineChart as LineChartIcon, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Brain, TrendingUp, TrendingDown, AlertTriangle, Target, Sparkles, Zap, BarChart3, PieChart, LineChart as LineChartIcon, Activity, AlertCircle, CheckCircle, Clock, Calculator, X } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { useNavigate } from 'react-router-dom';
@@ -42,7 +42,22 @@ import {
   AnomalyActions,
   AnomalyActionsTitle,
   AnomalyActionList,
-  AnomalyActionItem
+  AnomalyActionItem,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalCloseButton,
+  ModalBody,
+  FactorCard,
+  FactorHeader,
+  FactorName,
+  FactorImpact,
+  FactorDescription,
+  SummaryCard,
+  SummaryScore,
+  SummaryText,
+  ConfidenceBadgeModal
 } from './styles';
 import { 
   PieChart as RechartsPieChart, 
@@ -77,11 +92,21 @@ interface AIDashboardData {
     percentual: number;
     level: string;
     action: string;
+    factors?: Array<{
+      name: string;
+      value: number;
+      impact: number;
+      description?: string;
+    }>;
+    confidence?: number;
+    breakdown?: any;
   }>;
   atRiskProposals: Array<{
     proposalId: string;
     proposalNumber: string;
     client: string;
+    seller?: string;
+    sellerEmail?: string;
     value: number;
     score: number;
     percentual: number;
@@ -177,6 +202,7 @@ interface AIDashboardData {
     proposals: number;
     avgScore: number;
     totalValue: number;
+    weight?: number; // Peso em porcentagem (market share)
   }>;
   topClients: Array<{
     name: string;
@@ -250,6 +276,26 @@ export const AIDashboard: React.FC = () => {
     navigate(`/proposals/edit/${proposalId}`);
   };
 
+  // Carregar cálculo detalhado de uma proposta
+  const loadProposalCalculation = async (proposalId: string) => {
+    try {
+      const response = await apiService.getProposalScore(proposalId, 'javascript');
+      if (response.success && response.data) {
+        setSelectedProposal({
+          ...selectedProposal,
+          factors: response.data.factors || [],
+          confidence: response.data.confidence,
+          breakdown: response.data
+        });
+        setShowCalculationModal(true);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cálculo:', error);
+      // Mesmo assim mostrar modal com dados que temos
+      setShowCalculationModal(true);
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -294,8 +340,13 @@ export const AIDashboard: React.FC = () => {
   const sellersBarData = data.topSellers.map(seller => ({
     name: seller.name.split(' ')[0], // Primeiro nome
     score: Math.round(seller.avgScore),
-    proposals: seller.proposals
+    proposals: seller.proposals,
+    weight: seller.weight || 0 // Peso (market share)
   }));
+
+  // Estado para modal de cálculo
+  const [showCalculationModal, setShowCalculationModal] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
 
   return (
     <Container>
@@ -494,7 +545,6 @@ export const AIDashboard: React.FC = () => {
             {data.topProposals.map((proposal) => (
               <ProposalItem 
                 key={proposal.proposalId}
-                onClick={() => handleProposalClick(proposal.proposalId)}
               >
                 <ProposalHeader>
                   <ProposalInfo>
@@ -510,6 +560,79 @@ export const AIDashboard: React.FC = () => {
                 <ScoreText $level={proposal.level}>
                   {proposal.percentual}% chance de fechar - {proposal.action}
                 </ScoreText>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '0.5rem',
+                  marginTop: '0.75rem'
+                }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProposalClick(proposal.proposalId);
+                    }}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(99, 102, 241, 0.2)',
+                      border: '1px solid rgba(99, 102, 241, 0.4)',
+                      borderRadius: '6px',
+                      padding: '0.5rem',
+                      color: '#a5b4fc',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(99, 102, 241, 0.3)';
+                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                    }}
+                  >
+                    Ver Proposta
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProposal(proposal);
+                      // Se não tem factors, buscar do backend
+                      if (!proposal.factors || proposal.factors.length === 0) {
+                        loadProposalCalculation(proposal.proposalId);
+                      } else {
+                        setShowCalculationModal(true);
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%)',
+                      border: '1px solid rgba(139, 92, 246, 0.5)',
+                      borderRadius: '6px',
+                      padding: '0.5rem',
+                      color: '#c4b5fd',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.25rem',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(139, 92, 246, 0.4) 100%)';
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <Calculator size={14} />
+                    Ver Cálculo
+                  </button>
+                </div>
               </ProposalItem>
             ))}
           </ProposalList>
@@ -535,6 +658,15 @@ export const AIDashboard: React.FC = () => {
                     <ProposalInfo>
                       <ProposalNumber>{proposal.proposalNumber}</ProposalNumber>
                       <ProposalClient>{proposal.client}</ProposalClient>
+                      {proposal.seller && (
+                        <div style={{ 
+                          fontSize: '0.75rem', 
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          marginTop: '0.25rem'
+                        }}>
+                          Vendedor: {proposal.seller}
+                        </div>
+                      )}
                     </ProposalInfo>
                     <ProposalValue>{formatCurrency(proposal.value)}</ProposalValue>
                   </ProposalHeader>
@@ -837,21 +969,100 @@ export const AIDashboard: React.FC = () => {
                     borderRadius: '8px',
                     color: '#FFFFFF'
                   }}
-                  formatter={(value: number) => `${value}%`}
+                  formatter={(value: number, name: string, props: any) => {
+                    if (name === 'score') {
+                      return `${value}% (Score)`;
+                    }
+                    if (name === 'weight') {
+                      return `${value.toFixed(1)}% (Peso/Market Share)`;
+                    }
+                    return `${value}`;
+                  }}
                 />
                 <Bar 
                   dataKey="score" 
                   fill="url(#colorGradient2)"
                   radius={[0, 4, 4, 0]}
                 />
+                <Bar 
+                  dataKey="weight" 
+                  fill="url(#weightGradient)"
+                  radius={[0, 4, 4, 0]}
+                  opacity={0.6}
+                />
+                <Legend 
+                  wrapperStyle={{ 
+                    color: '#FFFFFF',
+                    fontSize: '0.75rem',
+                    paddingTop: '1rem'
+                  }}
+                  formatter={(value) => {
+                    if (value === 'score') return 'Score Médio';
+                    if (value === 'weight') return 'Peso (Market Share)';
+                    return value;
+                  }}
+                />
                 <defs>
                   <linearGradient id="colorGradient2" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#10b981" />
                   </linearGradient>
+                  <linearGradient id="weightGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#ec4899" />
+                  </linearGradient>
                 </defs>
               </BarChart>
             </ResponsiveContainer>
+            
+            {/* Lista com peso */}
+            <div style={{ 
+              marginTop: '1.5rem',
+              display: 'grid',
+              gap: '0.75rem'
+            }}>
+              {data.topSellers.map((seller, index) => (
+                <div
+                  key={index}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontWeight: '600',
+                      color: '#ffffff',
+                      marginBottom: '0.25rem'
+                    }}>
+                      {index + 1}. {seller.name}
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.6)'
+                    }}>
+                      {seller.proposals} proposta(s) • Score: {Math.round(seller.avgScore)}%
+                    </div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(139, 92, 246, 0.2)',
+                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                    borderRadius: '6px',
+                    padding: '0.5rem 0.75rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    color: '#a78bfa'
+                  }}>
+                    {seller.weight?.toFixed(1) || 0}% peso
+                  </div>
+                </div>
+              ))}
+            </div>
           </ChartCard>
         )}
       </ChartsGrid>
@@ -1091,6 +1302,119 @@ export const AIDashboard: React.FC = () => {
           </div>
         </ChartCard>
       </ChartsGrid>
+
+      {/* Modal de Cálculo do Score */}
+      {showCalculationModal && selectedProposal && (
+        <ModalOverlay onClick={() => setShowCalculationModal(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>
+                <Calculator size={24} />
+                Análise Detalhada do Score
+              </ModalTitle>
+              <ModalCloseButton onClick={() => setShowCalculationModal(false)}>
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <ModalBody>
+              {/* Resumo */}
+              <SummaryCard>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.5rem' }}>
+                  Proposta {selectedProposal.proposalNumber}
+                </div>
+                <SummaryScore>{selectedProposal.percentual}%</SummaryScore>
+                <SummaryText>
+                  Probabilidade de Fechamento
+                </SummaryText>
+                <div style={{ 
+                  fontSize: '0.875rem',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  marginTop: '0.5rem'
+                }}>
+                  Cliente: {selectedProposal.client} • Valor: {formatCurrency(selectedProposal.value)}
+                </div>
+                {selectedProposal.confidence && (
+                  <ConfidenceBadgeModal>
+                    Confiança: {selectedProposal.confidence}%
+                  </ConfidenceBadgeModal>
+                )}
+              </SummaryCard>
+
+              {/* Fatores de Análise */}
+              {selectedProposal.factors && selectedProposal.factors.length > 0 ? (
+                <>
+                  <div style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <Brain size={20} />
+                    Fatores de Análise
+                  </div>
+                  {selectedProposal.factors.map((factor: any, index: number) => (
+                    <FactorCard key={index} $impact={factor.impact || 0}>
+                      <FactorHeader>
+                        <FactorName>{factor.name || `Fator ${index + 1}`}</FactorName>
+                        <FactorImpact $impact={factor.impact || 0}>
+                          {factor.impact > 0 ? '+' : ''}{factor.impact?.toFixed(1) || factor.value?.toFixed(1) || 0}%
+                        </FactorImpact>
+                      </FactorHeader>
+                      {factor.description && (
+                        <FactorDescription>
+                          {factor.description}
+                        </FactorDescription>
+                      )}
+                      {factor.value && (
+                        <FactorDescription style={{ marginTop: '0.25rem', fontStyle: 'italic' }}>
+                          Valor: {typeof factor.value === 'number' ? factor.value.toFixed(2) : factor.value}
+                        </FactorDescription>
+                      )}
+                    </FactorCard>
+                  ))}
+                </>
+              ) : (
+                <div style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '0.875rem'
+                }}>
+                  Detalhes do cálculo não disponíveis. A análise foi feita com base em múltiplos fatores combinados.
+                </div>
+              )}
+
+              {/* Ação Recomendada */}
+              <div style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                background: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                borderRadius: '12px',
+                borderLeft: '4px solid #6366f1'
+              }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#a5b4fc',
+                  marginBottom: '0.5rem'
+                }}>
+                  🎯 Ação Recomendada
+                </div>
+                <div style={{
+                  fontSize: '0.95rem',
+                  color: '#ffffff'
+                }}>
+                  {selectedProposal.action || 'Analisar proposta e seguir o processo padrão'}
+                </div>
+              </div>
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </Container>
   );
 };

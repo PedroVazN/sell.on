@@ -311,12 +311,29 @@ export const CreateProposal: React.FC = () => {
       }
     }));
 
+    // Se não há produtos selecionados, carregar produtos populares
     if (selectedProducts.length === 0) {
-      setRecommendations([]);
-      setShowRecommendations(false);
+      try {
+        setLoadingRecommendations(true);
+        const response = await apiService.getPopularProducts(5);
+        if (response.success && response.data?.recommendations) {
+          setRecommendations(response.data.recommendations);
+          setShowRecommendations(true);
+        } else {
+          setRecommendations([]);
+          setShowRecommendations(false);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar produtos populares:', error);
+        setRecommendations([]);
+        setShowRecommendations(false);
+      } finally {
+        setLoadingRecommendations(false);
+      }
       return;
     }
 
+    // Se há produtos selecionados, carregar recomendações personalizadas
     try {
       setLoadingRecommendations(true);
       const response = await apiService.getProductRecommendations(
@@ -328,13 +345,31 @@ export const CreateProposal: React.FC = () => {
       if (response.success && response.data?.recommendations) {
         setRecommendations(response.data.recommendations);
         setShowRecommendations(true);
+      } else {
+        setRecommendations([]);
+        setShowRecommendations(false);
       }
     } catch (error) {
       console.error('Erro ao carregar recomendações:', error);
+      setRecommendations([]);
+      setShowRecommendations(false);
     } finally {
       setLoadingRecommendations(false);
     }
   };
+
+  // Carregar recomendações quando a página carrega (produtos populares)
+  useEffect(() => {
+    // Só carregar produtos populares se não houver produtos selecionados
+    const hasSelectedProducts = formData.items.some(item => item.product);
+    if (!hasSelectedProducts) {
+      const timer = setTimeout(() => {
+        loadRecommendations();
+      }, 1500); // Aguardar após carregar produtos e distribuidores
+
+      return () => clearTimeout(timer);
+    }
+  }, [products.length]); // Carregar quando produtos estiverem disponíveis
 
   // Adicionar produto recomendado à proposta
   const addRecommendedProduct = (recommendedProduct: any) => {
@@ -905,7 +940,7 @@ export const CreateProposal: React.FC = () => {
         </FormSection>
 
         {/* Recomendações de IA */}
-        {showRecommendations && recommendations.length > 0 && (
+        {(showRecommendations || recommendations.length > 0 || loadingRecommendations) && (
           <FormSection style={{ 
             background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
             border: '2px solid rgba(99, 102, 241, 0.3)'
@@ -914,23 +949,38 @@ export const CreateProposal: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Sparkles size={20} style={{ color: '#6366f1' }} />
                 <SectionTitle style={{ margin: 0, border: 'none', padding: 0 }}>
-                  Recomendações Inteligentes de Produtos
+                  {formData.items.filter(item => item.product).length > 0 
+                    ? 'Recomendações Inteligentes de Produtos'
+                    : 'Produtos Mais Vendidos'
+                  }
                 </SectionTitle>
               </div>
-              <button
-                onClick={() => setShowRecommendations(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '0.5rem',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <X size={18} />
-              </button>
+              {recommendations.length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowRecommendations(false);
+                    setRecommendations([]);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
             
             <div style={{ 
@@ -938,7 +988,10 @@ export const CreateProposal: React.FC = () => {
               color: 'rgba(255, 255, 255, 0.7)',
               marginBottom: '1rem'
             }}>
-              🧠 Baseado em padrões de compra e análise de IA
+              {formData.items.filter(item => item.product).length > 0
+                ? '🧠 Baseado em padrões de compra e análise de IA'
+                : '⭐ Produtos mais populares baseados no histórico de vendas'
+              }
             </div>
 
             <div style={{ 
@@ -1085,10 +1138,23 @@ export const CreateProposal: React.FC = () => {
             {loadingRecommendations && (
               <div style={{ 
                 textAlign: 'center', 
-                padding: '1rem',
-                color: 'rgba(255, 255, 255, 0.6)'
+                padding: '2rem',
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.95rem'
               }}>
-                Carregando recomendações...
+                <Sparkles size={24} style={{ marginBottom: '0.5rem', opacity: 0.6, animation: 'pulse 2s infinite' }} />
+                <div>Carregando recomendações inteligentes...</div>
+              </div>
+            )}
+
+            {!loadingRecommendations && recommendations.length === 0 && (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '2rem',
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontSize: '0.875rem'
+              }}>
+                Selecione produtos para receber recomendações personalizadas baseadas em IA
               </div>
             )}
           </FormSection>

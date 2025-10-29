@@ -650,3 +650,157 @@ export const AnomalyActionItem = styled.li`
   }
 `;
 
+// Modal de Cálculo
+export const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+export const ModalContent = styled.div`
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+`;
+
+export const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  z-index: 10;
+`;
+
+export const ModalTitle = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+export const ModalCloseButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+`;
+
+export const ModalBody = styled.div`
+  padding: 1.5rem;
+`;
+
+export const FactorCard = styled.div<{ $impact: number }>`
+  background: ${props => {
+    const impact = props.$impact || 0;
+    if (impact > 0) return 'rgba(16, 185, 129, 0.1)';
+    if (impact < 0) return 'rgba(239, 68, 68, 0.1)';
+    return 'rgba(255, 255, 255, 0.05)';
+  }};
+  border: 1px solid ${props => {
+    const impact = props.$impact || 0;
+    if (impact > 0) return 'rgba(16, 185, 129, 0.3)';
+    if (impact < 0) return 'rgba(239, 68, 68, 0.3)';
+    return 'rgba(255, 255, 255, 0.1)';
+  }};
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+`;
+
+export const FactorHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+`;
+
+export const FactorName = styled.div`
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.95rem;
+`;
+
+export const FactorImpact = styled.div<{ $impact: number }>`
+  font-weight: 700;
+  font-size: 1rem;
+  color: ${props => {
+    const impact = props.$impact || 0;
+    if (impact > 0) return '#10b981';
+    if (impact < 0) return '#ef4444';
+    return 'rgba(255, 255, 255, 0.6)';
+  }};
+`;
+
+export const FactorDescription = styled.div`
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+`;
+
+export const SummaryCard = styled.div`
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+`;
+
+export const SummaryScore = styled.div`
+  font-size: 3rem;
+  font-weight: 800;
+  color: #6366f1;
+  margin: 0.5rem 0;
+`;
+
+export const SummaryText = styled.div`
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
+`;
+
+export const ConfidenceBadgeModal = styled.div`
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #818cf8;
+  margin-top: 0.5rem;
+`;
+
