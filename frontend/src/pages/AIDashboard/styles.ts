@@ -129,11 +129,16 @@ export const Subtitle = styled.p`
 
 export const MetricsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
   position: relative;
   z-index: 1;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
 `;
 
 export const MetricCard = styled.div`
@@ -148,7 +153,13 @@ export const MetricCard = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -159,13 +170,67 @@ export const MetricCard = styled.div`
       0 0 0 1px rgba(99, 102, 241, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
+
+  @media (max-width: 1200px) {
+    padding: 1.75rem;
+    min-height: 130px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    min-height: 120px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.25rem;
+    min-height: 110px;
+  }
 `;
 
 export const MetricValue = styled.div<{ $color?: string }>`
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 3rem);
   font-weight: 800;
   color: ${props => props.$color || '#6366f1'};
   margin-bottom: 0.5rem;
+  line-height: 1.15;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  
+  /* Garantir que números grandes apareçam */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  
+  /* Permitir quebra de linha para valores muito longos */
+  hyphens: auto;
+  
+  /* Ajuste para valores monetários longos */
+  small {
+    font-size: 0.6em;
+    font-weight: 600;
+    opacity: 0.9;
+  }
+
+  /* Garantir visibilidade em todos os tamanhos */
+  @media (max-width: 1200px) {
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  }
+
+  @media (max-width: 768px) {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    line-height: 1.2;
+  }
+
+  @media (max-width: 480px) {
+    font-size: clamp(1.2rem, 5vw, 1.8rem);
+    line-height: 1.25;
+  }
 `;
 
 export const MetricLabel = styled.div`

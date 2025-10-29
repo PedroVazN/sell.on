@@ -237,12 +237,32 @@ export const AIDashboard: React.FC = () => {
         </MetricCard>
 
         <MetricCard>
-          <MetricValue $color="#fbbf24">{formatCurrency(data.forecast.next7Days.revenue)}</MetricValue>
+          <MetricValue 
+            $color="#fbbf24" 
+            style={{ 
+              fontSize: 'clamp(1.4rem, 3.2vw, 2.5rem)',
+              lineHeight: '1.1',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere'
+            }}
+          >
+            {formatCurrency(data.forecast.next7Days.revenue)}
+          </MetricValue>
           <MetricLabel>Previsão 7 Dias</MetricLabel>
         </MetricCard>
 
         <MetricCard>
-          <MetricValue $color="#8b5cf6">{formatCurrency(data.forecast.next30Days.revenue)}</MetricValue>
+          <MetricValue 
+            $color="#8b5cf6" 
+            style={{ 
+              fontSize: 'clamp(1.4rem, 3.2vw, 2.5rem)',
+              lineHeight: '1.1',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere'
+            }}
+          >
+            {formatCurrency(data.forecast.next30Days.revenue)}
+          </MetricValue>
           <MetricLabel>Previsão 30 Dias</MetricLabel>
         </MetricCard>
       </MetricsGrid>
