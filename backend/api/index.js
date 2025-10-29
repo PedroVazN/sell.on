@@ -139,7 +139,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     status: 'online',
     timestamp: new Date().toISOString(),
-    endpoints: {
+      endpoints: {
       api: '/api',
       test: '/api/test',
       testDb: '/api/test-db',
@@ -152,7 +152,8 @@ app.get('/', (req, res) => {
       goals: '/api/goals',
       events: '/api/events',
       notifications: '/api/notifications',
-      priceList: '/api/price-list'
+      priceList: '/api/price-list',
+      ai: '/api/ai'
     }
   });
 });
@@ -303,6 +304,9 @@ app.use('/api/sales', salesRouter);
 
 const proposalsRouter = require('../routes/proposals');
 app.use('/api/proposals', proposalsRouter);
+
+const aiRouter = require('../routes/ai');
+app.use('/api/ai', aiRouter);
 
 const priceListRouter = require('../routes/priceList');
 app.use('/api/price-list', priceListRouter);
