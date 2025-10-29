@@ -6,7 +6,7 @@ const Goal = require('../models/Goal');
 const { auth } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
 const { proposalLimiter } = require('../middleware/security');
-const { calculateProposalScore } = require('../services/proposalScore');
+const { calculateProposalScore, calculateProposalScoreWithComparison } = require('../services/proposalScore');
 
 // GET /api/proposals - Listar todas as propostas do usuário
 router.get('/', async (req, res) => {
@@ -1096,7 +1096,7 @@ router.post('/:id/score', async (req, res) => {
   try {
     const proposal = await Proposal.findById(req.params.id)
       .populate('createdBy', 'name email');
-
+    
     if (!proposal) {
       return res.status(404).json({
         success: false,
@@ -1104,14 +1104,47 @@ router.post('/:id/score', async (req, res) => {
       });
     }
 
-    const scoreData = await calculateProposalScore(proposal);
+    // Permitir escolher método via query: ?method=python ou ?method=javascript
+    const method = req.query.method || 'javascript';
+    const usePython = method === 'python';
+    const scoreData = await calculateProposalScore(proposal, usePython);
 
     res.json({
       success: true,
-      data: scoreData
+      data: scoreData,
+      method: usePython ? 'python_ml' : 'javascript_statistical'
     });
   } catch (error) {
     console.error('Erro ao calcular score da proposta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Rota para comparar JavaScript vs Python
+router.post('/:id/score/compare', async (req, res) => {
+  try {
+    const proposal = await Proposal.findById(req.params.id)
+      .populate('createdBy', 'name email');
+    
+    if (!proposal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proposta não encontrada'
+      });
+    }
+
+    const comparison = await calculateProposalScoreWithComparison(proposal);
+
+    res.json({
+      success: true,
+      data: comparison
+    });
+  } catch (error) {
+    console.error('Erro ao comparar scores:', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -1151,9 +1184,11 @@ router.get('/with-scores/list', async (req, res) => {
       .limit(parseInt(limit));
 
     // Calcular scores para cada proposta (limitado para performance)
+    const method = req.query.method || 'javascript';
+    const usePython = method === 'python';
     const proposalsWithScores = await Promise.all(
       proposals.slice(0, 20).map(async (proposal) => {
-        const scoreData = await calculateProposalScore(proposal);
+        const scoreData = await calculateProposalScore(proposal, usePython);
         return {
           ...proposal.toObject(),
           aiScore: scoreData

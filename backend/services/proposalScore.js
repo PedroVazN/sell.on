@@ -1,6 +1,8 @@
 const Proposal = require('../models/Proposal');
 const Client = require('../models/Client');
 const Product = require('../models/Product');
+const { spawn } = require('child_process');
+const path = require('path');
 
 /**
  * ============================================
@@ -17,11 +19,19 @@ const Product = require('../models/Product');
 /**
  * Calcula o score preditivo avançado de uma proposta (0-100%)
  * Baseado em análise histórica completa e múltiplos fatores
+ * 
+ * @param {Object} proposal - Proposta a ser analisada
+ * @param {boolean} usePython - Se true, usa Python ML. Se false, usa JavaScript estatístico
+ * @returns {Promise<Object>} Score calculado
  */
-async function calculateProposalScore(proposal) {
+async function calculateProposalScore(proposal, usePython = false) {
   try {
     // Primeiro, analisar o histórico completo para calibrar os pesos
     const historicalAnalysis = await analyzeHistoricalData();
+    
+    if (usePython) {
+      return await calculateScorePython(proposal, historicalAnalysis);
+    }
     
     const factors = {};
     let totalScore = 0;
@@ -1008,8 +1018,201 @@ function generateIntelligentAction(factors, level, historicalAnalysis) {
   }
 }
 
+/**
+ * Calcula score usando Python com Machine Learning
+ */
+async function calculateScorePython(proposal, historicalAnalysis) {
+  return new Promise((resolve, reject) => {
+    try {
+      const now = new Date();
+      const createdAt = new Date(proposal.createdAt);
+      const validUntil = new Date(proposal.validUntil);
+      
+      const proposalData = {
+        total: proposal.total || 0,
+        days_since_creation: Math.floor((now - createdAt) / (1000 * 60 * 60 * 24)),
+        days_until_expiry: Math.floor((validUntil - now) / (1000 * 60 * 60 * 24)),
+        items_count: proposal.items?.length || 0,
+        discount_percentage: proposal.subtotal > 0 
+          ? ((proposal.subtotal - proposal.total) / proposal.subtotal) * 100 
+          : 0,
+        month: createdAt.getMonth() + 1,
+        status: proposal.status
+      };
+
+      // Buscar dados históricos para treinamento
+      Proposal.find({
+        _id: { $ne: proposal._id },
+        createdAt: { 
+          $gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) 
+        }
+      }).limit(500).lean().then(async (historicalProposals) => {
+        try {
+          const sellerId = proposal.createdBy?._id || proposal.createdBy || proposal.seller?._id;
+          const clientEmail = proposal.client?.email?.toLowerCase();
+
+          // Stats do vendedor
+          const sellerProposals = historicalProposals.filter(p => {
+            const pSellerId = p.createdBy?._id || p.createdBy || p.seller?._id;
+            return pSellerId && pSellerId.toString() === sellerId?.toString();
+          });
+          const sellerClosed = sellerProposals.filter(p => p.status === 'venda_fechada').length;
+          const sellerLost = sellerProposals.filter(p => p.status === 'venda_perdida').length;
+          const sellerTotalDecided = sellerClosed + sellerLost;
+          const sellerConversionRate = sellerTotalDecided > 0 
+            ? sellerClosed / sellerTotalDecided 
+            : 0.5;
+
+          // Stats do cliente
+          const clientProposals = historicalProposals.filter(p => 
+            p.client?.email?.toLowerCase() === clientEmail
+          );
+          const clientClosed = clientProposals.filter(p => p.status === 'venda_fechada').length;
+          const clientLost = clientProposals.filter(p => p.status === 'venda_perdida').length;
+          const clientTotalDecided = clientClosed + clientLost;
+          const clientConversionRate = clientTotalDecided > 0 
+            ? clientClosed / clientTotalDecided 
+            : 0.5;
+          const clientRevenue = clientProposals
+            .filter(p => p.status === 'venda_fechada')
+            .reduce((sum, p) => sum + (p.total || 0), 0);
+
+          proposalData.seller_conversion_rate = sellerConversionRate;
+          proposalData.client_conversion_rate = clientConversionRate;
+          proposalData.seller_proposals_count = sellerProposals.length;
+          proposalData.client_proposals_count = clientProposals.length;
+          proposalData.client_total_revenue = clientRevenue;
+
+          // Preparar dados históricos para ML
+          const historicalDataForML = historicalProposals.map(p => {
+            const pCreated = new Date(p.createdAt);
+            const pUpdated = new Date(p.updatedAt);
+            const pValid = new Date(p.validUntil);
+            const pNow = new Date();
+            
+            return {
+              total: p.total || 0,
+              days_since_creation: Math.floor((pNow - pCreated) / (1000 * 60 * 60 * 24)),
+              days_until_expiry: Math.floor((pValid - pNow) / (1000 * 60 * 60 * 24)),
+              items_count: p.items?.length || 0,
+              discount_percentage: p.subtotal > 0 
+                ? ((p.subtotal - p.total) / p.subtotal) * 100 
+                : 0,
+              month: pCreated.getMonth() + 1,
+              seller_conversion_rate: sellerConversionRate,
+              client_conversion_rate: clientConversionRate,
+              seller_proposals_count: sellerProposals.length,
+              client_proposals_count: clientProposals.length,
+              client_total_revenue: clientRevenue,
+              status: p.status
+            };
+          });
+
+          const inputData = {
+            proposal: proposalData,
+            historical_data: historicalDataForML,
+            historical_stats: {
+              seller_rate: sellerConversionRate,
+              client_rate: clientConversionRate
+            }
+          };
+
+          // Executar script Python
+          const pythonScript = path.join(__dirname, 'proposalScorePython.py');
+          const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+          const pythonProcess = spawn(pythonCmd, [pythonScript], {
+            stdio: ['pipe', 'pipe', 'pipe']
+          });
+
+          let stdout = '';
+          let stderr = '';
+
+          pythonProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+          });
+
+          pythonProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+          });
+
+          pythonProcess.on('close', (code) => {
+            if (code === 0) {
+              try {
+                const result = JSON.parse(stdout);
+                result.method = 'python_ml';
+                result.comparison_available = true;
+                resolve(result);
+              } catch (parseError) {
+                console.error('Erro ao parsear resultado Python:', parseError);
+                console.error('Stdout:', stdout);
+                // Fallback para JavaScript
+                calculateProposalScore(proposal, false).then(resolve).catch(reject);
+              }
+            } else {
+              console.error('Erro Python:', stderr);
+              // Fallback para JavaScript
+              calculateProposalScore(proposal, false).then(resolve).catch(reject);
+            }
+          });
+
+          pythonProcess.stdin.write(JSON.stringify(inputData));
+          pythonProcess.stdin.end();
+
+        } catch (error) {
+          console.error('Erro ao preparar dados para Python:', error);
+          calculateProposalScore(proposal, false).then(resolve).catch(reject);
+        }
+      }).catch(error => {
+        console.error('Erro ao buscar histórico:', error);
+        calculateProposalScore(proposal, false).then(resolve).catch(reject);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Calcula score com comparação JavaScript vs Python
+ */
+async function calculateProposalScoreWithComparison(proposal) {
+  try {
+    const historicalAnalysis = await analyzeHistoricalData();
+    
+    // Calcular ambos
+    const [jsResult, pythonResult] = await Promise.allSettled([
+      calculateProposalScore(proposal, false),
+      calculateScorePython(proposal, historicalAnalysis).catch(() => null)
+    ]);
+
+    const jsScore = jsResult.status === 'fulfilled' ? jsResult.value : null;
+    const pyScore = pythonResult.status === 'fulfilled' ? pythonResult.value : null;
+
+    return {
+      javascript: jsScore,
+      python: pyScore,
+      comparison: {
+        score_difference: pyScore && jsScore 
+          ? Math.abs(pyScore.score - jsScore.score) 
+          : null,
+        both_available: !!pyScore && !!jsScore,
+        recommendation: pyScore && jsScore
+          ? (Math.abs(pyScore.score - jsScore.score) < 10 
+              ? 'Scores similares - ambos métodos concordam'
+              : 'Scores diferentes - considerar média ou investigar')
+          : 'Apenas JavaScript disponível'
+      },
+      calculated_at: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Erro na comparação:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   calculateProposalScore,
+  calculateProposalScoreWithComparison,
   calculateSellerConversionRateAdvanced,
   calculateClientHistoryAdvanced,
   analyzeHistoricalData
