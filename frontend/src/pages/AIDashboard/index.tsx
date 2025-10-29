@@ -247,6 +247,8 @@ export const AIDashboard: React.FC = () => {
   const [data, setData] = useState<AIDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCalculationModal, setShowCalculationModal] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -337,16 +339,23 @@ export const AIDashboard: React.FC = () => {
   }));
 
   // Dados para gráfico de vendedores
+  if (!data) {
+    return (
+      <Container>
+        <LoadingContainer>
+          <Brain size={48} style={{ animation: 'spin 2s linear infinite', marginBottom: '1rem' }} />
+          <div>Carregando dashboard de IA...</div>
+        </LoadingContainer>
+      </Container>
+    );
+  }
+
   const sellersBarData = data.topSellers.map(seller => ({
     name: seller.name.split(' ')[0], // Primeiro nome
     score: Math.round(seller.avgScore),
     proposals: seller.proposals,
     weight: seller.weight || 0 // Peso (market share)
   }));
-
-  // Estado para modal de cálculo
-  const [showCalculationModal, setShowCalculationModal] = useState(false);
-  const [selectedProposal, setSelectedProposal] = useState<any>(null);
 
   return (
     <Container>
