@@ -368,9 +368,16 @@ export interface ProposalScore {
     products?: ProposalScoreFactor;
     paymentCondition?: ProposalScoreFactor;
     discount?: ProposalScoreFactor;
+    seasonality?: ProposalScoreFactor;
+    engagement?: ProposalScoreFactor;
+    patterns?: ProposalScoreFactor;
   };
-  calculatedAt: string;
+  confidence?: number;
+  calculatedAt?: string;
   error?: string;
+  method?: string;
+  algorithmVersion?: string;
+  [key: string]: any;
 }
 
 export interface ProposalWithScore extends Proposal {
@@ -1058,8 +1065,8 @@ class ApiService {
   }
 
   // AI Score
-  async getProposalScore(id: string): Promise<ApiResponse<ProposalScore>> {
-    return this.request<ProposalScore>(`/proposals/${id}/score`, {
+  async getProposalScore(id: string, method: string = 'javascript'): Promise<ApiResponse<ProposalScore>> {
+    return this.request<ProposalScore>(`/proposals/${id}/score?method=${method}`, {
       method: 'POST',
     });
   }
