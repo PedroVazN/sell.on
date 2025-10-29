@@ -45,16 +45,39 @@ try {
 router.get('/dashboard', async (req, res) => {
   try {
     console.log('🤖 Carregando dashboard de IA...');
+    
+    // Timeout de segurança para evitar travamento
+    const timeout = setTimeout(() => {
+      console.error('⚠️ Timeout no dashboard de IA - retornando dados parciais');
+    }, 25000); // 25 segundos
 
     // 1. Distribuição de Scores
-    const negociacaoProposals = await Proposal.find({ 
-      status: 'negociacao' 
-    })
-      .populate('createdBy', 'name email')
-      .limit(100); // Limitar para performance
+    let negociacaoProposals = [];
+    let scoresData = [];
+    
+    try {
+      negociacaoProposals = await Proposal.find({ 
+        status: 'negociacao' 
+      })
+        .populate('createdBy', 'name email')
+        .limit(100); // Limitar para performance
 
-    const scoresPromises = negociacaoProposals.map(p => calculateProposalScore(p));
-    const scoresData = await Promise.all(scoresPromises);
+      const scoresPromises = negociacaoProposals.map(p => {
+        try {
+          return calculateProposalScore(p);
+        } catch (err) {
+          console.error('Erro ao calcular score individual:', err);
+          return null;
+        }
+      });
+      scoresData = await Promise.all(scoresPromises);
+      // Filtrar nulls
+      scoresData = scoresData.filter(s => s !== null);
+    } catch (err) {
+      console.error('Erro ao buscar propostas ou calcular scores:', err);
+      negociacaoProposals = [];
+      scoresData = [];
+    }
     
     // Distribuição por nível
     const scoreDistribution = {
@@ -65,13 +88,17 @@ router.get('/dashboard', async (req, res) => {
     };
 
     scoresData.forEach((score, index) => {
-      const proposal = negociacaoProposals[index];
-      if (score && proposal) {
-        const level = score.level;
-        if (scoreDistribution[level]) {
-          scoreDistribution[level].count++;
-          scoreDistribution[level].totalValue += proposal.total || 0;
+      try {
+        const proposal = negociacaoProposals[index];
+        if (score && proposal && score.level) {
+          const level = score.level;
+          if (scoreDistribution[level]) {
+            scoreDistribution[level].count++;
+            scoreDistribution[level].totalValue += (proposal.total || 0);
+          }
         }
+      } catch (err) {
+        console.error('Erro ao processar score na distribuição:', err);
       }
     });
 
@@ -361,12 +388,16 @@ router.get('/dashboard', async (req, res) => {
         topProposals: proposalsWithScores.map(item => {
           try {
             // Formatar fatores para o formato esperado pelo frontend
-            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map(([key, factor]: [string, any]) => ({
-              name: getFactorDisplayName(key),
-              value: factor?.score || factor?.value || 0,
-              impact: calculateFactorImpact(factor, key),
-              description: factor?.description || getFactorDefaultDescription(key, factor)
-            })) : [];
+            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map((entry) => {
+              const key = entry[0];
+              const factor = entry[1] || {};
+              return {
+                name: getFactorDisplayName(key),
+                value: factor.score || factor.value || 0,
+                impact: calculateFactorImpact(factor, key),
+                description: factor.description || getFactorDefaultDescription(key, factor)
+              };
+            }) : [];
 
             return {
               proposalId: item.proposal?._id || item.proposal?._id?.toString() || 'unknown',
@@ -449,12 +480,19 @@ router.get('/dashboard', async (req, res) => {
         }
       }
     });
+    
+    clearTimeout(timeout);
   } catch (error) {
     console.error('Erro ao carregar dashboard de IA:', error);
+    console.error('Stack trace:', error.stack);
+    
+    // Resposta de erro segura
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Erro ao processar dashboard de IA',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -605,6 +643,8 @@ router.get('/recommendations/popular', async (req, res) => {
 
 // Funções auxiliares para formatação de fatores
 function getFactorDisplayName(key) {
+  if (!key || typeof key !== 'string') return 'Fator Desconhecido';
+  
   const names = {
     sellerConversion: 'Taxa de Conversão do Vendedor',
     clientHistory: 'Histórico do Cliente',
@@ -621,6 +661,8 @@ function getFactorDisplayName(key) {
 }
 
 function calculateFactorImpact(factor, key) {
+  if (!factor || typeof factor !== 'object') return 0;
+  
   // Calcular impacto baseado no score e peso
   const score = factor.score || factor.value || 0;
   const weight = factor.weight || 0;
@@ -642,6 +684,9 @@ function calculateFactorImpact(factor, key) {
 }
 
 function getFactorDefaultDescription(key, factor) {
+  if (!factor || typeof factor !== 'object') return 'Sem descrição disponível';
+  if (!key) return 'Fator sem identificação';
+  
   if (key === 'sellerConversion') {
     return `Taxa de conversão: ${((factor.rate || 0) * 100).toFixed(1)}% | Score: ${(factor.score || 0).toFixed(1)}%`;
   }
