@@ -51,7 +51,7 @@ router.get('/dashboard', async (req, res) => {
       console.error('⚠️ Timeout no dashboard de IA - retornando dados parciais');
     }, 25000); // 25 segundos
 
-    // 1. Distribuição de Scores
+    // 1. Distribuição de Scores - LIMITAR A 20 para não sobrecarregar
     let negociacaoProposals = [];
     let scoresData = [];
     
@@ -60,19 +60,31 @@ router.get('/dashboard', async (req, res) => {
         status: 'negociacao' 
       })
         .populate('createdBy', 'name email')
-        .limit(100); // Limitar para performance
+        .limit(20) // REDUZIDO de 100 para 20 para evitar crash
+        .lean(); // Usar lean() para melhor performance
 
-      const scoresPromises = negociacaoProposals.map(p => {
+      // Limitar ainda mais se houver muitas
+      if (negociacaoProposals.length > 20) {
+        negociacaoProposals = negociacaoProposals.slice(0, 20);
+      }
+
+      // Calcular apenas os primeiros 10 scores para evitar timeout
+      const proposalsToScore = negociacaoProposals.slice(0, 10);
+      
+      // Calcular scores de forma sequencial para não sobrecarregar
+      scoresData = [];
+      for (let i = 0; i < proposalsToScore.length; i++) {
         try {
-          return calculateProposalScore(p);
+          const score = await calculateProposalScore(proposalsToScore[i]);
+          if (score) scoresData.push(score);
         } catch (err) {
-          console.error('Erro ao calcular score individual:', err);
-          return null;
+          console.error(`Erro ao calcular score ${i}:`, err);
+          // Continuar mesmo com erro
         }
-      });
-      scoresData = await Promise.all(scoresPromises);
-      // Filtrar nulls
-      scoresData = scoresData.filter(s => s !== null);
+        
+        // Se já processamos 5, limitar tempo
+        if (i === 5) break;
+      }
     } catch (err) {
       console.error('Erro ao buscar propostas ou calcular scores:', err);
       negociacaoProposals = [];
@@ -102,15 +114,34 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    // 2. Top Propostas (Maior Score)
-    const proposalsWithScores = negociacaoProposals
-      .map((p, i) => ({
-        proposal: p.toObject(),
-        score: scoresData[i]
-      }))
-      .filter(item => item.score)
-      .sort((a, b) => (b.score.score || 0) - (a.score.score || 0))
-      .slice(0, 10);
+    // 2. Top Propostas (Maior Score) - Protegido
+    let proposalsWithScores = [];
+    try {
+      proposalsWithScores = negociacaoProposals
+        .map((p, i) => {
+          try {
+            return {
+              proposal: typeof p.toObject === 'function' ? p.toObject() : p,
+              score: scoresData[i]
+            };
+          } catch (err) {
+            console.error('Erro ao converter proposta:', err);
+            return null;
+          }
+        })
+        .filter(item => item && item.score)
+        .sort((a, b) => {
+          try {
+            return (b.score?.score || 0) - (a.score?.score || 0);
+          } catch (err) {
+            return 0;
+          }
+        })
+        .slice(0, 10);
+    } catch (err) {
+      console.error('Erro ao processar proposalsWithScores:', err);
+      proposalsWithScores = [];
+    }
 
     // 3. Propostas em Risco (Score Baixo)
     const atRiskProposals = proposalsWithScores
@@ -237,14 +268,20 @@ router.get('/dashboard', async (req, res) => {
       }
     }
 
-    // 5. Previsão de Vendas (usando serviço avançado)
+    // 5. Previsão de Vendas (usando serviço avançado) - Simplificado
     const userId = req.user?.id || null;
     const userRole = req.user?.role || 'user';
     let forecast = null;
     let forecastData = null;
     
     try {
-      forecastData = await calculateSalesForecast(userId, userRole, 30);
+      // Limitar tempo de cálculo
+      const forecastPromise = calculateSalesForecast(userId, userRole, 30);
+      const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => resolve({ error: 'Timeout' }), 5000); // 5 segundos máximo
+      });
+      
+      forecastData = await Promise.race([forecastPromise, timeoutPromise]);
       if (!forecastData.error) {
         forecast = {
           next7Days: {
@@ -385,40 +422,57 @@ router.get('/dashboard', async (req, res) => {
           muito_baixo: scoreDistribution.muito_baixo.count,
           totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
         },
-        topProposals: proposalsWithScores.map(item => {
+        topProposals: proposalsWithScores.slice(0, 10).map((item, index) => {
           try {
+            if (!item || !item.proposal || !item.score) {
+              return null;
+            }
+            
             // Formatar fatores para o formato esperado pelo frontend
-            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map((entry) => {
-              const key = entry[0];
-              const factor = entry[1] || {};
-              return {
-                name: getFactorDisplayName(key),
-                value: factor.score || factor.value || 0,
-                impact: calculateFactorImpact(factor, key),
-                description: factor.description || getFactorDefaultDescription(key, factor)
-              };
-            }) : [];
+            let formattedFactors = [];
+            try {
+              if (item.score.factors && typeof item.score.factors === 'object') {
+                formattedFactors = Object.entries(item.score.factors).slice(0, 5).map((entry) => {
+                  try {
+                    const key = entry[0];
+                    const factor = entry[1] || {};
+                    return {
+                      name: getFactorDisplayName(key),
+                      value: factor.score || factor.value || 0,
+                      impact: calculateFactorImpact(factor, key),
+                      description: factor.description || getFactorDefaultDescription(key, factor)
+                    };
+                  } catch (err) {
+                    console.error('Erro ao formatar fator:', err);
+                    return null;
+                  }
+                }).filter(f => f !== null);
+              }
+            } catch (err) {
+              console.error('Erro ao processar fatores:', err);
+              formattedFactors = [];
+            }
 
             return {
-              proposalId: item.proposal?._id || item.proposal?._id?.toString() || 'unknown',
-              proposalNumber: item.proposal?.proposalNumber || 'N/A',
-              client: item.proposal?.client?.name || 'Cliente não informado',
-              value: item.proposal?.total || 0,
-              score: item.score?.score || 0,
-              percentual: item.score?.percentual || 0,
-              level: item.score?.level || 'medio',
-              action: item.score?.action || 'Não foi possível calcular',
+              proposalId: (item.proposal?._id || item.proposal?._id?.toString() || `unknown_${index}`),
+              proposalNumber: (item.proposal?.proposalNumber || 'N/A'),
+              client: (item.proposal?.client?.name || 'Cliente não informado'),
+              value: (item.proposal?.total || 0),
+              score: (item.score?.score || 0),
+              percentual: (item.score?.percentual || 0),
+              level: (item.score?.level || 'medio'),
+              action: (item.score?.action || 'Não foi possível calcular'),
               factors: formattedFactors,
-              confidence: item.score?.confidence || 50,
-              breakdown: item.score || {}
+              confidence: (item.score?.confidence || 50),
+              breakdown: (item.score || {})
             };
           } catch (err) {
-            console.error('Erro ao formatar topProposal:', err);
+            console.error(`Erro ao formatar topProposal ${index}:`, err);
             return {
-              proposalId: item.proposal?._id?.toString() || 'unknown',
-              proposalNumber: item.proposal?.proposalNumber || 'N/A',
-              client: item.proposal?.client?.name || 'Erro',
-              value: item.proposal?.total || 0,
+              proposalId: `error_${index}`,
+              proposalNumber: 'N/A',
+              client: 'Erro',
+              value: 0,
               score: 0,
               percentual: 0,
               level: 'medio',
@@ -428,7 +482,7 @@ router.get('/dashboard', async (req, res) => {
               breakdown: {}
             };
           }
-        }),
+        }).filter(p => p !== null),
         atRiskProposals: atRiskProposals.map(item => {
           // Acesso seguro aos campos seller e createdBy
           let sellerName = 'N/A';
