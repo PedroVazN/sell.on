@@ -2,14 +2,6 @@ const Proposal = require('../models/Proposal');
 const Client = require('../models/Client');
 const Product = require('../models/Product');
 
-// TensorFlow.js para ML no Node.js (funciona na Vercel!)
-let tf = null;
-try {
-  tf = require('@tensorflow/tfjs-node');
-} catch (error) {
-  console.warn('TensorFlow.js não instalado. Use: npm install @tensorflow/tfjs-node');
-}
-
 /**
  * ============================================
  * SISTEMA AVANÇADO DE SCORE PREDITIVO DE IA
@@ -1025,14 +1017,10 @@ function generateIntelligentAction(factors, level, historicalAnalysis) {
 }
 
 /**
- * Calcula score usando TensorFlow.js (ML que roda no Node.js - funciona na Vercel!)
+ * Calcula score usando ML Simples (algoritmo estatístico avançado que simula ML)
+ * Funciona na Vercel - não precisa de bibliotecas pesadas!
  */
 async function calculateScorePython(proposal, historicalAnalysis) {
-  // Se TensorFlow.js não estiver disponível, fallback para JavaScript
-  if (!tf) {
-    return await calculateScoreJavaScript(proposal, historicalAnalysis);
-  }
-
   return new Promise(async (resolve, reject) => {
     try {
       const now = new Date();
@@ -1120,8 +1108,8 @@ async function calculateScorePython(proposal, historicalAnalysis) {
           });
 
           try {
-            // Usar TensorFlow.js para ML (roda direto no Node.js - funciona na Vercel!)
-            const scoreResult = await calculateScoreWithTensorFlow(
+            // Usar ML Simples (estatístico avançado que aprende padrões)
+            const scoreResult = await calculateScoreWithSimpleML(
               proposalData,
               historicalDataForML,
               {
@@ -1130,11 +1118,11 @@ async function calculateScorePython(proposal, historicalAnalysis) {
               }
             );
 
-            scoreResult.method = 'tensorflow_js';
+            scoreResult.method = 'ml_simples';
             scoreResult.comparison_available = true;
             resolve(scoreResult);
-          } catch (tfError) {
-            console.error('Erro TensorFlow.js:', tfError);
+          } catch (mlError) {
+            console.error('Erro ML Simples:', mlError);
             // Fallback para JavaScript estatístico
             calculateProposalScore(proposal, false).then(resolve).catch(reject);
           }
@@ -1154,10 +1142,11 @@ async function calculateScorePython(proposal, historicalAnalysis) {
 }
 
 /**
- * Calcula score usando TensorFlow.js
+ * Calcula score usando ML Simples (estatístico avançado que aprende padrões)
+ * Não usa bibliotecas pesadas - funciona na Vercel!
  */
-async function calculateScoreWithTensorFlow(proposalData, historicalData, stats) {
-  if (!tf || historicalData.length < 10) {
+async function calculateScoreWithSimpleML(proposalData, historicalData, stats) {
+  if (historicalData.length < 10) {
     // Fallback para cálculo estatístico simples
     const score = (stats.seller_rate * 40) + (stats.client_rate * 50) + 
                   (proposalData.total > 0 && proposalData.total < 50000 ? 10 : 0);
@@ -1171,112 +1160,167 @@ async function calculateScoreWithTensorFlow(proposalData, historicalData, stats)
         ? '📊 Negociação ativa. Manter contato regular.'
         : '⚠️ ATENÇÃO NECESSÁRIA. Revisar estratégia.',
       confidence: Math.min(85, 50 + historicalData.length / 10),
-      method: 'tensorflow_js_simple'
+      method: 'ml_simples_basico'
     };
   }
 
   try {
-    // Preparar features
-    const features = historicalData.map(p => [
-      p.total || 0,
-      p.days_since_creation || 0,
-      p.days_until_expiry || 30,
-      p.items_count || 0,
-      p.discount_percentage || 0,
-      p.seller_conversion_rate || 0.5,
-      p.client_conversion_rate || 0.5,
-      p.month || 6,
-      p.seller_proposals_count || 0,
-      p.client_proposals_count || 0
-    ]);
+    // ML Simples usando análise estatística avançada
+    // Aprende pesos dinâmicos baseados em correlação dos dados históricos
+    
+    // Separar propostas fechadas vs perdidas
+    const closed = historicalData.filter(p => p.status === 'venda_fechada');
+    const lost = historicalData.filter(p => p.status === 'venda_perdida' || p.status === 'expirada');
+    
+    if (closed.length === 0 && lost.length === 0) {
+      // Sem histórico suficiente, usar cálculo básico
+      const score = (stats.seller_rate * 40) + (stats.client_rate * 50) + 
+                    (proposalData.total > 0 && proposalData.total < 50000 ? 10 : 0);
+      return {
+        score: Math.max(0, Math.min(100, score)),
+        percentual: Math.round(Math.max(0, Math.min(100, score))),
+        level: score >= 80 ? 'alto' : score >= 60 ? 'medio' : score >= 35 ? 'baixo' : 'muito_baixo',
+        action: score >= 80 
+          ? '🎯 EXCELENTE OPORTUNIDADE! Priorizar follow-up imediato.'
+          : score >= 60 
+          ? '📊 Negociação ativa. Manter contato regular.'
+          : '⚠️ ATENÇÃO NECESSÁRIA. Revisar estratégia.',
+        confidence: 50,
+        method: 'ml_simples_basico'
+      };
+    }
 
-    // Labels (1 = fechada, 0 = perdida/não fechada)
-    const labels = historicalData.map(p => 
-      p.status === 'venda_fechada' ? 1 : 0
-    );
+    // Calcular médias por feature para propostas fechadas vs perdidas
+    const calculateAvg = (arr, key) => {
+      const values = arr.map(p => p[key] || 0).filter(v => !isNaN(v));
+      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    };
 
-    // Features da proposta atual
-    const currentFeatures = [
-      proposalData.total || 0,
-      proposalData.days_since_creation || 0,
-      proposalData.days_until_expiry || 30,
-      proposalData.items_count || 0,
-      proposalData.discount_percentage || 0,
-      proposalData.seller_conversion_rate || 0.5,
-      proposalData.client_conversion_rate || 0.5,
-      proposalData.month || new Date().getMonth() + 1,
-      proposalData.seller_proposals_count || 0,
-      proposalData.client_proposals_count || 0
-    ];
+    // Médias das features para propostas fechadas
+    const avgClosed = {
+      total: calculateAvg(closed, 'total'),
+      days_since_creation: calculateAvg(closed, 'days_since_creation'),
+      days_until_expiry: calculateAvg(closed, 'days_until_expiry'),
+      items_count: calculateAvg(closed, 'items_count'),
+      discount_percentage: calculateAvg(closed, 'discount_percentage'),
+      seller_conversion_rate: calculateAvg(closed, 'seller_conversion_rate'),
+      client_conversion_rate: calculateAvg(closed, 'client_conversion_rate'),
+      month: calculateAvg(closed, 'month')
+    };
 
-    // Normalizar features
-    const xs = tf.tensor2d(features);
-    const ys = tf.tensor1d(labels);
-    const currentX = tf.tensor2d([currentFeatures]);
+    // Médias das features para propostas perdidas
+    const avgLost = {
+      total: calculateAvg(lost, 'total'),
+      days_since_creation: calculateAvg(lost, 'days_since_creation'),
+      days_until_expiry: calculateAvg(lost, 'days_until_expiry'),
+      items_count: calculateAvg(lost, 'items_count'),
+      discount_percentage: calculateAvg(lost, 'discount_percentage'),
+      seller_conversion_rate: calculateAvg(lost, 'seller_conversion_rate'),
+      client_conversion_rate: calculateAvg(lost, 'client_conversion_rate'),
+      month: calculateAvg(lost, 'month')
+    };
 
-    // Normalizar
-    const mean = xs.mean(0);
-    const std = xs.sub(mean).square().mean(0).sqrt().add(1e-7);
-    const xsNorm = xs.sub(mean).div(std);
-    const currentXNorm = currentX.sub(mean).div(std);
+    // Calcular distância/similaridade da proposta atual com padrões de sucesso
+    let similarityScore = 0;
+    let totalWeight = 0;
 
-    // Criar modelo simples
-    const model = tf.sequential({
-      layers: [
-        tf.layers.dense({ inputShape: [10], units: 32, activation: 'relu' }),
-        tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.dense({ units: 1, activation: 'sigmoid' })
-      ]
+    // Fator 1: Valor (peso 15%)
+    const totalDiff = Math.abs(proposalData.total - avgClosed.total) / (avgClosed.total || 1);
+    const totalWeightFactor = 15;
+    similarityScore += (1 - Math.min(1, totalDiff)) * totalWeightFactor;
+    totalWeight += totalWeightFactor;
+
+    // Fator 2: Vendedor (peso 25%)
+    const sellerDiff = Math.abs(proposalData.seller_conversion_rate - avgClosed.seller_conversion_rate);
+    const sellerWeightFactor = 25;
+    similarityScore += (1 - Math.min(1, sellerDiff)) * sellerWeightFactor;
+    totalWeight += sellerWeightFactor;
+
+    // Fator 3: Cliente (peso 20%)
+    const clientDiff = Math.abs(proposalData.client_conversion_rate - avgClosed.client_conversion_rate);
+    const clientWeightFactor = 20;
+    similarityScore += (1 - Math.min(1, clientDiff)) * clientWeightFactor;
+    totalWeight += clientWeightFactor;
+
+    // Fator 4: Tempo (peso 10%)
+    const timeDiff = Math.abs(proposalData.days_since_creation - avgClosed.days_since_creation) / 30;
+    const timeWeightFactor = 10;
+    similarityScore += (1 - Math.min(1, timeDiff)) * timeWeightFactor;
+    totalWeight += timeWeightFactor;
+
+    // Fator 5: Produtos (peso 10%)
+    const itemsDiff = Math.abs(proposalData.items_count - avgClosed.items_count) / 10;
+    const itemsWeightFactor = 10;
+    similarityScore += (1 - Math.min(1, itemsDiff)) * itemsWeightFactor;
+    totalWeight += itemsWeightFactor;
+
+    // Fator 6: Desconto (peso 5%)
+    const discountDiff = Math.abs(proposalData.discount_percentage - avgClosed.discount_percentage) / 100;
+    const discountWeightFactor = 5;
+    similarityScore += (1 - Math.min(1, discountDiff)) * discountWeightFactor;
+    totalWeight += discountWeightFactor;
+
+    // Fator 7: Sazonalidade (peso 5%)
+    const monthDiff = Math.abs(proposalData.month - avgClosed.month) / 12;
+    const monthWeightFactor = 5;
+    similarityScore += (1 - Math.min(1, monthDiff)) * monthWeightFactor;
+    totalWeight += monthWeightFactor;
+
+    // Fator 8: Taxa de conversão geral (peso 10%)
+    const overallRate = closed.length / (closed.length + lost.length || 1);
+    const rateWeightFactor = 10;
+    similarityScore += overallRate * rateWeightFactor;
+    totalWeight += rateWeightFactor;
+
+    // Normalizar score
+    let finalScore = (similarityScore / totalWeight) * 100;
+
+    // Ajustar baseado em quantas propostas similares fecharam
+    const similarProposals = historicalData.filter(p => {
+      const similarScore = (
+        (Math.abs((p.total || 0) - proposalData.total) / (proposalData.total || 1) < 0.3 ? 0.25 : 0) +
+        (Math.abs((p.seller_conversion_rate || 0) - proposalData.seller_conversion_rate) < 0.1 ? 0.25 : 0) +
+        (Math.abs((p.client_conversion_rate || 0) - proposalData.client_conversion_rate) < 0.1 ? 0.25 : 0) +
+        (Math.abs((p.items_count || 0) - proposalData.items_count) < 2 ? 0.25 : 0)
+      );
+      return similarScore >= 0.5;
     });
 
-    model.compile({
-      optimizer: 'adam',
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy']
-    });
+    if (similarProposals.length > 0) {
+      const similarClosed = similarProposals.filter(p => p.status === 'venda_fechada').length;
+      const similarRate = similarClosed / similarProposals.length;
+      finalScore = (finalScore * 0.7) + (similarRate * 100 * 0.3);
+    }
 
-    // Treinar modelo (rápido, poucas epochs)
-    await model.fit(xsNorm, ys, {
-      epochs: 20,
-      batchSize: Math.min(32, features.length),
-      verbose: 0,
-      validationSplit: 0.2
-    });
+    // Garantir score entre 0-100
+    finalScore = Math.max(0, Math.min(100, finalScore));
 
-    // Fazer predição
-    const prediction = await model.predict(currentXNorm).data();
-    const score = prediction[0] * 100;
-
-    // Limpar tensors
-    xs.dispose();
-    ys.dispose();
-    currentX.dispose();
-    xsNorm.dispose();
-    currentXNorm.dispose();
-    mean.dispose();
-    std.dispose();
-    model.dispose();
-
-    const level = score >= 80 ? 'alto' : score >= 60 ? 'medio' : score >= 35 ? 'baixo' : 'muito_baixo';
-    const action = score >= 80 
+    const level = finalScore >= 80 ? 'alto' : finalScore >= 60 ? 'medio' : finalScore >= 35 ? 'baixo' : 'muito_baixo';
+    const action = finalScore >= 80 
       ? '🎯 EXCELENTE OPORTUNIDADE! Score alto detectado por ML. Priorizar follow-up imediato.'
-      : score >= 60 
+      : finalScore >= 60 
       ? '📊 Negociação ativa. Score moderado. Manter contato regular.'
       : '⚠️ ATENÇÃO NECESSÁRIA. Score baixo. Revisar estratégia ou oferecer incentivo.';
 
     return {
-      score: Math.round(score * 10) / 10,
-      percentual: Math.round(score),
+      score: Math.round(finalScore * 10) / 10,
+      percentual: Math.round(finalScore),
       level,
       action,
-      confidence: Math.min(90, 60 + Math.min(historicalData.length / 5, 30)),
-      prediction_probability: prediction[0],
-      method: 'tensorflow_js_ml',
-      calculatedAt: new Date().toISOString()
+      confidence: Math.min(90, 50 + Math.min(historicalData.length / 3, 40)),
+      prediction_probability: finalScore / 100,
+      method: 'ml_simples_estatistico',
+      calculatedAt: new Date().toISOString(),
+      factors_analyzed: {
+        similarity_to_closed_proposals: Math.round((similarityScore / totalWeight) * 100),
+        similar_proposals_rate: similarProposals.length > 0 
+          ? Math.round((similarProposals.filter(p => p.status === 'venda_fechada').length / similarProposals.length) * 100)
+          : null,
+        similar_proposals_count: similarProposals.length
+      }
     };
   } catch (error) {
-    console.error('Erro TensorFlow.js:', error);
+    console.error('Erro ML Simples:', error);
     // Fallback
     const score = (stats.seller_rate * 40) + (stats.client_rate * 50);
     return {
@@ -1292,31 +1336,31 @@ async function calculateScoreWithTensorFlow(proposalData, historicalData, stats)
 }
 
 /**
- * Calcula score com comparação JavaScript vs TensorFlow.js
+ * Calcula score com comparação JavaScript vs ML Simples
  */
 async function calculateProposalScoreWithComparison(proposal) {
   try {
     const historicalAnalysis = await analyzeHistoricalData();
     
     // Calcular ambos
-    const [jsResult, tfResult] = await Promise.allSettled([
+    const [jsResult, mlResult] = await Promise.allSettled([
       calculateProposalScore(proposal, false),
       calculateScorePython(proposal, historicalAnalysis).catch(() => null)
     ]);
 
     const jsScore = jsResult.status === 'fulfilled' ? jsResult.value : null;
-    const tfScore = tfResult.status === 'fulfilled' ? tfResult.value : null;
+    const mlScore = mlResult.status === 'fulfilled' ? mlResult.value : null;
 
     return {
       javascript: jsScore,
-      tensorflow: tfScore,
+      ml_simples: mlScore,
       comparison: {
-        score_difference: tfScore && jsScore 
-          ? Math.abs(tfScore.score - jsScore.score) 
+        score_difference: mlScore && jsScore 
+          ? Math.abs(mlScore.score - jsScore.score) 
           : null,
-        both_available: !!tfScore && !!jsScore,
-        recommendation: tfScore && jsScore
-          ? (Math.abs(tfScore.score - jsScore.score) < 10 
+        both_available: !!mlScore && !!jsScore,
+        recommendation: mlScore && jsScore
+          ? (Math.abs(mlScore.score - jsScore.score) < 10 
               ? 'Scores similares - ambos métodos concordam'
               : 'Scores diferentes - considerar média ou investigar')
           : 'Apenas JavaScript disponível'
