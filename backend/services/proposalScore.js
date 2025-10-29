@@ -1,8 +1,14 @@
 const Proposal = require('../models/Proposal');
 const Client = require('../models/Client');
 const Product = require('../models/Product');
-const { spawn } = require('child_process');
-const path = require('path');
+
+// TensorFlow.js para ML no Node.js (funciona na Vercel!)
+let tf = null;
+try {
+  tf = require('@tensorflow/tfjs-node');
+} catch (error) {
+  console.warn('TensorFlow.js não instalado. Use: npm install @tensorflow/tfjs-node');
+}
 
 /**
  * ============================================
@@ -1019,10 +1025,15 @@ function generateIntelligentAction(factors, level, historicalAnalysis) {
 }
 
 /**
- * Calcula score usando Python com Machine Learning
+ * Calcula score usando TensorFlow.js (ML que roda no Node.js - funciona na Vercel!)
  */
 async function calculateScorePython(proposal, historicalAnalysis) {
-  return new Promise((resolve, reject) => {
+  // Se TensorFlow.js não estiver disponível, fallback para JavaScript
+  if (!tf) {
+    return await calculateScoreJavaScript(proposal, historicalAnalysis);
+  }
+
+  return new Promise(async (resolve, reject) => {
     try {
       const now = new Date();
       const createdAt = new Date(proposal.createdAt);
@@ -1108,55 +1119,25 @@ async function calculateScorePython(proposal, historicalAnalysis) {
             };
           });
 
-          const inputData = {
-            proposal: proposalData,
-            historical_data: historicalDataForML,
-            historical_stats: {
-              seller_rate: sellerConversionRate,
-              client_rate: clientConversionRate
-            }
-          };
-
-          // Executar script Python
-          const pythonScript = path.join(__dirname, 'proposalScorePython.py');
-          const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-          const pythonProcess = spawn(pythonCmd, [pythonScript], {
-            stdio: ['pipe', 'pipe', 'pipe']
-          });
-
-          let stdout = '';
-          let stderr = '';
-
-          pythonProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-          });
-
-          pythonProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-          });
-
-          pythonProcess.on('close', (code) => {
-            if (code === 0) {
-              try {
-                const result = JSON.parse(stdout);
-                result.method = 'python_ml';
-                result.comparison_available = true;
-                resolve(result);
-              } catch (parseError) {
-                console.error('Erro ao parsear resultado Python:', parseError);
-                console.error('Stdout:', stdout);
-                // Fallback para JavaScript
-                calculateProposalScore(proposal, false).then(resolve).catch(reject);
+          try {
+            // Usar TensorFlow.js para ML (roda direto no Node.js - funciona na Vercel!)
+            const scoreResult = await calculateScoreWithTensorFlow(
+              proposalData,
+              historicalDataForML,
+              {
+                seller_rate: sellerConversionRate,
+                client_rate: clientConversionRate
               }
-            } else {
-              console.error('Erro Python:', stderr);
-              // Fallback para JavaScript
-              calculateProposalScore(proposal, false).then(resolve).catch(reject);
-            }
-          });
+            );
 
-          pythonProcess.stdin.write(JSON.stringify(inputData));
-          pythonProcess.stdin.end();
+            scoreResult.method = 'tensorflow_js';
+            scoreResult.comparison_available = true;
+            resolve(scoreResult);
+          } catch (tfError) {
+            console.error('Erro TensorFlow.js:', tfError);
+            // Fallback para JavaScript estatístico
+            calculateProposalScore(proposal, false).then(resolve).catch(reject);
+          }
 
         } catch (error) {
           console.error('Erro ao preparar dados para Python:', error);
@@ -1173,31 +1154,169 @@ async function calculateScorePython(proposal, historicalAnalysis) {
 }
 
 /**
- * Calcula score com comparação JavaScript vs Python
+ * Calcula score usando TensorFlow.js
+ */
+async function calculateScoreWithTensorFlow(proposalData, historicalData, stats) {
+  if (!tf || historicalData.length < 10) {
+    // Fallback para cálculo estatístico simples
+    const score = (stats.seller_rate * 40) + (stats.client_rate * 50) + 
+                  (proposalData.total > 0 && proposalData.total < 50000 ? 10 : 0);
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      percentual: Math.round(Math.max(0, Math.min(100, score))),
+      level: score >= 80 ? 'alto' : score >= 60 ? 'medio' : score >= 35 ? 'baixo' : 'muito_baixo',
+      action: score >= 80 
+        ? '🎯 EXCELENTE OPORTUNIDADE! Priorizar follow-up imediato.'
+        : score >= 60 
+        ? '📊 Negociação ativa. Manter contato regular.'
+        : '⚠️ ATENÇÃO NECESSÁRIA. Revisar estratégia.',
+      confidence: Math.min(85, 50 + historicalData.length / 10),
+      method: 'tensorflow_js_simple'
+    };
+  }
+
+  try {
+    // Preparar features
+    const features = historicalData.map(p => [
+      p.total || 0,
+      p.days_since_creation || 0,
+      p.days_until_expiry || 30,
+      p.items_count || 0,
+      p.discount_percentage || 0,
+      p.seller_conversion_rate || 0.5,
+      p.client_conversion_rate || 0.5,
+      p.month || 6,
+      p.seller_proposals_count || 0,
+      p.client_proposals_count || 0
+    ]);
+
+    // Labels (1 = fechada, 0 = perdida/não fechada)
+    const labels = historicalData.map(p => 
+      p.status === 'venda_fechada' ? 1 : 0
+    );
+
+    // Features da proposta atual
+    const currentFeatures = [
+      proposalData.total || 0,
+      proposalData.days_since_creation || 0,
+      proposalData.days_until_expiry || 30,
+      proposalData.items_count || 0,
+      proposalData.discount_percentage || 0,
+      proposalData.seller_conversion_rate || 0.5,
+      proposalData.client_conversion_rate || 0.5,
+      proposalData.month || new Date().getMonth() + 1,
+      proposalData.seller_proposals_count || 0,
+      proposalData.client_proposals_count || 0
+    ];
+
+    // Normalizar features
+    const xs = tf.tensor2d(features);
+    const ys = tf.tensor1d(labels);
+    const currentX = tf.tensor2d([currentFeatures]);
+
+    // Normalizar
+    const mean = xs.mean(0);
+    const std = xs.sub(mean).square().mean(0).sqrt().add(1e-7);
+    const xsNorm = xs.sub(mean).div(std);
+    const currentXNorm = currentX.sub(mean).div(std);
+
+    // Criar modelo simples
+    const model = tf.sequential({
+      layers: [
+        tf.layers.dense({ inputShape: [10], units: 32, activation: 'relu' }),
+        tf.layers.dropout({ rate: 0.2 }),
+        tf.layers.dense({ units: 16, activation: 'relu' }),
+        tf.layers.dense({ units: 1, activation: 'sigmoid' })
+      ]
+    });
+
+    model.compile({
+      optimizer: 'adam',
+      loss: 'binaryCrossentropy',
+      metrics: ['accuracy']
+    });
+
+    // Treinar modelo (rápido, poucas epochs)
+    await model.fit(xsNorm, ys, {
+      epochs: 20,
+      batchSize: Math.min(32, features.length),
+      verbose: 0,
+      validationSplit: 0.2
+    });
+
+    // Fazer predição
+    const prediction = await model.predict(currentXNorm).data();
+    const score = prediction[0] * 100;
+
+    // Limpar tensors
+    xs.dispose();
+    ys.dispose();
+    currentX.dispose();
+    xsNorm.dispose();
+    currentXNorm.dispose();
+    mean.dispose();
+    std.dispose();
+    model.dispose();
+
+    const level = score >= 80 ? 'alto' : score >= 60 ? 'medio' : score >= 35 ? 'baixo' : 'muito_baixo';
+    const action = score >= 80 
+      ? '🎯 EXCELENTE OPORTUNIDADE! Score alto detectado por ML. Priorizar follow-up imediato.'
+      : score >= 60 
+      ? '📊 Negociação ativa. Score moderado. Manter contato regular.'
+      : '⚠️ ATENÇÃO NECESSÁRIA. Score baixo. Revisar estratégia ou oferecer incentivo.';
+
+    return {
+      score: Math.round(score * 10) / 10,
+      percentual: Math.round(score),
+      level,
+      action,
+      confidence: Math.min(90, 60 + Math.min(historicalData.length / 5, 30)),
+      prediction_probability: prediction[0],
+      method: 'tensorflow_js_ml',
+      calculatedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Erro TensorFlow.js:', error);
+    // Fallback
+    const score = (stats.seller_rate * 40) + (stats.client_rate * 50);
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      percentual: Math.round(Math.max(0, Math.min(100, score))),
+      level: 'medio',
+      action: 'Score calculado com fallback.',
+      confidence: 50,
+      method: 'fallback',
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Calcula score com comparação JavaScript vs TensorFlow.js
  */
 async function calculateProposalScoreWithComparison(proposal) {
   try {
     const historicalAnalysis = await analyzeHistoricalData();
     
     // Calcular ambos
-    const [jsResult, pythonResult] = await Promise.allSettled([
+    const [jsResult, tfResult] = await Promise.allSettled([
       calculateProposalScore(proposal, false),
       calculateScorePython(proposal, historicalAnalysis).catch(() => null)
     ]);
 
     const jsScore = jsResult.status === 'fulfilled' ? jsResult.value : null;
-    const pyScore = pythonResult.status === 'fulfilled' ? pythonResult.value : null;
+    const tfScore = tfResult.status === 'fulfilled' ? tfResult.value : null;
 
     return {
       javascript: jsScore,
-      python: pyScore,
+      tensorflow: tfScore,
       comparison: {
-        score_difference: pyScore && jsScore 
-          ? Math.abs(pyScore.score - jsScore.score) 
+        score_difference: tfScore && jsScore 
+          ? Math.abs(tfScore.score - jsScore.score) 
           : null,
-        both_available: !!pyScore && !!jsScore,
-        recommendation: pyScore && jsScore
-          ? (Math.abs(pyScore.score - jsScore.score) < 10 
+        both_available: !!tfScore && !!jsScore,
+        recommendation: tfScore && jsScore
+          ? (Math.abs(tfScore.score - jsScore.score) < 10 
               ? 'Scores similares - ambos métodos concordam'
               : 'Scores diferentes - considerar média ou investigar')
           : 'Apenas JavaScript disponível'

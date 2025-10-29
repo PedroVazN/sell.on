@@ -1104,15 +1104,15 @@ router.post('/:id/score', async (req, res) => {
       });
     }
 
-    // Permitir escolher método via query: ?method=python ou ?method=javascript
+    // Permitir escolher método via query: ?method=tensorflow ou ?method=javascript
     const method = req.query.method || 'javascript';
-    const usePython = method === 'python';
-    const scoreData = await calculateProposalScore(proposal, usePython);
+    const useTensorFlow = method === 'tensorflow' || method === 'python'; // 'python' por compatibilidade
+    const scoreData = await calculateProposalScore(proposal, useTensorFlow);
 
     res.json({
       success: true,
       data: scoreData,
-      method: usePython ? 'python_ml' : 'javascript_statistical'
+      method: useTensorFlow ? (scoreData.method || 'tensorflow_js') : 'javascript_statistical'
     });
   } catch (error) {
     console.error('Erro ao calcular score da proposta:', error);
@@ -1124,7 +1124,7 @@ router.post('/:id/score', async (req, res) => {
   }
 });
 
-// Rota para comparar JavaScript vs Python
+// Rota para comparar JavaScript vs TensorFlow.js
 router.post('/:id/score/compare', async (req, res) => {
   try {
     const proposal = await Proposal.findById(req.params.id)
@@ -1185,10 +1185,10 @@ router.get('/with-scores/list', async (req, res) => {
 
     // Calcular scores para cada proposta (limitado para performance)
     const method = req.query.method || 'javascript';
-    const usePython = method === 'python';
+    const useTensorFlow = method === 'tensorflow' || method === 'python';
     const proposalsWithScores = await Promise.all(
       proposals.slice(0, 20).map(async (proposal) => {
-        const scoreData = await calculateProposalScore(proposal, usePython);
+        const scoreData = await calculateProposalScore(proposal, useTensorFlow);
         return {
           ...proposal.toObject(),
           aiScore: scoreData
