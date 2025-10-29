@@ -209,6 +209,9 @@ app.use('/api/sales', salesRouter);
 const proposalsRouter = require('./routes/proposals');
 app.use('/api/proposals', proposalsRouter);
 
+const aiRouter = require('./routes/ai');
+app.use('/api/ai', aiRouter);
+
 const priceListRouter = require('./routes/priceList');
 app.use('/api/price-list', priceListRouter);
 

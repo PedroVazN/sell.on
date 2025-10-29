@@ -6,6 +6,7 @@ import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
+import { ProposalScore } from '../../components/ProposalScore';
 import { 
   Container, 
   Header, 
@@ -68,6 +69,8 @@ export const Proposals: React.FC = () => {
   const { user } = useAuth();
   const { success, error: showError, warning } = useToastContext();
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [proposalScores, setProposalScores] = useState<Record<string, any>>({});
+  const [loadingScores, setLoadingScores] = useState<Record<string, boolean>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [sellers, setSellers] = useState<UserType[]>([]);
@@ -166,6 +169,30 @@ export const Proposals: React.FC = () => {
         // Se for admin, carregar todas as propostas
         console.log('👑 Carregando todas as propostas (admin)');
         proposalsRes = await apiService.getProposals(1, 100, statusFilter || undefined, searchTerm || undefined);
+      }
+
+      // Carregar scores apenas para propostas em negociação
+      const negociacaoProposals = proposalsRes.data?.filter(p => p.status === 'negociacao') || [];
+      
+      if (negociacaoProposals.length > 0) {
+        // Calcular scores para as primeiras 20 propostas (para performance)
+        const proposalsToScore = negociacaoProposals.slice(0, 20);
+        const scorePromises = proposalsToScore.map(async (proposal) => {
+          try {
+            setLoadingScores(prev => ({ ...prev, [proposal._id]: true }));
+            const scoreRes = await apiService.getProposalScore(proposal._id);
+            if (scoreRes.success && scoreRes.data) {
+              setProposalScores(prev => ({ ...prev, [proposal._id]: scoreRes.data }));
+            }
+          } catch (error) {
+            console.error(`Erro ao calcular score da proposta ${proposal._id}:`, error);
+          } finally {
+            setLoadingScores(prev => ({ ...prev, [proposal._id]: false }));
+          }
+        });
+
+        // Executar em paralelo, mas limitado
+        await Promise.all(scorePromises);
       }
       
       const [productsRes, distributorsRes, sellersRes] = await Promise.all([
@@ -622,6 +649,7 @@ export const Proposals: React.FC = () => {
                   <TableCell>Produtos</TableCell>
                   <TableCell>Total</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell>Score IA</TableCell>
                   <TableCell>Data de Criação</TableCell>
                   <TableCell>Ações</TableCell>
                 </TableRow>
@@ -683,6 +711,17 @@ export const Proposals: React.FC = () => {
                           {getStatusIcon(proposal.status)}
                           {getStatusLabel(proposal.status)}
                         </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        {proposal.status === 'negociacao' ? (
+                          <ProposalScore 
+                            score={proposalScores[proposal._id] || null}
+                            loading={loadingScores[proposal._id] || false}
+                            compact={true}
+                          />
+                        ) : (
+                          <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>

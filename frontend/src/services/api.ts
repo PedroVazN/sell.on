@@ -348,6 +348,35 @@ export interface Proposal {
   updatedAt: string;
 }
 
+export interface ProposalScoreFactor {
+  score: number;
+  weight: number;
+  description: string;
+  [key: string]: any;
+}
+
+export interface ProposalScore {
+  score: number;
+  percentual: number;
+  level: 'alto' | 'medio' | 'baixo' | 'muito_baixo';
+  action: string;
+  factors: {
+    sellerConversion?: ProposalScoreFactor;
+    clientHistory?: ProposalScoreFactor;
+    value?: ProposalScoreFactor;
+    time?: ProposalScoreFactor;
+    products?: ProposalScoreFactor;
+    paymentCondition?: ProposalScoreFactor;
+    discount?: ProposalScoreFactor;
+  };
+  calculatedAt: string;
+  error?: string;
+}
+
+export interface ProposalWithScore extends Proposal {
+  aiScore: ProposalScore | null;
+}
+
 export interface Event {
   _id: string;
   title: string;
@@ -1026,6 +1055,30 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify({ status, lossReason, lossDescription }),
     });
+  }
+
+  // AI Score
+  async getProposalScore(id: string): Promise<ApiResponse<ProposalScore>> {
+    return this.request<ProposalScore>(`/proposals/${id}/score`, {
+      method: 'POST',
+    });
+  }
+
+  async getProposalsWithScores(page = 1, limit = 10, status?: string, search?: string): Promise<ApiResponse<ProposalWithScore[]>> {
+    let url = `/proposals/with-scores/list?page=${page}&limit=${limit}`;
+    if (status) url += `&status=${status}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    return this.request<ProposalWithScore[]>(url);
+  }
+
+  // AI Dashboard
+  async getAIDashboard(): Promise<ApiResponse<any>> {
+    return this.request('/ai/dashboard');
+  }
+
+  async getAIInsights(): Promise<ApiResponse<any>> {
+    return this.request('/ai/insights');
   }
 
   async getPriceListByDistributor(distributorId: string, page = 1, limit = 10): Promise<ApiResponse<PriceListItem[]>> {

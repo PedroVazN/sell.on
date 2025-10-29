@@ -6,6 +6,7 @@ const Goal = require('../models/Goal');
 const { auth } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
 const { proposalLimiter } = require('../middleware/security');
+const { calculateProposalScore } = require('../services/proposalScore');
 
 // GET /api/proposals - Listar todas as propostas do usuário
 router.get('/', async (req, res) => {
@@ -1086,6 +1087,108 @@ router.get('/top-performers', async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// POST /api/proposals/:id/score - Calcular score preditivo de uma proposta
+router.post('/:id/score', async (req, res) => {
+  try {
+    const proposal = await Proposal.findById(req.params.id)
+      .populate('createdBy', 'name email');
+
+    if (!proposal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proposta não encontrada'
+      });
+    }
+
+    const scoreData = await calculateProposalScore(proposal);
+
+    res.json({
+      success: true,
+      data: scoreData
+    });
+  } catch (error) {
+    console.error('Erro ao calcular score da proposta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// GET /api/proposals/with-scores - Listar propostas com scores calculados
+router.get('/with-scores/list', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    let query = {};
+    
+    if (status) {
+      query.status = status;
+    }
+    
+    if (search) {
+      query.$or = [
+        { proposalNumber: { $regex: search, $options: 'i' } },
+        { 'client.name': { $regex: search, $options: 'i' } },
+        { 'client.email': { $regex: search, $options: 'i' } },
+        { 'client.company': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Apenas propostas em negociação
+    query.status = query.status || 'negociacao';
+
+    const proposals = await Proposal.find(query)
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Calcular scores para cada proposta (limitado para performance)
+    const proposalsWithScores = await Promise.all(
+      proposals.slice(0, 20).map(async (proposal) => {
+        const scoreData = await calculateProposalScore(proposal);
+        return {
+          ...proposal.toObject(),
+          aiScore: scoreData
+        };
+      })
+    );
+
+    // Adicionar propostas sem score se houver mais
+    if (proposals.length > 20) {
+      proposals.slice(20).forEach(proposal => {
+        proposalsWithScores.push({
+          ...proposal.toObject(),
+          aiScore: null // Não calcular para não sobrecarregar
+        });
+      });
+    }
+
+    const total = await Proposal.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: proposalsWithScores,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar propostas com scores:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

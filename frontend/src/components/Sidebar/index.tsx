@@ -21,7 +21,8 @@ import {
   Megaphone,
   Menu,
   X,
-  FileBarChart
+  FileBarChart,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -85,6 +86,9 @@ export const Sidebar: React.FC = () => {
       title: 'PRINCIPAL',
       items: [
         { icon: <BarChart3 size={20} />, label: 'Dashboard', path: '/', permission: 'dashboard' },
+        ...(hasPermission('admin') ? [
+          { icon: <Brain size={20} />, label: 'Dashboard IA', path: '/ai-dashboard', permission: 'admin' },
+        ] : []),
         { 
           icon: <Megaphone size={20} />, 
           label: user?.role === 'admin' ? 'Gerenciar Avisos' : 'Mural de Avisos', 
