@@ -101,12 +101,76 @@ interface AIDashboardData {
       sales: number;
       revenue: number;
       confidence: number;
+      lowerBound?: number;
+      upperBound?: number;
     };
     next30Days: {
       sales: number;
       revenue: number;
       confidence: number;
+      lowerBound?: number;
+      upperBound?: number;
     };
+    trends?: {
+      direction: string;
+      rate: number;
+      periodComparison: number;
+      strength: string;
+      description: string;
+    };
+    goalComparison?: {
+      hasGoals: boolean;
+      goal?: number;
+      forecast?: number;
+      difference?: number;
+      percentageDiff?: number;
+      status?: string;
+      achievementProbability?: number;
+    };
+    insights?: Array<{
+      type: string;
+      priority: string;
+      title: string;
+      message: string;
+      icon: string;
+    }>;
+  };
+  forecastDetails?: {
+    historical: {
+      totalDays: number;
+      totalSales: number;
+      totalRevenue: number;
+      avgDailyRevenue: number;
+      avgDailySales: number;
+      period: {
+        start: string;
+        end: string;
+      };
+    };
+    seasonality: {
+      weeklyPattern: Array<{
+        day: string;
+        value: number;
+        multiplier: number;
+      }>;
+      detected: boolean;
+    };
+    sellerForecasts: Array<{
+      sellerId: string;
+      sellerName: string;
+      historical: {
+        sales: number;
+        revenue: number;
+        avgSaleValue: number;
+        marketShare: number;
+      };
+      forecast: {
+        next30Days: {
+          sales: number;
+          revenue: number;
+        };
+      };
+    }>;
   };
   topSellers: Array<{
     name: string;
@@ -499,39 +563,256 @@ export const AIDashboard: React.FC = () => {
 
       {/* Previsões e Performance */}
       <ChartsGrid>
-        {/* Previsão de Vendas */}
+        {/* Previsão de Vendas Avançada */}
         <ChartCard>
           <ChartTitle>
-            <Target size={20} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
-            Previsão de Vendas
+            <LineChartIcon size={24} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
+            Previsão de Vendas com IA
           </ChartTitle>
           <ChartSubtitle>
-            Baseado em análise de séries temporais e padrões históricos
+            Análise estatística avançada com detecção de tendências e sazonalidade
           </ChartSubtitle>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          {/* Cards de Resumo */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem', marginBottom: '1.5rem' }}>
             <ForecastCard>
-              <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)' }}>Próximos 7 dias</div>
-              <ForecastValue>{data.forecast.next7Days.sales}</ForecastValue>
-              <div style={{ fontSize: '1.25rem', color: '#10b981', fontWeight: '600' }}>
+              <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.5rem' }}>Próximos 7 dias</div>
+              <ForecastValue style={{ fontSize: '1.75rem' }}>{data.forecast.next7Days.sales}</ForecastValue>
+              <div style={{ fontSize: '1.25rem', color: '#10b981', fontWeight: '600', marginBottom: '0.5rem' }}>
                 {formatCurrency(data.forecast.next7Days.revenue)}
               </div>
+              {data.forecast.next7Days.lowerBound && data.forecast.next7Days.upperBound && (
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.5rem' }}>
+                  {formatCurrency(data.forecast.next7Days.lowerBound)} - {formatCurrency(data.forecast.next7Days.upperBound)}
+                </div>
+              )}
               <ConfidenceBadge>
-                {data.forecast.next7Days.confidence}% de confiança
+                {data.forecast.next7Days.confidence}% confiança
               </ConfidenceBadge>
             </ForecastCard>
 
             <ForecastCard>
-              <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)' }}>Próximos 30 dias</div>
-              <ForecastValue>{data.forecast.next30Days.sales}</ForecastValue>
-              <div style={{ fontSize: '1.25rem', color: '#6366f1', fontWeight: '600' }}>
+              <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.5rem' }}>Próximos 30 dias</div>
+              <ForecastValue style={{ fontSize: '1.75rem' }}>{data.forecast.next30Days.sales}</ForecastValue>
+              <div style={{ fontSize: '1.25rem', color: '#6366f1', fontWeight: '600', marginBottom: '0.5rem' }}>
                 {formatCurrency(data.forecast.next30Days.revenue)}
               </div>
+              {data.forecast.next30Days.lowerBound && data.forecast.next30Days.upperBound && (
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.5rem' }}>
+                  {formatCurrency(data.forecast.next30Days.lowerBound)} - {formatCurrency(data.forecast.next30Days.upperBound)}
+                </div>
+              )}
               <ConfidenceBadge>
-                {data.forecast.next30Days.confidence}% de confiança
+                {data.forecast.next30Days.confidence}% confiança
               </ConfidenceBadge>
             </ForecastCard>
+
+            {/* Comparação com Meta */}
+            {data.forecast.goalComparison && data.forecast.goalComparison.hasGoals && (
+              <ForecastCard style={{ 
+                background: data.forecast.goalComparison.status === 'acima' 
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%)',
+                borderColor: data.forecast.goalComparison.status === 'acima' 
+                  ? 'rgba(16, 185, 129, 0.5)' 
+                  : 'rgba(239, 68, 68, 0.5)'
+              }}>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.5rem' }}>Meta vs Previsão</div>
+                <ForecastValue style={{ 
+                  fontSize: '1.5rem',
+                  color: data.forecast.goalComparison.status === 'acima' ? '#10b981' : '#ef4444'
+                }}>
+                  {data.forecast.goalComparison.status === 'acima' ? '+' : ''}{data.forecast.goalComparison.percentageDiff?.toFixed(1)}%
+                </ForecastValue>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>
+                  {formatCurrency(data.forecast.goalComparison.forecast || 0)} / {formatCurrency(data.forecast.goalComparison.goal || 0)}
+                </div>
+                <ConfidenceBadge style={{ 
+                  background: data.forecast.goalComparison.status === 'acima' 
+                    ? 'rgba(16, 185, 129, 0.2)' 
+                    : 'rgba(239, 68, 68, 0.2)',
+                  borderColor: data.forecast.goalComparison.status === 'acima' 
+                    ? 'rgba(16, 185, 129, 0.4)' 
+                    : 'rgba(239, 68, 68, 0.4)',
+                  color: data.forecast.goalComparison.status === 'acima' ? '#34d399' : '#fca5a5'
+                }}>
+                  {data.forecast.goalComparison.achievementProbability}% probabilidade
+                </ConfidenceBadge>
+              </ForecastCard>
+            )}
+
+            {/* Tendência */}
+            {data.forecast.trends && (
+              <ForecastCard style={{ 
+                background: data.forecast.trends.direction === 'crescimento'
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)'
+              }}>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.5rem' }}>
+                  Tendência
+                </div>
+                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                  {data.forecast.trends.direction === 'crescimento' ? '📈' : '📉'}
+                </div>
+                <div style={{ fontSize: '1rem', color: data.forecast.trends.direction === 'crescimento' ? '#10b981' : '#fbbf24', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  {Math.abs(data.forecast.trends.periodComparison).toFixed(1)}%
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                  {data.forecast.trends.strength === 'forte' ? 'Forte' : data.forecast.trends.strength === 'moderada' ? 'Moderada' : 'Fraca'}
+                </div>
+              </ForecastCard>
+            )}
           </div>
+
+          {/* Gráfico de Previsão */}
+          {data.forecastDetails && data.forecastDetails.historical && (
+            <div style={{ marginTop: '2rem' }}>
+              <ChartSubtitle style={{ marginBottom: '1rem' }}>
+                Visualização de Tendência e Previsão
+              </ChartSubtitle>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={[
+                  { name: 'Histórico', value: data.forecastDetails.historical.avgDailyRevenue },
+                  { name: 'Previsão 7d', value: data.forecast.next7Days.revenue / 7 },
+                  { name: 'Previsão 30d', value: data.forecast.next30Days.revenue / 30 }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#A3A3A3"
+                    tick={{ fill: '#A3A3A3' }}
+                  />
+                  <YAxis 
+                    stroke="#A3A3A3"
+                    tick={{ fill: '#A3A3A3' }}
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1A1A1A', 
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      color: '#FFFFFF'
+                    }}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#6366f1" 
+                    strokeWidth={3}
+                    dot={{ r: 6, fill: '#6366f1' }}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Insights da Previsão */}
+          {data.forecast.insights && data.forecast.insights.length > 0 && (
+            <div style={{ marginTop: '2rem' }}>
+              <ChartSubtitle style={{ marginBottom: '1rem' }}>Insights da Previsão</ChartSubtitle>
+              {data.forecast.insights.map((insight, index) => (
+                <InsightCard 
+                  key={index}
+                  $type={insight.type as any}
+                  style={{ marginBottom: '1rem' }}
+                >
+                  <InsightTitle>
+                    <span style={{ fontSize: '1.25rem' }}>{insight.icon}</span>
+                    {insight.title}
+                  </InsightTitle>
+                  <InsightMessage>{insight.message}</InsightMessage>
+                </InsightCard>
+              ))}
+            </div>
+          )}
+
+          {/* Previsão por Vendedor (se admin) */}
+          {data.forecastDetails && data.forecastDetails.sellerForecasts && data.forecastDetails.sellerForecasts.length > 0 && (
+            <div style={{ marginTop: '2rem' }}>
+              <ChartSubtitle style={{ marginBottom: '1rem' }}>Previsão por Vendedor (Próximos 30 dias)</ChartSubtitle>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={data.forecastDetails.sellerForecasts.slice(0, 5)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                  <XAxis 
+                    dataKey="sellerName" 
+                    stroke="#A3A3A3"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fill: '#A3A3A3', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    stroke="#A3A3A3"
+                    tick={{ fill: '#A3A3A3' }}
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1A1A1A', 
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      color: '#FFFFFF'
+                    }}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Bar 
+                    dataKey="forecast.next30Days.revenue" 
+                    fill="url(#forecastGradient)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <defs>
+                    <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#6366f1" />
+                    </linearGradient>
+                  </defs>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Sazonalidade Semanal */}
+          {data.forecastDetails && data.forecastDetails.seasonality && data.forecastDetails.seasonality.detected && (
+            <div style={{ marginTop: '2rem' }}>
+              <ChartSubtitle style={{ marginBottom: '1rem' }}>Padrão Semanal Detectado</ChartSubtitle>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(7, 1fr)', 
+                gap: '0.5rem' 
+              }}>
+                {data.forecastDetails.seasonality.weeklyPattern.map((day, index) => (
+                  <div 
+                    key={index}
+                    style={{
+                      background: day.multiplier > 1.1 
+                        ? 'rgba(16, 185, 129, 0.15)' 
+                        : day.multiplier < 0.9 
+                        ? 'rgba(239, 68, 68, 0.15)' 
+                        : 'rgba(99, 102, 241, 0.15)',
+                      border: `1px solid ${day.multiplier > 1.1 
+                        ? 'rgba(16, 185, 129, 0.3)' 
+                        : day.multiplier < 0.9 
+                        ? 'rgba(239, 68, 68, 0.3)' 
+                        : 'rgba(99, 102, 241, 0.3)'}`,
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      {day.day.substring(0, 3)}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#ffffff' }}>
+                      {(day.multiplier * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </ChartCard>
 
         {/* Top Vendedores */}

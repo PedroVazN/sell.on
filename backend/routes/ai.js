@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
 const { detectAnomalies } = require('../services/anomalyDetection');
+const { calculateSalesForecast } = require('../services/salesForecast');
 
 // Verificar se o serviço existe, caso contrário usar função mockada
 let calculateProposalScore;
@@ -199,33 +200,91 @@ router.get('/dashboard', async (req, res) => {
       }
     }
 
-    // 5. Previsão de Vendas (simplificada baseada em histórico)
-    const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 30);
+    // 5. Previsão de Vendas (usando serviço avançado)
+    const userId = req.user?.id || null;
+    const userRole = req.user?.role || 'user';
+    let forecast = null;
+    let forecastData = null;
     
-    const recentClosed = await Proposal.find({
-      status: 'venda_fechada',
-      updatedAt: { $gte: last30Days }
-    });
-
-    const avgDailySales = recentClosed.length / 30;
-    const avgSaleValue = recentClosed.length > 0
-      ? recentClosed.reduce((sum, p) => sum + (p.total || 0), 0) / recentClosed.length
-      : 0;
-
-    // Previsão para próximos 7 dias
-    const forecast = {
-      next7Days: {
-        sales: Math.round(avgDailySales * 7),
-        revenue: Math.round(avgDailySales * 7 * avgSaleValue),
-        confidence: recentClosed.length > 10 ? 85 : recentClosed.length > 5 ? 70 : 50
-      },
-      next30Days: {
-        sales: Math.round(avgDailySales * 30),
-        revenue: Math.round(avgDailySales * 30 * avgSaleValue),
-        confidence: recentClosed.length > 10 ? 80 : recentClosed.length > 5 ? 65 : 45
+    try {
+      forecastData = await calculateSalesForecast(userId, userRole, 30);
+      if (!forecastData.error) {
+        forecast = {
+          next7Days: {
+            sales: forecastData.forecast.next7Days.sales,
+            revenue: forecastData.forecast.next7Days.revenue,
+            confidence: forecastData.confidence,
+            lowerBound: forecastData.forecast.next7Days.lowerBound,
+            upperBound: forecastData.forecast.next7Days.upperBound
+          },
+          next30Days: {
+            sales: forecastData.forecast.next30Days.sales,
+            revenue: forecastData.forecast.next30Days.revenue,
+            confidence: forecastData.confidence,
+            lowerBound: forecastData.forecast.next30Days.lowerBound,
+            upperBound: forecastData.forecast.next30Days.upperBound
+          },
+          trends: forecastData.trends,
+          goalComparison: forecastData.goalComparison,
+          insights: forecastData.insights
+        };
+      } else {
+        // Fallback para método simples se houver erro
+        const last30Days = new Date();
+        last30Days.setDate(last30Days.getDate() - 30);
+        const recentClosed = await Proposal.find({
+          status: 'venda_fechada',
+          updatedAt: { $gte: last30Days }
+        });
+        const avgDailySales = recentClosed.length / 30;
+        const avgSaleValue = recentClosed.length > 0
+          ? recentClosed.reduce((sum, p) => sum + (p.total || 0), 0) / recentClosed.length
+          : 0;
+        forecast = {
+          next7Days: {
+            sales: Math.round(avgDailySales * 7),
+            revenue: Math.round(avgDailySales * 7 * avgSaleValue),
+            confidence: recentClosed.length > 10 ? 85 : recentClosed.length > 5 ? 70 : 50
+          },
+          next30Days: {
+            sales: Math.round(avgDailySales * 30),
+            revenue: Math.round(avgDailySales * 30 * avgSaleValue),
+            confidence: recentClosed.length > 10 ? 80 : recentClosed.length > 5 ? 65 : 45
+          },
+          trends: null,
+          goalComparison: null,
+          insights: []
+        };
       }
-    };
+    } catch (error) {
+      console.error('Erro ao calcular previsão avançada:', error);
+      // Usar método simples como fallback
+      const last30Days = new Date();
+      last30Days.setDate(last30Days.getDate() - 30);
+      const recentClosed = await Proposal.find({
+        status: 'venda_fechada',
+        updatedAt: { $gte: last30Days }
+      });
+      const avgDailySales = recentClosed.length / 30;
+      const avgSaleValue = recentClosed.length > 0
+        ? recentClosed.reduce((sum, p) => sum + (p.total || 0), 0) / recentClosed.length
+        : 0;
+      forecast = {
+        next7Days: {
+          sales: Math.round(avgDailySales * 7),
+          revenue: Math.round(avgDailySales * 7 * avgSaleValue),
+          confidence: 50
+        },
+        next30Days: {
+          sales: Math.round(avgDailySales * 30),
+          revenue: Math.round(avgDailySales * 30 * avgSaleValue),
+          confidence: 45
+        },
+        trends: null,
+        goalComparison: null,
+        insights: []
+      };
+    }
 
     // 6. Taxa de Conversão por Score
     const conversionByScore = {
@@ -311,6 +370,11 @@ router.get('/dashboard', async (req, res) => {
         })),
         insights,
         forecast,
+        forecastDetails: forecastData && !forecastData.error ? {
+          historical: forecastData.historical,
+          seasonality: forecastData.seasonality,
+          sellerForecasts: forecastData.sellerForecasts
+        } : null,
         topSellers,
         topClients,
         conversionRates,
