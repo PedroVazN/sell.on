@@ -1065,8 +1065,8 @@ class ApiService {
   }
 
   // AI Score
-  async getProposalScore(id: string, method: string = 'javascript'): Promise<ApiResponse<ProposalScore>> {
-    return this.request<ProposalScore>(`/proposals/${id}/score?method=${method}`, {
+  async getProposalScore(id: string): Promise<ApiResponse<ProposalScore>> {
+    return this.request<ProposalScore>(`/proposals/${id}/score`, {
       method: 'POST',
     });
   }

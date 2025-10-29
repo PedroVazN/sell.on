@@ -279,7 +279,7 @@ export const AIDashboard: React.FC = () => {
   // Carregar cálculo detalhado de uma proposta
   const loadProposalCalculation = async (proposalId: string) => {
     try {
-      const response = await apiService.getProposalScore(proposalId, 'javascript');
+      const response = await apiService.getProposalScore(proposalId);
       if (response.success && response.data) {
         setSelectedProposal({
           ...selectedProposal,
