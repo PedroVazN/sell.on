@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Sparkles, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Product, Distributor, User as UserType, PriceOption } from '../../services/api';
@@ -89,6 +89,11 @@ export const CreateProposal: React.FC = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [distributorPriceList, setDistributorPriceList] = useState<any[]>([]);
+  
+  // Recomendações de IA
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   
   // Dados para seleção
   const [products, setProducts] = useState<Product[]>([]);
@@ -297,6 +302,64 @@ export const CreateProposal: React.FC = () => {
     }
   };
 
+  // Carregar recomendações de produtos baseado nos produtos selecionados
+  const loadRecommendations = async () => {
+    const selectedProducts = formData.items.filter(item => item.product).map(item => ({
+      product: {
+        _id: item.product?._id,
+        category: item.product?.category
+      }
+    }));
+
+    if (selectedProducts.length === 0) {
+      setRecommendations([]);
+      setShowRecommendations(false);
+      return;
+    }
+
+    try {
+      setLoadingRecommendations(true);
+      const response = await apiService.getProductRecommendations(
+        formData,
+        selectedProducts,
+        5
+      );
+
+      if (response.success && response.data?.recommendations) {
+        setRecommendations(response.data.recommendations);
+        setShowRecommendations(true);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar recomendações:', error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  // Adicionar produto recomendado à proposta
+  const addRecommendedProduct = (recommendedProduct: any) => {
+    if (!recommendedProduct.product) return;
+
+    const product = products.find(p => p._id === recommendedProduct.product._id);
+    if (!product) return;
+
+    const newItem: ProposalItem = {
+      product,
+      quantity: 1,
+      unitPrice: product.price || 0,
+      discount: 0,
+      total: product.price || 0
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, newItem]
+    }));
+
+    // Recarregar recomendações após adicionar
+    setTimeout(() => loadRecommendations(), 500);
+  };
+
   const handleProductChange = (index: number, productId: string) => {
     const product = products.find(p => p._id === productId);
     if (product) {
@@ -312,6 +375,9 @@ export const CreateProposal: React.FC = () => {
         ...prev,
         items: newItems
       }));
+
+      // Carregar recomendações quando produtos são selecionados
+      setTimeout(() => loadRecommendations(), 300);
     }
   };
 
@@ -837,6 +903,196 @@ export const CreateProposal: React.FC = () => {
             Adicionar Produto
           </Button>
         </FormSection>
+
+        {/* Recomendações de IA */}
+        {showRecommendations && recommendations.length > 0 && (
+          <FormSection style={{ 
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+            border: '2px solid rgba(99, 102, 241, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles size={20} style={{ color: '#6366f1' }} />
+                <SectionTitle style={{ margin: 0, border: 'none', padding: 0 }}>
+                  Recomendações Inteligentes de Produtos
+                </SectionTitle>
+              </div>
+              <button
+                onClick={() => setShowRecommendations(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div style={{ 
+              fontSize: '0.875rem', 
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '1rem'
+            }}>
+              🧠 Baseado em padrões de compra e análise de IA
+            </div>
+
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+              gap: '1rem' 
+            }}>
+              {recommendations.map((rec, index) => (
+                <div
+                  key={rec.productId || index}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  onClick={() => addRecommendedProduct(rec)}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ 
+                        fontWeight: '600', 
+                        fontSize: '0.95rem',
+                        color: '#ffffff',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {rec.product?.name || 'Produto'}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.75rem',
+                        color: 'rgba(255, 255, 255, 0.6)'
+                      }}>
+                        {rec.product?.category || 'Sem categoria'}
+                      </div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      borderRadius: '6px',
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      color: '#34d399'
+                    }}>
+                      {rec.confidence}%
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    fontSize: '1.25rem', 
+                    fontWeight: '700',
+                    color: '#6366f1',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {formatCurrency(rec.product?.price || 0)}
+                  </div>
+
+                  <div style={{ 
+                    fontSize: '0.8rem',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    marginBottom: '0.75rem',
+                    lineHeight: '1.4'
+                  }}>
+                    {rec.reason}
+                  </div>
+
+                  {rec.methods && rec.methods.length > 0 && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '0.5rem',
+                      marginBottom: '0.75rem',
+                      flexWrap: 'wrap'
+                    }}>
+                      {rec.methods.map((method: string) => (
+                        <span
+                          key={method}
+                          style={{
+                            background: 'rgba(99, 102, 241, 0.2)',
+                            border: '1px solid rgba(99, 102, 241, 0.4)',
+                            borderRadius: '4px',
+                            padding: '0.2rem 0.5rem',
+                            fontSize: '0.7rem',
+                            color: '#a5b4fc'
+                          }}
+                        >
+                          {method === 'association' ? 'Associação' :
+                           method === 'collaborative' ? 'Colaborativo' :
+                           method === 'category' ? 'Categoria' :
+                           method === 'popular' ? 'Popular' : method}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addRecommendedProduct(rec);
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '0.9';
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <Plus size={16} />
+                    Adicionar à Proposta
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {loadingRecommendations && (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '1rem',
+                color: 'rgba(255, 255, 255, 0.6)'
+              }}>
+                Carregando recomendações...
+              </div>
+            )}
+          </FormSection>
+        )}
 
         {/* Condições de Pagamento */}
         <FormSection>

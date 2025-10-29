@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
 const { detectAnomalies } = require('../services/anomalyDetection');
 const { calculateSalesForecast } = require('../services/salesForecast');
+const { getProductRecommendations, getGeneralRecommendations, enrichRecommendations } = require('../services/productRecommendation');
 
 // Verificar se o serviço existe, caso contrário usar função mockada
 let calculateProposalScore;
@@ -486,6 +487,59 @@ router.get('/insights', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Erro ao gerar insights'
+    });
+  }
+});
+
+/**
+ * POST /api/ai/recommendations - Gera recomendações de produtos
+ */
+router.post('/recommendations', async (req, res) => {
+  try {
+    const { proposal, selectedProducts, limit } = req.body;
+
+    const recommendations = await getProductRecommendations(
+      proposal || {},
+      selectedProducts || [],
+      limit || 5
+    );
+
+    // Enriquecer com dados dos produtos
+    if (recommendations.recommendations && recommendations.recommendations.length > 0) {
+      recommendations.recommendations = await enrichRecommendations(recommendations.recommendations);
+    }
+
+    res.json({
+      success: true,
+      data: recommendations
+    });
+  } catch (error) {
+    console.error('Erro ao gerar recomendações:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao gerar recomendações de produtos',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * GET /api/ai/recommendations/popular - Produtos mais populares
+ */
+router.get('/recommendations/popular', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const recommendations = await getGeneralRecommendations(limit);
+
+    res.json({
+      success: true,
+      data: recommendations
+    });
+  } catch (error) {
+    console.error('Erro ao buscar produtos populares:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar produtos populares'
     });
   }
 });
