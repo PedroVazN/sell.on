@@ -359,40 +359,75 @@ router.get('/dashboard', async (req, res) => {
           totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
         },
         topProposals: proposalsWithScores.map(item => {
-          // Formatar fatores para o formato esperado pelo frontend
-          const formattedFactors = item.score.factors ? Object.entries(item.score.factors).map(([key, factor]: [string, any]) => ({
-            name: getFactorDisplayName(key),
-            value: factor.score || factor.value || 0,
-            impact: calculateFactorImpact(factor, key),
-            description: factor.description || getFactorDefaultDescription(key, factor)
-          })) : [];
+          try {
+            // Formatar fatores para o formato esperado pelo frontend
+            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map(([key, factor]: [string, any]) => ({
+              name: getFactorDisplayName(key),
+              value: factor?.score || factor?.value || 0,
+              impact: calculateFactorImpact(factor, key),
+              description: factor?.description || getFactorDefaultDescription(key, factor)
+            })) : [];
 
+            return {
+              proposalId: item.proposal?._id || item.proposal?._id?.toString() || 'unknown',
+              proposalNumber: item.proposal?.proposalNumber || 'N/A',
+              client: item.proposal?.client?.name || 'Cliente não informado',
+              value: item.proposal?.total || 0,
+              score: item.score?.score || 0,
+              percentual: item.score?.percentual || 0,
+              level: item.score?.level || 'medio',
+              action: item.score?.action || 'Não foi possível calcular',
+              factors: formattedFactors,
+              confidence: item.score?.confidence || 50,
+              breakdown: item.score || {}
+            };
+          } catch (err) {
+            console.error('Erro ao formatar topProposal:', err);
+            return {
+              proposalId: item.proposal?._id?.toString() || 'unknown',
+              proposalNumber: item.proposal?.proposalNumber || 'N/A',
+              client: item.proposal?.client?.name || 'Erro',
+              value: item.proposal?.total || 0,
+              score: 0,
+              percentual: 0,
+              level: 'medio',
+              action: 'Erro ao processar',
+              factors: [],
+              confidence: 0,
+              breakdown: {}
+            };
+          }
+        }),
+        atRiskProposals: atRiskProposals.map(item => {
+          // Acesso seguro aos campos seller e createdBy
+          let sellerName = 'N/A';
+          let sellerEmail = '';
+          
+          try {
+            if (item.proposal.seller && typeof item.proposal.seller === 'object') {
+              sellerName = item.proposal.seller.name || 'N/A';
+              sellerEmail = item.proposal.seller.email || '';
+            } else if (item.proposal.createdBy && typeof item.proposal.createdBy === 'object') {
+              sellerName = item.proposal.createdBy.name || 'N/A';
+              sellerEmail = item.proposal.createdBy.email || '';
+            }
+          } catch (err) {
+            console.error('Erro ao acessar seller/createdBy:', err);
+          }
+          
           return {
-            proposalId: item.proposal._id,
-            proposalNumber: item.proposal.proposalNumber,
-            client: item.proposal.client.name,
-            value: item.proposal.total,
-            score: item.score.score,
-            percentual: item.score.percentual,
-            level: item.score.level,
-            action: item.score.action,
-            factors: formattedFactors,
-            confidence: item.score.confidence,
-            breakdown: item.score
+            proposalId: item.proposal._id || item.proposal._id?.toString(),
+            proposalNumber: item.proposal.proposalNumber || 'N/A',
+            client: item.proposal.client?.name || 'Cliente não informado',
+            seller: sellerName,
+            sellerEmail: sellerEmail,
+            value: item.proposal.total || 0,
+            score: item.score?.score || 0,
+            percentual: item.score?.percentual || 0,
+            level: item.score?.level || 'medio',
+            action: item.score?.action || 'Não foi possível calcular'
           };
         }),
-        atRiskProposals: atRiskProposals.map(item => ({
-          proposalId: item.proposal._id,
-          proposalNumber: item.proposal.proposalNumber,
-          client: item.proposal.client.name,
-          seller: item.proposal.seller?.name || item.proposal.createdBy?.name || 'N/A',
-          sellerEmail: item.proposal.seller?.email || item.proposal.createdBy?.email || '',
-          value: item.proposal.total,
-          score: item.score.score,
-          percentual: item.score.percentual,
-          level: item.score.level,
-          action: item.score.action
-        })),
         insights,
         forecast,
         forecastDetails: forecastData && !forecastData.error ? {
