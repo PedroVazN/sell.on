@@ -1081,6 +1081,10 @@ class ApiService {
     return this.request('/ai/insights');
   }
 
+  async getAIAnomalies(): Promise<ApiResponse<any>> {
+    return this.request('/ai/anomalies');
+  }
+
   async getPriceListByDistributor(distributorId: string, page = 1, limit = 10): Promise<ApiResponse<PriceListItem[]>> {
     return this.request<PriceListItem[]>(`/price-list/distributor/${distributorId}?page=${page}&limit=${limit}`);
   }

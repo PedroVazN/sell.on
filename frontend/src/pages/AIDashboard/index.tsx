@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, TrendingDown, AlertTriangle, Target, Sparkles, Zap, BarChart3, PieChart, LineChart as LineChartIcon, Activity } from 'lucide-react';
+import { Brain, TrendingUp, TrendingDown, AlertTriangle, Target, Sparkles, Zap, BarChart3, PieChart, LineChart as LineChartIcon, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +33,16 @@ import {
   ForecastCard,
   ForecastValue,
   ForecastLabel,
-  ConfidenceBadge
+  ConfidenceBadge,
+  AnomalyCard,
+  AnomalyHeader,
+  AnomalyTitle,
+  AnomalyPriority,
+  AnomalyMessage,
+  AnomalyActions,
+  AnomalyActionsTitle,
+  AnomalyActionList,
+  AnomalyActionItem
 } from './styles';
 import { 
   PieChart as RechartsPieChart, 
@@ -121,6 +130,25 @@ interface AIDashboardData {
     avgScore: number;
     highScoreCount: number;
     riskCount: number;
+  };
+  anomalies?: {
+    total: number;
+    byPriority: {
+      critica: number;
+      alta: number;
+      media: number;
+      baixa: number;
+    };
+    anomalies: Array<{
+      type: string;
+      priority: string;
+      title: string;
+      message: string;
+      details: any;
+      suggestedActions: string[];
+      detectedAt: string;
+      icon: string;
+    }>;
   };
 }
 
@@ -585,6 +613,94 @@ export const AIDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
+          </ChartCard>
+        </ChartsGrid>
+      )}
+
+      {/* Detecção de Anomalias */}
+      {data.anomalies && data.anomalies.total > 0 && (
+        <ChartsGrid style={{ gridTemplateColumns: '1fr' }}>
+          <ChartCard>
+            <ChartTitle>
+              <AlertCircle size={24} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
+              Detecção de Anomalias
+            </ChartTitle>
+            <ChartSubtitle>
+              Padrões incomuns detectados automaticamente pela IA
+            </ChartSubtitle>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: '1rem', 
+              marginBottom: '2rem' 
+            }}>
+              {data.anomalies.byPriority.critica > 0 && (
+                <MetricCard style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                  <MetricValue $color="#ef4444">{data.anomalies.byPriority.critica}</MetricValue>
+                  <MetricLabel>Críticas</MetricLabel>
+                </MetricCard>
+              )}
+              {data.anomalies.byPriority.alta > 0 && (
+                <MetricCard style={{ background: 'rgba(249, 115, 22, 0.1)', borderColor: 'rgba(249, 115, 22, 0.3)' }}>
+                  <MetricValue $color="#f97316">{data.anomalies.byPriority.alta}</MetricValue>
+                  <MetricLabel>Altas</MetricLabel>
+                </MetricCard>
+              )}
+              {data.anomalies.byPriority.media > 0 && (
+                <MetricCard style={{ background: 'rgba(251, 191, 36, 0.1)', borderColor: 'rgba(251, 191, 36, 0.3)' }}>
+                  <MetricValue $color="#fbbf24">{data.anomalies.byPriority.media}</MetricValue>
+                  <MetricLabel>Médias</MetricLabel>
+                </MetricCard>
+              )}
+              {data.anomalies.byPriority.baixa > 0 && (
+                <MetricCard style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+                  <MetricValue $color="#3b82f6">{data.anomalies.byPriority.baixa}</MetricValue>
+                  <MetricLabel>Baixas</MetricLabel>
+                </MetricCard>
+              )}
+            </div>
+
+            {data.anomalies.anomalies.map((anomaly, index) => (
+              <AnomalyCard key={index} $priority={anomaly.priority as any}>
+                <AnomalyHeader>
+                  <AnomalyTitle>
+                    <span>{anomaly.icon}</span>
+                    <span>{anomaly.title}</span>
+                  </AnomalyTitle>
+                  <AnomalyPriority $priority={anomaly.priority}>
+                    {anomaly.priority === 'critica' ? 'CRÍTICA' : 
+                     anomaly.priority === 'alta' ? 'ALTA' :
+                     anomaly.priority === 'media' ? 'MÉDIA' : 'BAIXA'}
+                  </AnomalyPriority>
+                </AnomalyHeader>
+                <AnomalyMessage>{anomaly.message}</AnomalyMessage>
+                {anomaly.suggestedActions && anomaly.suggestedActions.length > 0 && (
+                  <AnomalyActions>
+                    <AnomalyActionsTitle>
+                      <CheckCircle size={16} />
+                      Ações Recomendadas:
+                    </AnomalyActionsTitle>
+                    <AnomalyActionList>
+                      {anomaly.suggestedActions.map((action, idx) => (
+                        <AnomalyActionItem key={idx}>{action}</AnomalyActionItem>
+                      ))}
+                    </AnomalyActionList>
+                  </AnomalyActions>
+                )}
+                <div style={{ 
+                  marginTop: '1rem', 
+                  fontSize: '0.75rem', 
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <Clock size={12} />
+                  Detectado: {new Date(anomaly.detectedAt).toLocaleString('pt-BR')}
+                </div>
+              </AnomalyCard>
+            ))}
           </ChartCard>
         </ChartsGrid>
       )}

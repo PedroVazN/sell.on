@@ -480,3 +480,173 @@ export const ConfidenceBadge = styled.div`
   margin-top: 0.5rem;
 `;
 
+export const AnomalyCard = styled.div<{ $priority: 'critica' | 'alta' | 'media' | 'baixa' }>`
+  background: ${props => {
+    switch (props.$priority) {
+      case 'critica': return 'rgba(239, 68, 68, 0.15)';
+      case 'alta': return 'rgba(249, 115, 22, 0.15)';
+      case 'media': return 'rgba(251, 191, 36, 0.15)';
+      case 'baixa': return 'rgba(59, 130, 246, 0.15)';
+      default: return 'rgba(255, 255, 255, 0.05)';
+    }
+  }};
+  border: 1px solid ${props => {
+    switch (props.$priority) {
+      case 'critica': return 'rgba(239, 68, 68, 0.5)';
+      case 'alta': return 'rgba(249, 115, 22, 0.5)';
+      case 'media': return 'rgba(251, 191, 36, 0.5)';
+      case 'baixa': return 'rgba(59, 130, 246, 0.5)';
+      default: return 'rgba(99, 102, 241, 0.3)';
+    }
+  }};
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: ${props => {
+      switch (props.$priority) {
+        case 'critica': return '#ef4444';
+        case 'alta': return '#f97316';
+        case 'media': return '#fbbf24';
+        case 'baixa': return '#3b82f6';
+        default: return '#6366f1';
+      }
+    }};
+  }
+
+  &:hover {
+    transform: translateX(4px);
+    border-color: ${props => {
+      switch (props.$priority) {
+        case 'critica': return 'rgba(239, 68, 68, 0.8)';
+        case 'alta': return 'rgba(249, 115, 22, 0.8)';
+        case 'media': return 'rgba(251, 191, 36, 0.8)';
+        case 'baixa': return 'rgba(59, 130, 246, 0.8)';
+        default: return 'rgba(99, 102, 241, 0.6)';
+      }
+    }};
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+`;
+
+export const AnomalyHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+`;
+
+export const AnomalyTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  
+  span:first-child {
+    font-size: 1.5rem;
+  }
+`;
+
+export const AnomalyPriority = styled.div<{ $priority: string }>`
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: ${props => {
+    switch (props.$priority) {
+      case 'critica': return 'rgba(239, 68, 68, 0.3)';
+      case 'alta': return 'rgba(249, 115, 22, 0.3)';
+      case 'media': return 'rgba(251, 191, 36, 0.3)';
+      case 'baixa': return 'rgba(59, 130, 246, 0.3)';
+      default: return 'rgba(99, 102, 241, 0.3)';
+    }
+  }};
+  color: ${props => {
+    switch (props.$priority) {
+      case 'critica': return '#fca5a5';
+      case 'alta': return '#fdba74';
+      case 'media': return '#fde047';
+      case 'baixa': return '#93c5fd';
+      default: return '#a5b4fc';
+    }
+  }};
+  border: 1px solid ${props => {
+    switch (props.$priority) {
+      case 'critica': return 'rgba(239, 68, 68, 0.5)';
+      case 'alta': return 'rgba(249, 115, 22, 0.5)';
+      case 'media': return 'rgba(251, 191, 36, 0.5)';
+      case 'baixa': return 'rgba(59, 130, 246, 0.5)';
+      default: return 'rgba(99, 102, 241, 0.5)';
+    }
+  }};
+`;
+
+export const AnomalyMessage = styled.div`
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+`;
+
+export const AnomalyActions = styled.div`
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+export const AnomalyActionsTitle = styled.div`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+export const AnomalyActionList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+export const AnomalyActionItem = styled.li`
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  border-left: 3px solid rgba(99, 102, 241, 0.5);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #6366f1;
+    transform: translateX(4px);
+  }
+
+  &::before {
+    content: '→';
+    margin-right: 0.5rem;
+    color: #818cf8;
+  }
+`;
+

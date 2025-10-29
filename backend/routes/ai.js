@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
+const { detectAnomalies } = require('../services/anomalyDetection');
 
 // Verificar se o serviço existe, caso contrário usar função mockada
 let calculateProposalScore;
@@ -32,6 +33,9 @@ try {
     };
   };
 }
+
+// Middleware de autenticação (se necessário verificar depois)
+// Por enquanto, deixar sem auth para facilitar desenvolvimento
 
 /**
  * GET /api/ai/dashboard - Dashboard completo de IA/ML
@@ -261,6 +265,20 @@ router.get('/dashboard', async (req, res) => {
       total: data.total
     }));
 
+    // 7. Anomalias (limitar a 10 críticas/altas para não sobrecarregar)
+    let anomaliesData = { total: 0, byPriority: {}, anomalies: [] };
+    try {
+      const userId = req.user?.id || null;
+      const userRole = req.user?.role || 'user';
+      anomaliesData = await detectAnomalies(userId, userRole);
+      // Filtrar apenas críticas e altas para o dashboard
+      anomaliesData.anomalies = anomaliesData.anomalies
+        .filter(a => a.priority === 'critica' || a.priority === 'alta')
+        .slice(0, 10);
+    } catch (error) {
+      console.error('Erro ao buscar anomalias no dashboard:', error);
+    }
+
     res.json({
       success: true,
       data: {
@@ -296,6 +314,7 @@ router.get('/dashboard', async (req, res) => {
         topSellers,
         topClients,
         conversionRates,
+        anomalies: anomaliesData,
         stats: {
           totalProposalsAnalyzed: negociacaoProposals.length,
           avgScore: scoresData.length > 0
@@ -311,6 +330,30 @@ router.get('/dashboard', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * GET /api/ai/anomalies - Detecta anomalias no sistema
+ */
+router.get('/anomalies', async (req, res) => {
+  try {
+    const userId = req.user?.id || null;
+    const userRole = req.user?.role || 'user';
+
+    const anomaliesData = await detectAnomalies(userId, userRole);
+
+    res.json({
+      success: true,
+      data: anomaliesData
+    });
+  } catch (error) {
+    console.error('Erro ao detectar anomalias:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor ao detectar anomalias',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
