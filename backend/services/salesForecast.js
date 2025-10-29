@@ -132,9 +132,9 @@ async function calculateSalesForecast(userId = null, userRole = 'user', days = 3
       historical: {
         totalDays: dates.length,
         totalSales: historicalSales.length,
-        totalRevenue: dailyValues.reduce((sum, val) => sum + val, 0),
-        avgDailyRevenue: avgDailyValue,
-        avgDailySales: avgDailyCount,
+        totalRevenue: Math.round(dailyValues.reduce((sum, val) => sum + val, 0) * 100) / 100,
+        avgDailyRevenue: Math.round(avgDailyValue * 100) / 100,
+        avgDailySales: Math.round(avgDailyCount * 100) / 100,
         period: {
           start: dates[0],
           end: dates[dates.length - 1]
@@ -214,11 +214,17 @@ function detectWeeklyPattern(dailySales, dates) {
   // Normalizar (usar média geral como referência)
   const overallAvg = weeklyAverages.reduce((sum, val) => sum + val, 0) / 7;
 
-  return weeklyAverages.map(avg => ({
-    day: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][weeklyAverages.indexOf(avg)],
-    value: avg,
-    multiplier: overallAvg > 0 ? avg / overallAvg : 1
-  }));
+  return weeklyAverages.map((avg, index) => {
+    // Calcular multiplicador normalizado (limitando entre 0.7 e 1.3)
+    let multiplier = overallAvg > 0 ? avg / overallAvg : 1;
+    multiplier = Math.min(1.3, Math.max(0.7, multiplier)); // Limitar variação
+    
+    return {
+      day: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][index],
+      value: Math.round(avg * 100) / 100,
+      multiplier: Math.round(multiplier * 100) / 100 // 2 casas decimais
+    };
+  });
 }
 
 /**
@@ -228,9 +234,22 @@ function calculatePeriodForecast(avgDaily, trend, stdDev, weeklyPattern, days, s
   let totalRevenue = 0;
   let totalSales = 0;
 
-  // Usar últimas 7 médias diárias para suavizar
-  const recentAverage = historicalValues.slice(-7).reduce((sum, val) => sum + val, 0) / Math.min(7, historicalValues.length);
-  const currentTrend = trend.slope;
+  // Usar média móvel dos últimos 14 dias para maior estabilidade
+  const recentValues = historicalValues.slice(-14);
+  const recentAverage = recentValues.length > 0 
+    ? recentValues.reduce((sum, val) => sum + val, 0) / recentValues.length 
+    : avgDaily;
+  
+  // Calcular ticket médio (receita por venda) baseado no histórico
+  const avgTicketValue = recentAverage > 0 && historicalValues.length > 0
+    ? recentAverage / Math.max(1, Math.floor(recentValues.length / 7)) // Vendas médias por dia
+    : avgDaily / 2; // Fallback
+
+  // Limitar tendência a máximo de 5% de crescimento diário
+  const trendMultiplier = Math.min(1.05, Math.max(0.95, 1 + (trend.slope / Math.max(recentAverage, 1))));
+  
+  // Suavizar o slope da tendência para evitar crescimento exponencial
+  const smoothedTrend = trend.slope * 0.1; // Reduzir impacto da tendência
 
   const dailyForecasts = [];
   
@@ -238,43 +257,54 @@ function calculatePeriodForecast(avgDaily, trend, stdDev, weeklyPattern, days, s
     const forecastDate = new Date(startDate);
     forecastDate.setDate(forecastDate.getDate() + i);
     
-    // Base: média recente
+    // Base: média recente (mais estável)
     let dayForecast = recentAverage;
     
-    // Aplicar tendência
-    dayForecast += currentTrend * i;
+    // Aplicar tendência suavizada (multiplicativa limitada em vez de aditiva)
+    const trendFactor = 1 + (smoothedTrend * i) / Math.max(recentAverage, 1);
+    dayForecast *= Math.min(1.1, Math.max(0.9, trendFactor)); // Limitar a ±10% por dia
     
-    // Aplicar sazonalidade semanal
+    // Aplicar sazonalidade semanal (limitando o impacto)
     const dayOfWeek = forecastDate.getDay();
-    if (weeklyPattern[dayOfWeek]) {
-      dayForecast *= weeklyPattern[dayOfWeek].multiplier;
+    if (weeklyPattern[dayOfWeek] && weeklyPattern[dayOfWeek].multiplier) {
+      // Normalizar multiplicador para não ser extremo
+      const normalizedMultiplier = Math.min(1.3, Math.max(0.7, weeklyPattern[dayOfWeek].multiplier));
+      dayForecast *= normalizedMultiplier;
     }
     
-    // Suavizar variações extremas
+    // Garantir valores positivos e realistas
     dayForecast = Math.max(0, dayForecast);
+    // Limitar crescimento absurdo (máximo 3x a média recente por dia)
+    dayForecast = Math.min(dayForecast, recentAverage * 3);
+
+    // Calcular número de vendas baseado no ticket médio
+    const dailySalesCount = Math.max(0, Math.round(dayForecast / Math.max(avgTicketValue, 1)));
 
     dailyForecasts.push({
       date: forecastDate.toISOString().split('T')[0],
-      revenue: dayForecast,
-      sales: Math.round(dayForecast / (recentAverage > 0 ? (recentAverage / Math.max(avgDaily / 10, 1)) : 1))
+      revenue: Math.round(dayForecast * 100) / 100, // Arredondar para 2 casas decimais
+      sales: dailySalesCount
     });
 
     totalRevenue += dayForecast;
-    totalSales += dailyForecasts[i].sales;
+    totalSales += dailySalesCount;
   }
 
-  // Calcular intervalo de confiança (margem de erro)
-  const marginOfError = stdDev * 1.96; // 95% de confiança
-  const lowerBound = Math.max(0, totalRevenue - marginOfError * Math.sqrt(days));
-  const upperBound = totalRevenue + marginOfError * Math.sqrt(days);
+  // Calcular intervalo de confiança (margem de erro) - mais conservador
+  const coefficientOfVariation = stdDev / Math.max(avgDaily, 1);
+  const marginFactor = Math.min(0.3, coefficientOfVariation); // Limitar margem a 30%
+  const marginOfError = recentAverage * marginFactor * Math.sqrt(days);
+  
+  const lowerBound = Math.max(0, totalRevenue - marginOfError);
+  const upperBound = totalRevenue + marginOfError;
 
   return {
     sales: Math.round(totalSales),
-    revenue: Math.round(totalRevenue),
-    avgDailyRevenue: totalRevenue / days,
-    avgDailySales: totalSales / days,
-    lowerBound: Math.round(lowerBound),
-    upperBound: Math.round(upperBound),
+    revenue: Math.round(totalRevenue * 100) / 100, // Arredondar para 2 casas
+    avgDailyRevenue: Math.round((totalRevenue / days) * 100) / 100,
+    avgDailySales: Math.round((totalSales / days) * 100) / 100,
+    lowerBound: Math.round(lowerBound * 100) / 100,
+    upperBound: Math.round(upperBound * 100) / 100,
     dailyBreakdown: dailyForecasts
   };
 }
@@ -354,28 +384,32 @@ async function calculateSellerForecasts(historicalSales, avgDaily, trend) {
     sellerStats[sellerId].count++;
   });
 
+  // Calcular total de receita para obter market share
+  const totalRevenue = historicalSales.reduce((sum, s) => sum + (s.total || 0), 0);
+
   // Calcular previsão para cada vendedor
   const forecasts = Object.values(sellerStats).map(seller => {
-    const avgSaleValue = seller.totalRevenue / seller.count;
-    const avgDailySeller = (seller.totalRevenue / 90) * (90 / seller.count); // Aproximação
-    const share = seller.totalRevenue / historicalSales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const avgSaleValue = seller.count > 0 ? seller.totalRevenue / seller.count : 0;
+    const share = totalRevenue > 0 ? seller.totalRevenue / totalRevenue : 0;
 
-    // Previsão 30 dias baseada na participação histórica
+    // Previsão 30 dias baseada na participação histórica (market share)
+    // Usar avgDaily já ajustado do cálculo principal
     const forecast30Revenue = avgDaily * 30 * share;
+    const forecastSales = avgSaleValue > 0 ? Math.round(forecast30Revenue / avgSaleValue) : 0;
 
     return {
       sellerId: seller.id,
       sellerName: seller.name,
       historical: {
         sales: seller.count,
-        revenue: seller.totalRevenue,
-        avgSaleValue: avgSaleValue,
-        marketShare: share * 100
+        revenue: Math.round(seller.totalRevenue * 100) / 100,
+        avgSaleValue: Math.round(avgSaleValue * 100) / 100,
+        marketShare: Math.round(share * 100 * 100) / 100 // 2 casas decimais para porcentagem
       },
       forecast: {
         next30Days: {
-          sales: Math.round(forecast30Revenue / avgSaleValue),
-          revenue: Math.round(forecast30Revenue)
+          sales: forecastSales,
+          revenue: Math.round(forecast30Revenue * 100) / 100
         }
       }
     };
@@ -509,14 +543,15 @@ function generateForecastInsights(forecast30, forecast90, trends, goalComparison
     }
   }
 
-  // Insight 3: Volume
+  // Insight 3: Volume (valores mais conservadores)
   const avgDailyForMonth = forecast30.revenue / 30;
   if (avgDailyForMonth > forecast30.avgDailyRevenue * 1.2) {
+    const potentialRevenue = Math.round(forecast30.revenue * 1.15 * 100) / 100; // Limitar a 15% em vez de 20%
     insights.push({
       type: 'info',
       priority: 'medium',
       title: '💡 Oportunidade de Aceleração',
-      message: `Aumento de atividade pode levar a ${formatCurrency(forecast30.revenue * 1.2)} nos próximos 30 dias`,
+      message: `Aumento de atividade pode levar a ${formatCurrency(potentialRevenue)} nos próximos 30 dias`,
       icon: '💡'
     });
   }
