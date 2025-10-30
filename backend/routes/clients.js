@@ -3,8 +3,8 @@ const router = express.Router();
 const Client = require('../models/Client');
 const { auth } = require('../middleware/auth');
 
-// GET /api/clients - Listar todos os clientes
-router.get('/', async (req, res) => {
+// GET /api/clients - Listar clientes (filtrado por vendedor se necessário)
+router.get('/', auth, async (req, res) => {
   try {
     // Verificar se o MongoDB está conectado
     const mongoose = require('mongoose');
@@ -25,6 +25,13 @@ router.get('/', async (req, res) => {
     const skip = (page - 1) * limit;
 
     let query = {};
+    
+    // FILTRO POR VENDEDOR: Se for vendedor, só mostra clientes que ele criou
+    if (req.user.role === 'vendedor') {
+      query.createdBy = req.user.id;
+      console.log(`👤 Vendedor ${req.user.email} acessando apenas seus clientes`);
+    }
+    // Admin vê todos os clientes (sem filtro)
     
     if (search) {
       query.$or = [
@@ -64,7 +71,9 @@ router.get('/', async (req, res) => {
         pages: Math.ceil(total / limit),
         total,
         limit: parseInt(limit)
-      }
+      },
+      userRole: req.user.role,
+      filteredBySeller: req.user.role === 'vendedor' ? true : false
     });
   } catch (error) {
     console.error('Erro ao buscar clientes:', error);
@@ -76,16 +85,23 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/clients/:id - Buscar cliente específico
-router.get('/:id', async (req, res) => {
+// GET /api/clients/:id - Buscar cliente específico (filtrado por vendedor se necessário)
+router.get('/:id', auth, async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id)
+    let query = { _id: req.params.id };
+    
+    // FILTRO POR VENDEDOR: Se for vendedor, só pode ver clientes que ele criou
+    if (req.user.role === 'vendedor') {
+      query.createdBy = req.user.id;
+    }
+    
+    const client = await Client.findOne(query)
       .populate('createdBy', 'name email');
 
     if (!client) {
       return res.status(404).json({ 
         success: false,
-        message: 'Cliente não encontrado' 
+        message: 'Cliente não encontrado ou você não tem permissão para visualizá-lo' 
       });
     }
 
@@ -103,7 +119,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/clients - Criar novo cliente
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     const {
       cnpj,
@@ -138,11 +154,13 @@ router.post('/', async (req, res) => {
       endereco,
       classificacao: classificacao || 'OUTROS',
       observacoes,
-      createdBy: '68c1afbcf906c14a8e7e8ff7' // ID temporário para desenvolvimento
+      createdBy: req.user.id // Usar o ID do usuário autenticado
     });
 
     await client.save();
     await client.populate('createdBy', 'name email');
+
+    console.log(`✅ Cliente ${client.razaoSocial} criado por ${req.user.email} (${req.user.role})`);
 
     res.status(201).json({ 
       success: true,
@@ -163,8 +181,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/clients/:id - Atualizar cliente
-router.put('/:id', async (req, res) => {
+// PUT /api/clients/:id - Atualizar cliente (filtrado por vendedor se necessário)
+router.put('/:id', auth, async (req, res) => {
   try {
     const {
       cnpj,
@@ -177,12 +195,19 @@ router.put('/:id', async (req, res) => {
       observacoes
     } = req.body;
 
-    const client = await Client.findById(req.params.id);
+    let query = { _id: req.params.id };
+    
+    // FILTRO POR VENDEDOR: Se for vendedor, só pode atualizar clientes que ele criou
+    if (req.user.role === 'vendedor') {
+      query.createdBy = req.user.id;
+    }
+    
+    const client = await Client.findOne(query);
 
     if (!client) {
       return res.status(404).json({ 
         success: false,
-        message: 'Cliente não encontrado' 
+        message: 'Cliente não encontrado ou você não tem permissão para editá-lo' 
       });
     }
 
@@ -198,6 +223,8 @@ router.put('/:id', async (req, res) => {
 
     await client.save();
     await client.populate('createdBy', 'name email');
+
+    console.log(`✅ Cliente ${client.razaoSocial} atualizado por ${req.user.email}`);
 
     res.json({ 
       success: true,
@@ -218,17 +245,26 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/clients/:id - Deletar cliente
-router.delete('/:id', async (req, res) => {
+// DELETE /api/clients/:id - Deletar cliente (filtrado por vendedor se necessário)
+router.delete('/:id', auth, async (req, res) => {
   try {
-    const client = await Client.findByIdAndDelete(req.params.id);
+    let query = { _id: req.params.id };
+    
+    // FILTRO POR VENDEDOR: Se for vendedor, só pode deletar clientes que ele criou
+    if (req.user.role === 'vendedor') {
+      query.createdBy = req.user.id;
+    }
+    
+    const client = await Client.findOneAndDelete(query);
 
     if (!client) {
       return res.status(404).json({ 
         success: false,
-        message: 'Cliente não encontrado' 
+        message: 'Cliente não encontrado ou você não tem permissão para deletá-lo' 
       });
     }
+
+    console.log(`🗑️ Cliente ${client.razaoSocial} deletado por ${req.user.email}`);
 
     res.json({ 
       success: true,
@@ -243,10 +279,17 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// GET /api/clients/stats/summary - Estatísticas dos clientes
-router.get('/stats/summary', async (req, res) => {
+// GET /api/clients/stats/summary - Estatísticas dos clientes (filtrado por vendedor se necessário)
+router.get('/stats/summary', auth, async (req, res) => {
   try {
-    const totalClients = await Client.countDocuments();
+    let query = {};
+    
+    // FILTRO POR VENDEDOR: Se for vendedor, só conta clientes que ele criou
+    if (req.user.role === 'vendedor') {
+      query.createdBy = req.user.id;
+    }
+    
+    const totalClients = await Client.countDocuments(query);
     const activeClients = await Client.countDocuments({ 
       isActive: true 
     });
