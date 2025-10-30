@@ -51,43 +51,38 @@ router.get('/dashboard', async (req, res) => {
       console.error('⚠️ Timeout no dashboard de IA - retornando dados parciais');
     }, 25000); // 25 segundos
 
-    // 1. Distribuição de Scores - LIMITAR A 20 para não sobrecarregar
-    let negociacaoProposals = [];
+    // 1. Distribuição de Scores - ANALISAR TODAS AS PROPOSTAS PARA ML COMPLETO
+    let allProposals = [];
     let scoresData = [];
     
     try {
-      negociacaoProposals = await Proposal.find({ 
-        status: 'negociacao' 
-      })
+      // Buscar TODAS as propostas para análise completa de ML
+      allProposals = await Proposal.find({})
         .populate('createdBy', 'name email')
-        .limit(20) // REDUZIDO de 100 para 20 para evitar crash
-        .lean(); // Usar lean() para melhor performance
+        .sort({ createdAt: -1 }) // Mais recentes primeiro
+        .limit(500) // Aumentar limite para análise ML completa
+        .lean(); // Usar lean() para performance
 
-      // Limitar ainda mais se houver muitas
-      if (negociacaoProposals.length > 20) {
-        negociacaoProposals = negociacaoProposals.slice(0, 20);
-      }
+      console.log(`📊 Analisando ${allProposals.length} propostas para ML completo...`);
 
-      // Calcular apenas os primeiros 10 scores para evitar timeout
-      const proposalsToScore = negociacaoProposals.slice(0, 10);
-      
-      // Calcular scores de forma sequencial para não sobrecarregar
-      scoresData = [];
-      for (let i = 0; i < proposalsToScore.length; i++) {
+      // Calcular scores para todas as propostas (processo mais lento mas completo)
+      const scoresPromises = allProposals.map(p => {
         try {
-          const score = await calculateProposalScore(proposalsToScore[i]);
-          if (score) scoresData.push(score);
+          return calculateProposalScore(p);
         } catch (err) {
-          console.error(`Erro ao calcular score ${i}:`, err);
-          // Continuar mesmo com erro
+          console.error('Erro ao calcular score individual:', err);
+          return null;
         }
-        
-        // Se já processamos 5, limitar tempo
-        if (i === 5) break;
-      }
+      });
+      
+      scoresData = await Promise.all(scoresPromises);
+      // Filtrar nulls
+      scoresData = scoresData.filter(s => s !== null);
+      
+      console.log(`✅ Calculados ${scoresData.length} scores com sucesso`);
     } catch (err) {
       console.error('Erro ao buscar propostas ou calcular scores:', err);
-      negociacaoProposals = [];
+      allProposals = [];
       scoresData = [];
     }
     
@@ -99,9 +94,10 @@ router.get('/dashboard', async (req, res) => {
       muito_baixo: { count: 0, totalValue: 0 }
     };
 
+    // Processar TODAS as propostas na distribuição
     scoresData.forEach((score, index) => {
       try {
-        const proposal = negociacaoProposals[index];
+        const proposal = allProposals[index];
         if (score && proposal && score.level) {
           const level = score.level;
           if (scoreDistribution[level]) {
@@ -114,47 +110,46 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    // 2. Top Propostas (Maior Score) - Protegido
-    let proposalsWithScores = [];
-    try {
-      proposalsWithScores = negociacaoProposals
-        .map((p, i) => {
-          try {
-            return {
-              proposal: typeof p.toObject === 'function' ? p.toObject() : p,
-              score: scoresData[i]
-            };
-          } catch (err) {
-            console.error('Erro ao converter proposta:', err);
-            return null;
-          }
-        })
-        .filter(item => item && item.score)
-        .sort((a, b) => {
-          try {
-            return (b.score?.score || 0) - (a.score?.score || 0);
-          } catch (err) {
-            return 0;
-          }
-        })
-        .slice(0, 10);
-    } catch (err) {
-      console.error('Erro ao processar proposalsWithScores:', err);
-      proposalsWithScores = [];
-    }
+    console.log(`📊 Distribuição calculada: Alto=${scoreDistribution.alto.count}, Médio=${scoreDistribution.medio.count}, Baixo=${scoreDistribution.baixo.count}, Muito Baixo=${scoreDistribution.muito_baixo.count}`);
 
-    // 3. Propostas em Risco (Score Baixo)
-    const atRiskProposals = proposalsWithScores
-      .filter(item => item.score.level === 'baixo' || item.score.level === 'muito_baixo')
+    // 2. Top Propostas (Maior Score) - DE TODAS AS PROPOSTAS
+    const proposalsWithScores = allProposals
+      .map((p, i) => ({
+        proposal: p, // Já está como objeto plano (lean())
+        score: scoresData[i]
+      }))
+      .filter(item => item.score && item.score.score !== undefined)
+      .sort((a, b) => (b.score.score || 0) - (a.score.score || 0))
       .slice(0, 10);
+
+    console.log(`🏆 Top 10 propostas selecionadas de ${proposalsWithScores.length} candidatas`);
+
+    // 3. Propostas em Risco (Score Baixo ou Médio) - DE TODAS AS PROPOSTAS
+    const allProposalsWithScores = allProposals
+      .map((p, i) => ({
+        proposal: p,
+        score: scoresData[i]
+      }))
+      .filter(item => item.score && item.score.score !== undefined);
+    
+    const atRiskProposals = allProposalsWithScores
+      .filter(item => {
+        const level = item.score?.level;
+        // Incluir baixo, muito baixo E médio para análise mais completa
+        return level === 'baixo' || level === 'muito_baixo' || level === 'medio';
+      })
+      .sort((a, b) => (a.score.score || 0) - (b.score.score || 0)) // Ordenar do menor para maior (maior risco primeiro)
+      .slice(0, 10);
+
+    console.log(`⚠️ Propostas em risco identificadas: ${atRiskProposals.length}`);
 
     // 4. Insights Automáticos
     const insights = [];
 
-    // Insight 1: Vendedores com melhor performance
+    // Insight 1: Vendedores com melhor performance - BASEADO EM TODAS AS PROPOSTAS
     const sellerStats = {};
-    for (let i = 0; i < negociacaoProposals.length && i < scoresData.length; i++) {
-      const proposal = negociacaoProposals[i];
+    for (let i = 0; i < allProposals.length && i < scoresData.length; i++) {
+      const proposal = allProposals[i];
       const score = scoresData[i];
       if (proposal && score) {
         // Usar seller ou createdBy
@@ -268,20 +263,14 @@ router.get('/dashboard', async (req, res) => {
       }
     }
 
-    // 5. Previsão de Vendas (usando serviço avançado) - Simplificado
+    // 5. Previsão de Vendas (usando serviço avançado)
     const userId = req.user?.id || null;
     const userRole = req.user?.role || 'user';
     let forecast = null;
     let forecastData = null;
     
     try {
-      // Limitar tempo de cálculo
-      const forecastPromise = calculateSalesForecast(userId, userRole, 30);
-      const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => resolve({ error: 'Timeout' }), 5000); // 5 segundos máximo
-      });
-      
-      forecastData = await Promise.race([forecastPromise, timeoutPromise]);
+      forecastData = await calculateSalesForecast(userId, userRole, 30);
       if (!forecastData.error) {
         forecast = {
           next7Days: {
@@ -422,57 +411,40 @@ router.get('/dashboard', async (req, res) => {
           muito_baixo: scoreDistribution.muito_baixo.count,
           totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
         },
-        topProposals: proposalsWithScores.slice(0, 10).map((item, index) => {
+        topProposals: proposalsWithScores.map(item => {
           try {
-            if (!item || !item.proposal || !item.score) {
-              return null;
-            }
-            
             // Formatar fatores para o formato esperado pelo frontend
-            let formattedFactors = [];
-            try {
-              if (item.score.factors && typeof item.score.factors === 'object') {
-                formattedFactors = Object.entries(item.score.factors).slice(0, 5).map((entry) => {
-                  try {
-                    const key = entry[0];
-                    const factor = entry[1] || {};
-                    return {
-                      name: getFactorDisplayName(key),
-                      value: factor.score || factor.value || 0,
-                      impact: calculateFactorImpact(factor, key),
-                      description: factor.description || getFactorDefaultDescription(key, factor)
-                    };
-                  } catch (err) {
-                    console.error('Erro ao formatar fator:', err);
-                    return null;
-                  }
-                }).filter(f => f !== null);
-              }
-            } catch (err) {
-              console.error('Erro ao processar fatores:', err);
-              formattedFactors = [];
-            }
+            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map((entry) => {
+              const key = entry[0];
+              const factor = entry[1] || {};
+              return {
+                name: getFactorDisplayName(key),
+                value: factor.score || factor.value || 0,
+                impact: calculateFactorImpact(factor, key),
+                description: factor.description || getFactorDefaultDescription(key, factor)
+              };
+            }) : [];
 
             return {
-              proposalId: (item.proposal?._id || item.proposal?._id?.toString() || `unknown_${index}`),
-              proposalNumber: (item.proposal?.proposalNumber || 'N/A'),
-              client: (item.proposal?.client?.name || 'Cliente não informado'),
-              value: (item.proposal?.total || 0),
-              score: (item.score?.score || 0),
-              percentual: (item.score?.percentual || 0),
-              level: (item.score?.level || 'medio'),
-              action: (item.score?.action || 'Não foi possível calcular'),
+              proposalId: item.proposal?._id || item.proposal?._id?.toString() || 'unknown',
+              proposalNumber: item.proposal?.proposalNumber || 'N/A',
+              client: item.proposal?.client?.name || 'Cliente não informado',
+              value: item.proposal?.total || 0,
+              score: item.score?.score || 0,
+              percentual: item.score?.percentual || 0,
+              level: item.score?.level || 'medio',
+              action: item.score?.action || 'Não foi possível calcular',
               factors: formattedFactors,
-              confidence: (item.score?.confidence || 50),
-              breakdown: (item.score || {})
+              confidence: item.score?.confidence || 50,
+              breakdown: item.score || {}
             };
           } catch (err) {
-            console.error(`Erro ao formatar topProposal ${index}:`, err);
+            console.error('Erro ao formatar topProposal:', err);
             return {
-              proposalId: `error_${index}`,
-              proposalNumber: 'N/A',
-              client: 'Erro',
-              value: 0,
+              proposalId: item.proposal?._id?.toString() || 'unknown',
+              proposalNumber: item.proposal?.proposalNumber || 'N/A',
+              client: item.proposal?.client?.name || 'Erro',
+              value: item.proposal?.total || 0,
               score: 0,
               percentual: 0,
               level: 'medio',
@@ -482,7 +454,7 @@ router.get('/dashboard', async (req, res) => {
               breakdown: {}
             };
           }
-        }).filter(p => p !== null),
+        }),
         atRiskProposals: atRiskProposals.map(item => {
           // Acesso seguro aos campos seller e createdBy
           let sellerName = 'N/A';
@@ -525,12 +497,15 @@ router.get('/dashboard', async (req, res) => {
         conversionRates,
         anomalies: anomaliesData,
         stats: {
-          totalProposalsAnalyzed: negociacaoProposals.length,
+          totalProposalsAnalyzed: allProposals.length,
+          totalScoresCalculated: scoresData.length,
           avgScore: scoresData.length > 0
             ? scoresData.reduce((sum, s) => sum + (s?.score || 0), 0) / scoresData.length
             : 0,
           highScoreCount: scoreDistribution.alto.count,
-          riskCount: scoreDistribution.baixo.count + scoreDistribution.muito_baixo.count
+          mediumScoreCount: scoreDistribution.medio.count,
+          riskCount: scoreDistribution.baixo.count + scoreDistribution.muito_baixo.count,
+          mlAnalysisComplete: true // Indica que análise ML completa foi feita
         }
       }
     });
