@@ -198,10 +198,10 @@ router.get('/dashboard', async (req, res) => {
       });
     }
 
-    // Insight 2: Clientes com histórico positivo
+    // Insight 2: Clientes com histórico positivo - BASEADO EM TODAS AS PROPOSTAS
     const clientStats = {};
-    for (let i = 0; i < negociacaoProposals.length && i < scoresData.length; i++) {
-      const proposal = negociacaoProposals[i];
+    for (let i = 0; i < allProposals.length && i < scoresData.length; i++) {
+      const proposal = allProposals[i];
       const score = scoresData[i];
       if (proposal && score && proposal.client?.email) {
         const clientEmail = proposal.client.email.toLowerCase();
