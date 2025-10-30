@@ -14,12 +14,12 @@ export const Container = styled.aside<ContainerProps>`
   border-right: 1px solid rgba(71, 85, 105, 0.3);
   backdrop-filter: blur(20px);
   z-index: 1000;
-  overflow-y: auto;
+  overflow-y: hidden;
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.05),
     4px 0 20px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: none;
 
   /* Responsivo para mobile */
   @media (max-width: 768px) {
@@ -39,15 +39,11 @@ export const Container = styled.aside<ContainerProps>`
     bottom: 0;
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%);
     pointer-events: none;
-    transition: all 0.3s ease;
+    transition: none;
   }
   
   &:hover {
     border-right-color: rgba(71, 85, 105, 0.5);
-    box-shadow: 
-      0 0 0 1px rgba(255, 255, 255, 0.1),
-      8px 0 30px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
   
   &::-webkit-scrollbar {
@@ -61,7 +57,7 @@ export const Container = styled.aside<ContainerProps>`
   &::-webkit-scrollbar-thumb {
     background: rgba(59, 130, 246, 0.3);
     border-radius: 2px;
-    transition: all 0.3s ease;
+    transition: none;
   }
   
   &::-webkit-scrollbar-thumb:hover {

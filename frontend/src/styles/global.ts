@@ -21,6 +21,7 @@ export const GlobalStyle = createGlobalStyle`
     color: ${({ theme }) => theme.colors.text.primary};
     overflow-x: hidden;
     position: relative;
+    scroll-behavior: auto;
   }
 
   /* Efeito de partículas flutuantes */
@@ -35,7 +36,7 @@ export const GlobalStyle = createGlobalStyle`
       radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
       radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-    animation: float 20s ease-in-out infinite;
+    animation: none;
     pointer-events: none;
     z-index: 0;
   }
@@ -103,9 +104,9 @@ export const GlobalStyle = createGlobalStyle`
     outline-offset: 2px;
   }
 
-  /* Transições suaves */
+  /* Remover transições globais para evitar travas de scroll */
   * {
-    transition: all 0.2s ease-in-out;
+    transition: none;
   }
 
   /* Reset para inputs */
