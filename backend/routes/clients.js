@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Client = require('../models/Client');
-const { auth } = require('../middleware/auth');
+const { auth, authorize } = require('../middleware/auth');
 
 // GET /api/clients - Listar clientes (filtrado por vendedor se necessário)
 router.get('/', auth, async (req, res) => {
@@ -118,8 +118,8 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// POST /api/clients - Criar novo cliente
-router.post('/', auth, async (req, res) => {
+// POST /api/clients - Criar novo cliente (somente admin)
+router.post('/', auth, authorize('admin'), async (req, res) => {
   try {
     const {
       cnpj,
@@ -181,8 +181,8 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// PUT /api/clients/:id - Atualizar cliente (filtrado por vendedor se necessário)
-router.put('/:id', auth, async (req, res) => {
+// PUT /api/clients/:id - Atualizar cliente (somente admin)
+router.put('/:id', auth, authorize('admin'), async (req, res) => {
   try {
     const {
       cnpj,
@@ -245,8 +245,8 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/clients/:id - Deletar cliente (filtrado por vendedor se necessário)
-router.delete('/:id', auth, async (req, res) => {
+// DELETE /api/clients/:id - Deletar cliente (somente admin)
+router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   try {
     let query = { _id: req.params.id };
     
