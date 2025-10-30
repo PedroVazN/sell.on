@@ -14,7 +14,10 @@ export const Container = styled.aside<ContainerProps>`
   border-right: 1px solid rgba(71, 85, 105, 0.3);
   backdrop-filter: blur(20px);
   z-index: 1000;
-  overflow-y: hidden;
+  /* Reativa scroll vertical apenas no menu lateral */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.05),
     4px 0 20px rgba(0, 0, 0, 0.15),
