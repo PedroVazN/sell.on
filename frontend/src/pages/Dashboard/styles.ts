@@ -64,17 +64,10 @@ const shimmer = `
 `;
 
 export const Container = styled.div`
-  ${fadeIn}
-  ${slideIn}
-  ${scaleIn}
-  ${glow}
-  ${shimmer}
-  
   padding: ${({ theme }) => theme.spacing.xxl};
   background: #0a0a0f;
   min-height: 100vh;
   position: relative;
-  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
 
   @media (max-width: 768px) {
@@ -84,58 +77,12 @@ export const Container = styled.div`
   @media (max-width: 480px) {
     padding: ${({ theme }) => theme.spacing.md};
   }
-  
-  /* Background animado com orbs */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-      radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
-    pointer-events: none;
-    animation: orbitAnimation 20s ease-in-out infinite;
-    z-index: 0;
-  }
-
-  /* Grid pattern */
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.5;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  @keyframes orbitAnimation {
-    0%, 100% {
-      transform: scale(1) rotate(0deg);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.1) rotate(10deg);
-      opacity: 0.8;
-    }
-  }
 `;
 
 export const Header = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xxl};
   position: relative;
   z-index: 1;
-  animation: slideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 `;
 
 export const Title = styled.h1`
@@ -173,7 +120,7 @@ export const Subtitle = styled.p`
   color: rgba(255, 255, 255, 0.6);
   margin: 0;
   font-weight: 400;
-  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+  
   line-height: 1.6;
   
   @media (max-width: 768px) {
@@ -188,7 +135,6 @@ export const MetricsGrid = styled.div`
   margin-bottom: 2rem;
   position: relative;
   z-index: 1;
-  animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.9s both;
 
   @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
@@ -209,10 +155,10 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  transition: none;
   position: relative;
   overflow: hidden;
-  animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  
   z-index: 1;
 
   &::before {
@@ -228,18 +174,7 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     transition: opacity 0.3s ease;
   }
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 
-      0 28px 70px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(59, 130, 246, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    
-    &::before {
-      opacity: 1;
-    }
-  }
+  &:hover {}
 
   &:nth-child(1) { animation-delay: 0.1s; }
   &:nth-child(2) { animation-delay: 0.15s; }
@@ -324,7 +259,6 @@ export const ChartsGrid = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
   position: relative;
   z-index: 1;
-  animation: fadeInUp 0.8s ease-out 0.8s both;
 
   /* Responsivo para mobile */
   @media (max-width: 768px) {
@@ -348,10 +282,10 @@ export const ChartCard = styled.div`
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  transition: none;
   position: relative;
   overflow: hidden;
-  animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  
   z-index: 1;
 
   @media (max-width: 768px) {
@@ -376,18 +310,7 @@ export const ChartCard = styled.div`
     transition: opacity 0.3s ease;
   }
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 
-      0 28px 70px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(59, 130, 246, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    
-    &::before {
-      opacity: 1;
-    }
-  }
+  &:hover {}
 
   &:nth-child(1) { animation-delay: 0.1s; }
   &:nth-child(2) { animation-delay: 0.2s; }
