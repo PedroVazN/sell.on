@@ -291,14 +291,17 @@ router.get('/stats/summary', auth, async (req, res) => {
     
     const totalClients = await Client.countDocuments(query);
     const activeClients = await Client.countDocuments({ 
+      ...query,
       isActive: true 
     });
     
     const clientsByClassification = await Client.aggregate([
+      { $match: query },
       { $group: { _id: '$classificacao', count: { $sum: 1 } } }
     ]);
     
     const clientsByUF = await Client.aggregate([
+      { $match: query },
       { $group: { _id: '$endereco.uf', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 }
@@ -312,7 +315,9 @@ router.get('/stats/summary', auth, async (req, res) => {
         inactiveClients: totalClients - activeClients,
         clientsByClassification,
         clientsByUF
-      }
+      },
+      userRole: req.user.role,
+      filteredBySeller: req.user.role === 'vendedor' ? true : false
     });
   } catch (error) {
     console.error('Erro ao buscar estatísticas dos clientes:', error);
