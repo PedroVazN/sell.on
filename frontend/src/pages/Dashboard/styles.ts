@@ -69,6 +69,19 @@ export const Container = styled.div`
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  
+  /* Fundo inspirado no login (sem animação para manter leve) */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(59,130,246,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(139,92,246,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(236,72,153,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
   @media (max-width: 768px) {
     padding: ${({ theme }) => theme.spacing.lg};
@@ -83,6 +96,13 @@ export const Header = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xxl};
   position: relative;
   z-index: 1;
+  /* Aparição suave, sem impacto no scroll */
+  animation: fadeInHeader 300ms ease-out both;
+
+  @keyframes fadeInHeader {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 `;
 
 export const Title = styled.h1`
@@ -155,7 +175,7 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: none;
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
   position: relative;
   overflow: hidden;
   
@@ -174,7 +194,11 @@ export const MetricCard = styled.div<{ $variant?: 'success' | 'warning' | 'dange
     transition: opacity 0.3s ease;
   }
 
-  &:hover {}
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.25);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  }
 
   &:nth-child(1) { animation-delay: 0.1s; }
   &:nth-child(2) { animation-delay: 0.15s; }
@@ -282,7 +306,7 @@ export const ChartCard = styled.div`
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: none;
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
   position: relative;
   overflow: hidden;
   
@@ -310,7 +334,11 @@ export const ChartCard = styled.div`
     transition: opacity 0.3s ease;
   }
 
-  &:hover {}
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.25);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  }
 
   &:nth-child(1) { animation-delay: 0.1s; }
   &:nth-child(2) { animation-delay: 0.2s; }
