@@ -302,7 +302,7 @@ export const AIDashboard: React.FC = () => {
     return (
       <Container>
         <LoadingContainer>
-          <Brain size={48} style={{ animation: 'spin 2s linear infinite', marginBottom: '1rem' }} />
+          <Brain size={48} style={{ marginBottom: '1rem' }} />
           <div>Carregando insights de IA...</div>
         </LoadingContainer>
       </Container>
@@ -343,7 +343,7 @@ export const AIDashboard: React.FC = () => {
     return (
       <Container>
         <LoadingContainer>
-          <Brain size={48} style={{ animation: 'spin 2s linear infinite', marginBottom: '1rem' }} />
+          <Brain size={48} style={{ marginBottom: '1rem' }} />
           <div>Carregando dashboard de IA...</div>
         </LoadingContainer>
       </Container>
@@ -472,6 +472,7 @@ export const AIDashboard: React.FC = () => {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
+                isAnimationActive={false}
               >
                 {scorePieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -516,6 +517,7 @@ export const AIDashboard: React.FC = () => {
                 dataKey="rate" 
                 fill="url(#colorGradient)"
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={false}
               >
                 {conversionBarData.map((entry, index) => (
                   <Cell 
@@ -588,16 +590,7 @@ export const AIDashboard: React.FC = () => {
                       color: '#a5b4fc',
                       fontSize: '0.75rem',
                       fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(99, 102, 241, 0.3)';
-                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.6)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
-                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                    cursor: 'pointer'
                     }}
                   >
                     Ver Proposta
@@ -622,20 +615,11 @@ export const AIDashboard: React.FC = () => {
                       color: '#c4b5fd',
                       fontSize: '0.75rem',
                       fontWeight: '600',
-                      cursor: 'pointer',
+                    cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.25rem',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(139, 92, 246, 0.4) 100%)';
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%)';
-                      e.currentTarget.style.transform = 'scale(1)';
+                    gap: '0.25rem'
                     }}
                   >
                     <Calculator size={14} />
@@ -843,7 +827,8 @@ export const AIDashboard: React.FC = () => {
                     stroke="#6366f1" 
                     strokeWidth={3}
                     dot={{ r: 6, fill: '#6366f1' }}
-                    activeDot={{ r: 8 }}
+                    activeDot={{ r: 6 }}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -903,6 +888,7 @@ export const AIDashboard: React.FC = () => {
                     dataKey="forecast.next30Days.revenue" 
                     fill="url(#forecastGradient)"
                     radius={[4, 4, 0, 0]}
+                    isAnimationActive={false}
                   />
                   <defs>
                     <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
@@ -992,12 +978,14 @@ export const AIDashboard: React.FC = () => {
                   dataKey="score" 
                   fill="url(#colorGradient2)"
                   radius={[0, 4, 4, 0]}
+                  isAnimationActive={false}
                 />
                 <Bar 
                   dataKey="weight" 
                   fill="url(#weightGradient)"
                   radius={[0, 4, 4, 0]}
                   opacity={0.6}
+                  isAnimationActive={false}
                 />
                 <Legend 
                   wrapperStyle={{ 

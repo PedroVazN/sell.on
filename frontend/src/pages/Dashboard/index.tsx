@@ -138,17 +138,15 @@ interface DashboardData {
 const LoadingSkeleton: React.FC = () => (
   <Container>
     <Header>
-      <div style={{ height: '60px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', marginBottom: '16px', animation: 'pulse 2s infinite' }} />
-      <div style={{ height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', width: '60%', animation: 'pulse 2s infinite' }} />
+      <div style={{ height: '60px', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', marginBottom: '16px' }} />
+      <div style={{ height: '24px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', width: '60%' }} />
     </Header>
     <MetricsGrid>
       {[1, 2, 3, 4].map(i => (
         <div key={i} style={{ 
           height: '120px', 
-          background: 'rgba(255,255,255,0.1)', 
-          borderRadius: '20px', 
-          animation: 'pulse 2s infinite',
-          animationDelay: `${i * 0.1}s`
+          background: 'rgba(255,255,255,0.08)', 
+          borderRadius: '20px'
         }} />
       ))}
     </MetricsGrid>
@@ -236,7 +234,7 @@ export const Dashboard: React.FC = () => {
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
           apiService.getLossReasonsStats(),
-          apiService.getProposals(1, 10000), // Buscar todas as propostas do vendedor
+          apiService.getProposals(1, 2000), // Limitar para reduzir tempo de carregamento
           apiService.getGoals(1, 20, { assignedTo: user._id, status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
@@ -354,7 +352,7 @@ export const Dashboard: React.FC = () => {
         const [usersResponse, productsResponse, allProposalsResponse, lossReasonsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getProposals(1, 10000), // Buscar todas as propostas (limite alto)
+          apiService.getProposals(1, 2000), // Limitar para reduzir tempo de carregamento
           apiService.getLossReasonsStats(),
           apiService.getGoals(1, 50, { status: 'active' }),
           apiService.getProposalsDashboardSales()
@@ -487,7 +485,7 @@ export const Dashboard: React.FC = () => {
         setIsDailyDataLoading(true);
         
         // Buscar TODAS as propostas para cálculo correto
-        const response = await apiService.getProposals(1, 10000);
+        const response = await apiService.getProposals(1, 2000);
         const proposals = response.data || [];
         
         if (!isMounted) return;
@@ -698,8 +696,7 @@ export const Dashboard: React.FC = () => {
                           backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
                                          goal.progress.percentage >= 80 ? '#3B82F6' : 
                                          goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
-                          borderRadius: '4px',
-                          transition: 'width 0.3s ease'
+                          borderRadius: '4px'
                         }}
                       />
                     </GoalBar>
@@ -1150,8 +1147,7 @@ export const Dashboard: React.FC = () => {
             padding: '1rem',
             display: 'flex',
             gap: '0.5rem',
-            opacity: isDailyDataLoading ? 0.5 : 1,
-            transition: 'opacity 0.3s ease'
+            opacity: isDailyDataLoading ? 0.5 : 1
           }}>
             {/* Eixo Y (números à esquerda) */}
             {dailyProposalsData.length > 0 && (() => {
@@ -1511,8 +1507,7 @@ export const Dashboard: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999,
-          animation: 'fadeIn 0.3s ease'
+          zIndex: 9999
         }} onClick={closeDayModal}>
           <div style={{
             background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
@@ -1522,9 +1517,8 @@ export const Dashboard: React.FC = () => {
             width: '90%',
             maxHeight: '80vh',
             overflowY: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            animation: 'slideUp 0.3s ease'
+            boxShadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
+            border: '1px solid rgba(59, 130, 246, 0.3)'
           }} onClick={(e) => e.stopPropagation()}>
             {/* Header do Modal */}
             <div style={{
@@ -1567,16 +1561,7 @@ export const Dashboard: React.FC = () => {
                   height: '40px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                  e.currentTarget.style.transform = 'scale(1)';
+                  justifyContent: 'center'
                 }}
               >
                 ×
