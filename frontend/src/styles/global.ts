@@ -67,24 +67,7 @@ export const GlobalStyle = createGlobalStyle`
     background: ${({ theme }) => theme.colors.background.primary};
   }
 
-  /* Scrollbar personalizada */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background.secondary};
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border.primary};
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.primary};
-  }
+  /* Removido tema de scrollbar para evitar confusão de duplo scroll */
 
   /* Seleção de texto */
   ::selection {

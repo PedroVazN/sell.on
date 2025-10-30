@@ -345,8 +345,6 @@ export const ProposalList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-height: 400px;
-  overflow-y: auto;
 `;
 
 export const ProposalItem = styled.div`
