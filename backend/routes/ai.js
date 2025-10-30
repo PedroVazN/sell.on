@@ -51,24 +51,32 @@ router.get('/dashboard', async (req, res) => {
       console.error('⚠️ Timeout no dashboard de IA - retornando dados parciais');
     }, 25000); // 25 segundos
 
-    // 1. Distribuição de Scores - ANALISAR TODAS AS PROPOSTAS PARA ML COMPLETO
-    let allProposals = [];
+    // 1. ML TREINA COM TODAS AS PROPOSTAS (através do analyzeHistoricalData no proposalScore)
+    // Mas o DASHBOARD mostra apenas PROPOSTAS EM NEGOCIAÇÃO
+    
+    // Primeiro garantir que ML treina (isso já acontece automaticamente no calculateProposalScore via analyzeHistoricalData)
+    // Buscar apenas propostas em NEGOCIAÇÃO para o dashboard
+    let negociacaoProposals = [];
     let scoresData = [];
     
     try {
-      // Buscar TODAS as propostas para análise completa de ML
-      allProposals = await Proposal.find({})
+      // Buscar APENAS propostas em negociação para exibir no dashboard
+      negociacaoProposals = await Proposal.find({ 
+        status: 'negociacao' 
+      })
         .populate('createdBy', 'name email')
-        .sort({ createdAt: -1 }) // Mais recentes primeiro
-        .limit(500) // Aumentar limite para análise ML completa
-        .lean(); // Usar lean() para performance
+        .sort({ createdAt: -1 })
+        .limit(200) // Limite maior para ter boa amostra
+        .lean();
 
-      console.log(`📊 Analisando ${allProposals.length} propostas para ML completo...`);
+      console.log(`📊 Analisando ${negociacaoProposals.length} propostas em NEGOCIAÇÃO para dashboard...`);
+      console.log(`🤖 ML treinando com TODAS as propostas históricas (automático no calculateProposalScore)...`);
 
-      // Calcular scores para todas as propostas (processo mais lento mas completo)
-      const scoresPromises = allProposals.map(p => {
+      // Calcular scores para propostas em negociação
+      // O calculateProposalScore já usa analyzeHistoricalData() que treina com TODAS as propostas
+      const scoresPromises = negociacaoProposals.map(p => {
         try {
-          return calculateProposalScore(p);
+          return calculateProposalScore(p); // ML treina automaticamente aqui com todas as históricas
         } catch (err) {
           console.error('Erro ao calcular score individual:', err);
           return null;
@@ -79,10 +87,10 @@ router.get('/dashboard', async (req, res) => {
       // Filtrar nulls
       scoresData = scoresData.filter(s => s !== null);
       
-      console.log(`✅ Calculados ${scoresData.length} scores com sucesso`);
+      console.log(`✅ Calculados ${scoresData.length} scores para propostas em negociação`);
     } catch (err) {
       console.error('Erro ao buscar propostas ou calcular scores:', err);
-      allProposals = [];
+      negociacaoProposals = [];
       scoresData = [];
     }
     
@@ -94,10 +102,10 @@ router.get('/dashboard', async (req, res) => {
       muito_baixo: { count: 0, totalValue: 0 }
     };
 
-    // Processar TODAS as propostas na distribuição
+    // Processar apenas propostas em negociação na distribuição
     scoresData.forEach((score, index) => {
       try {
-        const proposal = allProposals[index];
+        const proposal = negociacaoProposals[index];
         if (score && proposal && score.level) {
           const level = score.level;
           if (scoreDistribution[level]) {
@@ -110,10 +118,10 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    console.log(`📊 Distribuição calculada: Alto=${scoreDistribution.alto.count}, Médio=${scoreDistribution.medio.count}, Baixo=${scoreDistribution.baixo.count}, Muito Baixo=${scoreDistribution.muito_baixo.count}`);
+    console.log(`📊 Distribuição (apenas negociação): Alto=${scoreDistribution.alto.count}, Médio=${scoreDistribution.medio.count}, Baixo=${scoreDistribution.baixo.count}, Muito Baixo=${scoreDistribution.muito_baixo.count}`);
 
-    // 2. Top Propostas (Maior Score) - DE TODAS AS PROPOSTAS
-    const proposalsWithScores = allProposals
+    // 2. Top 10 Propostas (Maior Score) - APENAS EM NEGOCIAÇÃO
+    const proposalsWithScores = negociacaoProposals
       .map((p, i) => ({
         proposal: p, // Já está como objeto plano (lean())
         score: scoresData[i]
@@ -122,34 +130,32 @@ router.get('/dashboard', async (req, res) => {
       .sort((a, b) => (b.score.score || 0) - (a.score.score || 0))
       .slice(0, 10);
 
-    console.log(`🏆 Top 10 propostas selecionadas de ${proposalsWithScores.length} candidatas`);
+    console.log(`🏆 Top 10 propostas em NEGOCIAÇÃO selecionadas`);
 
-    // 3. Propostas em Risco (Score Baixo ou Médio) - DE TODAS AS PROPOSTAS
-    const allProposalsWithScores = allProposals
+    // 3. Propostas em Risco - APENAS EM NEGOCIAÇÃO
+    const atRiskProposals = negociacaoProposals
       .map((p, i) => ({
         proposal: p,
         score: scoresData[i]
       }))
-      .filter(item => item.score && item.score.score !== undefined);
-    
-    const atRiskProposals = allProposalsWithScores
       .filter(item => {
-        const level = item.score?.level;
-        // Incluir baixo, muito baixo E médio para análise mais completa
-        return level === 'baixo' || level === 'muito_baixo' || level === 'medio';
+        if (!item.score || item.score.score === undefined) return false;
+        const level = item.score.level;
+        // Incluir baixo e muito baixo (em negociação que precisam atenção)
+        return level === 'baixo' || level === 'muito_baixo';
       })
-      .sort((a, b) => (a.score.score || 0) - (b.score.score || 0)) // Ordenar do menor para maior (maior risco primeiro)
+      .sort((a, b) => (a.score.score || 0) - (b.score.score || 0)) // Menor score = maior risco
       .slice(0, 10);
 
-    console.log(`⚠️ Propostas em risco identificadas: ${atRiskProposals.length}`);
+    console.log(`⚠️ ${atRiskProposals.length} propostas em RISCO (negociação)`);
 
     // 4. Insights Automáticos
     const insights = [];
 
-    // Insight 1: Vendedores com melhor performance - BASEADO EM TODAS AS PROPOSTAS
+    // Insight 1: Vendedores com melhor performance - BASEADO EM PROPOSTAS EM NEGOCIAÇÃO
     const sellerStats = {};
-    for (let i = 0; i < allProposals.length && i < scoresData.length; i++) {
-      const proposal = allProposals[i];
+    for (let i = 0; i < negociacaoProposals.length && i < scoresData.length; i++) {
+      const proposal = negociacaoProposals[i];
       const score = scoresData[i];
       if (proposal && score) {
         // Usar seller ou createdBy
@@ -198,10 +204,10 @@ router.get('/dashboard', async (req, res) => {
       });
     }
 
-    // Insight 2: Clientes com histórico positivo - BASEADO EM TODAS AS PROPOSTAS
+    // Insight 2: Clientes com histórico positivo - BASEADO EM PROPOSTAS EM NEGOCIAÇÃO
     const clientStats = {};
-    for (let i = 0; i < allProposals.length && i < scoresData.length; i++) {
-      const proposal = allProposals[i];
+    for (let i = 0; i < negociacaoProposals.length && i < scoresData.length; i++) {
+      const proposal = negociacaoProposals[i];
       const score = scoresData[i];
       if (proposal && score && proposal.client?.email) {
         const clientEmail = proposal.client.email.toLowerCase();
@@ -472,6 +478,10 @@ router.get('/dashboard', async (req, res) => {
             console.error('Erro ao acessar seller/createdBy:', err);
           }
           
+          // Garantir que score e percentual estão corretos
+          const scoreValue = item.score?.score || item.score?.percentual || 0;
+          const percentualValue = item.score?.percentual || item.score?.score || 0;
+          
           return {
             proposalId: item.proposal._id || item.proposal._id?.toString(),
             proposalNumber: item.proposal.proposalNumber || 'N/A',
@@ -479,10 +489,12 @@ router.get('/dashboard', async (req, res) => {
             seller: sellerName,
             sellerEmail: sellerEmail,
             value: item.proposal.total || 0,
-            score: item.score?.score || 0,
-            percentual: item.score?.percentual || 0,
+            score: Math.round(scoreValue * 100) / 100, // Arredondar para 2 decimais
+            percentual: Math.round(percentualValue), // Porcentagem inteira
             level: item.score?.level || 'medio',
-            action: item.score?.action || 'Não foi possível calcular'
+            action: item.score?.action || 'Não foi possível calcular',
+            factors: item.score?.factors || {}, // Incluir fatores para possível cálculo detalhado
+            confidence: item.score?.confidence || 50
           };
         }),
         insights,
@@ -497,7 +509,7 @@ router.get('/dashboard', async (req, res) => {
         conversionRates,
         anomalies: anomaliesData,
         stats: {
-          totalProposalsAnalyzed: allProposals.length,
+          totalProposalsAnalyzed: negociacaoProposals.length,
           totalScoresCalculated: scoresData.length,
           avgScore: scoresData.length > 0
             ? scoresData.reduce((sum, s) => sum + (s?.score || 0), 0) / scoresData.length
@@ -505,7 +517,8 @@ router.get('/dashboard', async (req, res) => {
           highScoreCount: scoreDistribution.alto.count,
           mediumScoreCount: scoreDistribution.medio.count,
           riskCount: scoreDistribution.baixo.count + scoreDistribution.muito_baixo.count,
-          mlAnalysisComplete: true // Indica que análise ML completa foi feita
+          mlTrainedWithAllProposals: true, // ML foi treinado com todas propostas históricas
+          dashboardShowsNegotiationOnly: true // Dashboard mostra apenas negociação
         }
       }
     });
