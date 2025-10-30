@@ -69,7 +69,7 @@ function App() {
           <Route path="configurations" element={<ProtectedRoute permission="admin"><Configurations /></ProtectedRoute>} />
           <Route path="products" element={<ProtectedRoute permission="admin"><Products /></ProtectedRoute>} />
           <Route path="products/create" element={<ProtectedRoute permission="admin"><CreateProduct /></ProtectedRoute>} />
-          <Route path="clients" element={<ProtectedRoute permission="admin"><Clients /></ProtectedRoute>} />
+          <Route path="clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
           <Route path="clients/register" element={<ProtectedRoute permission="admin"><ClientRegistration /></ProtectedRoute>} />
           <Route path="distributors" element={<ProtectedRoute permission="admin"><Distributors /></ProtectedRoute>} />
           <Route path="distributors/register" element={<ProtectedRoute permission="admin"><DistributorRegistration /></ProtectedRoute>} />

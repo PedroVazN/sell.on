@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Plus, Search, Filter, Edit, Trash2, Loader2 } from 'lucide-react';
 import { apiService, Client } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { ClientModal } from '../../components/ClientModal';
 import { 
   Container, 
@@ -27,6 +28,8 @@ import {
 
 export const Clients: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isSeller = user?.role === 'vendedor';
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,15 +60,18 @@ export const Clients: React.FC = () => {
   };
 
   const handleCreateClient = () => {
+    if (isSeller) return; // vendedor não cria
     navigate('/clients/register');
   };
 
   const handleEditClient = (client: Client) => {
+    if (isSeller) return; // vendedor não edita
     setEditingClient(client);
     setShowModal(true);
   };
 
   const handleDeleteClient = async (client: Client) => {
+    if (isSeller) return; // vendedor não deleta
     if (window.confirm(`Tem certeza que deseja excluir o cliente ${client.razaoSocial}?`)) {
       try {
         await apiService.deleteClient(client._id);
@@ -104,10 +110,12 @@ export const Clients: React.FC = () => {
               <Filter size={20} />
               Filtros
             </FilterButton>
-            <CreateButton disabled>
+          {!isSeller && (
+          <CreateButton disabled>
               <Plus size={20} />
               Novo Cliente
             </CreateButton>
+          )}
           </Actions>
         </Header>
         <Content>
@@ -134,10 +142,12 @@ export const Clients: React.FC = () => {
               <Filter size={20} />
               Filtros
             </FilterButton>
+            {!isSeller && (
             <CreateButton disabled>
               <Plus size={20} />
               Novo Cliente
             </CreateButton>
+            )}
           </Actions>
         </Header>
         <Content>
@@ -167,10 +177,12 @@ export const Clients: React.FC = () => {
             <Filter size={20} />
             Filtros
           </FilterButton>
-          <CreateButton onClick={handleCreateClient}>
-            <Plus size={20} />
-            Novo Cliente
-          </CreateButton>
+          {!isSeller && (
+            <CreateButton onClick={handleCreateClient}>
+              <Plus size={20} />
+              Novo Cliente
+            </CreateButton>
+          )}
         </Actions>
       </Header>
       
@@ -179,11 +191,15 @@ export const Clients: React.FC = () => {
           <EmptyState>
             <UserCheck size={48} />
             <h3>Nenhum cliente encontrado</h3>
-            <p>Comece criando seu primeiro cliente</p>
-            <CreateButton onClick={handleCreateClient}>
-              <Plus size={20} />
-              Novo Cliente
-            </CreateButton>
+            {!isSeller && (
+              <>
+                <p>Comece criando seu primeiro cliente</p>
+                <CreateButton onClick={handleCreateClient}>
+                  <Plus size={20} />
+                  Novo Cliente
+                </CreateButton>
+              </>
+            )}
           </EmptyState>
         ) : (
           <Table>
@@ -195,7 +211,7 @@ export const Clients: React.FC = () => {
                 <TableCell>UF</TableCell>
                 <TableCell>Classificação</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Ações</TableCell>
+                {!isSeller && (<TableCell>Ações</TableCell>)}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -230,14 +246,16 @@ export const Clients: React.FC = () => {
                       {client.isActive ? 'Ativo' : 'Inativo'}
                     </StatusBadge>
                   </TableCell>
-                  <TableCell>
-                    <ActionButton onClick={() => handleEditClient(client)}>
-                      <Edit size={16} />
-                    </ActionButton>
-                    <ActionButton onClick={() => handleDeleteClient(client)}>
-                      <Trash2 size={16} />
-                    </ActionButton>
-                  </TableCell>
+                  {!isSeller && (
+                    <TableCell>
+                      <ActionButton onClick={() => handleEditClient(client)}>
+                        <Edit size={16} />
+                      </ActionButton>
+                      <ActionButton onClick={() => handleDeleteClient(client)}>
+                        <Trash2 size={16} />
+                      </ActionButton>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -245,12 +263,14 @@ export const Clients: React.FC = () => {
         )}
       </Content>
 
-      <ClientModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSave={handleSaveClient}
-        client={editingClient}
-      />
+      {!isSeller && (
+        <ClientModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onSave={handleSaveClient}
+          client={editingClient}
+        />
+      )}
     </Container>
   );
 };
