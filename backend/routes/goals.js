@@ -38,9 +38,19 @@ async function recalculateGoalAutomatically(goal) {
     goal.progress.percentage = Math.min(100, (totalValue / goal.targetValue) * 100);
     goal.progress.countedProposals = proposalIds;
 
-    // Verificar se atingiu a meta
-    if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
-      goal.status = 'completed';
+    // Verificar se atingiu a meta ou se deixou de atingir
+    if (goal.currentValue >= goal.targetValue) {
+      // Meta atingida - marcar como concluída
+      if (goal.status === 'active') {
+        goal.status = 'completed';
+        console.log(`✅ Meta "${goal.title}" atingida após recálculo!`);
+      }
+    } else {
+      // Meta não atingida - se estava completa, reativar
+      if (goal.status === 'completed') {
+        goal.status = 'active';
+        console.log(`🔄 Meta "${goal.title}" reativada após recálculo (valor abaixo da meta)`);
+      }
     }
 
     await goal.save();
@@ -113,9 +123,19 @@ router.post('/recalculate', async (req, res) => {
         description: `Recálculo: ${closedProposals.length} vendas totalizando R$ ${totalValue.toLocaleString('pt-BR')}`
       });
 
-      // Verificar se atingiu a meta
-      if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
-        goal.status = 'completed';
+      // Verificar se atingiu a meta ou se deixou de atingir
+      if (goal.currentValue >= goal.targetValue) {
+        // Meta atingida - marcar como concluída
+        if (goal.status === 'active') {
+          goal.status = 'completed';
+          console.log(`✅ Meta "${goal.title}" atingida após recálculo!`);
+        }
+      } else {
+        // Meta não atingida - se estava completa, reativar
+        if (goal.status === 'completed') {
+          goal.status = 'active';
+          console.log(`🔄 Meta "${goal.title}" reativada após recálculo (valor abaixo da meta)`);
+        }
       }
 
       await goal.save();
@@ -200,6 +220,30 @@ router.get('/', async (req, res) => {
       query['period.endDate'] = { $lte: endDate };
     }
 
+    // Se estiver buscando metas ativas de vendas, PRIMEIRO buscar e recalcular também as completas
+    // Isso garante que metas completas que foram recalculadas e não bateram mais sejam reativadas
+    if (status === 'active' && (!category || category === 'sales')) {
+      // Buscar metas completas do mesmo usuário/período para também recalcular
+      const completedQuery = { ...query };
+      completedQuery.status = 'completed';
+      
+      const completedGoals = await Goal.find(completedQuery)
+        .populate('assignedTo', 'name email role')
+        .populate('createdBy', 'name email')
+        .limit(100); // Limitar para não sobrecarregar
+      
+      // Recalcular metas completas primeiro (podem ser reativadas)
+      const completedSalesGoals = completedGoals.filter(g => 
+        g.category === 'sales' && g.unit === 'currency'
+      );
+      
+      if (completedSalesGoals.length > 0) {
+        console.log(`🔄 Recalculando ${completedSalesGoals.length} meta(s) completa(s) que podem precisar ser reativadas...`);
+        await Promise.all(completedSalesGoals.map(goal => recalculateGoalAutomatically(goal)));
+      }
+    }
+
+    // Agora buscar as metas conforme o query original
     let goals = await Goal.find(query)
       .populate('assignedTo', 'name email role')
       .populate('createdBy', 'name email')
@@ -207,9 +251,13 @@ router.get('/', async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    // Se estiver buscando metas ativas de vendas, recalcular automaticamente
-    if (status === 'active' && (!category || category === 'sales')) {
-      const salesGoals = goals.filter(g => g.category === 'sales' && g.unit === 'currency' && g.status === 'active');
+    // Recalcular metas ativas de vendas
+    if ((status === 'active' || !status) && (!category || category === 'sales')) {
+      const salesGoals = goals.filter(g => 
+        g.category === 'sales' && 
+        g.unit === 'currency' && 
+        g.status === 'active'
+      );
       
       if (salesGoals.length > 0) {
         console.log(`🔄 Recalculando automaticamente ${salesGoals.length} meta(s) ativa(s) de vendas...`);
@@ -218,7 +266,7 @@ router.get('/', async (req, res) => {
         const recalculationPromises = salesGoals.map(goal => recalculateGoalAutomatically(goal));
         await Promise.all(recalculationPromises);
         
-        // Buscar novamente para ter os valores atualizados
+        // Buscar novamente para ter os valores atualizados (pode incluir metas que foram reativadas)
         goals = await Goal.find(query)
           .populate('assignedTo', 'name email role')
           .populate('createdBy', 'name email')
