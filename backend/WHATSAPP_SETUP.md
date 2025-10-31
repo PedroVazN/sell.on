@@ -69,12 +69,22 @@ WPPCONNECT_SESSION=default
 
 1. **Telefone do Vendedor**: O vendedor precisa ter um telefone cadastrado no sistema (campo `phone` no modelo User)
 
-2. **Formato do Telefone**: O sistema aceita números no formato:
+2. **Telefone do Admin/Gerente**: Configure seu número para receber notificações também no `.env`:
+   ```env
+   ADMIN_WHATSAPP_PHONE=55649999999999
+   ```
+   **IMPORTANTE**: Use o formato com código do país (55 para Brasil) + DDD + número
+   Exemplos:
+   - `55649999999999` (correto)
+   - `5564999999999` (correto)
+   - `64999999999` (errado - falta código do país)
+
+3. **Formato do Telefone**: O sistema aceita números no formato:
    - `(64) 99999-9999`
    - `64999999999`
    - `5564999999999` (com código do país)
 
-3. **Ativação**: Configure a variável `WHATSAPP_PROVIDER` no `.env` e reinicie o servidor
+4. **Ativação**: Configure a variável `WHATSAPP_PROVIDER` e `ADMIN_WHATSAPP_PHONE` no `.env` e reinicie o servidor
 
 ## Formato das Mensagens
 

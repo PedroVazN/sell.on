@@ -207,14 +207,12 @@ async function sendViaWppConnect(phoneNumber, message, options = {}) {
  */
 async function notifyProposalCreated(proposal, seller) {
   try {
+    const promises = [];
+    
+    // Enviar para o vendedor (se tiver telefone)
     const sellerPhone = seller.phone || seller.contato?.telefone;
-    
-    if (!sellerPhone) {
-      console.warn('⚠️ Vendedor não tem telefone cadastrado para WhatsApp');
-      return { success: false, error: 'Telefone não encontrado' };
-    }
-    
-    const message = `🎉 *Nova Proposta Criada!*
+    if (sellerPhone) {
+      const sellerMessage = `🎉 *Nova Proposta Criada!*
 
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
 👤 Cliente: ${proposal.client?.name || 'N/A'}
@@ -224,8 +222,36 @@ async function notifyProposalCreated(proposal, seller) {
 Status: ${getStatusEmoji(proposal.status)} ${proposal.status === 'negociacao' ? 'Em Negociação' : proposal.status}
 
 Acompanhe sua proposta no sistema!`;
+      
+      promises.push(sendWhatsAppMessage(sellerPhone, sellerMessage));
+    }
     
-    return await sendWhatsAppMessage(sellerPhone, message);
+    // Enviar para o admin/gerente (se configurado)
+    const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
+    if (adminPhone) {
+      const adminMessage = `📢 *Nova Proposta Criada pelo Vendedor*
+
+👤 Vendedor: ${seller.name || 'N/A'}
+📋 Proposta: ${proposal.proposalNumber || 'N/A'}
+👥 Cliente: ${proposal.client?.name || 'N/A'}
+💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
+📅 Válido até: ${new Date(proposal.validUntil).toLocaleDateString('pt-BR')}
+
+Status: ${getStatusEmoji(proposal.status)} ${proposal.status === 'negociacao' ? 'Em Negociação' : proposal.status}`;
+      
+      promises.push(sendWhatsAppMessage(adminPhone, adminMessage));
+    }
+    
+    // Enviar todas as mensagens em paralelo
+    const results = await Promise.allSettled(promises);
+    
+    return {
+      success: true,
+      results: results.map((r, i) => ({
+        recipient: i === 0 ? 'vendedor' : 'admin',
+        success: r.status === 'fulfilled'
+      }))
+    };
   } catch (error) {
     console.error('Erro ao enviar notificação de proposta criada:', error);
     return { success: false, error: error.message };
@@ -239,22 +265,47 @@ Acompanhe sua proposta no sistema!`;
  */
 async function notifyProposalClosed(proposal, seller) {
   try {
+    const promises = [];
+    
+    // Enviar para o vendedor (se tiver telefone)
     const sellerPhone = seller.phone || seller.contato?.telefone;
-    
-    if (!sellerPhone) {
-      console.warn('⚠️ Vendedor não tem telefone cadastrado para WhatsApp');
-      return { success: false, error: 'Telefone não encontrado' };
-    }
-    
-    const message = `🎊 *Venda Fechada!*
+    if (sellerPhone) {
+      const sellerMessage = `🎊 *Venda Fechada!*
 
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
 👤 Cliente: ${proposal.client?.name || 'N/A'}
 💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
 
 Parabéns pela venda! 🎉`;
+      
+      promises.push(sendWhatsAppMessage(sellerPhone, sellerMessage));
+    }
     
-    return await sendWhatsAppMessage(sellerPhone, message);
+    // Enviar para o admin/gerente (se configurado)
+    const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
+    if (adminPhone) {
+      const adminMessage = `✅ *Venda Fechada!*
+
+👤 Vendedor: ${seller.name || 'N/A'}
+📋 Proposta: ${proposal.proposalNumber || 'N/A'}
+👥 Cliente: ${proposal.client?.name || 'N/A'}
+💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
+
+Parabéns ao vendedor! 🎉`;
+      
+      promises.push(sendWhatsAppMessage(adminPhone, adminMessage));
+    }
+    
+    // Enviar todas as mensagens em paralelo
+    const results = await Promise.allSettled(promises);
+    
+    return {
+      success: true,
+      results: results.map((r, i) => ({
+        recipient: i === 0 ? 'vendedor' : 'admin',
+        success: r.status === 'fulfilled'
+      }))
+    };
   } catch (error) {
     console.error('Erro ao enviar notificação de venda fechada:', error);
     return { success: false, error: error.message };
@@ -268,16 +319,14 @@ Parabéns pela venda! 🎉`;
  */
 async function notifyProposalLost(proposal, seller) {
   try {
+    const promises = [];
+    
+    // Enviar para o vendedor (se tiver telefone)
     const sellerPhone = seller.phone || seller.contato?.telefone;
-    
-    if (!sellerPhone) {
-      console.warn('⚠️ Vendedor não tem telefone cadastrado para WhatsApp');
-      return { success: false, error: 'Telefone não encontrado' };
-    }
-    
-    const lossReason = proposal.lossReason ? getLossReasonLabel(proposal.lossReason) : 'Não informado';
-    
-    const message = `😔 *Venda Perdida*
+    if (sellerPhone) {
+      const lossReason = proposal.lossReason ? getLossReasonLabel(proposal.lossReason) : 'Não informado';
+      
+      const sellerMessage = `😔 *Venda Perdida*
 
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
 👤 Cliente: ${proposal.client?.name || 'N/A'}
@@ -285,8 +334,36 @@ async function notifyProposalLost(proposal, seller) {
 📝 Motivo: ${lossReason}
 
 Não desanime! Continue trabalhando! 💪`;
+      
+      promises.push(sendWhatsAppMessage(sellerPhone, sellerMessage));
+    }
     
-    return await sendWhatsAppMessage(sellerPhone, message);
+    // Enviar para o admin/gerente (se configurado)
+    const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
+    if (adminPhone) {
+      const lossReason = proposal.lossReason ? getLossReasonLabel(proposal.lossReason) : 'Não informado';
+      
+      const adminMessage = `❌ *Venda Perdida*
+
+👤 Vendedor: ${seller.name || 'N/A'}
+📋 Proposta: ${proposal.proposalNumber || 'N/A'}
+👥 Cliente: ${proposal.client?.name || 'N/A'}
+💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
+📝 Motivo: ${lossReason}`;
+      
+      promises.push(sendWhatsAppMessage(adminPhone, adminMessage));
+    }
+    
+    // Enviar todas as mensagens em paralelo
+    const results = await Promise.allSettled(promises);
+    
+    return {
+      success: true,
+      results: results.map((r, i) => ({
+        recipient: i === 0 ? 'vendedor' : 'admin',
+        success: r.status === 'fulfilled'
+      }))
+    };
   } catch (error) {
     console.error('Erro ao enviar notificação de venda perdida:', error);
     return { success: false, error: error.message };
