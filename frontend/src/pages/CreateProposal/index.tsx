@@ -664,7 +664,7 @@ export const CreateProposal: React.FC = () => {
       }
       
       // Validar IDs dos produtos
-      const invalidProductIds = proposalData.items.filter(item => 
+      const invalidProductIds = proposalData.items.filter((item: any) => 
         !item.product._id || !isValidObjectId(item.product._id)
       );
       if (invalidProductIds.length > 0) {
