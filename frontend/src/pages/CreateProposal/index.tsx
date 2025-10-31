@@ -98,6 +98,7 @@ export const CreateProposal: React.FC = () => {
   // Dados para seleção
   const [products, setProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
+  const [sellers, setSellers] = useState<UserType[]>([]); // Lista de vendedores para admin selecionar
   
   // Dados do formulário
   const [formData, setFormData] = useState<ProposalFormData>({
@@ -170,13 +171,28 @@ export const CreateProposal: React.FC = () => {
       setLoading(true);
       console.log('=== CARREGANDO DADOS ===');
       
-      const [productsResponse, distributorsResponse] = await Promise.all([
+      const promises: Promise<any>[] = [
         apiService.getProducts(1, 1000),
-        apiService.getDistributors(1, 1000) // Aumentado para mostrar todos os distribuidores
-      ]);
+        apiService.getDistributors(1, 1000)
+      ];
+
+      // Se for admin, carregar lista de vendedores também
+      if (user?.role === 'admin') {
+        promises.push(apiService.getUsers(1, 1000));
+      }
+
+      const responses = await Promise.all(promises);
+      
+      // Se for admin, terá 3 respostas, senão apenas 2
+      const productsResponse = responses[0];
+      const distributorsResponse = responses[1];
+      const usersResponse = user?.role === 'admin' ? responses[2] : undefined;
 
       console.log('Products response:', productsResponse);
       console.log('Distributors response:', distributorsResponse);
+      if (usersResponse) {
+        console.log('Users response:', usersResponse);
+      }
 
       if (productsResponse.success) {
         setProducts(productsResponse.data || []);
@@ -188,30 +204,44 @@ export const CreateProposal: React.FC = () => {
         setDistributors(distributorsResponse.data || []);
         console.log('Distributors loaded:', distributorsResponse.data?.length || 0);
       }
+
+      // Carregar vendedores se for admin
+      if (user?.role === 'admin' && usersResponse?.success) {
+        // Filtrar apenas vendedores e admins ativos
+        const sellersList = (usersResponse.data || []).filter((u: UserType) => 
+          (u.role === 'vendedor' || u.role === 'admin') && (u.isActive !== false)
+        );
+        setSellers(sellersList);
+        console.log('Sellers loaded:', sellersList.length);
+      }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Atualizar seller quando user estiver disponível
+  // Atualizar seller quando user estiver disponível (apenas se não for admin ou se ainda não tem seller selecionado)
   useEffect(() => {
-    if (user && user._id && (!formData.seller._id || formData.seller._id !== user._id)) {
-      setFormData(prev => ({
-        ...prev,
-        seller: {
-          _id: user._id,
-          name: user.name || '',
-          email: user.email || ''
-        }
-      }));
+    // Se for vendedor, sempre usar o próprio usuário
+    // Se for admin, só atualizar se ainda não selecionou um vendedor
+    if (user && user._id) {
+      if (user.role === 'vendedor' || (!formData.seller._id || formData.seller._id === '')) {
+        setFormData(prev => ({
+          ...prev,
+          seller: {
+            _id: user._id,
+            name: user.name || '',
+            email: user.email || ''
+          }
+        }));
+      }
     }
-  }, [user, formData.seller._id]);
+  }, [user]);
 
   // Calcular totais
   useEffect(() => {
@@ -301,6 +331,19 @@ export const CreateProposal: React.FC = () => {
     }
   };
 
+  const handleSellerChange = (sellerId: string) => {
+    const selectedSeller = sellers.find(s => s._id === sellerId);
+    if (selectedSeller) {
+      setFormData(prev => ({
+        ...prev,
+        seller: {
+          _id: selectedSeller._id,
+          name: selectedSeller.name || '',
+          email: selectedSeller.email || ''
+        }
+      }));
+    }
+  };
 
   const handleDistributorChange = async (distributorId: string) => {
     const distributor = distributors.find(d => d._id === distributorId);
@@ -941,6 +984,29 @@ export const CreateProposal: React.FC = () => {
             </FormGroup>
           </FormRow>
         </FormSection>
+
+        {/* Vendedor - Apenas para Admin */}
+        {user?.role === 'admin' && (
+          <FormSection>
+            <SectionTitle>Vendedor</SectionTitle>
+            <FormRow>
+              <FormGroup>
+                <Label>Vendedor *</Label>
+                <Select
+                  value={formData.seller._id}
+                  onChange={(e) => handleSellerChange(e.target.value)}
+                >
+                  <option value="">Selecione um vendedor</option>
+                  {sellers.map(seller => (
+                    <option key={seller._id} value={seller._id}>
+                      {seller.name} ({seller.email}) {seller.role === 'admin' ? '- Admin' : ''}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            </FormRow>
+          </FormSection>
+        )}
 
         {/* Distribuidor */}
         <FormSection>
