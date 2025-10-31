@@ -147,6 +147,9 @@ async function calculateSalesForecast(userId = null, userRole = 'user', days = 3
       sellerForecasts = await calculateSellerForecasts(historicalSales, avgDailyRevenue, avgTicketValue);
     }
 
+    // 8.5. Previsão por categoria de produto
+    const categoryForecasts = await calculateCategoryForecasts(historicalSales, avgDailyRevenue, avgTicketValue);
+
     // 9. Comparar com metas ativas
     const activeGoals = await Goal.find({
       status: 'ativa',
@@ -180,6 +183,7 @@ async function calculateSalesForecast(userId = null, userRole = 'user', days = 3
       },
       confidence,
       sellerForecasts: sellerForecasts.slice(0, 10), // Top 10
+      categoryForecasts: categoryForecasts.slice(0, 10), // Top 10 categorias
       goalComparison,
       insights: generateForecastInsights(forecast30Days, forecast90Days, trendAnalysis, goalComparison)
     };
@@ -416,6 +420,73 @@ function analyzeTrend(trend, historicalValues) {
       ? `Queda de ${Math.abs(periodGrowth).toFixed(1)}% nos últimos 30 dias`
       : 'Estabilidade mantida'
   };
+}
+
+/**
+ * Calcula previsões por categoria de produto
+ */
+async function calculateCategoryForecasts(historicalSales, avgDailyRevenue, avgTicketValue) {
+  const categoryStats = {};
+
+  // Agrupar por categoria
+  historicalSales.forEach(sale => {
+    sale.items?.forEach(item => {
+      const category = item.product?.category || 'Sem Categoria';
+      
+      if (!categoryStats[category]) {
+        categoryStats[category] = {
+          name: category,
+          sales: [],
+          totalRevenue: 0,
+          count: 0,
+          totalQuantity: 0
+        };
+      }
+
+      categoryStats[category].sales.push(sale);
+      categoryStats[category].totalRevenue += (item.total || 0) * (item.quantity || 1);
+      categoryStats[category].count++;
+      categoryStats[category].totalQuantity += item.quantity || 1;
+    });
+  });
+
+  // Calcular total de receita para obter market share
+  const totalRevenue = historicalSales.reduce((sum, s) => sum + (s.total || 0), 0);
+
+  // Calcular previsão para cada categoria
+  const forecasts = Object.values(categoryStats).map(category => {
+    const avgSaleValue = category.count > 0 ? category.totalRevenue / category.count : 0;
+    const share = totalRevenue > 0 ? category.totalRevenue / totalRevenue : 0;
+
+    // Previsão 30 dias baseada na participação histórica
+    const forecast30Revenue = avgDailyRevenue * 30 * share;
+    const forecastSales = avgTicketValue > 0 ? Math.round(forecast30Revenue / avgTicketValue) : 0;
+    const forecastQuantity = category.count > 0 
+      ? Math.round((category.totalQuantity / category.count) * forecastSales) 
+      : 0;
+
+    return {
+      category: category.name,
+      historical: {
+        sales: category.count,
+        revenue: Math.round(category.totalRevenue * 100) / 100,
+        avgSaleValue: Math.round(avgSaleValue * 100) / 100,
+        marketShare: Math.round(share * 100 * 100) / 100,
+        totalQuantity: category.totalQuantity,
+        avgQuantity: category.count > 0 ? Math.round((category.totalQuantity / category.count) * 100) / 100 : 0
+      },
+      forecast: {
+        next30Days: {
+          sales: forecastSales,
+          revenue: Math.round(forecast30Revenue * 100) / 100,
+          quantity: forecastQuantity
+        }
+      }
+    };
+  });
+
+  // Ordenar por previsão de receita
+  return forecasts.sort((a, b) => b.forecast.next30Days.revenue - a.forecast.next30Days.revenue);
 }
 
 /**

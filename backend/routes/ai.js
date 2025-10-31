@@ -80,6 +80,69 @@ router.get('/cache/stats', (req, res) => {
 });
 
 /**
+ * Calcula relevância de fatores (feature importance)
+ */
+async function calculateFeatureImportance(proposals, scores) {
+  try {
+    const factorImpacts = {
+      sellerConversion: { totalImpact: 0, count: 0, avgImpact: 0 },
+      clientHistory: { totalImpact: 0, count: 0, avgImpact: 0 },
+      value: { totalImpact: 0, count: 0, avgImpact: 0 },
+      time: { totalImpact: 0, count: 0, avgImpact: 0 },
+      products: { totalImpact: 0, count: 0, avgImpact: 0 },
+      paymentCondition: { totalImpact: 0, count: 0, avgImpact: 0 },
+      discount: { totalImpact: 0, count: 0, avgImpact: 0 },
+      seasonality: { totalImpact: 0, count: 0, avgImpact: 0 },
+      engagement: { totalImpact: 0, count: 0, avgImpact: 0 },
+      patterns: { totalImpact: 0, count: 0, avgImpact: 0 }
+    };
+
+    // Analisar fatores das propostas com scores
+    for (let i = 0; i < proposals.length && i < scores.length; i++) {
+      const score = scores[i];
+      if (!score || !score.factors) continue;
+
+      // Calcular impacto de cada fator baseado no peso e score
+      Object.keys(score.factors).forEach(factorKey => {
+        const factor = score.factors[factorKey];
+        if (factor && factor.weight && factor.score !== undefined) {
+          const impact = (factor.score / 100) * (factor.weight / 100) * 100;
+          if (factorImpacts[factorKey]) {
+            factorImpacts[factorKey].totalImpact += impact;
+            factorImpacts[factorKey].count++;
+          }
+        }
+      });
+    }
+
+    // Calcular média e ordenar por importância
+    const importanceArray = Object.entries(factorImpacts)
+      .map(([key, data]) => ({
+        factor: key,
+        name: getFactorDisplayName(key),
+        importance: data.count > 0 ? data.totalImpact / data.count : 0,
+        count: data.count,
+        percentage: 0 // Será calculado depois
+      }))
+      .filter(item => item.count > 0)
+      .sort((a, b) => b.importance - a.importance);
+
+    // Calcular porcentagem relativa
+    const totalImportance = importanceArray.reduce((sum, item) => sum + item.importance, 0);
+    if (totalImportance > 0) {
+      importanceArray.forEach(item => {
+        item.percentage = (item.importance / totalImportance) * 100;
+      });
+    }
+
+    return importanceArray;
+  } catch (error) {
+    console.error('Erro ao calcular feature importance:', error);
+    return [];
+  }
+}
+
+/**
  * GET /api/ai/dashboard - Dashboard completo de IA/ML
  * Com cache de 5 minutos para melhor performance
  */
@@ -558,7 +621,8 @@ router.get('/dashboard', async (req, res) => {
         forecastDetails: forecastData && !forecastData.error ? {
           historical: forecastData.historical,
           seasonality: forecastData.seasonality,
-          sellerForecasts: forecastData.sellerForecasts
+          sellerForecasts: forecastData.sellerForecasts,
+          categoryForecasts: forecastData.categoryForecasts || []
         } : null,
         topSellers,
         topClients,
@@ -748,10 +812,15 @@ router.get('/dashboard', async (req, res) => {
       }
     };
 
+    // 11. Relevância de Fatores (Feature Importance)
+    // Analisar quais fatores mais impactam no score das propostas
+    const featureImportance = await calculateFeatureImportance(negociacaoProposals, scoresData);
+
     // Adicionar novos dados ao dashboard
     dashboardData.scoreEvolution = scoreEvolution;
     dashboardData.sellerHeatmap = sellerHeatmap;
     dashboardData.periodComparison = periodComparison;
+    dashboardData.featureImportance = featureImportance;
 
     // Armazenar no cache antes de retornar (TTL de 5 minutos)
     cache.set(cacheKey, dashboardData, 300);

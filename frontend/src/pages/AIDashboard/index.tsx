@@ -280,6 +280,39 @@ interface AIDashboardData {
       highScoreDiff: number;
     };
   };
+  featureImportance?: Array<{
+    factor: string;
+    name: string;
+    importance: number;
+    count: number;
+    percentage: number;
+  }>;
+  forecastDetails?: {
+    categoryForecasts?: Array<{
+      category: string;
+      historical: {
+        sales: number;
+        revenue: number;
+        avgSaleValue: number;
+        marketShare: number;
+        totalQuantity: number;
+        avgQuantity: number;
+      };
+      forecast: {
+        next30Days: {
+          sales: number;
+          revenue: number;
+          quantity: number;
+        };
+      };
+    }>;
+    historical?: {
+      period?: {
+        start: string;
+        end: string;
+      };
+    };
+  };
 }
 
 // Componentes auxiliares
@@ -955,49 +988,142 @@ export const AIDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Gráfico de Previsão */}
+          {/* Gráfico de Previsão com Intervalos de Confiança */}
           {data.forecastDetails && data.forecastDetails.historical && (
             <div style={{ marginTop: '2rem' }}>
               <ChartSubtitle style={{ marginBottom: '1rem' }}>
-                Visualização de Tendência e Previsão
+                Tendência de Vendas com Intervalos de Confiança
               </ChartSubtitle>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={[
-                  { name: 'Histórico', value: data.forecastDetails.historical.avgDailyRevenue },
-                  { name: 'Previsão 7d', value: data.forecast.next7Days.revenue / 7 },
-                  { name: 'Previsão 30d', value: data.forecast.next30Days.revenue / 30 }
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={[
+                  { 
+                    name: 'Média Histórica', 
+                    value: data.forecastDetails.historical.avgDailyRevenue,
+                    lower: data.forecastDetails.historical.avgDailyRevenue * 0.8,
+                    upper: data.forecastDetails.historical.avgDailyRevenue * 1.2
+                  },
+                  { 
+                    name: 'Previsão 7d', 
+                    value: data.forecast.next7Days.revenue / 7,
+                    lower: data.forecast.next7Days.lowerBound ? data.forecast.next7Days.lowerBound / 7 : (data.forecast.next7Days.revenue / 7) * 0.85,
+                    upper: data.forecast.next7Days.upperBound ? data.forecast.next7Days.upperBound / 7 : (data.forecast.next7Days.revenue / 7) * 1.15
+                  },
+                  { 
+                    name: 'Previsão 30d', 
+                    value: data.forecast.next30Days.revenue / 30,
+                    lower: data.forecast.next30Days.lowerBound ? data.forecast.next30Days.lowerBound / 30 : (data.forecast.next30Days.revenue / 30) * 0.85,
+                    upper: data.forecast.next30Days.upperBound ? data.forecast.next30Days.upperBound / 30 : (data.forecast.next30Days.revenue / 30) * 1.15
+                  }
                 ]}>
+                  <defs>
+                    <linearGradient id="confidenceGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
                   <XAxis 
                     dataKey="name" 
-                    stroke="#A3A3A3"
-                    tick={{ fill: '#A3A3A3' }}
+                    stroke="rgba(255,255,255,0.6)"
+                    tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
                   />
                   <YAxis 
-                    stroke="#A3A3A3"
-                    tick={{ fill: '#A3A3A3' }}
-                    tickFormatter={(value) => formatCurrency(value)}
+                    stroke="rgba(255,255,255,0.6)"
+                    tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                    tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#1A1A1A', 
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'rgba(10, 10, 15, 0.95)', 
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
                       borderRadius: '8px',
-                      color: '#FFFFFF'
+                      color: '#fff'
                     }}
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'value') return [formatCurrency(value), 'Previsão'];
+                      if (name === 'upper') return [formatCurrency(value), 'Limite Superior'];
+                      if (name === 'lower') return [formatCurrency(value), 'Limite Inferior'];
+                      return [formatCurrency(value), name];
+                    }}
                   />
-                  <Line 
+                  <Area 
+                    type="monotone" 
+                    dataKey="upper" 
+                    stroke="none" 
+                    fill="rgba(99, 102, 241, 0.1)"
+                    isAnimationActive={false}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="lower" 
+                    stroke="none" 
+                    fill="rgba(99, 102, 241, 0.1)"
+                    isAnimationActive={false}
+                  />
+                  <Area 
                     type="monotone" 
                     dataKey="value" 
                     stroke="#6366f1" 
                     strokeWidth={3}
-                    dot={{ r: 6, fill: '#6366f1' }}
-                    activeDot={{ r: 6 }}
+                    fillOpacity={1}
+                    fill="url(#confidenceGradient)"
                     isAnimationActive={false}
                   />
-                </LineChart>
+                  <ReferenceLine 
+                    y={data.forecastDetails.historical.avgDailyRevenue} 
+                    stroke="#10b981" 
+                    strokeDasharray="5 5"
+                    label={{ value: "Média Histórica", position: "topRight", fill: '#10b981', fontSize: 12 }}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
+              <div style={{ 
+                marginTop: '1rem', 
+                fontSize: '0.75rem', 
+                color: 'rgba(255,255,255,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                justifyContent: 'center'
+              }}>
+                <div style={{ width: '12px', height: '12px', background: 'rgba(99, 102, 241, 0.3)', borderRadius: '2px' }}></div>
+                <span>Área sombreada: intervalo de confiança</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Previsões por Categoria */}
+          {data.forecastDetails?.categoryForecasts && data.forecastDetails.categoryForecasts.length > 0 && (
+            <div style={{ marginTop: '2rem' }}>
+              <ChartSubtitle style={{ marginBottom: '1rem' }}>
+                Previsões por Categoria de Produto (Próximos 30 dias)
+              </ChartSubtitle>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                {data.forecastDetails.categoryForecasts.slice(0, 6).map((category, index) => (
+                  <div 
+                    key={index}
+                    style={{
+                      background: 'rgba(99, 102, 241, 0.1)',
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                      borderRadius: '8px',
+                      padding: '1rem'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem' }}>
+                      {category.category}
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#a5b4fc', marginBottom: '0.25rem' }}>
+                      {formatCurrency(category.forecast.next30Days.revenue)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.5rem' }}>
+                      {category.forecast.next30Days.sales} vendas previstas
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                      {category.historical.marketShare.toFixed(1)}% market share
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -1633,6 +1759,86 @@ export const AIDashboard: React.FC = () => {
                   />
                 </div>
               </div>
+            </div>
+          </ChartCard>
+        </ChartsGrid>
+      )}
+
+      {/* Relevância de Fatores (Feature Importance) */}
+      {data.featureImportance && data.featureImportance.length > 0 && (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>
+              <Target size={20} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
+              Relevância de Fatores (Feature Importance)
+            </ChartTitle>
+            <ChartSubtitle>
+              Fatores que mais impactam no score das propostas
+            </ChartSubtitle>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart 
+                data={data.featureImportance.slice(0, 10).map(item => ({
+                  name: item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name,
+                  fullName: item.name,
+                  importance: item.importance,
+                  percentage: item.percentage
+                }))}
+                layout="vertical"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  type="number"
+                  stroke="rgba(255,255,255,0.6)"
+                  tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                />
+                <YAxis 
+                  type="category"
+                  dataKey="name"
+                  stroke="rgba(255,255,255,0.6)"
+                  tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                  width={150}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'rgba(10, 10, 15, 0.95)', 
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value: number, name: string, props: any) => {
+                    if (name === 'percentage') {
+                      return [`${value.toFixed(1)}%`, 'Porcentagem de Impacto'];
+                    }
+                    return [value.toFixed(2), 'Importância'];
+                  }}
+                  labelFormatter={(value, payload) => {
+                    if (payload && payload[0] && payload[0].payload) {
+                      return payload[0].payload.fullName;
+                    }
+                    return value;
+                  }}
+                />
+                <Bar 
+                  dataKey="importance" 
+                  fill="#6366f1"
+                  radius={[0, 8, 8, 0]}
+                  isAnimationActive={false}
+                >
+                  {data.featureImportance.slice(0, 10).map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={
+                        entry.percentage > 15 ? '#10b981' :
+                        entry.percentage > 10 ? '#6366f1' :
+                        entry.percentage > 5 ? '#8b5cf6' : '#a78bfa'
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+              💡 Os fatores são ordenados por impacto médio no score final das propostas
             </div>
           </ChartCard>
         </ChartsGrid>
