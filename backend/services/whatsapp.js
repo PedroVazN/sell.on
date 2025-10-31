@@ -21,8 +21,8 @@ async function sendWhatsAppMessage(phoneNumber, message, options = {}) {
       throw new Error('Número de telefone inválido');
     }
 
-    // Verificar qual API está configurada
-    const whatsappProvider = process.env.WHATSAPP_PROVIDER || 'evolution';
+    // Verificar qual API está configurada (Twilio é padrão para produção/Vercel)
+    const whatsappProvider = process.env.WHATSAPP_PROVIDER || 'twilio';
     
     switch (whatsappProvider.toLowerCase()) {
       case 'evolution':
@@ -143,6 +143,11 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
     params.append('To', toNumber);
     params.append('Body', message);
     
+    console.log(`📤 Enviando WhatsApp via Twilio:`);
+    console.log(`   De: ${from}`);
+    console.log(`   Para: ${toNumber}`);
+    console.log(`   Mensagem: ${message.substring(0, 50)}...`);
+    
     const response = await axios.post(url, params, {
       headers: {
         'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
@@ -154,12 +159,16 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
     
     if (response.status === 200 || response.status === 201) {
       console.log(`✅ WhatsApp enviado via Twilio para ${phoneNumber}`);
+      console.log(`   Status: ${data.status}, SID: ${data.sid}`);
       return { success: true, data };
     } else {
       throw new Error(data.message || 'Erro ao enviar via Twilio');
     }
   } catch (error) {
-    console.error('❌ Erro Twilio:', error);
+    console.error('❌ Erro Twilio:', error.response?.data || error.message);
+    if (error.response?.data) {
+      console.error('   Detalhes:', JSON.stringify(error.response.data, null, 2));
+    }
     throw error;
   }
 }
