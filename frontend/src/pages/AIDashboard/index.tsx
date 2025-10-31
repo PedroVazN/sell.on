@@ -72,7 +72,10 @@ import {
   Tooltip, 
   Legend,
   LineChart,
-  Line
+  Line,
+  AreaChart,
+  Area,
+  ReferenceLine
 } from 'recharts';
 
 interface AIDashboardData {
@@ -240,7 +243,92 @@ interface AIDashboardData {
       icon: string;
     }>;
   };
+  scoreEvolution?: Array<{
+    date: string;
+    avgScore: number;
+    count: number;
+  }>;
+  sellerHeatmap?: Array<{
+    sellerName: string;
+    avgScore: number;
+    proposalCount: number;
+    highScoreCount: number;
+    performanceLevel: 'high' | 'medium' | 'low';
+  }>;
+  periodComparison?: {
+    current: {
+      period: string;
+      avgScore: number;
+      total: number;
+      totalValue: number;
+      highScoreCount: number;
+    };
+    previous: {
+      period: string;
+      avgScore: number;
+      total: number;
+      totalValue: number;
+      highScoreCount: number;
+    };
+    changes: {
+      avgScoreDiff: number;
+      avgScorePercentChange: number;
+      totalDiff: number;
+      totalPercentChange: number;
+      valueDiff: number;
+      valuePercentChange: number;
+      highScoreDiff: number;
+    };
+  };
 }
+
+// Componentes auxiliares
+const MetricRow: React.FC<{ label: string; value: string | number }> = ({ label, value }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+    <span style={{ fontSize: '1rem', fontWeight: '600', color: '#fff' }}>{value}</span>
+  </div>
+);
+
+const ChangeMetric: React.FC<{ 
+  label: string; 
+  diff: number; 
+  percent?: number; 
+  isCurrency?: boolean;
+}> = ({ label, diff, percent, isCurrency = false }) => {
+  const isPositive = diff >= 0;
+  const color = isPositive ? '#10b981' : '#ef4444';
+  const icon = isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />;
+  const formattedDiff = isCurrency 
+    ? formatCurrency(Math.abs(diff))
+    : Math.abs(diff);
+  
+  return (
+    <div style={{
+      background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+      border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+      borderRadius: '6px',
+      padding: '0.75rem',
+    }}>
+      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.25rem' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span style={{ color, fontSize: '1.25rem', fontWeight: '700' }}>
+          {isPositive ? '+' : '-'}{formattedDiff}
+        </span>
+        {percent !== undefined && (
+          <span style={{ color, fontSize: '0.875rem', fontWeight: '600' }}>
+            ({isPositive ? '+' : ''}{percent.toFixed(1)}%)
+          </span>
+        )}
+        <span style={{ color }}>
+          {icon}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const AIDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -1268,6 +1356,284 @@ export const AIDashboard: React.FC = () => {
                 </div>
               </AnomalyCard>
             ))}
+          </ChartCard>
+        </ChartsGrid>
+      )}
+
+      {/* Evolução Temporal do Score */}
+      {data.scoreEvolution && data.scoreEvolution.length > 0 && (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>
+              <Activity size={20} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
+              Evolução Temporal do Score (30 dias)
+            </ChartTitle>
+            <ChartSubtitle>
+              Média diária de scores de propostas em negociação
+            </ChartSubtitle>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data.scoreEvolution}>
+                <defs>
+                  <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="rgba(255,255,255,0.6)"
+                  tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getDate()}/${date.getMonth() + 1}`;
+                  }}
+                />
+                <YAxis 
+                  stroke="rgba(255,255,255,0.6)"
+                  tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                  domain={[0, 100]}
+                  label={{ value: 'Score Médio', angle: -90, position: 'insideLeft', fill: 'rgba(255,255,255,0.6)' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'rgba(10, 10, 15, 0.95)', 
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  labelFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString('pt-BR');
+                  }}
+                  formatter={(value: number, name: string) => {
+                    if (name === 'avgScore') return [`${value}%`, 'Score Médio'];
+                    if (name === 'count') return [value, 'Propostas'];
+                    return [value, name];
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="avgScore" 
+                  stroke="#6366f1" 
+                  fillOpacity={1}
+                  fill="url(#scoreGradient)"
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
+                <ReferenceLine 
+                  y={70} 
+                  stroke="#10b981" 
+                  strokeDasharray="5 5"
+                  label={{ value: "Meta (70%)", position: "topRight", fill: '#10b981' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </ChartsGrid>
+      )}
+
+      {/* Heatmap de Performance por Vendedor */}
+      {data.sellerHeatmap && data.sellerHeatmap.length > 0 && (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>
+              <BarChart3 size={20} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
+              Heatmap de Performance por Vendedor
+            </ChartTitle>
+            <ChartSubtitle>
+              Performance dos vendedores nos últimos 30 dias
+            </ChartSubtitle>
+            <div style={{ marginTop: '1.5rem' }}>
+              {data.sellerHeatmap.map((seller, index) => {
+                const performanceColor = 
+                  seller.performanceLevel === 'high' ? '#10b981' :
+                  seller.performanceLevel === 'medium' ? '#fbbf24' : '#ef4444';
+                const bgColor = 
+                  seller.performanceLevel === 'high' ? 'rgba(16, 185, 129, 0.15)' :
+                  seller.performanceLevel === 'medium' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+                const borderColor = 
+                  seller.performanceLevel === 'high' ? 'rgba(16, 185, 129, 0.3)' :
+                  seller.performanceLevel === 'medium' ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)';
+                
+                return (
+                  <div 
+                    key={index}
+                    style={{
+                      background: bgColor,
+                      border: `1px solid ${borderColor}`,
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      transition: 'transform 0.2s ease'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ 
+                        fontWeight: '600', 
+                        color: '#fff', 
+                        marginBottom: '0.25rem',
+                        fontSize: '1rem'
+                      }}>
+                        {seller.sellerName}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.75rem', 
+                        color: 'rgba(255,255,255,0.6)',
+                        display: 'flex',
+                        gap: '1rem',
+                        marginTop: '0.5rem'
+                      }}>
+                        <span>📊 {seller.proposalCount} propostas</span>
+                        <span>⭐ {seller.highScoreCount} altos scores</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ 
+                        fontSize: '1.5rem', 
+                        fontWeight: '700', 
+                        color: performanceColor,
+                        marginBottom: '0.25rem'
+                      }}>
+                        {seller.avgScore}%
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.75rem', 
+                        color: performanceColor,
+                        fontWeight: '600',
+                        textTransform: 'uppercase'
+                      }}>
+                        {seller.performanceLevel === 'high' ? 'Alta' : 
+                         seller.performanceLevel === 'medium' ? 'Média' : 'Baixa'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ChartCard>
+        </ChartsGrid>
+      )}
+
+      {/* Comparação Período Atual vs Anterior */}
+      {data.periodComparison && (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>
+              <TrendingUp size={20} style={{ marginRight: '0.5rem', display: 'inline-block' }} />
+              Comparação de Períodos
+            </ChartTitle>
+            <ChartSubtitle>
+              Período atual vs. período anterior
+            </ChartSubtitle>
+            <div style={{ marginTop: '1.5rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                {/* Período Atual */}
+                <div style={{
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  borderRadius: '8px',
+                  padding: '1rem'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'rgba(255,255,255,0.6)',
+                    marginBottom: '0.5rem'
+                  }}>
+                    PERÍODO ATUAL
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    color: '#a5b4fc',
+                    marginBottom: '1rem'
+                  }}>
+                    {data.periodComparison.current.period}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <MetricRow label="Score Médio" value={`${data.periodComparison.current.avgScore}%`} />
+                    <MetricRow label="Total Propostas" value={data.periodComparison.current.total} />
+                    <MetricRow label="Valor Total" value={formatCurrency(data.periodComparison.current.totalValue)} />
+                    <MetricRow label="Altos Scores" value={data.periodComparison.current.highScoreCount} />
+                  </div>
+                </div>
+
+                {/* Período Anterior */}
+                <div style={{
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '8px',
+                  padding: '1rem'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'rgba(255,255,255,0.6)',
+                    marginBottom: '0.5rem'
+                  }}>
+                    PERÍODO ANTERIOR
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    color: '#c4b5fd',
+                    marginBottom: '1rem'
+                  }}>
+                    {data.periodComparison.previous.period}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <MetricRow label="Score Médio" value={`${data.periodComparison.previous.avgScore}%`} />
+                    <MetricRow label="Total Propostas" value={data.periodComparison.previous.total} />
+                    <MetricRow label="Valor Total" value={formatCurrency(data.periodComparison.previous.totalValue)} />
+                    <MetricRow label="Altos Scores" value={data.periodComparison.previous.highScoreCount} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mudanças */}
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                padding: '1rem'
+              }}>
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  fontWeight: '600',
+                  color: '#fff',
+                  marginBottom: '1rem'
+                }}>
+                  📈 VARIAÇÕES
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                  <ChangeMetric 
+                    label="Score Médio" 
+                    diff={data.periodComparison.changes.avgScoreDiff}
+                    percent={data.periodComparison.changes.avgScorePercentChange}
+                  />
+                  <ChangeMetric 
+                    label="Total Propostas" 
+                    diff={data.periodComparison.changes.totalDiff}
+                    percent={data.periodComparison.changes.totalPercentChange}
+                  />
+                  <ChangeMetric 
+                    label="Valor Total" 
+                    diff={data.periodComparison.changes.valueDiff}
+                    percent={data.periodComparison.changes.valuePercentChange}
+                    isCurrency
+                  />
+                  <ChangeMetric 
+                    label="Altos Scores" 
+                    diff={data.periodComparison.changes.highScoreDiff}
+                  />
+                </div>
+              </div>
+            </div>
           </ChartCard>
         </ChartsGrid>
       )}

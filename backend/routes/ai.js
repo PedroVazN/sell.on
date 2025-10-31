@@ -579,6 +579,180 @@ router.get('/dashboard', async (req, res) => {
       }
     };
 
+    // 8. Evolução Temporal do Score (últimos 30 dias)
+    const scoreEvolution = [];
+    const daysAgo = 30;
+    for (let i = daysAgo - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const dayProposals = await Proposal.find({
+        status: 'negociacao',
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+      }).limit(50).lean();
+      
+      if (dayProposals.length > 0) {
+        const dayScores = [];
+        for (const p of dayProposals.slice(0, 20)) { // Limitar para performance
+          try {
+            const score = await calculateProposalScore(p);
+            if (score && score.score !== undefined) {
+              dayScores.push(score.score);
+            }
+          } catch (err) {
+            // Ignorar erros individuais
+          }
+        }
+        
+        if (dayScores.length > 0) {
+          const avgScore = dayScores.reduce((sum, s) => sum + s, 0) / dayScores.length;
+          scoreEvolution.push({
+            date: date.toISOString().split('T')[0],
+            avgScore: Math.round(avgScore),
+            count: dayScores.length
+          });
+        }
+      }
+    }
+
+    // 9. Heatmap de Performance por Vendedor (últimos 30 dias)
+    const heatmapData = {};
+    const sellerHeatmapPromises = topSellers.map(async (seller) => {
+      const sellerId = Object.keys(sellerStats).find(id => sellerStats[id].name === seller.name);
+      if (!sellerId) return null;
+      
+      // Buscar propostas do vendedor nos últimos 30 dias
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const sellerProposals = await Proposal.find({
+        $or: [
+          { 'createdBy._id': new mongoose.Types.ObjectId(sellerId) },
+          { createdBy: new mongoose.Types.ObjectId(sellerId) }
+        ],
+        createdAt: { $gte: thirtyDaysAgo },
+        status: 'negociacao'
+      }).limit(100).lean();
+      
+      if (sellerProposals.length === 0) return null;
+      
+      // Calcular scores para o vendedor
+      const sellerScores = [];
+      for (const p of sellerProposals.slice(0, 30)) {
+        try {
+          const score = await calculateProposalScore(p);
+          if (score && score.score !== undefined) {
+            sellerScores.push(score.score);
+          }
+        } catch (err) {
+          // Ignorar
+        }
+      }
+      
+      const avgScore = sellerScores.length > 0 
+        ? sellerScores.reduce((sum, s) => sum + s, 0) / sellerScores.length 
+        : 0;
+      
+      return {
+        sellerName: seller.name,
+        avgScore: Math.round(avgScore),
+        proposalCount: sellerProposals.length,
+        highScoreCount: sellerScores.filter(s => s >= 70).length,
+        performanceLevel: avgScore >= 70 ? 'high' : avgScore >= 50 ? 'medium' : 'low'
+      };
+    });
+    
+    const sellerHeatmap = (await Promise.all(sellerHeatmapPromises)).filter(Boolean);
+
+    // 10. Comparação Período Atual vs Anterior
+    const now = new Date();
+    const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentPeriodEnd = now;
+    
+    const previousPeriodEnd = new Date(currentPeriodStart);
+    previousPeriodEnd.setDate(previousPeriodEnd.getDate() - 1);
+    const previousPeriodStart = new Date(previousPeriodEnd.getFullYear(), previousPeriodEnd.getMonth(), 1);
+    
+    // Propostas do período atual
+    const currentPeriodProposals = await Proposal.find({
+      status: 'negociacao',
+      createdAt: { $gte: currentPeriodStart, $lte: currentPeriodEnd }
+    }).limit(100).lean();
+    
+    // Propostas do período anterior
+    const previousPeriodProposals = await Proposal.find({
+      status: 'negociacao',
+      createdAt: { $gte: previousPeriodStart, $lte: previousPeriodEnd }
+    }).limit(100).lean();
+    
+    // Calcular métricas de comparação
+    const calculatePeriodMetrics = async (proposals) => {
+      if (proposals.length === 0) return { avgScore: 0, total: 0, totalValue: 0, highScoreCount: 0 };
+      
+      const scores = [];
+      let totalValue = 0;
+      
+      for (const p of proposals.slice(0, 50)) {
+        try {
+          const score = await calculateProposalScore(p);
+          if (score && score.score !== undefined) {
+            scores.push(score.score);
+          }
+          totalValue += p.total || 0;
+        } catch (err) {
+          // Ignorar
+        }
+      }
+      
+      const avgScore = scores.length > 0 ? scores.reduce((sum, s) => sum + s, 0) / scores.length : 0;
+      const highScoreCount = scores.filter(s => s >= 70).length;
+      
+      return {
+        avgScore: Math.round(avgScore),
+        total: proposals.length,
+        totalValue,
+        highScoreCount
+      };
+    };
+    
+    const currentMetrics = await calculatePeriodMetrics(currentPeriodProposals);
+    const previousMetrics = await calculatePeriodMetrics(previousPeriodProposals);
+    
+    const periodComparison = {
+      current: {
+        period: `${currentPeriodStart.toLocaleDateString('pt-BR')} - ${currentPeriodEnd.toLocaleDateString('pt-BR')}`,
+        ...currentMetrics
+      },
+      previous: {
+        period: `${previousPeriodStart.toLocaleDateString('pt-BR')} - ${previousPeriodEnd.toLocaleDateString('pt-BR')}`,
+        ...previousMetrics
+      },
+      changes: {
+        avgScoreDiff: currentMetrics.avgScore - previousMetrics.avgScore,
+        avgScorePercentChange: previousMetrics.avgScore > 0 
+          ? ((currentMetrics.avgScore - previousMetrics.avgScore) / previousMetrics.avgScore) * 100 
+          : 0,
+        totalDiff: currentMetrics.total - previousMetrics.total,
+        totalPercentChange: previousMetrics.total > 0 
+          ? ((currentMetrics.total - previousMetrics.total) / previousMetrics.total) * 100 
+          : 0,
+        valueDiff: currentMetrics.totalValue - previousMetrics.totalValue,
+        valuePercentChange: previousMetrics.totalValue > 0 
+          ? ((currentMetrics.totalValue - previousMetrics.totalValue) / previousMetrics.totalValue) * 100 
+          : 0,
+        highScoreDiff: currentMetrics.highScoreCount - previousMetrics.highScoreCount
+      }
+    };
+
+    // Adicionar novos dados ao dashboard
+    dashboardData.scoreEvolution = scoreEvolution;
+    dashboardData.sellerHeatmap = sellerHeatmap;
+    dashboardData.periodComparison = periodComparison;
+
     // Armazenar no cache antes de retornar (TTL de 5 minutos)
     cache.set(cacheKey, dashboardData, 300);
     console.log('💾 Dashboard calculado e armazenado no cache (TTL: 5 minutos)');
