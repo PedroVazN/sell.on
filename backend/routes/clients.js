@@ -114,8 +114,9 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// POST /api/clients - Criar novo cliente (somente admin)
-router.post('/', auth, authorize('admin'), async (req, res) => {
+// POST /api/clients - Criar novo cliente (admin e vendedor)
+// Vendedores podem criar clientes ao criar propostas, igual ao admin
+router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
   try {
     const {
       cnpj,
