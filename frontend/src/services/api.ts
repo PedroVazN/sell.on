@@ -548,6 +548,8 @@ export interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data: T;
+  cached?: boolean;
+  cacheAge?: number;
   pagination?: {
     current: number;
     pages: number;

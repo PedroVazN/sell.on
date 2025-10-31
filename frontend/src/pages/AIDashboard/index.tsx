@@ -183,7 +183,7 @@ interface AIDashboardData {
       }>;
       detected: boolean;
     };
-    sellerForecasts: Array<{
+    sellerForecasts?: Array<{
       sellerId: string;
       sellerName: string;
       historical: {
@@ -196,6 +196,24 @@ interface AIDashboardData {
         next30Days: {
           sales: number;
           revenue: number;
+        };
+      };
+    }>;
+    categoryForecasts?: Array<{
+      category: string;
+      historical: {
+        sales: number;
+        revenue: number;
+        avgSaleValue: number;
+        marketShare: number;
+        totalQuantity: number;
+        avgQuantity: number;
+      };
+      forecast: {
+        next30Days: {
+          sales: number;
+          revenue: number;
+          quantity: number;
         };
       };
     }>;
@@ -287,32 +305,6 @@ interface AIDashboardData {
     count: number;
     percentage: number;
   }>;
-  forecastDetails?: {
-    categoryForecasts?: Array<{
-      category: string;
-      historical: {
-        sales: number;
-        revenue: number;
-        avgSaleValue: number;
-        marketShare: number;
-        totalQuantity: number;
-        avgQuantity: number;
-      };
-      forecast: {
-        next30Days: {
-          sales: number;
-          revenue: number;
-          quantity: number;
-        };
-      };
-    }>;
-    historical?: {
-      period?: {
-        start: string;
-        end: string;
-      };
-    };
-  };
 }
 
 // Componentes auxiliares
@@ -1073,7 +1065,7 @@ export const AIDashboard: React.FC = () => {
                     y={data.forecastDetails.historical.avgDailyRevenue} 
                     stroke="#10b981" 
                     strokeDasharray="5 5"
-                    label={{ value: "Média Histórica", position: "topRight", fill: '#10b981', fontSize: 12 }}
+                    label={{ value: "Média Histórica", position: "top", fill: '#10b981', fontSize: 12 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -1551,7 +1543,7 @@ export const AIDashboard: React.FC = () => {
                   y={70} 
                   stroke="#10b981" 
                   strokeDasharray="5 5"
-                  label={{ value: "Meta (70%)", position: "topRight", fill: '#10b981' }}
+                  label={{ value: "Meta (70%)", position: "top", fill: '#10b981' }}
                 />
               </AreaChart>
             </ResponsiveContainer>

@@ -17,13 +17,9 @@ import {
   Label,
   Input,
   Select,
-  SwitchContainer,
-  SwitchLabel,
-  Switch,
   ButtonGroup,
   Button,
-  LoadingSpinner,
-  StatusIndicator
+  LoadingSpinner
 } from './styles';
 
 interface ProductFormData {
