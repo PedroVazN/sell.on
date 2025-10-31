@@ -26,12 +26,10 @@ router.get('/', auth, async (req, res) => {
 
     let query = {};
     
-    // FILTRO POR VENDEDOR: Se for vendedor, só mostra clientes que ele criou
-    if (req.user.role === 'vendedor') {
-      query.createdBy = req.user.id;
-      console.log(`👤 Vendedor ${req.user.email} acessando apenas seus clientes`);
-    }
+    // VENDEDOR: Pode buscar TODOS os clientes para criar propostas
+    // (mas só pode gerenciar/editar os que ele criou - ver rotas POST/PUT/DELETE)
     // Admin vê todos os clientes (sem filtro)
+    console.log(`👤 Usuário ${req.user.email} (${req.user.role}) buscando clientes`);
     
     if (search) {
       query.$or = [
@@ -90,10 +88,8 @@ router.get('/:id', auth, async (req, res) => {
   try {
     let query = { _id: req.params.id };
     
-    // FILTRO POR VENDEDOR: Se for vendedor, só pode ver clientes que ele criou
-    if (req.user.role === 'vendedor') {
-      query.createdBy = req.user.id;
-    }
+    // VENDEDOR: Pode ver TODOS os clientes para criar propostas
+    // (mas só pode editar os que ele criou - ver rotas PUT/DELETE)
     
     const client = await Client.findOne(query)
       .populate('createdBy', 'name email');
@@ -101,7 +97,7 @@ router.get('/:id', auth, async (req, res) => {
     if (!client) {
       return res.status(404).json({ 
         success: false,
-        message: 'Cliente não encontrado ou você não tem permissão para visualizá-lo' 
+        message: 'Cliente não encontrado' 
       });
     }
 
