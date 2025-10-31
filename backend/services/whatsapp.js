@@ -253,11 +253,37 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
       
       // Sugestões baseadas no erro
       if (error.response.data.code === 21211 || error.response.data.message?.includes('Channel')) {
-        console.error('   💡 SOLUÇÃO:');
-        console.error('      1. Verifique se ativou o WhatsApp Sandbox no Twilio');
-        console.error('      2. Acesse: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn');
-        console.error('      3. Use EXATAMENTE: TWILIO_WHATSAPP_FROM=whatsapp:+14155238886');
-        console.error('      4. Certifique-se que o número sandbox está ativo na sua conta');
+        console.error('');
+        console.error('   ⚠️⚠️⚠️ ERRO CRÍTICO: WhatsApp Sandbox não configurado ⚠️⚠️⚠️');
+        console.error('');
+        console.error('   📋 PASSO A PASSO OBRIGATÓRIO:');
+        console.error('');
+        console.error('   1️⃣ Ativar WhatsApp Sandbox no Twilio:');
+        console.error('      → Acesse: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn');
+        console.error('      → Faça login na sua conta Twilio');
+        console.error('      → Você DEVE ver uma página com instruções do WhatsApp Sandbox');
+        console.error('');
+        console.error('   2️⃣ Descobrir o número sandbox EXATO:');
+        console.error('      → Na mesma página, procure por "From" ou "Sandbox Number"');
+        console.error('      → Anote o número (formato: +1 415 XXX XXXX)');
+        console.error('      → Exemplo: Se aparecer "+1 415 523 8886", use: whatsapp:+14155238886');
+        console.error('');
+        console.error('   3️⃣ Cadastrar seu número para receber mensagens:');
+        console.error('      → Envie uma mensagem para o número sandbox no WhatsApp');
+        console.error('      → Envie o código que aparece (ex: "join <código>")');
+        console.error('      → Você receberá "You\'re all set!"');
+        console.error('      → SEM ISSO, você NÃO recebe mensagens!');
+        console.error('');
+        console.error('   4️⃣ Configurar no .env ou Vercel:');
+        console.error('      TWILIO_WHATSAPP_FROM=whatsapp:+1415XXXXXXXX');
+        console.error('      (Substitua 1415XXXXXXXX pelo número que descobriu)');
+        console.error('');
+        console.error('   ⚠️ IMPORTANTE:');
+        console.error('      - Números sandbox SEMPRE começam com +1415');
+        console.error('      - Você NÃO pode usar seu número pessoal como "From" no sandbox');
+        console.error('      - O sandbox é apenas para testes');
+        console.error('      - Para produção, você precisa solicitar aprovação do número');
+        console.error('');
       }
       if (error.response.data.code === 21608 || error.response.data.message?.includes('same')) {
         console.error('   💡 SOLUÇÃO: From e To não podem ser iguais. Verifique ADMIN_WHATSAPP_PHONE.');
