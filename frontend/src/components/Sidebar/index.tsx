@@ -106,10 +106,6 @@ export const Sidebar: React.FC = () => {
           { icon: <Truck size={20} />, label: 'Distribuidores', path: '/distributors', permission: 'admin' },
           { icon: <DollarSign size={20} />, label: 'Lista de Preços', path: '/price-list', permission: 'admin' },
         ] : []),
-        // Aba visível para vendedor: usa mesma rota de clientes, backend já filtra por createdBy
-        ...(user?.role === 'vendedor' ? [
-          { icon: <UsersIcon size={20} />, label: 'Meus Clientes', path: '/clients', permission: 'proposals' },
-        ] : []),
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
         ...(hasPermission('admin') ? [
           { icon: <FileBarChart size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
