@@ -23,7 +23,12 @@ import {
   StatusBadge,
   EmptyState,
   LoadingState,
-  ErrorState
+  ErrorState,
+  Pagination,
+  PaginationButton,
+  PaginationNumbers,
+  PaginationNumber,
+  Ellipsis
 } from './styles';
 
 export const Clients: React.FC = () => {
@@ -36,24 +41,35 @@ export const Clients: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
 
   const loadClients = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getClients(1, 100, searchTerm);
-      setClients(response.data);
+      const response = await apiService.getClients(currentPage, itemsPerPage, searchTerm);
+      setClients(response.data || []);
+      // Calcular total de páginas baseado na resposta da API
+      if (response.pagination) {
+        setTotalPages(Math.ceil((response.pagination.total || 0) / itemsPerPage));
+      }
     } catch (err) {
       setError('Erro ao carregar clientes');
       console.error('Erro ao carregar clientes:', err);
     } finally {
       setLoading(false);
     }
+  }, [searchTerm, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Resetar para primeira página ao buscar
   }, [searchTerm]);
 
   useEffect(() => {
     loadClients();
-  }, [searchTerm, loadClients]);
+  }, [loadClients]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -260,6 +276,52 @@ export const Clients: React.FC = () => {
               ))}
             </TableBody>
           </Table>
+        )}
+
+        {/* Paginação */}
+        {clients.length > 0 && totalPages > 1 && (
+          <Pagination>
+            <PaginationButton 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </PaginationButton>
+            
+            <PaginationNumbers>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Mostrar primeira, última, atual e páginas adjacentes
+                  return page === 1 || 
+                         page === totalPages || 
+                         Math.abs(page - currentPage) <= 1;
+                })
+                .map((page, index, array) => {
+                  // Adicionar "..." quando necessário
+                  const prevPage = array[index - 1];
+                  const showEllipsis = prevPage && page - prevPage > 1;
+                  
+                  return (
+                    <React.Fragment key={page}>
+                      {showEllipsis && <Ellipsis>...</Ellipsis>}
+                      <PaginationNumber
+                        onClick={() => setCurrentPage(page)}
+                        $active={currentPage === page}
+                      >
+                        {page}
+                      </PaginationNumber>
+                    </React.Fragment>
+                  );
+                })}
+            </PaginationNumbers>
+            
+            <PaginationButton 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Próxima
+            </PaginationButton>
+          </Pagination>
         )}
       </Content>
 

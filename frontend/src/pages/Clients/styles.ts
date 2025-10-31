@@ -1,50 +1,20 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: ${({ theme }) => theme.spacing.xxl};
-  background: ${({ theme }) => theme.colors.gradients.background};
+  padding: 32px;
+  background: #0a0a0f;
   min-height: 100vh;
   position: relative;
-  animation: fadeIn 0.8s ease-out;
   
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
     pointer-events: none;
-    animation: float 20s ease-in-out infinite;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-      linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.01) 50%, transparent 70%),
-      linear-gradient(-45deg, transparent 30%, rgba(59, 130, 246, 0.02) 50%, transparent 70%);
-    pointer-events: none;
-    animation: shimmer 15s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    33% { transform: translateY(-10px) rotate(0.5deg); }
-    66% { transform: translateY(5px) rotate(-0.5deg); }
-  }
-
-  @keyframes shimmer {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.8; }
+    z-index: 0;
   }
 `;
 
@@ -52,79 +22,45 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${({ theme }) => theme.spacing.xxl};
+  margin-bottom: 32px;
   position: relative;
   z-index: 1;
-  animation: slideIn 0.8s ease-out 0.2s both;
 `;
 
 export const Title = styled.h1`
-  font-size: 3rem;
-  font-weight: 900;
-  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
   margin: 0;
-  letter-spacing: -2px;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -12px;
-    left: 0;
-    width: 120px;
-    height: 4px;
-    background: ${({ theme }) => theme.colors.primary};
-    border-radius: 4px;
-  }
+  letter-spacing: -0.5px;
 `;
 
 export const Actions = styled.div`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.lg};
-  animation: fadeInUp 0.8s ease-out 0.4s both;
+  gap: 16px;
 `;
 
 export const SearchContainer = styled.div`
   display: flex;
   align-items: center;
-  background: ${({ theme }) => theme.colors.background.glass};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
-  min-width: 350px;
-  backdrop-filter: blur(20px);
-  box-shadow: ${({ theme }) => theme.shadows.medium};
-  transition: all ${({ theme }) => theme.transitions.normal};
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.glass};
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    z-index: -1;
-  }
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${({ theme }) => theme.shadows.glow};
-    border-color: ${({ theme }) => theme.colors.border.secondary};
-  }
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 300px;
   
   svg {
-    color: ${({ theme }) => theme.colors.text.tertiary};
-    margin-right: ${({ theme }) => theme.spacing.sm};
-    transition: color ${({ theme }) => theme.transitions.normal};
+    color: rgba(255, 255, 255, 0.5);
+    margin-right: 12px;
   }
   
-  &:hover svg {
-    color: ${({ theme }) => theme.colors.primary};
+  &:focus-within {
+    border-color: rgba(59, 130, 246, 0.5);
+    
+    svg {
+      color: #3b82f6;
+    }
   }
 `;
 
@@ -132,180 +68,91 @@ export const SearchInput = styled.input`
   background: transparent;
   border: none;
   outline: none;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1rem;
+  color: #ffffff;
+  font-size: 0.95rem;
   flex: 1;
-  font-weight: 500;
+  font-weight: 400;
   
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text.tertiary};
-    font-weight: 400;
-  }
-  
-  &:focus {
-    &::placeholder {
-      color: ${({ theme }) => theme.colors.text.secondary};
-    }
-  }
-  
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.text.tertiary};
+    color: rgba(255, 255, 255, 0.4);
   }
 `;
 
 export const FilterButton = styled.button`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.sm};
-  background: ${({ theme }) => theme.colors.background.glass};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 1rem;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all ${({ theme }) => theme.transitions.normal};
-  backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
-  animation: fadeInUp 0.8s ease-out 0.7s both;
+  transition: all 0.2s ease;
   
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.glass};
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    z-index: -1;
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(59, 130, 246, 0.3);
   }
   
-  &:hover {
-    color: ${({ theme }) => theme.colors.primary};
-    border-color: ${({ theme }) => theme.colors.border.secondary};
-    transform: translateY(-2px);
-    box-shadow: ${({ theme }) => theme.shadows.medium};
-  }
-  
-  &:active {
-    transform: translateY(0);
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
 export const CreateButton = styled.button`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.sm};
-  background: ${({ theme }) => theme.colors.gradients.button};
+  gap: 8px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   border: none;
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
+  border-radius: 12px;
+  padding: 12px 24px;
   color: white;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all ${({ theme }) => theme.transitions.normal};
-  position: relative;
-  overflow: hidden;
-  box-shadow: ${({ theme }) => theme.shadows.medium};
-  animation: fadeInUp 0.8s ease-out 0.6s both;
+  transition: all 0.2s ease;
   
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
   }
   
-  &:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: ${({ theme }) => theme.shadows.glow};
-    
-    &::before {
-      left: 100%;
-    }
-  }
-  
-  &:active {
-    transform: translateY(-1px) scale(0.98);
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
 export const Content = styled.div`
-  background: ${({ theme }) => theme.colors.background.glass};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  padding: ${({ theme }) => theme.spacing.xxl};
-  backdrop-filter: blur(30px);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
   position: relative;
   z-index: 1;
-  box-shadow: ${({ theme }) => theme.shadows.medium};
-  animation: fadeInUp 0.8s ease-out 0.8s both;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.glass};
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    z-index: -1;
-  }
-  
-  p {
-    color: ${({ theme }) => theme.colors.text.secondary};
-    font-size: 1.125rem;
-    font-weight: 500;
-  }
 `;
 
 export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  background: ${({ theme }) => theme.colors.background.glass};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  overflow: hidden;
-  box-shadow: ${({ theme }) => theme.shadows.medium};
-  position: relative;
-  z-index: 1;
+  background: transparent;
 `;
 
 export const TableHeader = styled.thead`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.primary};
-    opacity: 0.1;
-    z-index: -1;
-  }
+  background: rgba(255, 255, 255, 0.05);
 `;
 
 export const TableRow = styled.tr`
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
-  transition: all ${({ theme }) => theme.transitions.normal};
-  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
   
   &:hover {
-    background: ${({ theme }) => theme.colors.background.glassHover};
-    transform: translateX(4px);
-    box-shadow: ${({ theme }) => theme.shadows.small};
+    background: rgba(255, 255, 255, 0.03);
   }
   
   &:last-child {
@@ -314,103 +161,55 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.lg};
+  padding: 16px 12px;
   text-align: left;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1rem;
-  font-weight: 500;
-  position: relative;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 400;
   
-  &:first-child {
-    font-weight: 700;
-    color: ${({ theme }) => theme.colors.text.primary};
+  strong {
+    font-weight: 600;
+    color: #ffffff;
   }
 `;
 
 export const TableBody = styled.tbody``;
 
 export const ActionButton = styled.button`
-  background: none;
+  background: rgba(255, 255, 255, 0.05);
   border: none;
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  padding: ${({ theme }) => theme.spacing.sm};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  transition: all ${({ theme }) => theme.transitions.normal};
-  margin-right: ${({ theme }) => theme.spacing.sm};
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.primary};
-    opacity: 0;
-    transition: opacity ${({ theme }) => theme.transitions.normal};
-    border-radius: ${({ theme }) => theme.borderRadius.md};
-  }
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  margin-right: 8px;
   
   &:hover {
-    background: ${({ theme }) => theme.colors.background.glassHover};
-    color: ${({ theme }) => theme.colors.primary};
-    transform: translateY(-2px) scale(1.1);
-    box-shadow: ${({ theme }) => theme.shadows.small};
-    
-    &::before {
-      opacity: 0.1;
-    }
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
   }
   
   &:last-child:hover {
-    color: ${({ theme }) => theme.colors.error};
-  }
-  
-  &:active {
-    transform: translateY(0) scale(1.05);
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
   }
 `;
 
 export const StatusBadge = styled.span<{ $isActive: boolean }>`
   display: inline-block;
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  font-size: 0.875rem;
-  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: ${({ $isActive, theme }) => 
-    $isActive ? theme.colors.gradients.button : theme.colors.gradients.buttonSecondary};
-  color: white;
-  box-shadow: ${({ theme }) => theme.shadows.small};
-  position: relative;
-  overflow: hidden;
   
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-  }
-  
-  &:hover::before {
-    left: 100%;
-  }
-  letter-spacing: 0.5px;
-  
-  ${({ $isActive, theme }) => $isActive ? `
-    background: ${theme.colors.success}20;
-    color: ${theme.colors.success};
+  ${({ $isActive }) => $isActive ? `
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
   ` : `
-    background: ${theme.colors.error}20;
-    color: ${theme.colors.error};
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
   `}
 `;
 
@@ -419,23 +218,23 @@ export const EmptyState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: ${({ theme }) => theme.spacing.xxl};
+  padding: 48px;
   text-align: center;
   
   svg {
-    color: ${({ theme }) => theme.colors.text.tertiary};
-    margin-bottom: ${({ theme }) => theme.spacing.lg};
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 24px;
   }
   
   h3 {
-    color: ${({ theme }) => theme.colors.text.primary};
-    margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
+    color: #ffffff;
+    margin: 0 0 12px 0;
     font-size: 1.5rem;
   }
   
   p {
-    color: ${({ theme }) => theme.colors.text.secondary};
-    margin: 0 0 ${({ theme }) => theme.spacing.lg} 0;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 24px 0;
     font-size: 1rem;
   }
 `;
@@ -445,17 +244,17 @@ export const LoadingState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: ${({ theme }) => theme.spacing.xxl};
+  padding: 48px;
   text-align: center;
   
   svg {
-    color: ${({ theme }) => theme.colors.primary};
-    margin-bottom: ${({ theme }) => theme.spacing.lg};
+    color: #3b82f6;
+    margin-bottom: 24px;
     animation: spin 1s linear infinite;
   }
   
   p {
-    color: ${({ theme }) => theme.colors.text.secondary};
+    color: rgba(255, 255, 255, 0.7);
     margin: 0;
     font-size: 1rem;
   }
@@ -471,28 +270,89 @@ export const ErrorState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: ${({ theme }) => theme.spacing.xxl};
+  padding: 48px;
   text-align: center;
   
   p {
-    color: ${({ theme }) => theme.colors.error};
-    margin: 0 0 ${({ theme }) => theme.spacing.lg} 0;
+    color: #ef4444;
+    margin: 0 0 24px 0;
     font-size: 1rem;
   }
   
   button {
-    background: ${({ theme }) => theme.colors.primary};
+    background: #3b82f6;
     border: none;
-    border-radius: ${({ theme }) => theme.borderRadius.lg};
-    padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-    color: ${({ theme }) => theme.colors.text.inverse};
+    border-radius: 12px;
+    padding: 10px 20px;
+    color: #ffffff;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     
     &:hover {
-      background: ${({ theme }) => theme.colors.success};
-      transform: translateY(-2px);
+      background: #2563eb;
     }
   }
+`;
+
+// Paginação
+export const Pagination = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+export const PaginationButton = styled.button`
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+`;
+
+export const PaginationNumbers = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+export const PaginationNumber = styled.button<{ $active: boolean }>`
+  min-width: 36px;
+  height: 36px;
+  background: ${({ $active }) => $active ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
+  border: 1px solid ${({ $active }) => $active ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.1)'};
+  border-radius: 8px;
+  color: ${({ $active }) => $active ? '#3b82f6' : '#ffffff'};
+  font-size: 0.9rem;
+  font-weight: ${({ $active }) => $active ? '600' : '500'};
+  cursor: pointer;
+  transition: all 0.15s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+`;
+
+export const Ellipsis = styled.span`
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 4px;
 `;
