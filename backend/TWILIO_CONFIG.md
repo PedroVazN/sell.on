@@ -13,16 +13,27 @@
    - **Account SID**: Começa com `AC...`
    - **Auth Token**: Clique em "show" para revelar
 
-## 3. Configurar WhatsApp
+## 3. Configurar WhatsApp (IMPORTANTE!)
 
-1. No menu lateral, vá em **Messaging** > **Try it out** > **Send a WhatsApp message**
-2. Ou vá em **Messaging** > **Senders** > **WhatsApp**
-3. Use o número sandbox do Twilio: `+14155238886`
-4. Para adicionar números para receber mensagens (modo sandbox):
-   - Vá em **Messaging** > **Try it out** > **Send a WhatsApp message**
-   - Clique em "Join Sandbox"
-   - Escaneie o QR Code com seu WhatsApp
-   - Agora você pode receber mensagens deste número sandbox
+### Passo 1: Ativar WhatsApp Sandbox
+1. No menu lateral do Twilio, vá em **Messaging** > **Try it out** > **Send a WhatsApp message**
+2. Ou acesse diretamente: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn
+3. Você verá um número sandbox: `+1 415 523 8886` (ou similar)
+4. **ANOTE O CÓDIGO DE CONFIRMAÇÃO** que aparece (ex: "join <código>")
+
+### Passo 2: Cadastrar seu número para receber mensagens
+1. Envie uma mensagem para o número sandbox do Twilio no WhatsApp
+2. Envie o código de confirmação que você viu (ex: "join <código>")
+3. Você receberá uma confirmação "You're all set!"
+4. **IMPORTANTE**: Você só pode receber mensagens se fizer isso primeiro!
+
+### Passo 3: Configurar o número "From"
+**O número sandbox padrão é:** `whatsapp:+14155238886`
+
+**IMPORTANTE:**
+- Use exatamente: `whatsapp:+14155238886` (com "whatsapp:" e "+")
+- Não esqueça o "whatsapp:" no início
+- Não esqueça o "+" antes do número
 
 ## 4. Configurar Variáveis de Ambiente
 
@@ -34,6 +45,12 @@ TWILIO_AUTH_TOKEN=seu_auth_token_aqui
 TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
 ADMIN_WHATSAPP_PHONE=55649999999999
 ```
+
+**⚠️ ATENÇÃO - Formato do TWILIO_WHATSAPP_FROM:**
+- ✅ Correto: `whatsapp:+14155238886`
+- ❌ Errado: `+14155238886` (falta "whatsapp:")
+- ❌ Errado: `14155238886` (falta "whatsapp:" e "+")
+- ❌ Errado: `whatsapp:14155238886` (falta "+")
 
 ### Na Vercel:
 1. Vá no seu projeto na Vercel
@@ -69,15 +86,22 @@ Para usar em produção (não sandbox):
 
 ## Troubleshooting
 
+**Erro: "Twilio could not find a Channel with the specified 'From' address"**
+- ✅ **Solução**: Configure `TWILIO_WHATSAPP_FROM=whatsapp:+14155238886` (com "whatsapp:" e "+")
+- Verifique se copiou o número completo sem espaços
+- O código agora usa o sandbox padrão automaticamente se não configurar
+
 **Erro: "Unable to create record"**
 - Verifique se o número de destino está no formato correto
-- No modo sandbox, o número precisa estar cadastrado (escaneado QR Code)
+- No modo sandbox, o número precisa estar cadastrado (enviar "join <código>" primeiro)
 
 **Erro: "Unauthorized"**
 - Verifique Account SID e Auth Token
 - Certifique-se de copiar completo (sem espaços)
+- Auth Token é diferente do Account SID
 
 **Não recebe mensagem**
-- No modo sandbox, você precisa escanear o QR Code primeiro
-- Verifique se o número está no formato correto (55 + DDD + número)
+- No modo sandbox, você precisa enviar "join <código>" para o número sandbox primeiro
+- Verifique se o número ADMIN_WHATSAPP_PHONE está no formato correto (55 + DDD + número)
+- Confirme que você está usando o mesmo número que cadastrou no sandbox
 
