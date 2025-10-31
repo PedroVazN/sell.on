@@ -5,6 +5,7 @@ const Proposal = require('../models/Proposal');
 const { detectAnomalies } = require('../services/anomalyDetection');
 const { calculateSalesForecast } = require('../services/salesForecast');
 const { getProductRecommendations, getGeneralRecommendations, enrichRecommendations } = require('../services/productRecommendation');
+const cache = require('../services/cache');
 
 // Verificar se o serviço existe, caso contrário usar função mockada
 let calculateProposalScore;
@@ -40,11 +41,68 @@ try {
 // Por enquanto, deixar sem auth para facilitar desenvolvimento
 
 /**
+ * POST /api/ai/cache/invalidate - Invalidar cache do dashboard
+ * Útil quando propostas são atualizadas/criadas
+ */
+router.post('/cache/invalidate', (req, res) => {
+  try {
+    cache.delete('ai_dashboard_full');
+    console.log('🗑️ Cache do dashboard de IA invalidado');
+    res.json({
+      success: true,
+      message: 'Cache invalidado com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao invalidar cache:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao invalidar cache'
+    });
+  }
+});
+
+/**
+ * GET /api/ai/cache/stats - Estatísticas do cache
+ */
+router.get('/cache/stats', (req, res) => {
+  try {
+    const stats = cache.stats();
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter estatísticas do cache'
+    });
+  }
+});
+
+/**
  * GET /api/ai/dashboard - Dashboard completo de IA/ML
+ * Com cache de 5 minutos para melhor performance
  */
 router.get('/dashboard', async (req, res) => {
   try {
     console.log('🤖 Carregando dashboard de IA...');
+    
+    // Verificar cache primeiro (TTL de 5 minutos)
+    const cacheKey = 'ai_dashboard_full';
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      console.log('✅ Retornando dados do cache (sem recálculo)');
+      const cacheTimestamp = cache.getTimestamp(cacheKey);
+      return res.json({
+        success: true,
+        data: cachedData,
+        cached: true,
+        cacheAge: cacheTimestamp ? Math.floor((Date.now() - cacheTimestamp) / 1000) : 0
+      });
+    }
+
+    console.log('🔄 Cache não encontrado ou expirado, calculando novo dashboard...');
     
     // Timeout de segurança para evitar travamento
     const timeout = setTimeout(() => {
@@ -407,17 +465,15 @@ router.get('/dashboard', async (req, res) => {
       console.error('Erro ao buscar anomalias no dashboard:', error);
     }
 
-    res.json({
-      success: true,
-      data: {
-        scoreDistribution: {
-          alto: scoreDistribution.alto.count,
-          medio: scoreDistribution.medio.count,
-          baixo: scoreDistribution.baixo.count,
-          muito_baixo: scoreDistribution.muito_baixo.count,
-          totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
-        },
-        topProposals: proposalsWithScores.map(item => {
+    const dashboardData = {
+      scoreDistribution: {
+        alto: scoreDistribution.alto.count,
+        medio: scoreDistribution.medio.count,
+        baixo: scoreDistribution.baixo.count,
+        muito_baixo: scoreDistribution.muito_baixo.count,
+        totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
+      },
+      topProposals: proposalsWithScores.map(item => {
           try {
             // Formatar fatores para o formato esperado pelo frontend
             const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map((entry) => {
@@ -521,6 +577,16 @@ router.get('/dashboard', async (req, res) => {
           dashboardShowsNegotiationOnly: true // Dashboard mostra apenas negociação
         }
       }
+    };
+
+    // Armazenar no cache antes de retornar (TTL de 5 minutos)
+    cache.set(cacheKey, dashboardData, 300);
+    console.log('💾 Dashboard calculado e armazenado no cache (TTL: 5 minutos)');
+    
+    res.json({
+      success: true,
+      data: dashboardData,
+      cached: false
     });
     
     clearTimeout(timeout);

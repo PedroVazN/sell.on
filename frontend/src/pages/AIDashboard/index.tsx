@@ -249,20 +249,51 @@ export const AIDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCalculationModal, setShowCalculationModal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [cached, setCached] = useState(false);
+  const [chartsLoaded, setChartsLoaded] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
+  // Lazy load dos gráficos quando componente montar
+  useEffect(() => {
+    if (data && !chartsLoaded) {
+      // Simular carregamento assíncrono dos gráficos
+      const timer = setTimeout(() => {
+        setChartsLoaded(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [data, chartsLoaded]);
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
+      setLoadingProgress(0);
+
+      // Simular progresso
+      const progressInterval = setInterval(() => {
+        setLoadingProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
 
       const response = await apiService.getAIDashboard();
       
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
+      
       if (response.success && response.data) {
         setData(response.data);
+        // Verificar se veio do cache
+        if (response.cached) {
+          setCached(true);
+          console.log('✅ Dados carregados do cache (age:', response.cacheAge, 's)');
+        } else {
+          setCached(false);
+          console.log('🔄 Dados recalculados e atualizados');
+        }
       } else {
         setError('Erro ao carregar dados do dashboard de IA');
       }
@@ -271,6 +302,7 @@ export const AIDashboard: React.FC = () => {
       setError('Erro ao carregar dados do dashboard de IA');
     } finally {
       setLoading(false);
+      setLoadingProgress(0);
     }
   };
 
@@ -304,6 +336,24 @@ export const AIDashboard: React.FC = () => {
         <LoadingContainer>
           <Brain size={48} style={{ marginBottom: '1rem' }} />
           <div>Carregando insights de IA...</div>
+          <div style={{ 
+            marginTop: '1rem', 
+            width: '300px', 
+            height: '4px', 
+            background: 'rgba(255,255,255,0.1)', 
+            borderRadius: '2px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${loadingProgress}%`,
+              height: '100%',
+              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>
+            {loadingProgress}%
+          </div>
         </LoadingContainer>
       </Container>
     );
@@ -360,10 +410,27 @@ export const AIDashboard: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>Dashboard IA & Machine Learning</Title>
-        <Subtitle>
-          Insights inteligentes, previsões e análises automáticas para otimizar suas vendas
-        </Subtitle>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div>
+            <Title>Dashboard IA & Machine Learning</Title>
+            <Subtitle>
+              Insights inteligentes, previsões e análises automáticas para otimizar suas vendas
+            </Subtitle>
+          </div>
+          {cached && (
+            <div style={{
+              padding: '8px 16px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              color: '#10b981',
+              fontWeight: '500'
+            }}>
+              ⚡ Cache ativo
+            </div>
+          )}
+        </div>
       </Header>
 
       {/* Métricas Principais */}
@@ -450,7 +517,8 @@ export const AIDashboard: React.FC = () => {
         </ChartsGrid>
       )}
 
-      {/* Gráficos */}
+      {/* Gráficos - Lazy Loading */}
+      {chartsLoaded ? (
       <ChartsGrid>
         {/* Distribuição de Scores */}
         <ChartCard>
@@ -540,6 +608,16 @@ export const AIDashboard: React.FC = () => {
           </ResponsiveContainer>
         </ChartCard>
       </ChartsGrid>
+      ) : (
+        <ChartsGrid>
+          <ChartCard>
+            <ChartTitle>Carregando gráficos...</ChartTitle>
+            <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+              Preparando visualizações...
+            </div>
+          </ChartCard>
+        </ChartsGrid>
+      )}
 
       {/* Top Propostas e Propostas em Risco */}
       <ChartsGrid>
