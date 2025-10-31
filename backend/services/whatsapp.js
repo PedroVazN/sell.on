@@ -184,7 +184,7 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
   }
   
   // Normalizar número From (garantir que seja sandbox)
-  const from = normalizeTwilioFrom(fromNumberEnv);
+  const from = await normalizeTwilioFrom(fromNumberEnv, accountSid, authToken);
   
   console.log(`📋 Configuração Twilio:`);
   console.log(`   Account SID: ${accountSid.substring(0, 10)}...`);
