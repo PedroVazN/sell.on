@@ -199,6 +199,20 @@ export const CreateProposal: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  // Atualizar seller quando user estiver disponível
+  useEffect(() => {
+    if (user && user._id && (!formData.seller._id || formData.seller._id !== user._id)) {
+      setFormData(prev => ({
+        ...prev,
+        seller: {
+          _id: user._id,
+          name: user.name || '',
+          email: user.email || ''
+        }
+      }));
+    }
+  }, [user, formData.seller._id]);
+
   // Calcular totais
   useEffect(() => {
     const newSubtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
@@ -256,18 +270,29 @@ export const CreateProposal: React.FC = () => {
       if (existingClient) {
         console.log('✅ Cliente encontrado:', existingClient);
         // Preencher todos os dados do cliente
+        const clientEmail = existingClient.contato?.email || '';
+        const clientName = existingClient.contato?.nome || '';
+        
+        // Validar se os dados essenciais estão presentes
+        if (!clientEmail || !clientName) {
+          alert('Cliente encontrado, mas faltam dados essenciais (nome ou email). Por favor, preencha manualmente.');
+        }
+        
         setFormData(prev => ({
           ...prev,
           client: {
-            name: existingClient.contato?.nome || '',
-            email: existingClient.contato?.email || '',
-            phone: existingClient.contato?.telefone || '',
-            company: existingClient.nomeFantasia || '',
-            cnpj: existingClient.cnpj || '',
-            razaoSocial: existingClient.razaoSocial || ''
+            name: clientName || prev.client.name,
+            email: clientEmail || prev.client.email,
+            phone: existingClient.contato?.telefone || prev.client.phone || '',
+            company: existingClient.nomeFantasia || prev.client.company || '',
+            cnpj: existingClient.cnpj || prev.client.cnpj || '',
+            razaoSocial: existingClient.razaoSocial || prev.client.razaoSocial || ''
           }
         }));
-        alert('Cliente encontrado! Dados preenchidos automaticamente.');
+        
+        if (clientEmail && clientName) {
+          alert('Cliente encontrado! Dados preenchidos automaticamente.');
+        }
       } else {
         console.log('ℹ️ Cliente não encontrado. Novo cliente será criado.');
       }
@@ -482,9 +507,22 @@ export const CreateProposal: React.FC = () => {
     try {
       setSaving(true);
       
-      // Validar dados obrigatórios
+      // Validar seller (obrigatório e deve ter _id válido)
+      if (!formData.seller._id || !formData.seller.name || !user?._id) {
+        alert('Erro: dados do vendedor não estão carregados. Por favor, faça login novamente.');
+        return;
+      }
+      
+      // Validar dados obrigatórios do cliente
       if (!formData.client.cnpj || !formData.client.name || !formData.client.email || !formData.client.razaoSocial) {
         alert('CNPJ, nome do contato, email e razão social são obrigatórios');
+        return;
+      }
+      
+      // Validar formato do email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.client.email)) {
+        alert('Email do cliente inválido');
         return;
       }
       
@@ -554,11 +592,27 @@ export const CreateProposal: React.FC = () => {
         console.log('✅ Cliente já existe:', existingClient);
       }
 
-      // Preparar dados para envio
-      const proposalData = {
-        client: formData.client,
-        seller: formData.seller,
-        distributor: formData.distributor,
+      // Preparar dados para envio com validação final
+      const clientPhone = formData.client.phone?.trim();
+      const proposalData: any = {
+        client: {
+          name: formData.client.name.trim(),
+          email: formData.client.email.trim(),
+          company: formData.client.company?.trim() || formData.client.razaoSocial.trim(),
+          cnpj: formData.client.cnpj.trim(),
+          razaoSocial: formData.client.razaoSocial.trim()
+        },
+        seller: {
+          _id: formData.seller._id.trim(), // Garantir que é string válida
+          name: formData.seller.name.trim(),
+          email: formData.seller.email?.trim() || user?.email || ''
+        },
+        distributor: {
+          _id: formData.distributor._id.trim(),
+          apelido: formData.distributor.apelido || '',
+          razaoSocial: formData.distributor.razaoSocial || '',
+          cnpj: formData.distributor.cnpj || ''
+        },
         items: formData.items.map(item => ({
           product: {
             _id: item.product!._id,
@@ -575,11 +629,16 @@ export const CreateProposal: React.FC = () => {
         subtotal,
         discount: totalDiscount,
         total,
-        paymentCondition: formData.paymentCondition,
-        observations: formData.observations,
+        paymentCondition: formData.paymentCondition.trim(),
+        observations: formData.observations?.trim() || '',
         status: 'negociacao' as const,
         validUntil: new Date(formData.validUntil).toISOString()
       };
+      
+      // Adicionar telefone apenas se não estiver vazio
+      if (clientPhone && clientPhone.length > 0) {
+        proposalData.client.phone = clientPhone;
+      }
 
       const response = await apiService.createProposal(proposalData);
       

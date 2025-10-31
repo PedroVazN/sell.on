@@ -159,9 +159,17 @@ const validateProposal = [
     .normalizeEmail(),
 
   body('client.phone')
-    .optional()
-    .isMobilePhone('pt-BR')
-    .withMessage('Telefone do cliente inválido'),
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      // Se o telefone está presente e não é vazio, deve ser válido
+      if (value && value.trim() !== '') {
+        const phoneRegex = /^[\d\s\(\)\-]+$/;
+        if (!phoneRegex.test(value) || value.replace(/\D/g, '').length < 10) {
+          throw new Error('Telefone do cliente inválido');
+        }
+      }
+      return true;
+    }),
 
   body('seller._id')
     .isMongoId()
