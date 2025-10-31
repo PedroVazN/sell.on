@@ -3,10 +3,12 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
 const Goal = require('../models/Goal');
+const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
 const { proposalLimiter } = require('../middleware/security');
 const { calculateProposalScore, calculateProposalScoreWithComparison } = require('../services/proposalScore');
+const { notifyProposalCreated, notifyProposalClosed, notifyProposalLost } = require('../services/whatsapp');
 
 // GET /api/proposals - Listar todas as propostas do usuário
 router.get('/', async (req, res) => {
@@ -140,6 +142,28 @@ router.put('/:id', async (req, res) => {
     console.log('Status:', proposal.status);
     console.log('Loss Reason:', proposal.lossReason);
     console.log('Loss Description:', proposal.lossDescription);
+
+    // Enviar notificação WhatsApp baseado no novo status (em background)
+    try {
+      const sellerId = proposal.createdBy?._id || proposal.createdBy;
+      if (sellerId) {
+        const sellerUser = await User.findById(sellerId).select('name email phone');
+        if (sellerUser) {
+          if (status === 'venda_fechada') {
+            notifyProposalClosed(proposal, sellerUser).catch(err => {
+              console.error('Erro ao enviar WhatsApp venda fechada:', err);
+            });
+          } else if (status === 'venda_perdida') {
+            notifyProposalLost(proposal, sellerUser).catch(err => {
+              console.error('Erro ao enviar WhatsApp venda perdida:', err);
+            });
+          }
+        }
+      }
+    } catch (whatsappError) {
+      // Não bloquear atualização se WhatsApp falhar
+      console.error('Erro ao enviar WhatsApp:', whatsappError);
+    }
 
     // Se a proposta foi fechada (venda_fechada), atualizar as metas do vendedor
     if (status === 'venda_fechada') {
@@ -327,6 +351,19 @@ router.post('/', auth, proposalLimiter, (req, res, next) => {
     
     await proposal.populate('createdBy', 'name email');
     console.log('Proposta populada:', proposal);
+
+    // Enviar notificação WhatsApp para o vendedor (em background, não bloquear resposta)
+    try {
+      const sellerUser = await User.findById(seller._id).select('name email phone');
+      if (sellerUser) {
+        notifyProposalCreated(proposal, sellerUser).catch(err => {
+          console.error('Erro ao enviar WhatsApp (não bloqueia criação):', err);
+        });
+      }
+    } catch (whatsappError) {
+      // Não bloquear criação da proposta se WhatsApp falhar
+      console.error('Erro ao buscar vendedor para WhatsApp:', whatsappError);
+    }
 
     res.status(201).json({ 
       success: true,
