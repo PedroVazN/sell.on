@@ -4,6 +4,17 @@ const { body, param, query, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.error('=== ERROS DE VALIDAÇÃO ===');
+    console.error('Número de erros:', errors.array().length);
+    errors.array().forEach((error, index) => {
+      console.error(`Erro ${index + 1}:`, {
+        campo: error.path,
+        mensagem: error.msg,
+        valor: error.value,
+        tipo: typeof error.value
+      });
+    });
+    
     return res.status(400).json({
       success: false,
       message: 'Dados inválidos',
@@ -172,8 +183,15 @@ const validateProposal = [
     }),
 
   body('seller._id')
-    .isMongoId()
-    .withMessage('ID do vendedor inválido'),
+    .notEmpty()
+    .withMessage('ID do vendedor é obrigatório')
+    .custom((value) => {
+      // Validar se é um ObjectId válido (24 caracteres hexadecimais)
+      if (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value)) {
+        throw new Error('ID do vendedor deve ser um ObjectId válido (24 caracteres hexadecimais)');
+      }
+      return true;
+    }),
 
   body('seller.name')
     .notEmpty()
@@ -181,16 +199,30 @@ const validateProposal = [
     .escape(),
 
   body('distributor._id')
-    .isMongoId()
-    .withMessage('ID do distribuidor inválido'),
+    .notEmpty()
+    .withMessage('ID do distribuidor é obrigatório')
+    .custom((value) => {
+      // Validar se é um ObjectId válido (24 caracteres hexadecimais)
+      if (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value)) {
+        throw new Error('ID do distribuidor deve ser um ObjectId válido (24 caracteres hexadecimais)');
+      }
+      return true;
+    }),
 
   body('items')
     .isArray({ min: 1 })
     .withMessage('Pelo menos um item é obrigatório'),
 
   body('items.*.product._id')
-    .isMongoId()
-    .withMessage('ID do produto inválido'),
+    .notEmpty()
+    .withMessage('ID do produto é obrigatório')
+    .custom((value) => {
+      // Validar se é um ObjectId válido (24 caracteres hexadecimais)
+      if (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value)) {
+        throw new Error('ID do produto deve ser um ObjectId válido (24 caracteres hexadecimais)');
+      }
+      return true;
+    }),
 
   body('items.*.product.name')
     .notEmpty()

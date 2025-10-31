@@ -640,6 +640,39 @@ export const CreateProposal: React.FC = () => {
         proposalData.client.phone = clientPhone;
       }
 
+      // Função para validar ObjectId do MongoDB (24 caracteres hexadecimais)
+      const isValidObjectId = (id: string): boolean => {
+        if (!id || typeof id !== 'string') return false;
+        // ObjectId do MongoDB tem exatamente 24 caracteres hexadecimais
+        return /^[0-9a-fA-F]{24}$/.test(id);
+      };
+
+      // Log detalhado do que está sendo enviado
+      console.log('📤 Dados da proposta a serem enviados:', JSON.stringify(proposalData, null, 2));
+      
+      // Validar dados críticos antes de enviar
+      if (!proposalData.seller._id || !isValidObjectId(proposalData.seller._id)) {
+        alert('Erro: ID do vendedor inválido. Por favor, faça login novamente.');
+        setSaving(false);
+        return;
+      }
+      
+      if (!proposalData.distributor._id || !isValidObjectId(proposalData.distributor._id)) {
+        alert('Erro: ID do distribuidor inválido.');
+        setSaving(false);
+        return;
+      }
+      
+      // Validar IDs dos produtos
+      const invalidProductIds = proposalData.items.filter(item => 
+        !item.product._id || !isValidObjectId(item.product._id)
+      );
+      if (invalidProductIds.length > 0) {
+        alert(`Erro: IDs de produtos inválidos. Verifique os produtos selecionados.`);
+        setSaving(false);
+        return;
+      }
+
       const response = await apiService.createProposal(proposalData);
       
       if (response.success) {
@@ -656,9 +689,29 @@ export const CreateProposal: React.FC = () => {
       } else {
         alert('Erro ao criar proposta');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar proposta:', error);
-      alert('Erro ao salvar proposta');
+      
+      // Mostrar mensagem de erro mais detalhada
+      let errorMessage = 'Erro ao salvar proposta';
+      if (error.message) {
+        errorMessage = error.message;
+        // Se contém detalhes de validação, mostrar apenas a parte importante
+        if (error.message.includes('Detalhes:')) {
+          try {
+            const detailsMatch = error.message.match(/Detalhes: (.*)/s);
+            if (detailsMatch) {
+              const details = JSON.parse(detailsMatch[1]);
+              const fieldErrors = details.map((err: any) => `${err.field}: ${err.message}`).join('\n');
+              errorMessage = `Erro de validação:\n${fieldErrors}`;
+            }
+          } catch (e) {
+            // Se não conseguir parsear, usar a mensagem original
+          }
+        }
+      }
+      
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }

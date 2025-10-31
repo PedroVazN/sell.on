@@ -600,7 +600,10 @@ class ApiService {
       console.log('Resposta da API:', response.status, data);
 
       if (!response.ok) {
-        throw new Error(data.message || 'Erro na requisição');
+        // Se houver erros de validação, incluir detalhes
+        const errorMessage = data.message || data.error || 'Erro na requisição';
+        const errorDetails = data.errors ? `\nDetalhes: ${JSON.stringify(data.errors, null, 2)}` : '';
+        throw new Error(errorMessage + errorDetails);
       }
 
       return data;

@@ -256,12 +256,35 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/proposals - Criar nova proposta
-router.post('/', proposalLimiter, validateProposal, async (req, res) => {
+router.post('/', proposalLimiter, (req, res, next) => {
+  // Log detalhado ANTES da validação
+  console.log('=== RECEBENDO DADOS DA PROPOSTA ===');
+  console.log('Body completo:', JSON.stringify(req.body, null, 2));
+  console.log('Client:', {
+    name: req.body.client?.name,
+    email: req.body.client?.email,
+    phone: req.body.client?.phone,
+    company: req.body.client?.company,
+    cnpj: req.body.client?.cnpj,
+    razaoSocial: req.body.client?.razaoSocial
+  });
+  console.log('Seller:', {
+    _id: req.body.seller?._id,
+    name: req.body.seller?.name,
+    email: req.body.seller?.email
+  });
+  console.log('Distributor:', {
+    _id: req.body.distributor?._id,
+    apelido: req.body.distributor?.apelido,
+    razaoSocial: req.body.distributor?.razaoSocial
+  });
+  console.log('Items:', req.body.items?.length || 0);
+  console.log('PaymentCondition:', req.body.paymentCondition);
+  console.log('ValidUntil:', req.body.validUntil);
+  next();
+}, validateProposal, async (req, res) => {
   try {
-    console.log('=== CRIANDO PROPOSTA ===');
-    console.log('Cliente:', req.body.client?.name);
-    console.log('Vendedor:', req.body.seller?.name);
-    console.log('Itens:', req.body.items?.length || 0);
+    console.log('=== VALIDAÇÃO PASSOU - CRIANDO PROPOSTA ===');
 
     const {
       client,
