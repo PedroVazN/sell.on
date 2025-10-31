@@ -116,6 +116,58 @@ async function sendViaEvolutionAPI(phoneNumber, message, options = {}) {
 }
 
 /**
+ * Validar e normalizar número From do Twilio
+ * Garante que sempre seja o sandbox padrão no modo sandbox
+ */
+function normalizeTwilioFrom(fromNumber) {
+  // Número sandbox padrão do Twilio
+  const SANDBOX_NUMBER = 'whatsapp:+14155238886';
+  
+  // Se não configurado, usar sandbox
+  if (!fromNumber || fromNumber.trim() === '') {
+    console.warn('⚠️ TWILIO_WHATSAPP_FROM não configurado, usando sandbox padrão');
+    return SANDBOX_NUMBER;
+  }
+  
+  // Limpar espaços
+  let cleaned = fromNumber.trim();
+  
+  // Remover espaços entre caracteres
+  cleaned = cleaned.replace(/\s/g, '');
+  
+  // Garantir formato whatsapp:+
+  if (!cleaned.startsWith('whatsapp:')) {
+    cleaned = `whatsapp:${cleaned}`;
+  }
+  
+  // Garantir que tem o +
+  if (!cleaned.includes('+')) {
+    // Adicionar + após whatsapp:
+    cleaned = cleaned.replace('whatsapp:', 'whatsapp:+');
+  }
+  
+  // Verificar se é o número sandbox
+  const numberOnly = cleaned.replace(/whatsapp:|\+/g, '');
+  const isSandbox = numberOnly === '14155238886' || cleaned.includes('14155238886');
+  
+  // No modo sandbox, SEMPRE usar o sandbox padrão
+  // Números pessoais NÃO FUNCIONAM no sandbox
+  if (!isSandbox) {
+    console.warn(`⚠️ TWILIO_WHATSAPP_FROM (${fromNumber}) não é sandbox válido`);
+    console.warn('   💡 No modo sandbox, você DEVE usar: whatsapp:+14155238886');
+    console.warn('   📌 Números pessoais não funcionam no sandbox do Twilio');
+    return SANDBOX_NUMBER;
+  }
+  
+  // Garantir formato exato do sandbox
+  if (isSandbox) {
+    return SANDBOX_NUMBER; // Sempre retornar formato exato
+  }
+  
+  return cleaned;
+}
+
+/**
  * Enviar via Twilio (Pago - Profissional)
  * @param {string} phoneNumber - Número formatado
  * @param {string} message - Mensagem
@@ -124,34 +176,33 @@ async function sendViaEvolutionAPI(phoneNumber, message, options = {}) {
 async function sendViaTwilio(phoneNumber, message, options = {}) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  let fromNumber = process.env.TWILIO_WHATSAPP_FROM; // Formato esperado: whatsapp:+14155238886
+  const fromNumberEnv = process.env.TWILIO_WHATSAPP_FROM;
   
   if (!accountSid || !authToken) {
     console.warn('⚠️ Twilio não configurado (Account SID ou Auth Token faltando).');
     return { success: false, error: 'Twilio não configurado' };
   }
   
-  // Se não tiver TWILIO_WHATSAPP_FROM, usar número sandbox padrão
-  if (!fromNumber) {
-    fromNumber = 'whatsapp:+14155238886'; // Número sandbox padrão do Twilio
-    console.warn('⚠️ TWILIO_WHATSAPP_FROM não configurado, usando sandbox padrão');
-  }
+  // Normalizar número From (garantir que seja sandbox)
+  const from = normalizeTwilioFrom(fromNumberEnv);
+  
+  console.log(`📋 Configuração Twilio:`);
+  console.log(`   Account SID: ${accountSid.substring(0, 10)}...`);
+  console.log(`   From (configurado): ${fromNumberEnv || '(não configurado)'}`);
+  console.log(`   From (usando): ${from}`);
   
   try {
     // Twilio requer whatsapp: no número
     const toNumber = `whatsapp:+${phoneNumber}`;
     
-    // Garantir formato correto do from (deve ter whatsapp: e +)
-    let from = fromNumber;
-    if (!from.startsWith('whatsapp:')) {
-      from = `whatsapp:${from}`;
-    }
-    if (!from.includes('+') && fromNumber.replace('whatsapp:', '').length > 0) {
-      from = from.replace('whatsapp:', 'whatsapp:+');
-    }
+    // VALIDAÇÃO CRÍTICA: From e To não podem ser iguais
+    // Extrair apenas os números para comparação
+    const fromNumberOnly = from.replace(/whatsapp:|\+|\s/g, '');
+    const toNumberOnly = toNumber.replace(/whatsapp:|\+|\s/g, '');
     
-    // Garantir que não tem espaços ou caracteres especiais
-    from = from.replace(/\s/g, '');
+    if (fromNumberOnly === toNumberOnly) {
+      throw new Error(`Não é possível enviar mensagem para o mesmo número (From: ${from}, To: ${toNumber}). Verifique ADMIN_WHATSAPP_PHONE e TWILIO_WHATSAPP_FROM.`);
+    }
     
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     
@@ -161,7 +212,6 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
     params.append('Body', message);
     
     console.log(`📤 Enviando WhatsApp via Twilio:`);
-    console.log(`   Account SID: ${accountSid.substring(0, 10)}...`);
     console.log(`   De (From): ${from}`);
     console.log(`   Para (To): ${toNumber}`);
     console.log(`   Mensagem: ${message.substring(0, 50)}...`);
@@ -187,11 +237,19 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
     if (error.response?.data) {
       console.error('   Código:', error.response.data.code);
       console.error('   Mensagem:', error.response.data.message);
+      console.error('   From usado:', from);
       console.error('   Detalhes:', JSON.stringify(error.response.data, null, 2));
       
       // Sugestões baseadas no erro
-      if (error.response.data.code === 21211) {
-        console.error('   💡 SOLUÇÃO: O número "From" não está configurado. Use o número sandbox: whatsapp:+14155238886');
+      if (error.response.data.code === 21211 || error.response.data.message?.includes('Channel')) {
+        console.error('   💡 SOLUÇÃO:');
+        console.error('      1. Verifique se ativou o WhatsApp Sandbox no Twilio');
+        console.error('      2. Acesse: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn');
+        console.error('      3. Use EXATAMENTE: TWILIO_WHATSAPP_FROM=whatsapp:+14155238886');
+        console.error('      4. Certifique-se que o número sandbox está ativo na sua conta');
+      }
+      if (error.response.data.code === 21608 || error.response.data.message?.includes('same')) {
+        console.error('   💡 SOLUÇÃO: From e To não podem ser iguais. Verifique ADMIN_WHATSAPP_PHONE.');
       }
     }
     throw error;
@@ -263,11 +321,19 @@ Acompanhe sua proposta no sistema!`;
     // Enviar para o admin/gerente (se configurado)
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
-      const now = new Date();
-      const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const data = now.toLocaleDateString('pt-BR');
+      // Validar se o número do admin não é o mesmo que o From do Twilio
+      const formattedAdminPhone = formatPhoneNumber(adminPhone);
+      const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+      const fromNumberOnly = twilioFrom.replace(/whatsapp:|\+|\s/g, '');
       
-      const adminMessage = `📢 *Nova Proposta Criada*
+      if (formattedAdminPhone === fromNumberOnly) {
+        console.warn(`⚠️ ADMIN_WHATSAPP_PHONE (${adminPhone}) é o mesmo que TWILIO_WHATSAPP_FROM. Pulando envio para evitar erro.`);
+      } else {
+        const now = new Date();
+        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const data = now.toLocaleDateString('pt-BR');
+        
+        const adminMessage = `📢 *Nova Proposta Criada*
 
 👤 Vendedor: ${seller.name || 'N/A'}
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
@@ -277,12 +343,13 @@ Acompanhe sua proposta no sistema!`;
 🕐 Criada em: ${data} às ${hora}
 
 Status: ${getStatusEmoji(proposal.status)} ${proposal.status === 'negociacao' ? 'Em Negociação' : proposal.status}`;
-      
-      console.log(`📱 Enviando WhatsApp para admin: ${adminPhone}`);
-      promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
-        console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
-        throw err;
-      }));
+        
+        console.log(`📱 Enviando WhatsApp para admin: ${adminPhone} (formatado: ${formattedAdminPhone})`);
+        promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
+          console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
+          throw err;
+        }));
+      }
     } else {
       console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
     }
@@ -329,11 +396,19 @@ Parabéns pela venda! 🎉`;
     // Enviar para o admin/gerente (se configurado)
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
-      const now = new Date();
-      const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const data = now.toLocaleDateString('pt-BR');
+      // Validar se o número do admin não é o mesmo que o From do Twilio
+      const formattedAdminPhone = formatPhoneNumber(adminPhone);
+      const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+      const fromNumberOnly = twilioFrom.replace(/whatsapp:|\+|\s/g, '');
       
-      const adminMessage = `✅ *Venda Fechada!*
+      if (formattedAdminPhone === fromNumberOnly) {
+        console.warn(`⚠️ ADMIN_WHATSAPP_PHONE (${adminPhone}) é o mesmo que TWILIO_WHATSAPP_FROM. Pulando envio para evitar erro.`);
+      } else {
+        const now = new Date();
+        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const data = now.toLocaleDateString('pt-BR');
+        
+        const adminMessage = `✅ *Venda Fechada!*
 
 👤 Vendedor: ${seller.name || 'N/A'}
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
@@ -342,12 +417,13 @@ Parabéns pela venda! 🎉`;
 🕐 Fechada em: ${data} às ${hora}
 
 Parabéns ao vendedor! 🎉`;
-      
-      console.log(`📱 Enviando WhatsApp para admin: ${adminPhone}`);
-      promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
-        console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
-        throw err;
-      }));
+        
+        console.log(`📱 Enviando WhatsApp para admin: ${adminPhone} (formatado: ${formattedAdminPhone})`);
+        promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
+          console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
+          throw err;
+        }));
+      }
     } else {
       console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
     }
@@ -397,12 +473,20 @@ Não desanime! Continue trabalhando! 💪`;
     // Enviar para o admin/gerente (se configurado)
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
-      const lossReason = proposal.lossReason ? getLossReasonLabel(proposal.lossReason) : 'Não informado';
-      const now = new Date();
-      const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const data = now.toLocaleDateString('pt-BR');
+      // Validar se o número do admin não é o mesmo que o From do Twilio
+      const formattedAdminPhone = formatPhoneNumber(adminPhone);
+      const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+      const fromNumberOnly = twilioFrom.replace(/whatsapp:|\+|\s/g, '');
       
-      const adminMessage = `❌ *Venda Perdida*
+      if (formattedAdminPhone === fromNumberOnly) {
+        console.warn(`⚠️ ADMIN_WHATSAPP_PHONE (${adminPhone}) é o mesmo que TWILIO_WHATSAPP_FROM. Pulando envio para evitar erro.`);
+      } else {
+        const lossReason = proposal.lossReason ? getLossReasonLabel(proposal.lossReason) : 'Não informado';
+        const now = new Date();
+        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const data = now.toLocaleDateString('pt-BR');
+        
+        const adminMessage = `❌ *Venda Perdida*
 
 👤 Vendedor: ${seller.name || 'N/A'}
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
@@ -410,12 +494,13 @@ Não desanime! Continue trabalhando! 💪`;
 💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
 📝 Motivo: ${lossReason}
 🕐 Perdida em: ${data} às ${hora}`;
-      
-      console.log(`📱 Enviando WhatsApp para admin: ${adminPhone}`);
-      promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
-        console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
-        throw err;
-      }));
+        
+        console.log(`📱 Enviando WhatsApp para admin: ${adminPhone} (formatado: ${formattedAdminPhone})`);
+        promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
+          console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
+          throw err;
+        }));
+      }
     } else {
       console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
     }
