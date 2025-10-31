@@ -119,14 +119,19 @@ async function sendViaEvolutionAPI(phoneNumber, message, options = {}) {
  * Validar e normalizar número From do Twilio
  * Garante que sempre seja o sandbox padrão no modo sandbox
  */
-function normalizeTwilioFrom(fromNumber) {
-  // Número sandbox padrão do Twilio
-  const SANDBOX_NUMBER = 'whatsapp:+14155238886';
+async function normalizeTwilioFrom(fromNumber, accountSid, authToken) {
+  // Número sandbox padrão do Twilio (mais comum, mas pode variar)
+  const DEFAULT_SANDBOX = 'whatsapp:+14155238886';
   
-  // Se não configurado, usar sandbox
+  // Se não configurado, usar padrão e avisar
   if (!fromNumber || fromNumber.trim() === '') {
-    console.warn('⚠️ TWILIO_WHATSAPP_FROM não configurado, usando sandbox padrão');
-    return SANDBOX_NUMBER;
+    console.warn('⚠️ TWILIO_WHATSAPP_FROM não configurado');
+    console.warn(`   Usando sandbox padrão: ${DEFAULT_SANDBOX}`);
+    console.warn('   ⚠️ Se não funcionar, descubra o número EXATO da sua conta:');
+    console.warn('   1. Acesse: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn');
+    console.warn('   2. Procure por "From" ou "Sandbox Number"');
+    console.warn('   3. Configure: TWILIO_WHATSAPP_FROM=whatsapp:+1415XXXXXXXX');
+    return DEFAULT_SANDBOX;
   }
   
   // Limpar espaços
@@ -146,22 +151,28 @@ function normalizeTwilioFrom(fromNumber) {
     cleaned = cleaned.replace('whatsapp:', 'whatsapp:+');
   }
   
-  // Verificar se é o número sandbox
+  // Extrair apenas números para validação
   const numberOnly = cleaned.replace(/whatsapp:|\+/g, '');
-  const isSandbox = numberOnly === '14155238886' || cleaned.includes('14155238886');
   
-  // No modo sandbox, SEMPRE usar o sandbox padrão
-  // Números pessoais NÃO FUNCIONAM no sandbox
+  // Verificar se é um número sandbox (começa com 1415 - formato sandbox Twilio)
+  const isSandbox = numberOnly.startsWith('1415') && numberOnly.length === 11;
+  
+  // Validar formato
   if (!isSandbox) {
-    console.warn(`⚠️ TWILIO_WHATSAPP_FROM (${fromNumber}) não é sandbox válido`);
-    console.warn('   💡 No modo sandbox, você DEVE usar: whatsapp:+14155238886');
-    console.warn('   📌 Números pessoais não funcionam no sandbox do Twilio');
-    return SANDBOX_NUMBER;
-  }
-  
-  // Garantir formato exato do sandbox
-  if (isSandbox) {
-    return SANDBOX_NUMBER; // Sempre retornar formato exato
+    console.error(`❌ ERRO: TWILIO_WHATSAPP_FROM (${fromNumber}) não é válido!`);
+    console.error('   📋 Números sandbox do Twilio:');
+    console.error('      - Devem começar com +1415');
+    console.error('      - Devem ter 11 dígitos (ex: +14155238886)');
+    console.error('      - Formato: whatsapp:+1415XXXXXXXX');
+    console.error('');
+    console.error('   🔍 Para descobrir o número EXATO da sua conta:');
+    console.error('   1. Acesse: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn');
+    console.error('   2. Procure por "From" ou "Sandbox Number" na página');
+    console.error('   3. Copie o número EXATO (formato: +1 415 XXX XXXX)');
+    console.error('   4. Remova espaços e configure como: whatsapp:+1415XXXXXXXX');
+    console.error('');
+    console.error(`   ⚠️ Usando sandbox padrão (${DEFAULT_SANDBOX}) - pode não funcionar se sua conta usar outro número`);
+    return DEFAULT_SANDBOX;
   }
   
   return cleaned;
