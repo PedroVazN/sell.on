@@ -238,17 +238,28 @@ Acompanhe sua proposta no sistema!`;
     // Enviar para o admin/gerente (se configurado)
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
-      const adminMessage = `📢 *Nova Proposta Criada pelo Vendedor*
+      const now = new Date();
+      const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const data = now.toLocaleDateString('pt-BR');
+      
+      const adminMessage = `📢 *Nova Proposta Criada*
 
 👤 Vendedor: ${seller.name || 'N/A'}
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
 👥 Cliente: ${proposal.client?.name || 'N/A'}
 💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
 📅 Válido até: ${new Date(proposal.validUntil).toLocaleDateString('pt-BR')}
+🕐 Criada em: ${data} às ${hora}
 
 Status: ${getStatusEmoji(proposal.status)} ${proposal.status === 'negociacao' ? 'Em Negociação' : proposal.status}`;
       
-      promises.push(sendWhatsAppMessage(adminPhone, adminMessage));
+      console.log(`📱 Enviando WhatsApp para admin: ${adminPhone}`);
+      promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
+        console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
+        throw err;
+      }));
+    } else {
+      console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
     }
     
     // Enviar todas as mensagens em paralelo
@@ -293,16 +304,27 @@ Parabéns pela venda! 🎉`;
     // Enviar para o admin/gerente (se configurado)
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
+      const now = new Date();
+      const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const data = now.toLocaleDateString('pt-BR');
+      
       const adminMessage = `✅ *Venda Fechada!*
 
 👤 Vendedor: ${seller.name || 'N/A'}
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
 👥 Cliente: ${proposal.client?.name || 'N/A'}
 💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
+🕐 Fechada em: ${data} às ${hora}
 
 Parabéns ao vendedor! 🎉`;
       
-      promises.push(sendWhatsAppMessage(adminPhone, adminMessage));
+      console.log(`📱 Enviando WhatsApp para admin: ${adminPhone}`);
+      promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
+        console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
+        throw err;
+      }));
+    } else {
+      console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
     }
     
     // Enviar todas as mensagens em paralelo
@@ -351,6 +373,9 @@ Não desanime! Continue trabalhando! 💪`;
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
       const lossReason = proposal.lossReason ? getLossReasonLabel(proposal.lossReason) : 'Não informado';
+      const now = new Date();
+      const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const data = now.toLocaleDateString('pt-BR');
       
       const adminMessage = `❌ *Venda Perdida*
 
@@ -358,9 +383,16 @@ Não desanime! Continue trabalhando! 💪`;
 📋 Proposta: ${proposal.proposalNumber || 'N/A'}
 👥 Cliente: ${proposal.client?.name || 'N/A'}
 💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
-📝 Motivo: ${lossReason}`;
+📝 Motivo: ${lossReason}
+🕐 Perdida em: ${data} às ${hora}`;
       
-      promises.push(sendWhatsAppMessage(adminPhone, adminMessage));
+      console.log(`📱 Enviando WhatsApp para admin: ${adminPhone}`);
+      promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
+        console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
+        throw err;
+      }));
+    } else {
+      console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
     }
     
     // Enviar todas as mensagens em paralelo

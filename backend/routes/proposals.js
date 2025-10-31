@@ -145,24 +145,46 @@ router.put('/:id', async (req, res) => {
 
     // Enviar notificação WhatsApp baseado no novo status (em background)
     try {
+      console.log('📱 Iniciando envio de notificação WhatsApp (atualização status)...');
+      console.log('   Novo status:', status);
+      
       const sellerId = proposal.createdBy?._id || proposal.createdBy;
       if (sellerId) {
         const sellerUser = await User.findById(sellerId).select('name email phone');
         if (sellerUser) {
+          console.log('   Vendedor encontrado:', sellerUser.name);
+          console.log('   Admin Phone configurado:', !!process.env.ADMIN_WHATSAPP_PHONE);
+          
           if (status === 'venda_fechada') {
-            notifyProposalClosed(proposal, sellerUser).catch(err => {
-              console.error('Erro ao enviar WhatsApp venda fechada:', err);
-            });
+            notifyProposalClosed(proposal, sellerUser)
+              .then(result => {
+                console.log('✅ Notificação WhatsApp enviada (venda fechada):', result);
+              })
+              .catch(err => {
+                console.error('❌ Erro ao enviar WhatsApp venda fechada:', err);
+                if (err.response?.data) {
+                  console.error('   Resposta Twilio:', JSON.stringify(err.response.data, null, 2));
+                }
+              });
           } else if (status === 'venda_perdida') {
-            notifyProposalLost(proposal, sellerUser).catch(err => {
-              console.error('Erro ao enviar WhatsApp venda perdida:', err);
-            });
+            notifyProposalLost(proposal, sellerUser)
+              .then(result => {
+                console.log('✅ Notificação WhatsApp enviada (venda perdida):', result);
+              })
+              .catch(err => {
+                console.error('❌ Erro ao enviar WhatsApp venda perdida:', err);
+                if (err.response?.data) {
+                  console.error('   Resposta Twilio:', JSON.stringify(err.response.data, null, 2));
+                }
+              });
           }
+        } else {
+          console.warn('⚠️ Vendedor não encontrado para enviar WhatsApp');
         }
       }
     } catch (whatsappError) {
       // Não bloquear atualização se WhatsApp falhar
-      console.error('Erro ao enviar WhatsApp:', whatsappError);
+      console.error('❌ Erro ao enviar WhatsApp:', whatsappError);
     }
 
     // Se a proposta foi fechada (venda_fechada), atualizar as metas do vendedor
@@ -352,17 +374,35 @@ router.post('/', auth, proposalLimiter, (req, res, next) => {
     await proposal.populate('createdBy', 'name email');
     console.log('Proposta populada:', proposal);
 
-    // Enviar notificação WhatsApp para o vendedor (em background, não bloquear resposta)
+    // Enviar notificação WhatsApp para o vendedor e admin (em background, não bloquear resposta)
     try {
+      console.log('📱 Iniciando envio de notificação WhatsApp...');
+      console.log('   Seller ID:', seller._id);
+      
       const sellerUser = await User.findById(seller._id).select('name email phone');
+      
       if (sellerUser) {
-        notifyProposalCreated(proposal, sellerUser).catch(err => {
-          console.error('Erro ao enviar WhatsApp (não bloqueia criação):', err);
-        });
+        console.log('   Vendedor encontrado:', sellerUser.name);
+        console.log('   Admin Phone configurado:', !!process.env.ADMIN_WHATSAPP_PHONE);
+        console.log('   Twilio configurado:', !!process.env.TWILIO_ACCOUNT_SID);
+        
+        notifyProposalCreated(proposal, sellerUser)
+          .then(result => {
+            console.log('✅ Notificação WhatsApp enviada:', result);
+          })
+          .catch(err => {
+            console.error('❌ Erro ao enviar WhatsApp (não bloqueia criação):', err);
+            console.error('   Detalhes:', err.message);
+            if (err.response?.data) {
+              console.error('   Resposta Twilio:', JSON.stringify(err.response.data, null, 2));
+            }
+          });
+      } else {
+        console.warn('⚠️ Vendedor não encontrado para enviar WhatsApp');
       }
     } catch (whatsappError) {
       // Não bloquear criação da proposta se WhatsApp falhar
-      console.error('Erro ao buscar vendedor para WhatsApp:', whatsappError);
+      console.error('❌ Erro ao buscar vendedor para WhatsApp:', whatsappError);
     }
 
     res.status(201).json({ 
