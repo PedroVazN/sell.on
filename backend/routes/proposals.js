@@ -256,7 +256,8 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/proposals - Criar nova proposta
-router.post('/', proposalLimiter, (req, res, next) => {
+// Vendedores e admins podem criar propostas
+router.post('/', auth, proposalLimiter, (req, res, next) => {
   // Log detalhado ANTES da validação
   console.log('=== RECEBENDO DADOS DA PROPOSTA ===');
   console.log('Body completo:', JSON.stringify(req.body, null, 2));
