@@ -174,9 +174,19 @@ const validateProposal = [
     .custom((value) => {
       // Se o telefone está presente e não é vazio, deve ser válido
       if (value && value.trim() !== '') {
-        const phoneRegex = /^[\d\s\(\)\-]+$/;
-        if (!phoneRegex.test(value) || value.replace(/\D/g, '').length < 10) {
-          throw new Error('Telefone do cliente inválido');
+        // Remove caracteres não numéricos para validar
+        const cleanPhone = value.replace(/\D/g, '');
+        
+        // Aceita telefones com código do país (10 a 15 dígitos) ou sem (10 a 11 dígitos para Brasil)
+        // Formatos aceitos: +55 64 9601-3526, (64) 9601-3526, 64 9601-3526, 6496013526, etc.
+        if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+          throw new Error('Telefone do cliente inválido: deve ter entre 10 e 15 dígitos');
+        }
+        
+        // Validar caracteres permitidos (números, espaços, parênteses, hífens, +)
+        const phoneRegex = /^[\d\s\(\)\-\+]+$/;
+        if (!phoneRegex.test(value)) {
+          throw new Error('Telefone do cliente contém caracteres inválidos');
         }
       }
       return true;
