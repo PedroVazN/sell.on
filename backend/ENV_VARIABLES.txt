@@ -1,0 +1,44 @@
+# ============================================
+# COPIE ESTE CONTEÚDO PARA SEU ARQUIVO .env
+# Crie o arquivo .env na pasta backend/
+# ============================================
+
+# ============================================
+# CONFIGURAÇÕES GERAIS
+# ============================================
+NODE_ENV=development
+PORT=5000
+
+# ============================================
+# MONGODB
+# ============================================
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/vendas-db?retryWrites=true&w=majority
+
+# ============================================
+# JWT / AUTENTICAÇÃO
+# ============================================
+JWT_SECRET=seu_jwt_secret_super_seguro_aqui_altere_em_producao
+
+# ============================================
+# WHATSAPP - TWILIO (RECOMENDADO)
+# ============================================
+WHATSAPP_PROVIDER=twilio
+TWILIO_ACCOUNT_SID=1a028a0c0ce702a7878bb6fff444670d
+TWILIO_AUTH_TOKEN=seu_auth_token_aqui
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+ADMIN_WHATSAPP_PHONE=55649999999999
+
+# ============================================
+# INSTRUÇÕES:
+# ============================================
+# 1. Copie todo este conteúdo
+# 2. Crie um arquivo chamado .env na pasta backend/
+# 3. Cole o conteúdo e substitua os valores pelos seus
+# 4. IMPORTANTE: Não commite o arquivo .env no Git!
+
+# Variáveis que você precisa preencher:
+# - MONGODB_URI: Sua URI do MongoDB Atlas
+# - JWT_SECRET: Uma string secreta aleatória
+# - TWILIO_AUTH_TOKEN: Seu Auth Token do Twilio (diferente do Account SID)
+# - ADMIN_WHATSAPP_PHONE: Seu número no formato 55 + DDD + número (ex: 55649999999999)
+
