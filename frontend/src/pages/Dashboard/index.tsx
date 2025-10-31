@@ -235,7 +235,7 @@ export const Dashboard: React.FC = () => {
           apiService.getProducts(1, 1),
           apiService.getLossReasonsStats(),
           apiService.getProposals(1, 2000), // Limitar para reduzir tempo de carregamento
-          apiService.getGoals(1, 20, { assignedTo: user._id, status: 'active' }),
+          apiService.getGoals(1, 100, { assignedTo: user._id, status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
 
@@ -354,7 +354,7 @@ export const Dashboard: React.FC = () => {
           apiService.getProducts(1, 1),
           apiService.getProposals(1, 2000), // Limitar para reduzir tempo de carregamento
           apiService.getLossReasonsStats(),
-          apiService.getGoals(1, 50, { status: 'active' }),
+          apiService.getGoals(1, 100, { status: 'active' }),
           apiService.getProposalsDashboardSales()
         ]);
 

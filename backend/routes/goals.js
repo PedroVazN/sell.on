@@ -1,7 +1,63 @@
 const express = require('express');
 const router = express.Router();
 const Goal = require('../models/Goal');
+const Proposal = require('../models/Proposal');
 const { auth } = require('../middleware/auth');
+const mongoose = require('mongoose');
+
+/**
+ * Função para recalcular automaticamente uma meta baseado em TODAS as propostas fechadas
+ * Usa a mesma lógica do recalculate-goals.js mas para uma meta específica
+ */
+async function recalculateGoalAutomatically(goal) {
+  try {
+    const vendorId = goal.assignedTo;
+    const oldValue = goal.currentValue; // Guardar valor antigo antes de recalcular
+    
+    // Buscar TODAS as propostas fechadas do vendedor no período da meta
+    const closedProposals = await Proposal.find({
+      $or: [
+        { 'createdBy._id': new mongoose.Types.ObjectId(vendorId) },
+        { createdBy: new mongoose.Types.ObjectId(vendorId) }
+      ],
+      status: 'venda_fechada',
+      createdAt: {
+        $gte: new Date(goal.period.startDate),
+        $lte: new Date(goal.period.endDate)
+      }
+    }).lean();
+
+    // Calcular valor total baseado em TODAS as propostas
+    const totalValue = closedProposals.reduce((sum, p) => sum + (p.total || 0), 0);
+    
+    // Coletar IDs das propostas
+    const proposalIds = closedProposals.map(p => p._id.toString());
+
+    // Atualizar meta com cálculo completo
+    goal.currentValue = totalValue;
+    goal.progress.percentage = Math.min(100, (totalValue / goal.targetValue) * 100);
+    goal.progress.countedProposals = proposalIds;
+
+    // Verificar se atingiu a meta
+    if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
+      goal.status = 'completed';
+    }
+
+    await goal.save();
+    
+    return {
+      goalId: goal._id,
+      title: goal.title,
+      oldValue: oldValue,
+      newValue: totalValue,
+      proposalsCount: closedProposals.length,
+      percentage: goal.progress.percentage
+    };
+  } catch (error) {
+    console.error(`Erro ao recalcular meta ${goal._id}:`, error);
+    return null;
+  }
+}
 
 // Rota de recálculo SEM autenticação (para manutenção)
 router.post('/recalculate', async (req, res) => {
@@ -144,12 +200,35 @@ router.get('/', async (req, res) => {
       query['period.endDate'] = { $lte: endDate };
     }
 
-    const goals = await Goal.find(query)
+    let goals = await Goal.find(query)
       .populate('assignedTo', 'name email role')
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
+
+    // Se estiver buscando metas ativas de vendas, recalcular automaticamente
+    if (status === 'active' && (!category || category === 'sales')) {
+      const salesGoals = goals.filter(g => g.category === 'sales' && g.unit === 'currency' && g.status === 'active');
+      
+      if (salesGoals.length > 0) {
+        console.log(`🔄 Recalculando automaticamente ${salesGoals.length} meta(s) ativa(s) de vendas...`);
+        
+        // Recalcular cada meta ativa em paralelo
+        const recalculationPromises = salesGoals.map(goal => recalculateGoalAutomatically(goal));
+        await Promise.all(recalculationPromises);
+        
+        // Buscar novamente para ter os valores atualizados
+        goals = await Goal.find(query)
+          .populate('assignedTo', 'name email role')
+          .populate('createdBy', 'name email')
+          .sort({ createdAt: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+        
+        console.log('✅ Metas recalculadas automaticamente');
+      }
+    }
 
     const total = await Goal.countDocuments(query);
 
