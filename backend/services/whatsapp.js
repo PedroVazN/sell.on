@@ -124,17 +124,34 @@ async function sendViaEvolutionAPI(phoneNumber, message, options = {}) {
 async function sendViaTwilio(phoneNumber, message, options = {}) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_WHATSAPP_FROM; // Formato: whatsapp:+14155238886
+  let fromNumber = process.env.TWILIO_WHATSAPP_FROM; // Formato esperado: whatsapp:+14155238886
   
-  if (!accountSid || !authToken || !fromNumber) {
-    console.warn('⚠️ Twilio não configurado. Pule envio WhatsApp.');
+  if (!accountSid || !authToken) {
+    console.warn('⚠️ Twilio não configurado (Account SID ou Auth Token faltando).');
     return { success: false, error: 'Twilio não configurado' };
+  }
+  
+  // Se não tiver TWILIO_WHATSAPP_FROM, usar número sandbox padrão
+  if (!fromNumber) {
+    fromNumber = 'whatsapp:+14155238886'; // Número sandbox padrão do Twilio
+    console.warn('⚠️ TWILIO_WHATSAPP_FROM não configurado, usando sandbox padrão');
   }
   
   try {
     // Twilio requer whatsapp: no número
     const toNumber = `whatsapp:+${phoneNumber}`;
-    const from = fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`;
+    
+    // Garantir formato correto do from (deve ter whatsapp: e +)
+    let from = fromNumber;
+    if (!from.startsWith('whatsapp:')) {
+      from = `whatsapp:${from}`;
+    }
+    if (!from.includes('+') && fromNumber.replace('whatsapp:', '').length > 0) {
+      from = from.replace('whatsapp:', 'whatsapp:+');
+    }
+    
+    // Garantir que não tem espaços ou caracteres especiais
+    from = from.replace(/\s/g, '');
     
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     
@@ -144,8 +161,9 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
     params.append('Body', message);
     
     console.log(`📤 Enviando WhatsApp via Twilio:`);
-    console.log(`   De: ${from}`);
-    console.log(`   Para: ${toNumber}`);
+    console.log(`   Account SID: ${accountSid.substring(0, 10)}...`);
+    console.log(`   De (From): ${from}`);
+    console.log(`   Para (To): ${toNumber}`);
     console.log(`   Mensagem: ${message.substring(0, 50)}...`);
     
     const response = await axios.post(url, params, {
@@ -167,7 +185,14 @@ async function sendViaTwilio(phoneNumber, message, options = {}) {
   } catch (error) {
     console.error('❌ Erro Twilio:', error.response?.data || error.message);
     if (error.response?.data) {
+      console.error('   Código:', error.response.data.code);
+      console.error('   Mensagem:', error.response.data.message);
       console.error('   Detalhes:', JSON.stringify(error.response.data, null, 2));
+      
+      // Sugestões baseadas no erro
+      if (error.response.data.code === 21211) {
+        console.error('   💡 SOLUÇÃO: O número "From" não está configurado. Use o número sandbox: whatsapp:+14155238886');
+      }
     }
     throw error;
   }
