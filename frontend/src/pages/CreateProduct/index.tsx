@@ -109,11 +109,11 @@ export const CreateProduct: React.FC = () => {
       <Card>
         <Header>
           <Title>
-            <Package size={32} />
+            <Package size={28} />
             Novo Produto
           </Title>
           <Subtitle>
-            Cadastre um novo produto no sistema com as informações essenciais
+            Cadastre um novo produto no sistema
           </Subtitle>
         </Header>
 
