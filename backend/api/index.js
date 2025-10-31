@@ -305,7 +305,23 @@ app.use('/api/sales', salesRouter);
 const proposalsRouter = require('../routes/proposals');
 app.use('/api/proposals', proposalsRouter);
 
-const aiRouter = require('../routes/ai');
+let aiRouter;
+try {
+  aiRouter = require('../routes/ai');
+} catch (error) {
+  console.error('❌ Erro ao carregar rotas de IA:', error);
+  console.error('Stack:', error.stack);
+  // Criar um router vazio para evitar crash do servidor
+  const express = require('express');
+  aiRouter = express.Router();
+  aiRouter.get('*', (req, res) => {
+    res.status(500).json({
+      success: false,
+      error: 'Rotas de IA temporariamente indisponíveis',
+      message: error.message
+    });
+  });
+}
 app.use('/api/ai', aiRouter);
 
 const priceListRouter = require('../routes/priceList');

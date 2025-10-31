@@ -528,122 +528,7 @@ router.get('/dashboard', async (req, res) => {
       console.error('Erro ao buscar anomalias no dashboard:', error);
     }
 
-    const dashboardData = {
-      scoreDistribution: {
-        alto: scoreDistribution.alto.count,
-        medio: scoreDistribution.medio.count,
-        baixo: scoreDistribution.baixo.count,
-        muito_baixo: scoreDistribution.muito_baixo.count,
-        totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
-      },
-      topProposals: proposalsWithScores.map(item => {
-          try {
-            // Formatar fatores para o formato esperado pelo frontend
-            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map((entry) => {
-              const key = entry[0];
-              const factor = entry[1] || {};
-              return {
-                name: getFactorDisplayName(key),
-                value: factor.score || factor.value || 0,
-                impact: calculateFactorImpact(factor, key),
-                description: factor.description || getFactorDefaultDescription(key, factor)
-              };
-            }) : [];
-
-            return {
-              proposalId: item.proposal?._id || item.proposal?._id?.toString() || 'unknown',
-              proposalNumber: item.proposal?.proposalNumber || 'N/A',
-              client: item.proposal?.client?.name || 'Cliente não informado',
-              value: item.proposal?.total || 0,
-              score: item.score?.score || 0,
-              percentual: item.score?.percentual || 0,
-              level: item.score?.level || 'medio',
-              action: item.score?.action || 'Não foi possível calcular',
-              factors: formattedFactors,
-              confidence: item.score?.confidence || 50,
-              breakdown: item.score || {}
-            };
-          } catch (err) {
-            console.error('Erro ao formatar topProposal:', err);
-            return {
-              proposalId: item.proposal?._id?.toString() || 'unknown',
-              proposalNumber: item.proposal?.proposalNumber || 'N/A',
-              client: item.proposal?.client?.name || 'Erro',
-              value: item.proposal?.total || 0,
-              score: 0,
-              percentual: 0,
-              level: 'medio',
-              action: 'Erro ao processar',
-              factors: [],
-              confidence: 0,
-              breakdown: {}
-            };
-          }
-        }),
-        atRiskProposals: atRiskProposals.map(item => {
-          // Acesso seguro aos campos seller e createdBy
-          let sellerName = 'N/A';
-          let sellerEmail = '';
-          
-          try {
-            if (item.proposal.seller && typeof item.proposal.seller === 'object') {
-              sellerName = item.proposal.seller.name || 'N/A';
-              sellerEmail = item.proposal.seller.email || '';
-            } else if (item.proposal.createdBy && typeof item.proposal.createdBy === 'object') {
-              sellerName = item.proposal.createdBy.name || 'N/A';
-              sellerEmail = item.proposal.createdBy.email || '';
-            }
-          } catch (err) {
-            console.error('Erro ao acessar seller/createdBy:', err);
-          }
-          
-          // Garantir que score e percentual estão corretos
-          const scoreValue = item.score?.score || item.score?.percentual || 0;
-          const percentualValue = item.score?.percentual || item.score?.score || 0;
-          
-          return {
-            proposalId: item.proposal._id || item.proposal._id?.toString(),
-            proposalNumber: item.proposal.proposalNumber || 'N/A',
-            client: item.proposal.client?.name || 'Cliente não informado',
-            seller: sellerName,
-            sellerEmail: sellerEmail,
-            value: item.proposal.total || 0,
-            score: Math.round(scoreValue * 100) / 100, // Arredondar para 2 decimais
-            percentual: Math.round(percentualValue), // Porcentagem inteira
-            level: item.score?.level || 'medio',
-            action: item.score?.action || 'Não foi possível calcular',
-            factors: item.score?.factors || {}, // Incluir fatores para possível cálculo detalhado
-            confidence: item.score?.confidence || 50
-          };
-        }),
-        insights,
-        forecast,
-        forecastDetails: forecastData && !forecastData.error ? {
-          historical: forecastData.historical,
-          seasonality: forecastData.seasonality,
-          sellerForecasts: forecastData.sellerForecasts,
-          categoryForecasts: forecastData.categoryForecasts || []
-        } : null,
-        topSellers,
-        topClients,
-        conversionRates,
-        anomalies: anomaliesData,
-        stats: {
-          totalProposalsAnalyzed: negociacaoProposals.length,
-          totalScoresCalculated: scoresData.length,
-          avgScore: scoresData.length > 0
-            ? scoresData.reduce((sum, s) => sum + (s?.score || 0), 0) / scoresData.length
-            : 0,
-          highScoreCount: scoreDistribution.alto.count,
-          mediumScoreCount: scoreDistribution.medio.count,
-          riskCount: scoreDistribution.baixo.count + scoreDistribution.muito_baixo.count,
-          mlTrainedWithAllProposals: true, // ML foi treinado com todas propostas históricas
-          dashboardShowsNegotiationOnly: true // Dashboard mostra apenas negociação
-        }
-      }
-    };
-
-    // 8. Evolução Temporal do Score (últimos 30 dias)
+    // 8. Evolução Temporal do Score (últimos 30 dias) - calcular ANTES de criar dashboardData
     const scoreEvolution = [];
     const daysAgo = 30;
     for (let i = daysAgo - 1; i >= 0; i--) {
@@ -654,106 +539,93 @@ router.get('/dashboard', async (req, res) => {
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
       
-      const dayProposals = await Proposal.find({
-        status: 'negociacao',
-        createdAt: { $gte: startOfDay, $lte: endOfDay }
-      }).limit(50).lean();
-      
-      if (dayProposals.length > 0) {
-        const dayScores = [];
-        for (const p of dayProposals.slice(0, 20)) { // Limitar para performance
-          try {
-            const score = await calculateProposalScore(p);
-            if (score && score.score !== undefined) {
-              dayScores.push(score.score);
+      try {
+        const dayProposals = await Proposal.find({
+          status: 'negociacao',
+          createdAt: { $gte: startOfDay, $lte: endOfDay }
+        }).limit(50).lean();
+        
+        if (dayProposals.length > 0) {
+          const dayScores = [];
+          for (const p of dayProposals.slice(0, 20)) { // Limitar para performance
+            try {
+              const score = await calculateProposalScore(p);
+              if (score && score.score !== undefined) {
+                dayScores.push(score.score);
+              }
+            } catch (err) {
+              // Ignorar erros individuais
             }
-          } catch (err) {
-            // Ignorar erros individuais
+          }
+          
+          if (dayScores.length > 0) {
+            const avgScore = dayScores.reduce((sum, s) => sum + s, 0) / dayScores.length;
+            scoreEvolution.push({
+              date: date.toISOString().split('T')[0],
+              avgScore: Math.round(avgScore),
+              count: dayScores.length
+            });
           }
         }
-        
-        if (dayScores.length > 0) {
-          const avgScore = dayScores.reduce((sum, s) => sum + s, 0) / dayScores.length;
-          scoreEvolution.push({
-            date: date.toISOString().split('T')[0],
-            avgScore: Math.round(avgScore),
-            count: dayScores.length
-          });
-        }
+      } catch (err) {
+        // Ignorar erros de busca por dia
       }
     }
 
-    // 9. Heatmap de Performance por Vendedor (últimos 30 dias)
-    const heatmapData = {};
-    const sellerHeatmapPromises = topSellers.map(async (seller) => {
-      const sellerId = Object.keys(sellerStats).find(id => sellerStats[id].name === seller.name);
-      if (!sellerId) return null;
-      
-      // Buscar propostas do vendedor nos últimos 30 dias
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const sellerProposals = await Proposal.find({
-        $or: [
-          { 'createdBy._id': new mongoose.Types.ObjectId(sellerId) },
-          { createdBy: new mongoose.Types.ObjectId(sellerId) }
-        ],
-        createdAt: { $gte: thirtyDaysAgo },
-        status: 'negociacao'
-      }).limit(100).lean();
-      
-      if (sellerProposals.length === 0) return null;
-      
-      // Calcular scores para o vendedor
-      const sellerScores = [];
-      for (const p of sellerProposals.slice(0, 30)) {
-        try {
-          const score = await calculateProposalScore(p);
-          if (score && score.score !== undefined) {
-            sellerScores.push(score.score);
+    // 9. Heatmap de Performance por Vendedor (últimos 30 dias) - calcular ANTES
+    let sellerHeatmap = [];
+    try {
+      const sellerHeatmapPromises = topSellers.map(async (seller) => {
+        const sellerId = Object.keys(sellerStats).find(id => sellerStats[id].name === seller.name);
+        if (!sellerId) return null;
+        
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const sellerProposals = await Proposal.find({
+          $or: [
+            { 'createdBy._id': new mongoose.Types.ObjectId(sellerId) },
+            { createdBy: new mongoose.Types.ObjectId(sellerId) }
+          ],
+          createdAt: { $gte: thirtyDaysAgo },
+          status: 'negociacao'
+        }).limit(100).lean();
+        
+        if (sellerProposals.length === 0) return null;
+        
+        const sellerScores = [];
+        for (const p of sellerProposals.slice(0, 30)) {
+          try {
+            const score = await calculateProposalScore(p);
+            if (score && score.score !== undefined) {
+              sellerScores.push(score.score);
+            }
+          } catch (err) {
+            // Ignorar
           }
-        } catch (err) {
-          // Ignorar
         }
-      }
+        
+        const avgScore = sellerScores.length > 0 
+          ? sellerScores.reduce((sum, s) => sum + s, 0) / sellerScores.length 
+          : 0;
+        
+        return {
+          sellerName: seller.name,
+          avgScore: Math.round(avgScore),
+          proposalCount: sellerProposals.length,
+          highScoreCount: sellerScores.filter(s => s >= 70).length,
+          performanceLevel: avgScore >= 70 ? 'high' : avgScore >= 50 ? 'medium' : 'low'
+        };
+      });
       
-      const avgScore = sellerScores.length > 0 
-        ? sellerScores.reduce((sum, s) => sum + s, 0) / sellerScores.length 
-        : 0;
-      
-      return {
-        sellerName: seller.name,
-        avgScore: Math.round(avgScore),
-        proposalCount: sellerProposals.length,
-        highScoreCount: sellerScores.filter(s => s >= 70).length,
-        performanceLevel: avgScore >= 70 ? 'high' : avgScore >= 50 ? 'medium' : 'low'
-      };
-    });
-    
-    const sellerHeatmap = (await Promise.all(sellerHeatmapPromises)).filter(Boolean);
+      sellerHeatmap = (await Promise.all(sellerHeatmapPromises)).filter(Boolean);
+    } catch (error) {
+      console.error('Erro ao calcular heatmap de vendedores:', error);
+      sellerHeatmap = [];
+    }
 
-    // 10. Comparação Período Atual vs Anterior
-    const now = new Date();
-    const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentPeriodEnd = now;
-    
-    const previousPeriodEnd = new Date(currentPeriodStart);
-    previousPeriodEnd.setDate(previousPeriodEnd.getDate() - 1);
-    const previousPeriodStart = new Date(previousPeriodEnd.getFullYear(), previousPeriodEnd.getMonth(), 1);
-    
-    // Propostas do período atual
-    const currentPeriodProposals = await Proposal.find({
-      status: 'negociacao',
-      createdAt: { $gte: currentPeriodStart, $lte: currentPeriodEnd }
-    }).limit(100).lean();
-    
-    // Propostas do período anterior
-    const previousPeriodProposals = await Proposal.find({
-      status: 'negociacao',
-      createdAt: { $gte: previousPeriodStart, $lte: previousPeriodEnd }
-    }).limit(100).lean();
-    
-    // Calcular métricas de comparação
+    // 10. Comparação Período Atual vs Anterior - calcular ANTES
+    // Função auxiliar para calcular métricas de período
     const calculatePeriodMetrics = async (proposals) => {
       if (proposals.length === 0) return { avgScore: 0, total: 0, totalValue: 0, highScoreCount: 0 };
       
@@ -783,44 +655,185 @@ router.get('/dashboard', async (req, res) => {
       };
     };
     
-    const currentMetrics = await calculatePeriodMetrics(currentPeriodProposals);
-    const previousMetrics = await calculatePeriodMetrics(previousPeriodProposals);
-    
-    const periodComparison = {
-      current: {
-        period: `${currentPeriodStart.toLocaleDateString('pt-BR')} - ${currentPeriodEnd.toLocaleDateString('pt-BR')}`,
-        ...currentMetrics
+    let periodComparison = null;
+    try {
+      const now = new Date();
+      const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentPeriodEnd = now;
+      
+      const previousPeriodEnd = new Date(currentPeriodStart);
+      previousPeriodEnd.setDate(previousPeriodEnd.getDate() - 1);
+      const previousPeriodStart = new Date(previousPeriodEnd.getFullYear(), previousPeriodEnd.getMonth(), 1);
+      
+      const currentPeriodProposals = await Proposal.find({
+        status: 'negociacao',
+        createdAt: { $gte: currentPeriodStart, $lte: currentPeriodEnd }
+      }).limit(100).lean();
+      
+      const previousPeriodProposals = await Proposal.find({
+        status: 'negociacao',
+        createdAt: { $gte: previousPeriodStart, $lte: previousPeriodEnd }
+      }).limit(100).lean();
+      
+      const currentMetrics = await calculatePeriodMetrics(currentPeriodProposals);
+      const previousMetrics = await calculatePeriodMetrics(previousPeriodProposals);
+      
+      periodComparison = {
+        current: {
+          period: `${currentPeriodStart.toLocaleDateString('pt-BR')} - ${currentPeriodEnd.toLocaleDateString('pt-BR')}`,
+          ...currentMetrics
+        },
+        previous: {
+          period: `${previousPeriodStart.toLocaleDateString('pt-BR')} - ${previousPeriodEnd.toLocaleDateString('pt-BR')}`,
+          ...previousMetrics
+        },
+        changes: {
+          avgScoreDiff: currentMetrics.avgScore - previousMetrics.avgScore,
+          avgScorePercentChange: previousMetrics.avgScore > 0 
+            ? ((currentMetrics.avgScore - previousMetrics.avgScore) / previousMetrics.avgScore) * 100 
+            : 0,
+          totalDiff: currentMetrics.total - previousMetrics.total,
+          totalPercentChange: previousMetrics.total > 0 
+            ? ((currentMetrics.total - previousMetrics.total) / previousMetrics.total) * 100 
+            : 0,
+          valueDiff: currentMetrics.totalValue - previousMetrics.totalValue,
+          valuePercentChange: previousMetrics.totalValue > 0 
+            ? ((currentMetrics.totalValue - previousMetrics.totalValue) / previousMetrics.totalValue) * 100 
+            : 0,
+          highScoreDiff: currentMetrics.highScoreCount - previousMetrics.highScoreCount
+        }
+      };
+    } catch (error) {
+      console.error('Erro ao calcular comparação de períodos:', error);
+      periodComparison = null;
+    }
+
+    // 11. Relevância de Fatores (Feature Importance) - calcular ANTES
+    let featureImportance = [];
+    try {
+      featureImportance = await calculateFeatureImportance(negociacaoProposals, scoresData);
+    } catch (error) {
+      console.error('Erro ao calcular feature importance:', error);
+      featureImportance = [];
+    }
+
+    const dashboardData = {
+      scoreDistribution: {
+        alto: scoreDistribution.alto.count,
+        medio: scoreDistribution.medio.count,
+        baixo: scoreDistribution.baixo.count,
+        muito_baixo: scoreDistribution.muito_baixo.count,
+        totalValue: Object.values(scoreDistribution).reduce((sum, dist) => sum + dist.totalValue, 0)
       },
-      previous: {
-        period: `${previousPeriodStart.toLocaleDateString('pt-BR')} - ${previousPeriodEnd.toLocaleDateString('pt-BR')}`,
-        ...previousMetrics
+      topProposals: proposalsWithScores.map((item) => {
+        try {
+            // Formatar fatores para o formato esperado pelo frontend
+            const formattedFactors = item.score?.factors ? Object.entries(item.score.factors).map((entry) => {
+            const key = entry[0];
+            const factor = entry[1] || {};
+            return {
+              name: getFactorDisplayName(key),
+              value: factor.score || factor.value || 0,
+              impact: calculateFactorImpact(factor, key),
+              description: factor.description || getFactorDefaultDescription(key, factor)
+            };
+          }) : [];
+
+          return {
+            proposalId: item.proposal?._id || item.proposal?._id?.toString() || 'unknown',
+            proposalNumber: item.proposal?.proposalNumber || 'N/A',
+            client: item.proposal?.client?.name || 'Cliente não informado',
+            value: item.proposal?.total || 0,
+            score: item.score?.score || 0,
+            percentual: item.score?.percentual || 0,
+            level: item.score?.level || 'medio',
+            action: item.score?.action || 'Não foi possível calcular',
+            factors: formattedFactors,
+            confidence: item.score?.confidence || 50,
+            breakdown: item.score || {}
+          };
+        } catch (err) {
+          console.error('Erro ao formatar topProposal:', err);
+          return {
+            proposalId: item.proposal?._id?.toString() || 'unknown',
+            proposalNumber: item.proposal?.proposalNumber || 'N/A',
+            client: item.proposal?.client?.name || 'Erro',
+            value: item.proposal?.total || 0,
+            score: 0,
+            percentual: 0,
+            level: 'medio',
+            action: 'Erro ao processar',
+            factors: [],
+            confidence: 0,
+            breakdown: {}
+          };
+        }
+      }),
+      atRiskProposals: atRiskProposals.map((item) => {
+        // Acesso seguro aos campos seller e createdBy
+        let sellerName = 'N/A';
+        let sellerEmail = '';
+        
+        try {
+          if (item.proposal.seller && typeof item.proposal.seller === 'object') {
+            sellerName = item.proposal.seller.name || 'N/A';
+            sellerEmail = item.proposal.seller.email || '';
+          } else if (item.proposal.createdBy && typeof item.proposal.createdBy === 'object') {
+            sellerName = item.proposal.createdBy.name || 'N/A';
+            sellerEmail = item.proposal.createdBy.email || '';
+          }
+        } catch (err) {
+          console.error('Erro ao acessar seller/createdBy:', err);
+        }
+        
+        // Garantir que score e percentual estão corretos
+        const scoreValue = item.score?.score || item.score?.percentual || 0;
+        const percentualValue = item.score?.percentual || item.score?.score || 0;
+        
+        return {
+          proposalId: item.proposal._id || item.proposal._id?.toString(),
+          proposalNumber: item.proposal.proposalNumber || 'N/A',
+          client: item.proposal.client?.name || 'Cliente não informado',
+          seller: sellerName,
+          sellerEmail: sellerEmail,
+          value: item.proposal.total || 0,
+          score: Math.round(scoreValue * 100) / 100, // Arredondar para 2 decimais
+          percentual: Math.round(percentualValue), // Porcentagem inteira
+          level: item.score?.level || 'medio',
+          action: item.score?.action || 'Não foi possível calcular',
+          factors: item.score?.factors || {}, // Incluir fatores para possível cálculo detalhado
+          confidence: item.score?.confidence || 50
+        };
+      }),
+      insights,
+      forecast,
+      forecastDetails: forecastData && !forecastData.error ? {
+          historical: forecastData.historical,
+          seasonality: forecastData.seasonality,
+          sellerForecasts: forecastData.sellerForecasts,
+          categoryForecasts: forecastData.categoryForecasts || []
+        } : null,
+      topSellers,
+      topClients,
+      conversionRates,
+      anomalies: anomaliesData,
+      stats: {
+        totalProposalsAnalyzed: negociacaoProposals.length,
+        totalScoresCalculated: scoresData.length,
+        avgScore: scoresData.length > 0
+          ? scoresData.reduce((sum, s) => sum + (s?.score || 0), 0) / scoresData.length
+          : 0,
+        highScoreCount: scoreDistribution.alto.count,
+        mediumScoreCount: scoreDistribution.medio.count,
+        riskCount: scoreDistribution.baixo.count + scoreDistribution.muito_baixo.count,
+        mlTrainedWithAllProposals: true, // ML foi treinado com todas propostas históricas
+        dashboardShowsNegotiationOnly: true // Dashboard mostra apenas negociação
       },
-      changes: {
-        avgScoreDiff: currentMetrics.avgScore - previousMetrics.avgScore,
-        avgScorePercentChange: previousMetrics.avgScore > 0 
-          ? ((currentMetrics.avgScore - previousMetrics.avgScore) / previousMetrics.avgScore) * 100 
-          : 0,
-        totalDiff: currentMetrics.total - previousMetrics.total,
-        totalPercentChange: previousMetrics.total > 0 
-          ? ((currentMetrics.total - previousMetrics.total) / previousMetrics.total) * 100 
-          : 0,
-        valueDiff: currentMetrics.totalValue - previousMetrics.totalValue,
-        valuePercentChange: previousMetrics.totalValue > 0 
-          ? ((currentMetrics.totalValue - previousMetrics.totalValue) / previousMetrics.totalValue) * 100 
-          : 0,
-        highScoreDiff: currentMetrics.highScoreCount - previousMetrics.highScoreCount
-      }
+      scoreEvolution,
+      sellerHeatmap,
+      periodComparison,
+      featureImportance
     };
-
-    // 11. Relevância de Fatores (Feature Importance)
-    // Analisar quais fatores mais impactam no score das propostas
-    const featureImportance = await calculateFeatureImportance(negociacaoProposals, scoresData);
-
-    // Adicionar novos dados ao dashboard
-    dashboardData.scoreEvolution = scoreEvolution;
-    dashboardData.sellerHeatmap = sellerHeatmap;
-    dashboardData.periodComparison = periodComparison;
-    dashboardData.featureImportance = featureImportance;
 
     // Armazenar no cache antes de retornar (TTL de 5 minutos)
     cache.set(cacheKey, dashboardData, 300);

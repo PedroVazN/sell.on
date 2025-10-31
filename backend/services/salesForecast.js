@@ -148,7 +148,13 @@ async function calculateSalesForecast(userId = null, userRole = 'user', days = 3
     }
 
     // 8.5. Previsão por categoria de produto
-    const categoryForecasts = await calculateCategoryForecasts(historicalSales, avgDailyRevenue, avgTicketValue);
+    let categoryForecasts = [];
+    try {
+      categoryForecasts = await calculateCategoryForecasts(historicalSales, avgDailyRevenue, avgTicketValue);
+    } catch (error) {
+      console.error('Erro ao calcular previsões por categoria:', error);
+      categoryForecasts = []; // Fallback para array vazio
+    }
 
     // 9. Comparar com metas ativas
     const activeGoals = await Goal.find({
