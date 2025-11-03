@@ -37,7 +37,8 @@ import {
   LoadingContainer
 } from './styles';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Loader2, TrendingDown, TrendingUp, DollarSign, AlertTriangle, Target, BarChart3 } from 'lucide-react';
+import { Loader2, TrendingDown, TrendingUp, DollarSign, AlertTriangle, Target, BarChart3, FileDown } from 'lucide-react';
+import { generateDashboardPdf, DashboardPdfData } from '../../utils/pdfGenerator';
 
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -201,6 +202,8 @@ export const Dashboard: React.FC = () => {
     quantity: number;
     timesQuoted: number;
   }>>([]);
+  
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   // Modal de detalhes do dia
   const [selectedDayData, setSelectedDayData] = useState<{
@@ -491,6 +494,42 @@ export const Dashboard: React.FC = () => {
     setSelectedMonth(dashboardMonth);
     setSelectedYear(dashboardYear);
   }, [dashboardMonth, dashboardYear]);
+
+  // Função para gerar PDF do dashboard
+  const handleGeneratePdf = () => {
+    if (!data) return;
+    
+    try {
+      setIsGeneratingPdf(true);
+      
+      const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      const monthName = monthNames[dashboardMonth - 1];
+      
+      const pdfData: DashboardPdfData = {
+        month: monthName,
+        year: dashboardYear,
+        proposalStats: data.proposalStats,
+        salesStats: data.salesStats,
+        topProducts: data.topProducts || [],
+        goals: goals.map(g => ({
+          title: g.title,
+          currentValue: g.currentValue,
+          targetValue: g.targetValue,
+          progress: g.progress,
+          status: g.status,
+          assignedTo: typeof g.assignedTo === 'object' ? g.assignedTo : undefined
+        }))
+      };
+      
+      generateDashboardPdf(pdfData);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar PDF do dashboard');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   // Processar dados diários quando mudar o mês - OTIMIZADO COM CACHE
   useEffect(() => {
@@ -799,6 +838,44 @@ export const Dashboard: React.FC = () => {
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
+              <button
+                onClick={handleGeneratePdf}
+                disabled={isGeneratingPdf || !data}
+                style={{
+                  padding: '0.625rem 1rem',
+                  borderRadius: '0.75rem',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  background: isGeneratingPdf || !data 
+                    ? 'rgba(16, 185, 129, 0.1)' 
+                    : 'rgba(16, 185, 129, 0.2)',
+                  color: '#10b981',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isGeneratingPdf || !data ? 'not-allowed' : 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  backdropFilter: 'blur(10px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  opacity: isGeneratingPdf || !data ? 0.5 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!isGeneratingPdf && data) {
+                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.3)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isGeneratingPdf && data) {
+                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)';
+                  }
+                }}
+              >
+                <FileDown size={16} />
+                {isGeneratingPdf ? 'Gerando...' : 'Gerar PDF'}
+              </button>
             </div>
           )}
         </div>

@@ -320,3 +320,319 @@ const getStatusLabel = (status: string): string => {
       return status;
   }
 };
+
+export interface DashboardPdfData {
+  month: string;
+  year: number;
+  proposalStats: {
+    totalProposals: number;
+    totalValue: number;
+    negociacaoProposals: number;
+    negociacaoValue: number;
+    vendaFechadaProposals: number;
+    vendaFechadaValue: number;
+    vendaPerdidaProposals: number;
+    vendaPerdidaValue: number;
+    expiradaProposals: number;
+    expiradaValue: number;
+  };
+  salesStats: {
+    totalSales: number;
+    totalRevenue: number;
+    averageSale: number;
+  };
+  topProducts: Array<{
+    name: string;
+    sales: number;
+    revenue: number;
+    quantity: number;
+  }>;
+  goals: Array<{
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    progress: { percentage: number };
+    status: string;
+    assignedTo?: { name: string } | string;
+  }>;
+}
+
+export const generateDashboardPdf = (data: DashboardPdfData): void => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  
+  // Cores
+  const primaryColor = [59, 130, 246]; // #3B82F6
+  const successColor = [16, 185, 129]; // #10B981
+  const dangerColor = [239, 68, 68]; // #EF4444
+  const warningColor = [245, 158, 11]; // #F59E0B
+  const textPrimary = [31, 41, 55]; // #1F2937
+  const textSecondary = [107, 114, 128]; // #6B7280
+  const borderColor = [229, 231, 235]; // #E5E7EB
+  const bgLight = [249, 250, 251]; // #F9FAFB
+  const white = [255, 255, 255];
+  
+  let yPosition = 20;
+  let currentPage = 1;
+  
+  // Função para adicionar nova página se necessário
+  const checkPageBreak = (requiredSpace: number) => {
+    if (yPosition + requiredSpace > pageHeight - 30) {
+      doc.addPage();
+      yPosition = 20;
+      currentPage++;
+    }
+  };
+  
+  // Cabeçalho
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.rect(0, 0, pageWidth, 35, 'F');
+  
+  doc.setTextColor(white[0], white[1], white[2]);
+  doc.setFontSize(24);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sell.On', 20, 20);
+  
+  doc.setFontSize(16);
+  doc.text('Dashboard de Vendas', 20, 30);
+  
+  // Período
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${data.month} ${data.year}`, pageWidth - 100, 20);
+  
+  const dateNow = new Date().toLocaleDateString('pt-BR');
+  doc.setFontSize(10);
+  doc.text(`Gerado em: ${dateNow}`, pageWidth - 100, 28);
+  
+  yPosition = 50;
+  
+  // Seção: Estatísticas de Propostas
+  checkPageBreak(80);
+  doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ESTATÍSTICAS DE PROPOSTAS', 20, yPosition);
+  yPosition += 10;
+  
+  // Cards de métricas principais (2x2 grid)
+  const cardWidth = (pageWidth - 50) / 2;
+  const cardHeight = 35;
+  
+  // Card 1: Valor Ganho
+  doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+  doc.rect(20, yPosition, cardWidth, cardHeight, 'F');
+  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+  doc.rect(20, yPosition, cardWidth, cardHeight, 'S');
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Valor Ganho', 30, yPosition + 8);
+  
+  doc.setTextColor(successColor[0], successColor[1], successColor[2]);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`R$ ${data.proposalStats.vendaFechadaValue.toFixed(2)}`, 30, yPosition + 18);
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${data.proposalStats.vendaFechadaProposals} propostas fechadas`, 30, yPosition + 28);
+  
+  // Card 2: Valor Perdido
+  doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+  doc.rect(20 + cardWidth + 10, yPosition, cardWidth, cardHeight, 'F');
+  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+  doc.rect(20 + cardWidth + 10, yPosition, cardWidth, cardHeight, 'S');
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Valor Perdido', 30 + cardWidth + 10, yPosition + 8);
+  
+  doc.setTextColor(dangerColor[0], dangerColor[1], dangerColor[2]);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`R$ ${data.proposalStats.vendaPerdidaValue.toFixed(2)}`, 30 + cardWidth + 10, yPosition + 18);
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${data.proposalStats.vendaPerdidaProposals} propostas perdidas`, 30 + cardWidth + 10, yPosition + 28);
+  
+  yPosition += cardHeight + 15;
+  
+  // Card 3: Valor Total Gerado
+  doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+  doc.rect(20, yPosition, cardWidth, cardHeight, 'F');
+  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+  doc.rect(20, yPosition, cardWidth, cardHeight, 'S');
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Valor Total Gerado', 30, yPosition + 8);
+  
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`R$ ${data.proposalStats.totalValue.toFixed(2)}`, 30, yPosition + 18);
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${data.proposalStats.totalProposals} propostas criadas`, 30, yPosition + 28);
+  
+  // Card 4: Em Negociação
+  doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+  doc.rect(20 + cardWidth + 10, yPosition, cardWidth, cardHeight, 'F');
+  doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+  doc.rect(20 + cardWidth + 10, yPosition, cardWidth, cardHeight, 'S');
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Em Negociação', 30 + cardWidth + 10, yPosition + 8);
+  
+  doc.setTextColor(warningColor[0], warningColor[1], warningColor[2]);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`R$ ${data.proposalStats.negociacaoValue.toFixed(2)}`, 30 + cardWidth + 10, yPosition + 18);
+  
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${data.proposalStats.negociacaoProposals} propostas`, 30 + cardWidth + 10, yPosition + 28);
+  
+  yPosition += cardHeight + 20;
+  
+  // Seção: Estatísticas de Vendas
+  checkPageBreak(50);
+  doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ESTATÍSTICAS DE VENDAS', 20, yPosition);
+  yPosition += 15;
+  
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+  doc.text(`Total de Vendas: ${data.salesStats.totalSales}`, 30, yPosition);
+  yPosition += 8;
+  doc.text(`Receita Total: R$ ${data.salesStats.totalRevenue.toFixed(2)}`, 30, yPosition);
+  yPosition += 8;
+  doc.text(`Ticket Médio: R$ ${data.salesStats.averageSale.toFixed(2)}`, 30, yPosition);
+  
+  yPosition += 15;
+  
+  // Seção: Top Produtos
+  if (data.topProducts && data.topProducts.length > 0) {
+    checkPageBreak(60);
+    doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOP PRODUTOS', 20, yPosition);
+    yPosition += 10;
+    
+    // Tabela
+    const tableY = yPosition;
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(20, tableY, pageWidth - 40, 12, 'F');
+    
+    doc.setTextColor(white[0], white[1], white[2]);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Produto', 25, tableY + 8);
+    doc.text('Quantidade', 100, tableY + 8);
+    doc.text('Receita', pageWidth - 80, tableY + 8);
+    
+    yPosition = tableY + 12;
+    
+    data.topProducts.slice(0, 5).forEach((product, index) => {
+      checkPageBreak(12);
+      if (index % 2 === 0) {
+        doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+        doc.rect(20, yPosition, pageWidth - 40, 10, 'F');
+      }
+      
+      doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+      doc.rect(20, yPosition, pageWidth - 40, 10, 'S');
+      
+      doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(product.name, 25, yPosition + 7);
+      doc.text(product.quantity.toString(), 100, yPosition + 7);
+      doc.text(`R$ ${product.revenue.toFixed(2)}`, pageWidth - 80, yPosition + 7);
+      
+      yPosition += 10;
+    });
+    
+    yPosition += 10;
+  }
+  
+  // Seção: Metas
+  if (data.goals && data.goals.length > 0) {
+    checkPageBreak(80);
+    doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('METAS', 20, yPosition);
+    yPosition += 10;
+    
+    data.goals.slice(0, 5).forEach((goal) => {
+      checkPageBreak(25);
+      
+      doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+      doc.rect(20, yPosition, pageWidth - 40, 20, 'F');
+      doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+      doc.rect(20, yPosition, pageWidth - 40, 20, 'S');
+      
+      // Título da meta
+      doc.setTextColor(textPrimary[0], textPrimary[1], textPrimary[2]);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      const assignedToName = typeof goal.assignedTo === 'object' ? goal.assignedTo?.name : goal.assignedTo;
+      const goalTitle = assignedToName ? `${goal.title} (${assignedToName})` : goal.title;
+      doc.text(goalTitle, 25, yPosition + 8);
+      
+      // Progresso
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+      doc.text(
+        `R$ ${goal.currentValue.toFixed(2)} / R$ ${goal.targetValue.toFixed(2)} (${goal.progress.percentage}%)`,
+        25,
+        yPosition + 16
+      );
+      
+      // Barra de progresso
+      const progressWidth = ((pageWidth - 60) * Math.min(goal.progress.percentage, 100)) / 100;
+      const progressColor = goal.progress.percentage >= 100 ? successColor :
+                           goal.progress.percentage >= 80 ? primaryColor :
+                           goal.progress.percentage >= 50 ? warningColor : dangerColor;
+      
+      doc.setFillColor(progressColor[0], progressColor[1], progressColor[2]);
+      doc.rect(25, yPosition + 18, progressWidth, 3, 'F');
+      
+      yPosition += 25;
+    });
+  }
+  
+  // Rodapé em todas as páginas
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(textSecondary[0], textSecondary[1], textSecondary[2]);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Página ${i} de ${totalPages}`, pageWidth - 30, pageHeight - 10);
+    doc.text('Sell.On - Sistema de Gestão Comercial', 20, pageHeight - 10);
+  }
+  
+  // Salvar o PDF
+  const fileName = `dashboard-${data.month.toLowerCase()}-${data.year}.pdf`;
+  doc.save(fileName);
+};
