@@ -10,6 +10,7 @@ declare module 'jspdf' {
     getNumberOfPages(): number;
     setPage(pageNumber: number): jsPDF;
     rect(x: number, y: number, width: number, height: number, style?: string): jsPDF;
+    roundedRect(x: number, y: number, width: number, height: number, rx: number, ry: number, style?: string): jsPDF;
     line(x1: number, y1: number, x2: number, y2: number): jsPDF;
     setLineWidth(width: number): jsPDF;
     setDrawColor(r: number, g?: number, b?: number): jsPDF;
@@ -20,5 +21,11 @@ declare module 'jspdf' {
     getFontSize(): number;
     splitTextToSize(text: string, maxWidth: number): string[];
     autoTable(options: any): jsPDF;
+    internal: {
+      pageSize: {
+        getWidth(): number;
+        getHeight(): number;
+      };
+    };
   }
 }
