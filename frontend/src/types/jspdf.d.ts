@@ -8,6 +8,7 @@ declare module 'jspdf' {
     save(filename: string): void;
     output(type: string): any;
     getNumberOfPages(): number;
+    getPageInfo(pageNumber: number): any;
     setPage(pageNumber: number): jsPDF;
     rect(x: number, y: number, width: number, height: number, style?: string): jsPDF;
     roundedRect(x: number, y: number, width: number, height: number, rx: number, ry: number, style?: string): jsPDF;
