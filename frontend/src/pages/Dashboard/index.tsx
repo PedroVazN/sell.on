@@ -165,6 +165,11 @@ export const Dashboard: React.FC = () => {
     count: number;
     totalValue: number;
   }[]>([]);
+  // Mês principal para filtro do dashboard (admin)
+  const [dashboardMonth, setDashboardMonth] = useState(new Date().getMonth() + 1);
+  const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear());
+  
+  // Mês para o gráfico diário (sincronizado com o principal)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dailyProposalsData, setDailyProposalsData] = useState<{
@@ -358,9 +363,15 @@ export const Dashboard: React.FC = () => {
           apiService.getProposalsDashboardSales()
         ]);
 
-        // Calcular estatísticas de todas as propostas (como no vendedor)
+        // Filtrar propostas pelo mês/ano selecionado no dashboard (admin)
         const allProposals = allProposalsResponse.data || [];
-        const proposalStats = allProposals.reduce((acc: any, proposal: any) => {
+        const filteredProposals = allProposals.filter((proposal: any) => {
+          const date = new Date(proposal.createdAt);
+          return date.getMonth() + 1 === dashboardMonth && date.getFullYear() === dashboardYear;
+        });
+        
+        // Calcular estatísticas apenas das propostas filtradas
+        const proposalStats = filteredProposals.reduce((acc: any, proposal: any) => {
           const total = proposal.total || 0;
           
           acc.totalProposals++;
@@ -399,8 +410,8 @@ export const Dashboard: React.FC = () => {
           expiradaValue: 0
         });
 
-        // Agrupar propostas por mês (como no vendedor)
-        const monthlyProposals = allProposals.reduce((acc: any, proposal: any) => {
+        // Agrupar propostas por mês (apenas do mês selecionado)
+        const monthlyProposals = filteredProposals.reduce((acc: any, proposal: any) => {
           const date = new Date(proposal.createdAt);
           const month = date.getMonth() + 1;
           const year = date.getFullYear();
@@ -469,11 +480,17 @@ export const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.role, user?._id]);
+  }, [user?.role, user?._id, dashboardMonth, dashboardYear]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  // Sincronizar seletores de mês (dashboard principal e gráfico diário)
+  useEffect(() => {
+    setSelectedMonth(dashboardMonth);
+    setSelectedYear(dashboardYear);
+  }, [dashboardMonth, dashboardYear]);
 
   // Processar dados diários quando mudar o mês - OTIMIZADO COM CACHE
   useEffect(() => {
@@ -635,14 +652,55 @@ export const Dashboard: React.FC = () => {
   }, [selectedMonth, selectedYear]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
+  // Para admin, mostrar apenas o mês selecionado nos gráficos mensais
   const salesData = useMemo(() => {
     if (user?.role === 'vendedor') {
       return getVendedorSalesData(data?.monthlyData || []);
     }
-    return getSalesData(data?.monthlyData || []);
-  }, [data?.monthlyData, user?.role]);
+    // Para admin, filtrar apenas o mês selecionado
+    const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
+      d.month === dashboardMonth && d.year === dashboardYear
+    );
+    // Criar array com 12 meses, mas apenas o mês selecionado terá dados
+    return monthNames.map((month, index) => {
+      if (index + 1 === dashboardMonth) {
+        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+        return {
+          month,
+          vendas: monthData?.sales || 0,
+          receita: monthData?.revenue || 0
+        };
+      }
+      return {
+        month,
+        vendas: 0,
+        receita: 0
+      };
+    });
+  }, [data?.monthlyData, user?.role, dashboardMonth, dashboardYear]);
   
-  const revenueData = useMemo(() => getRevenueData(data?.monthlyData || []), [data?.monthlyData]);
+  const revenueData = useMemo(() => {
+    if (user?.role === 'admin') {
+      // Para admin, filtrar apenas o mês selecionado
+      const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
+        d.month === dashboardMonth && d.year === dashboardYear
+      );
+      return monthNames.map((month, index) => {
+        if (index + 1 === dashboardMonth) {
+          const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+          return {
+            month,
+            receita: monthData?.revenue || 0
+          };
+        }
+        return {
+          month,
+          receita: 0
+        };
+      });
+    }
+    return getRevenueData(data?.monthlyData || []);
+  }, [data?.monthlyData, user?.role, dashboardMonth, dashboardYear]);
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -662,13 +720,88 @@ export const Dashboard: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>Dashboard</Title>
-        <Subtitle>
-          {user?.role === 'vendedor' 
-            ? 'Suas propostas e performance de vendas' 
-            : 'Visão geral de todas as propostas e performance da equipe'
-          }
-        </Subtitle>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <Title>Dashboard</Title>
+            <Subtitle>
+              {user?.role === 'vendedor' 
+                ? 'Suas propostas e performance de vendas' 
+                : 'Visão geral de todas as propostas e performance da equipe'
+              }
+            </Subtitle>
+          </div>
+          {user?.role === 'admin' && (
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}>
+              <select
+                value={dashboardMonth}
+                onChange={(e) => setDashboardMonth(Number(e.target.value))}
+                style={{
+                  padding: '0.625rem 1rem',
+                  borderRadius: '0.75rem',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  color: '#e2e8f0',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                  e.target.style.background = 'rgba(59, 130, 246, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                  e.target.style.background = 'rgba(59, 130, 246, 0.1)';
+                }}
+              >
+                <option value={1}>Janeiro</option>
+                <option value={2}>Fevereiro</option>
+                <option value={3}>Março</option>
+                <option value={4}>Abril</option>
+                <option value={5}>Maio</option>
+                <option value={6}>Junho</option>
+                <option value={7}>Julho</option>
+                <option value={8}>Agosto</option>
+                <option value={9}>Setembro</option>
+                <option value={10}>Outubro</option>
+                <option value={11}>Novembro</option>
+                <option value={12}>Dezembro</option>
+              </select>
+              <select
+                value={dashboardYear}
+                onChange={(e) => setDashboardYear(Number(e.target.value))}
+                style={{
+                  padding: '0.625rem 1rem',
+                  borderRadius: '0.75rem',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  color: '#e2e8f0',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                  e.target.style.background = 'rgba(59, 130, 246, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                  e.target.style.background = 'rgba(59, 130, 246, 0.1)';
+                }}
+              >
+                {[2023, 2024, 2025, 2026, 2027].map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </Header>
 
       {/* Meta Ativa do Vendedor */}
