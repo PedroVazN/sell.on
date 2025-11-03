@@ -167,7 +167,8 @@ export const Dashboard: React.FC = () => {
     totalValue: number;
   }[]>([]);
   // Mês principal para filtro do dashboard (admin)
-  const [dashboardMonth, setDashboardMonth] = useState(new Date().getMonth() + 1);
+  // 0 = Todos os meses
+  const [dashboardMonth, setDashboardMonth] = useState<number | 0>(new Date().getMonth() + 1);
   const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear());
   
   // Mês para o gráfico diário (sincronizado com o principal)
@@ -368,10 +369,15 @@ export const Dashboard: React.FC = () => {
 
         // Filtrar propostas pelo mês/ano selecionado no dashboard (admin)
         const allProposals = allProposalsResponse.data || [];
-        const filteredProposals = allProposals.filter((proposal: any) => {
-          const date = new Date(proposal.createdAt);
-          return date.getMonth() + 1 === dashboardMonth && date.getFullYear() === dashboardYear;
-        });
+        const filteredProposals = dashboardMonth === 0
+          ? allProposals.filter((proposal: any) => {
+              const date = new Date(proposal.createdAt);
+              return date.getFullYear() === dashboardYear;
+            })
+          : allProposals.filter((proposal: any) => {
+              const date = new Date(proposal.createdAt);
+              return date.getMonth() + 1 === dashboardMonth && date.getFullYear() === dashboardYear;
+            });
         
         // Calcular estatísticas apenas das propostas filtradas
         const proposalStats = filteredProposals.reduce((acc: any, proposal: any) => {
@@ -490,9 +496,12 @@ export const Dashboard: React.FC = () => {
   }, [loadDashboardData]);
 
   // Sincronizar seletores de mês (dashboard principal e gráfico diário)
+  // Não sincronizar se for "Todos os meses" (0)
   useEffect(() => {
-    setSelectedMonth(dashboardMonth);
-    setSelectedYear(dashboardYear);
+    if (dashboardMonth !== 0) {
+      setSelectedMonth(dashboardMonth);
+      setSelectedYear(dashboardYear);
+    }
   }, [dashboardMonth, dashboardYear]);
 
   // Função para gerar PDF do dashboard
@@ -504,7 +513,7 @@ export const Dashboard: React.FC = () => {
       
       const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-      const monthName = monthNames[dashboardMonth - 1];
+      const monthName = dashboardMonth === 0 ? 'Todos os Meses' : monthNames[dashboardMonth - 1];
       
       const pdfData: DashboardPdfData = {
         month: monthName,
@@ -696,7 +705,19 @@ export const Dashboard: React.FC = () => {
     if (user?.role === 'vendedor') {
       return getVendedorSalesData(data?.monthlyData || []);
     }
-    // Para admin, filtrar apenas o mês selecionado
+    // Para admin, se selecionou "Todos os meses", mostrar todos do ano
+    if (dashboardMonth === 0) {
+      const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
+      return monthNames.map((month, index) => {
+        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+        return {
+          month,
+          vendas: monthData?.sales || 0,
+          receita: monthData?.revenue || 0
+        };
+      });
+    }
+    // Filtrar apenas o mês selecionado
     const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
       d.month === dashboardMonth && d.year === dashboardYear
     );
@@ -720,7 +741,18 @@ export const Dashboard: React.FC = () => {
   
   const revenueData = useMemo(() => {
     if (user?.role === 'admin') {
-      // Para admin, filtrar apenas o mês selecionado
+      // Para admin, se selecionou "Todos os meses", mostrar todos do ano
+      if (dashboardMonth === 0) {
+        const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
+        return monthNames.map((month, index) => {
+          const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+          return {
+            month,
+            receita: monthData?.revenue || 0
+          };
+        });
+      }
+      // Filtrar apenas o mês selecionado
       const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
         d.month === dashboardMonth && d.year === dashboardYear
       );
@@ -796,6 +828,7 @@ export const Dashboard: React.FC = () => {
                   e.target.style.background = 'rgba(59, 130, 246, 0.1)';
                 }}
               >
+                <option value={0}>Todos os Meses</option>
                 <option value={1}>Janeiro</option>
                 <option value={2}>Fevereiro</option>
                 <option value={3}>Março</option>
