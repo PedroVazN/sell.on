@@ -622,7 +622,8 @@ export const generateDashboardPdf = (data: DashboardPdfData): void => {
   }
   
   // Rodapé em todas as páginas
-  const totalPages = doc.getNumberOfPages();
+  // Usar any para acessar getNumberOfPages que pode estar no internal
+  const totalPages = (doc as any).internal?.getNumberOfPages?.() || (doc as any).getNumberOfPages?.() || currentPage;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
