@@ -187,72 +187,61 @@ router.put('/:id', async (req, res) => {
       console.error('❌ Erro ao enviar WhatsApp:', whatsappError);
     }
 
-    // Se a proposta foi fechada (venda_fechada), atualizar as metas do vendedor
+    // Se a proposta foi fechada (venda_fechada), RECALCULAR TODAS as metas do vendedor
+    // Isso garante que o valor sempre esteja correto, baseado em TODAS as propostas fechadas
     if (status === 'venda_fechada') {
-      console.log('🎯 Proposta fechada! Atualizando metas do vendedor...');
-      console.log('Vendedor ID:', proposal.createdBy._id);
+      console.log('🎯 Proposta fechada! Recalculando TODAS as metas do vendedor...');
+      console.log('Vendedor ID:', proposal.createdBy?._id || proposal.createdBy);
       console.log('Valor da proposta:', proposal.total);
       console.log('ID da proposta:', proposal._id.toString());
       
       try {
-        // Buscar metas ativas do vendedor
-        const activeGoals = await Goal.find({
-          assignedTo: proposal.createdBy._id,
-          category: 'sales',
-          status: 'active',
-          unit: 'currency'
-        });
-
-        console.log(`📊 Encontradas ${activeGoals.length} metas ativas para atualizar`);
-
-        // Atualizar cada meta ativa
-        for (const goal of activeGoals) {
-          // Inicializar array se não existir
-          if (!goal.progress.countedProposals) {
-            goal.progress.countedProposals = [];
-          }
-
-          // Verificar se esta proposta já foi contabilizada
-          const proposalId = proposal._id.toString();
-          if (goal.progress.countedProposals.includes(proposalId)) {
-            console.log(`⚠️ Proposta ${proposal.proposalNumber} já foi contabilizada na meta "${goal.title}". Pulando...`);
-            continue;
-          }
-
-          // Adicionar proposta à lista de contabilizadas
-          goal.progress.countedProposals.push(proposalId);
-
-          const newCurrentValue = goal.currentValue + proposal.total;
+        const sellerId = proposal.createdBy?._id || proposal.createdBy;
+        
+        if (!sellerId) {
+          console.error('⚠️ Vendedor não encontrado na proposta, não é possível atualizar metas');
+        } else {
+          // Importar função de recálculo
+          const goalsRouter = require('./goals');
+          const recalculateGoalAutomatically = goalsRouter.recalculateGoalAutomatically;
           
-          // Adicionar marco de progresso
-          goal.progress.milestones.push({
-            date: new Date().toISOString().split('T')[0],
-            value: newCurrentValue,
-            description: `Proposta ${proposal.proposalNumber} fechada: R$ ${proposal.total.toLocaleString('pt-BR')}`
+          // Buscar TODAS as metas de vendas do vendedor (ativas e completas)
+          const allSalesGoals = await Goal.find({
+            assignedTo: sellerId,
+            category: 'sales',
+            unit: 'currency',
+            status: { $in: ['active', 'completed'] } // Incluir completas também para recalcular
           });
 
-          // Manter apenas os últimos 10 marcos
-          if (goal.progress.milestones.length > 10) {
-            goal.progress.milestones = goal.progress.milestones.slice(-10);
-          }
+          console.log(`📊 Encontradas ${allSalesGoals.length} meta(s) de vendas para recalcular`);
 
-          // Atualizar valor atual
-          goal.currentValue = newCurrentValue;
-          
-          // Atualizar porcentagem
-          goal.progress.percentage = Math.min(100, (newCurrentValue / goal.targetValue) * 100);
-          
-          // Verificar se a meta foi atingida
-          if (goal.currentValue >= goal.targetValue && goal.status === 'active') {
-            goal.status = 'completed';
-            console.log(`✅ Meta "${goal.title}" atingida!`);
+          // Recalcular cada meta usando a função automática que busca TODAS as propostas fechadas
+          // Isso garante consistência - sempre recalcula baseado em TODAS as propostas do período
+          for (const goal of allSalesGoals) {
+            try {
+              // Buscar a meta atualizada do banco para ter os dados mais recentes
+              const freshGoal = await Goal.findById(goal._id);
+              if (!freshGoal) {
+                console.log(`⚠️ Meta ${goal._id} não encontrada no banco, pulando...`);
+                continue;
+              }
+              
+              // Usar a função de recálculo automático que busca TODAS as propostas fechadas
+              const recalcResult = await recalculateGoalAutomatically(freshGoal);
+              
+              if (recalcResult) {
+                console.log(`✅ Meta "${freshGoal.title}" recalculada: R$ ${recalcResult.oldValue.toFixed(2)} → R$ ${recalcResult.newValue.toFixed(2)} (${recalcResult.proposalsCount} propostas)`);
+              }
+            } catch (goalError) {
+              console.error(`❌ Erro ao recalcular meta ${goal._id}:`, goalError);
+            }
           }
-
-          await goal.save();
-          console.log(`✅ Meta "${goal.title}" atualizada: ${goal.currentValue}/${goal.targetValue} (${goal.progress.percentage.toFixed(1)}%)`);
+          
+          console.log('✅ Todas as metas foram recalculadas automaticamente após fechamento da proposta');
         }
       } catch (goalError) {
-        console.error('⚠️ Erro ao atualizar metas, mas proposta foi salva:', goalError);
+        console.error('❌ Erro ao recalcular metas:', goalError);
+        console.error('Stack:', goalError.stack);
         // Não retornar erro, pois a proposta foi atualizada com sucesso
       }
     }

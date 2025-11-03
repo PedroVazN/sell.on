@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 /**
  * Função para recalcular automaticamente uma meta baseado em TODAS as propostas fechadas
  * Usa a mesma lógica do recalculate-goals.js mas para uma meta específica
+ * EXPORTADA para ser usada em outras rotas (ex: proposals.js)
  */
 async function recalculateGoalAutomatically(goal) {
   try {
@@ -710,4 +711,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Exportar função de recálculo para ser usada em outras rotas
 module.exports = router;
+module.exports.recalculateGoalAutomatically = recalculateGoalAutomatically;
