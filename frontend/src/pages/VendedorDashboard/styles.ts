@@ -37,6 +37,15 @@ export const VendedorSelector = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
 `;
 
 export const SelectorContainer = styled.div`
@@ -44,6 +53,7 @@ export const SelectorContainer = styled.div`
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
+  flex: 1;
 `;
 
 export const SelectorLabel = styled.label`
