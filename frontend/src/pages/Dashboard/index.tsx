@@ -796,81 +796,85 @@ export const Dashboard: React.FC = () => {
             <Title>Dashboard</Title>
             <Subtitle>
               {user?.role === 'vendedor' 
-                ? 'Suas propostas e performance de vendas' 
+                ? `Suas propostas e performance de vendas - ${
+                    dashboardMonth === 0 
+                      ? `Todos os meses de ${dashboardYear}`
+                      : `${monthNames[dashboardMonth - 1]} ${dashboardYear}`
+                  }`
                 : 'Visão geral de todas as propostas e performance da equipe'
               }
             </Subtitle>
           </div>
-          {user?.role === 'admin' && (
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}>
-              <select
-                value={dashboardMonth}
-                onChange={(e) => setDashboardMonth(Number(e.target.value))}
-                style={{
-                  padding: '0.625rem 1rem',
-                  borderRadius: '0.75rem',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  color: '#e2e8f0',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.2s ease',
-                  backdropFilter: 'blur(10px)'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
-                  e.target.style.background = 'rgba(59, 130, 246, 0.15)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                  e.target.style.background = 'rgba(59, 130, 246, 0.1)';
-                }}
-              >
-                <option value={0}>Todos os Meses</option>
-                <option value={1}>Janeiro</option>
-                <option value={2}>Fevereiro</option>
-                <option value={3}>Março</option>
-                <option value={4}>Abril</option>
-                <option value={5}>Maio</option>
-                <option value={6}>Junho</option>
-                <option value={7}>Julho</option>
-                <option value={8}>Agosto</option>
-                <option value={9}>Setembro</option>
-                <option value={10}>Outubro</option>
-                <option value={11}>Novembro</option>
-                <option value={12}>Dezembro</option>
-              </select>
-              <select
-                value={dashboardYear}
-                onChange={(e) => setDashboardYear(Number(e.target.value))}
-                style={{
-                  padding: '0.625rem 1rem',
-                  borderRadius: '0.75rem',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  color: '#e2e8f0',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.2s ease',
-                  backdropFilter: 'blur(10px)'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
-                  e.target.style.background = 'rgba(59, 130, 246, 0.15)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                  e.target.style.background = 'rgba(59, 130, 246, 0.1)';
-                }}
-              >
-                {[2023, 2024, 2025, 2026, 2027].map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}>
+            <select
+              value={dashboardMonth}
+              onChange={(e) => setDashboardMonth(Number(e.target.value))}
+              style={{
+                padding: '0.625rem 1rem',
+                borderRadius: '0.75rem',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                background: 'rgba(59, 130, 246, 0.1)',
+                color: '#e2e8f0',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                backdropFilter: 'blur(10px)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                e.target.style.background = 'rgba(59, 130, 246, 0.15)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                e.target.style.background = 'rgba(59, 130, 246, 0.1)';
+              }}
+            >
+              <option value={0}>Todos os Meses</option>
+              <option value={1}>Janeiro</option>
+              <option value={2}>Fevereiro</option>
+              <option value={3}>Março</option>
+              <option value={4}>Abril</option>
+              <option value={5}>Maio</option>
+              <option value={6}>Junho</option>
+              <option value={7}>Julho</option>
+              <option value={8}>Agosto</option>
+              <option value={9}>Setembro</option>
+              <option value={10}>Outubro</option>
+              <option value={11}>Novembro</option>
+              <option value={12}>Dezembro</option>
+            </select>
+            <select
+              value={dashboardYear}
+              onChange={(e) => setDashboardYear(Number(e.target.value))}
+              style={{
+                padding: '0.625rem 1rem',
+                borderRadius: '0.75rem',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                background: 'rgba(59, 130, 246, 0.1)',
+                color: '#e2e8f0',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                backdropFilter: 'blur(10px)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                e.target.style.background = 'rgba(59, 130, 246, 0.15)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                e.target.style.background = 'rgba(59, 130, 246, 0.1)';
+              }}
+            >
+              {[2023, 2024, 2025, 2026, 2027].map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            {user?.role === 'admin' && (
               <button
                 onClick={handleGeneratePdf}
                 disabled={isGeneratingPdf || !data}
@@ -909,8 +913,8 @@ export const Dashboard: React.FC = () => {
                 <FileDown size={16} />
                 {isGeneratingPdf ? 'Gerando...' : 'Gerar PDF'}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </Header>
 
