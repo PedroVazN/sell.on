@@ -256,15 +256,19 @@ export const Proposals: React.FC = () => {
           return `${nomeProduto} (${item.quantity} x R$ ${item.unitPrice.toFixed(2)})`;
         }).join('; ') || 'Sem produtos';
 
-        // Pegar nome do vendedor
-        const vendedor = typeof proposal.createdBy === 'object' 
-          ? proposal.createdBy.name 
-          : sellers.find(s => s._id === proposal.createdBy)?.name || 'Não informado';
+        // Pegar nome do vendedor - usar o que já vem na proposta
+        let vendedor = 'Não informado';
+        if (proposal.seller && typeof proposal.seller === 'object') {
+          vendedor = proposal.seller.name;
+        } else if (proposal.createdBy && typeof proposal.createdBy === 'object') {
+          vendedor = proposal.createdBy.name;
+        }
 
-        // Pegar nome do distribuidor
-        const distribuidor = typeof proposal.distributor === 'object'
-          ? proposal.distributor.name
-          : distributors.find(d => d._id === proposal.distributor)?.name || 'Não informado';
+        // Pegar nome do distribuidor - usar o que já vem na proposta
+        let distribuidor = 'Não informado';
+        if (proposal.distributor && typeof proposal.distributor === 'object') {
+          distribuidor = proposal.distributor.apelido || proposal.distributor.razaoSocial || 'Não informado';
+        }
 
         // Formatar status
         const statusMap: { [key: string]: string } = {
@@ -325,10 +329,10 @@ export const Proposals: React.FC = () => {
       link.click();
       document.body.removeChild(link);
 
-      success('CSV exportado com sucesso!');
+      success('CSV exportado com sucesso!', '');
     } catch (error) {
       console.error('Erro ao exportar CSV:', error);
-      showError('Erro ao exportar CSV');
+      showError('Erro ao exportar CSV', '');
     }
   };
 
