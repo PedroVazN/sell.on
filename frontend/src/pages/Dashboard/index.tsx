@@ -253,8 +253,19 @@ export const Dashboard: React.FC = () => {
           proposal.createdBy?._id === user._id || proposal.createdBy === user._id
         );
 
-        // Calcular estatísticas detalhadas das propostas do vendedor
-        const proposalStats = vendedorProposals.reduce((acc: any, proposal: any) => {
+        // Filtrar propostas pelo mês/ano selecionado (igual ao admin)
+        const filteredProposals = dashboardMonth === 0
+          ? vendedorProposals.filter((proposal: any) => {
+              const date = new Date(proposal.createdAt);
+              return date.getFullYear() === dashboardYear;
+            })
+          : vendedorProposals.filter((proposal: any) => {
+              const date = new Date(proposal.createdAt);
+              return date.getMonth() + 1 === dashboardMonth && date.getFullYear() === dashboardYear;
+            });
+
+        // Calcular estatísticas detalhadas das propostas FILTRADAS do vendedor
+        const proposalStats = filteredProposals.reduce((acc: any, proposal: any) => {
           const total = proposal.total || 0;
           
           acc.totalProposals++;
@@ -293,8 +304,8 @@ export const Dashboard: React.FC = () => {
           expiradaValue: 0
         });
 
-        // Agrupar propostas por mês
-        const monthlyProposals = vendedorProposals.reduce((acc: any, proposal: any) => {
+        // Agrupar propostas FILTRADAS por mês
+        const monthlyProposals = filteredProposals.reduce((acc: any, proposal: any) => {
           const date = new Date(proposal.createdAt);
           const month = date.getMonth() + 1;
           const year = date.getFullYear();
@@ -700,16 +711,21 @@ export const Dashboard: React.FC = () => {
   }, [selectedMonth, selectedYear]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
-  // Para admin, mostrar apenas o mês selecionado nos gráficos mensais
+  // Aplicar filtro de mês/ano tanto para admin quanto para vendedor
   const salesData = useMemo(() => {
-    if (user?.role === 'vendedor') {
-      return getVendedorSalesData(data?.monthlyData || []);
-    }
-    // Para admin, se selecionou "Todos os meses", mostrar todos do ano
+    // Se selecionou "Todos os meses", mostrar todos do ano
     if (dashboardMonth === 0) {
       const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
       return monthNames.map((month, index) => {
         const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+        if (user?.role === 'vendedor') {
+          return {
+            month,
+            propostas: monthData?.totalProposals || 0,
+            aprovadas: monthData?.approvedProposals || 0,
+            receita: monthData?.revenue || 0
+          };
+        }
         return {
           month,
           vendas: monthData?.sales || 0,
@@ -725,10 +741,26 @@ export const Dashboard: React.FC = () => {
     return monthNames.map((month, index) => {
       if (index + 1 === dashboardMonth) {
         const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+        if (user?.role === 'vendedor') {
+          return {
+            month,
+            propostas: monthData?.totalProposals || 0,
+            aprovadas: monthData?.approvedProposals || 0,
+            receita: monthData?.revenue || 0
+          };
+        }
         return {
           month,
           vendas: monthData?.sales || 0,
           receita: monthData?.revenue || 0
+        };
+      }
+      if (user?.role === 'vendedor') {
+        return {
+          month,
+          propostas: 0,
+          aprovadas: 0,
+          receita: 0
         };
       }
       return {
@@ -740,37 +772,34 @@ export const Dashboard: React.FC = () => {
   }, [data?.monthlyData, user?.role, dashboardMonth, dashboardYear]);
   
   const revenueData = useMemo(() => {
-    if (user?.role === 'admin') {
-      // Para admin, se selecionou "Todos os meses", mostrar todos do ano
-      if (dashboardMonth === 0) {
-        const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
-        return monthNames.map((month, index) => {
-          const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
-          return {
-            month,
-            receita: monthData?.revenue || 0
-          };
-        });
-      }
-      // Filtrar apenas o mês selecionado
-      const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
-        d.month === dashboardMonth && d.year === dashboardYear
-      );
+    // Se selecionou "Todos os meses", mostrar todos do ano (para admin e vendedor)
+    if (dashboardMonth === 0) {
+      const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
       return monthNames.map((month, index) => {
-        if (index + 1 === dashboardMonth) {
-          const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
-          return {
-            month,
-            receita: monthData?.revenue || 0
-          };
-        }
+        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
         return {
           month,
-          receita: 0
+          receita: monthData?.revenue || 0
         };
       });
     }
-    return getRevenueData(data?.monthlyData || []);
+    // Filtrar apenas o mês selecionado (para admin e vendedor)
+    const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
+      d.month === dashboardMonth && d.year === dashboardYear
+    );
+    return monthNames.map((month, index) => {
+      if (index + 1 === dashboardMonth) {
+        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+        return {
+          month,
+          receita: monthData?.revenue || 0
+        };
+      }
+      return {
+        month,
+        receita: 0
+      };
+    });
   }, [data?.monthlyData, user?.role, dashboardMonth, dashboardYear]);
 
   if (isLoading) {
