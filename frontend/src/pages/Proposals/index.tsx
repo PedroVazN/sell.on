@@ -226,6 +226,112 @@ export const Proposals: React.FC = () => {
     setStatusFilter(e.target.value);
   };
 
+  // Função para exportar propostas para CSV
+  const handleExportCSV = () => {
+    try {
+      // Cabeçalho do CSV
+      const headers = [
+        'Número da Proposta',
+        'Data de Criação',
+        'Vendedor',
+        'Cliente',
+        'Empresa',
+        'Email',
+        'Telefone',
+        'Distribuidor',
+        'Produtos',
+        'Condição de Pagamento',
+        'Valor Total',
+        'Status',
+        'Válido Até',
+        'Motivo da Perda',
+        'Observações'
+      ];
+
+      // Converter propostas para linhas CSV
+      const rows = filteredProposals.map(proposal => {
+        // Formatar produtos: nome (qtd x preço); nome2 (qtd x preço)
+        const produtos = proposal.items?.map(item => {
+          const nomeProduto = typeof item.product === 'object' ? item.product.name : 'Produto';
+          return `${nomeProduto} (${item.quantity} x R$ ${item.unitPrice.toFixed(2)})`;
+        }).join('; ') || 'Sem produtos';
+
+        // Pegar nome do vendedor
+        const vendedor = typeof proposal.createdBy === 'object' 
+          ? proposal.createdBy.name 
+          : sellers.find(s => s._id === proposal.createdBy)?.name || 'Não informado';
+
+        // Pegar nome do distribuidor
+        const distribuidor = typeof proposal.distributor === 'object'
+          ? proposal.distributor.name
+          : distributors.find(d => d._id === proposal.distributor)?.name || 'Não informado';
+
+        // Formatar status
+        const statusMap: { [key: string]: string } = {
+          'negociacao': 'Em Negociação',
+          'venda_fechada': 'Venda Fechada',
+          'venda_perdida': 'Venda Perdida',
+          'expirada': 'Expirada'
+        };
+        const statusLabel = statusMap[proposal.status] || proposal.status;
+
+        // Formatar data
+        const dataCreacao = new Date(proposal.createdAt).toLocaleDateString('pt-BR');
+        const validoAte = proposal.validUntil 
+          ? new Date(proposal.validUntil).toLocaleDateString('pt-BR')
+          : 'Não definido';
+
+        // Motivo da perda
+        const motivoPerda = proposal.lossReason 
+          ? lossReasons.find(r => r.value === proposal.lossReason)?.label || proposal.lossReason
+          : '';
+
+        return [
+          proposal.proposalNumber || 'N/A',
+          dataCreacao,
+          vendedor,
+          proposal.client?.name || 'Não informado',
+          proposal.client?.company || 'Não informado',
+          proposal.client?.email || 'Não informado',
+          proposal.client?.phone || 'Não informado',
+          distribuidor,
+          `"${produtos}"`, // Aspas para manter produtos na mesma célula
+          proposal.paymentCondition || 'Não informado',
+          `R$ ${(proposal.total || 0).toFixed(2)}`,
+          statusLabel,
+          validoAte,
+          motivoPerda,
+          proposal.observations ? `"${proposal.observations.replace(/"/g, '""')}"` : ''
+        ];
+      });
+
+      // Criar conteúdo CSV
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+
+      // Adicionar BOM para UTF-8 (para Excel abrir corretamente)
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Criar link de download
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `propostas_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      success('CSV exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      showError('Erro ao exportar CSV');
+    }
+  };
+
   const handleCreateProposal = () => {
     setEditingProposal(null);
     setSelectedClient({ name: '', email: '', phone: '', company: '' });
@@ -588,6 +694,17 @@ export const Proposals: React.FC = () => {
             <option value="venda_perdida">Venda Perdida</option>
             <option value="expirada">Expirada</option>
           </Select>
+          <CreateButton 
+            onClick={handleExportCSV}
+            style={{ 
+              backgroundColor: '#10b981',
+              marginRight: '0.5rem'
+            }}
+            title="Exportar propostas para Excel/CSV"
+          >
+            <Download size={20} />
+            Exportar CSV
+          </CreateButton>
           <CreateButton onClick={() => navigate('/proposals/create')}>
             <Plus size={20} />
             Nova Proposta
