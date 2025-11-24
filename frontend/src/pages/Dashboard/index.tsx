@@ -239,10 +239,9 @@ export const Dashboard: React.FC = () => {
 
       if (user?.role === 'vendedor' && user?._id) {
         // Dashboard específico para vendedor - Buscar TODAS as propostas
-        const [usersResponse, productsResponse, lossReasonsResponse, proposalsResponse, goalsResponse, salesDataResponse] = await Promise.all([
+        const [usersResponse, productsResponse, proposalsResponse, goalsResponse, salesDataResponse] = await Promise.all([
           apiService.getUsers(1, 1),
           apiService.getProducts(1, 1),
-          apiService.getLossReasonsStats(),
           apiService.getProposals(1, 2000), // Limitar para reduzir tempo de carregamento
           apiService.getGoals(1, 100, { assignedTo: user._id, status: 'active' }),
           apiService.getProposalsDashboardSales()
@@ -335,6 +334,42 @@ export const Dashboard: React.FC = () => {
           return a.month - b.month;
         }) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
 
+        // Calcular motivos de perda apenas das propostas FILTRADAS do vendedor
+        const lossReasonsMap: { [key: string]: { reason: string; label: string; count: number; totalValue: number } } = {};
+        
+        filteredProposals.forEach((proposal: any) => {
+          if (proposal.status === 'venda_perdida' && proposal.lossReason) {
+            if (!lossReasonsMap[proposal.lossReason]) {
+              // Mapear labels dos motivos
+              const reasonLabels: { [key: string]: string } = {
+                'preco_concorrente': 'Preço Concorrente',
+                'condicao_pagamento': 'Condição de Pagamento',
+                'sem_retorno': 'Sem Retorno',
+                'credito_negado': 'Crédito Negado',
+                'concorrencia_marca': 'Concorrência (Marca)',
+                'adiamento_compra': 'Adiamento de Compra',
+                'cotacao_preco': 'Cotação de Preço',
+                'perca_preco': 'Perda de Preço',
+                'urgencia_comprou_local': 'Urgência / Comprou Localmente',
+                'golpe': 'Golpe',
+                'licitacao': 'Licitação',
+                'fechado_outro_parceiro': 'Fechado em Outro Parceiro'
+              };
+              
+              lossReasonsMap[proposal.lossReason] = {
+                reason: proposal.lossReason,
+                label: reasonLabels[proposal.lossReason] || proposal.lossReason,
+                count: 0,
+                totalValue: 0
+              };
+            }
+            lossReasonsMap[proposal.lossReason].count++;
+            lossReasonsMap[proposal.lossReason].totalValue += proposal.total || 0;
+          }
+        });
+
+        const vendedorLossReasons = Object.values(lossReasonsMap).sort((a, b) => b.count - a.count);
+
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
           totalProducts: productsResponse.pagination?.total || 0,
@@ -365,7 +400,7 @@ export const Dashboard: React.FC = () => {
         };
         
         setData(dashboardData);
-        setLossReasons(lossReasonsResponse.data || []);
+        setLossReasons(vendedorLossReasons);
         setGoals(goalsResponse.data || []);
       } else {
         // Dashboard para admin - Buscar TODAS as propostas
@@ -562,7 +597,14 @@ export const Dashboard: React.FC = () => {
         
         // Buscar TODAS as propostas para cálculo correto
         const response = await apiService.getProposals(1, 2000);
-        const proposals = response.data || [];
+        let proposals = response.data || [];
+        
+        // Se for vendedor, filtrar apenas suas propostas
+        if (user?.role === 'vendedor' && user?._id) {
+          proposals = proposals.filter((p: any) => 
+            p.createdBy?._id === user._id || p.createdBy === user._id
+          );
+        }
         
         if (!isMounted) return;
 
@@ -708,7 +750,7 @@ export const Dashboard: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, user?.role, user?._id]);
 
   // Memoizar dados dos gráficos para evitar recálculos desnecessários
   // Aplicar filtro de mês/ano tanto para admin quanto para vendedor
