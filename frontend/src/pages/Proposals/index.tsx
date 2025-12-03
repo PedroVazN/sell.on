@@ -435,7 +435,7 @@ export const Proposals: React.FC = () => {
         setDeletingItems(prev => [...prev, proposal._id]);
         await apiService.deleteProposal(proposal._id);
         setDeletingItems(prev => prev.filter(id => id !== proposal._id));
-        await loadData();
+        await loadData(currentPage);
         success('Sucesso!', 'Proposta excluída com sucesso!');
       } catch (err) {
         console.error('Erro ao deletar proposta:', err);
@@ -502,7 +502,7 @@ export const Proposals: React.FC = () => {
         }
       }
       
-      await loadData();
+      await loadData(currentPage);
       
       // Mostrar modal de sucesso se venda foi fechada
       if (newStatus === 'venda_fechada') {
@@ -531,7 +531,7 @@ export const Proposals: React.FC = () => {
         lossReason, 
         lossDescription
       );
-      await loadData();
+      await loadData(currentPage);
       setShowLossModal(false);
       
       // Mostrar modal de perda
@@ -670,7 +670,7 @@ export const Proposals: React.FC = () => {
       }
 
       setShowModal(false);
-      await loadData();
+      await loadData(currentPage);
     } catch (err) {
       console.error('Erro ao salvar proposta:', err);
       showError('Erro!', `Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
@@ -746,7 +746,7 @@ export const Proposals: React.FC = () => {
       <Container>
         <ErrorState>
           <div>{error}</div>
-          <Button onClick={loadData}>Tentar novamente</Button>
+          <Button onClick={() => loadData(1)}>Tentar novamente</Button>
         </ErrorState>
       </Container>
     );
