@@ -303,8 +303,24 @@ export const Proposals: React.FC = () => {
   };
 
   // Função para exportar propostas para CSV
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     try {
+      // Buscar TODAS as propostas para exportação
+      let allProposals: Proposal[] = [];
+      
+      if (user?.role === 'vendedor') {
+        const response = await apiService.getVendedorProposals(user._id, 1, 10000);
+        allProposals = response.data || [];
+      } else {
+        const response = await apiService.getProposals(1, 10000, statusFilter || undefined, searchTerm || undefined);
+        allProposals = response.data || [];
+      }
+
+      if (allProposals.length === 0) {
+        warning('Atenção', 'Nenhuma proposta encontrada para exportar');
+        return;
+      }
+
       // Cabeçalho do CSV
       const headers = [
         'Número da Proposta',
@@ -325,7 +341,7 @@ export const Proposals: React.FC = () => {
       ];
 
       // Converter propostas para linhas CSV
-      const rows = filteredProposals.map(proposal => {
+      const rows = allProposals.map(proposal => {
         // Formatar produtos: nome (qtd x preço); nome2 (qtd x preço)
         const produtos = proposal.items?.map(item => {
           const nomeProduto = typeof item.product === 'object' ? item.product.name : 'Produto';
@@ -405,10 +421,10 @@ export const Proposals: React.FC = () => {
       link.click();
       document.body.removeChild(link);
 
-      success('CSV exportado com sucesso!', '');
+      success('CSV exportado com sucesso!', `${allProposals.length} propostas exportadas`);
     } catch (error) {
       console.error('Erro ao exportar CSV:', error);
-      showError('Erro ao exportar CSV', '');
+      showError('Erro ao exportar CSV', 'Tente novamente');
     }
   };
 
