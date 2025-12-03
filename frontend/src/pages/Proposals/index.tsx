@@ -811,6 +811,7 @@ export const Proposals: React.FC = () => {
             </CreateButton>
           </EmptyState>
         ) : (
+          <>
           <TableWrapper>
             <Table>
               <TableHeader>
@@ -1057,6 +1058,7 @@ export const Proposals: React.FC = () => {
               </div>
             </div>
           )}
+          </>
         )}
       </Content>
 
