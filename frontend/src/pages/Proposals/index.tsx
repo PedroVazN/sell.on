@@ -790,17 +790,19 @@ export const Proposals: React.FC = () => {
             <option value="venda_perdida">Venda Perdida</option>
             <option value="expirada">Expirada</option>
           </Select>
-          <CreateButton 
-            onClick={handleExportCSV}
-            style={{ 
-              backgroundColor: '#10b981',
-              marginRight: '0.5rem'
-            }}
-            title="Exportar propostas para Excel/CSV"
-          >
-            <Download size={20} />
-            Exportar CSV
-          </CreateButton>
+          {user?.role === 'admin' && (
+            <CreateButton 
+              onClick={handleExportCSV}
+              style={{ 
+                backgroundColor: '#10b981',
+                marginRight: '0.5rem'
+              }}
+              title="Exportar propostas para Excel/CSV"
+            >
+              <Download size={20} />
+              Exportar CSV
+            </CreateButton>
+          )}
           <CreateButton onClick={() => navigate('/proposals/create')}>
             <Plus size={20} />
             Nova Proposta
