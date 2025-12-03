@@ -173,6 +173,10 @@ const proposalSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500
   },
+  closedAt: {
+    type: Date,
+    default: null
+  },
   validUntil: {
     type: Date,
     required: true

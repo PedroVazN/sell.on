@@ -112,6 +112,11 @@ router.put('/:id', async (req, res) => {
 
     const updateData = { status };
     
+    // Se a venda foi fechada, registrar a data de fechamento
+    if (status === 'venda_fechada') {
+      updateData.closedAt = new Date();
+    }
+    
     // Adicionar motivo da perda se fornecido
     if (lossReason) {
       updateData.lossReason = lossReason;
@@ -708,14 +713,20 @@ router.get('/dashboard/sales', async (req, res) => {
       { $limit: 10 }
     ]);
 
-    // Buscar dados mensais para gráficos
+    // Buscar dados mensais para gráficos - usando closedAt (data de fechamento) ao invés de createdAt
+    // Para propostas antigas sem closedAt, usa updatedAt como fallback
     const monthlyData = await Proposal.aggregate([
       { $match: salesMatchFilter },
       {
+        $addFields: {
+          effectiveClosedDate: { $ifNull: ['$closedAt', '$updatedAt'] }
+        }
+      },
+      {
         $group: {
           _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
+            year: { $year: '$effectiveClosedDate' },
+            month: { $month: '$effectiveClosedDate' }
           },
           totalRevenue: { $sum: '$total' },
           totalSales: { $sum: 1 }

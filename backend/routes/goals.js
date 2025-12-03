@@ -16,15 +16,18 @@ async function recalculateGoalAutomatically(goal) {
     const oldValue = goal.currentValue; // Guardar valor antigo antes de recalcular
     
     // Buscar TODAS as propostas fechadas do vendedor no período da meta
+    // Usar closedAt (data de fechamento) ou updatedAt como fallback para propostas antigas
     const closedProposals = await Proposal.find({
       $or: [
         { 'createdBy._id': new mongoose.Types.ObjectId(vendorId) },
         { createdBy: new mongoose.Types.ObjectId(vendorId) }
       ],
       status: 'venda_fechada',
-      createdAt: {
-        $gte: new Date(goal.period.startDate),
-        $lte: new Date(goal.period.endDate)
+      $expr: {
+        $and: [
+          { $gte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.startDate)] },
+          { $lte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.endDate)] }
+        ]
       }
     }).lean();
 
@@ -91,15 +94,18 @@ router.post('/recalculate', async (req, res) => {
       const vendorId = goal.assignedTo;
       
       // Buscar todas as propostas fechadas do vendedor no período da meta
+      // Usar closedAt (data de fechamento) ou updatedAt como fallback para propostas antigas
       const closedProposals = await Proposal.find({
         $or: [
           { 'createdBy._id': vendorId },
           { createdBy: vendorId }
         ],
         status: 'venda_fechada',
-        createdAt: {
-          $gte: new Date(goal.period.startDate),
-          $lte: new Date(goal.period.endDate)
+        $expr: {
+          $and: [
+            { $gte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.startDate)] },
+            { $lte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.endDate)] }
+          ]
         }
       });
 

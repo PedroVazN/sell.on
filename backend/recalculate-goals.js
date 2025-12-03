@@ -30,15 +30,18 @@ async function recalculateGoals() {
       const vendorId = goal.assignedTo;
       
       // Buscar todas as propostas fechadas do vendedor no período da meta
+      // Usar closedAt (data de fechamento) ou updatedAt como fallback para propostas antigas
       const closedProposals = await Proposal.find({
         $or: [
           { 'createdBy._id': vendorId },
           { createdBy: vendorId }
         ],
         status: 'venda_fechada',
-        createdAt: {
-          $gte: new Date(goal.period.startDate),
-          $lte: new Date(goal.period.endDate)
+        $expr: {
+          $and: [
+            { $gte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.startDate)] },
+            { $lte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.endDate)] }
+          ]
         }
       });
 
