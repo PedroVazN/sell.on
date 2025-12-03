@@ -87,6 +87,12 @@ export const Proposals: React.FC = () => {
   const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('win');
   const [proposalNumber, setProposalNumber] = useState<string>('');
 
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+
   // Opções de motivo da perda
   const lossReasons = [
     { value: 'preco_concorrente', label: 'Preço Concorrente' },
@@ -152,21 +158,21 @@ export const Proposals: React.FC = () => {
   const [validUntil, setValidUntil] = useState('');
   const [availablePriceList, setAvailablePriceList] = useState<any[]>([]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
-      console.log('🔍 Carregando propostas para usuário:', user?.email, 'Role:', user?.role);
+      console.log('🔍 Carregando propostas para usuário:', user?.email, 'Role:', user?.role, 'Página:', page);
       
       let proposalsRes;
       
       // Se for vendedor, carregar apenas suas propostas
       if (user?.role === 'vendedor') {
         console.log('👤 Carregando propostas do vendedor:', user._id);
-        proposalsRes = await apiService.getVendedorProposals(user._id, 1, 100);
+        proposalsRes = await apiService.getVendedorProposals(user._id, page, itemsPerPage);
       } else {
         // Se for admin, carregar todas as propostas
         console.log('👑 Carregando todas as propostas (admin)');
-        proposalsRes = await apiService.getProposals(1, 100, statusFilter || undefined, searchTerm || undefined);
+        proposalsRes = await apiService.getProposals(page, itemsPerPage, statusFilter || undefined, searchTerm || undefined);
       }
 
       // Removido cálculo de Score IA na listagem para otimização
@@ -182,7 +188,18 @@ export const Proposals: React.FC = () => {
       setDistributors(distributorsRes.data);
       setSellers(sellersRes.data.filter(user => user.role === 'vendedor' || user.role === 'admin'));
       
-      console.log('📊 Propostas carregadas:', proposalsRes.data?.length || 0);
+      // Atualizar informações de paginação
+      if (proposalsRes.pagination) {
+        setTotalPages(proposalsRes.pagination.pages || 1);
+        setTotalItems(proposalsRes.pagination.total || proposalsRes.data?.length || 0);
+      } else {
+        // Fallback se não tiver paginação
+        const total = proposalsRes.data?.length || 0;
+        setTotalItems(total);
+        setTotalPages(Math.ceil(total / itemsPerPage) || 1);
+      }
+      
+      console.log('📊 Propostas carregadas:', proposalsRes.data?.length || 0, 'Total:', proposalsRes.pagination?.total || 'N/A');
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
       setError('Erro ao carregar dados');
@@ -191,9 +208,68 @@ export const Proposals: React.FC = () => {
     }
   }, [searchTerm, statusFilter, user]);
 
+  // Carregar dados quando a página mudar
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData(currentPage);
+  }, [currentPage, loadData]);
+
+  // Resetar para página 1 quando filtros mudarem
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadData(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter]);
+
+  // Função para mudar de página
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Gera array de páginas para exibir
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Sempre mostra a primeira página
+      pages.push(1);
+      
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+      
+      // Páginas ao redor da atual
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) {
+          pages.push(i);
+        }
+      }
+      
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+      
+      // Sempre mostra a última página
+      if (!pages.includes(totalPages)) {
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
 
   // Carregar lista de preços quando o distribuidor for selecionado
   useEffect(() => {
@@ -879,6 +955,108 @@ export const Proposals: React.FC = () => {
               </TableBody>
             </Table>
           </TableWrapper>
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#1f2937',
+              borderRadius: '0.5rem',
+              flexWrap: 'wrap',
+              gap: '1rem'
+            }}>
+              <div style={{ 
+                color: '#9ca3af', 
+                fontSize: '0.875rem' 
+              }}>
+                Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} propostas
+              </div>
+              
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem' 
+              }}>
+                {/* Botão Anterior */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: currentPage === 1 ? '#374151' : '#3b82f6',
+                    color: currentPage === 1 ? '#6b7280' : 'white',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  ← Anterior
+                </button>
+                
+                {/* Números das páginas */}
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {getPageNumbers().map((page, index) => (
+                    page === '...' ? (
+                      <span 
+                        key={`ellipsis-${index}`} 
+                        style={{ 
+                          padding: '0.5rem', 
+                          color: '#6b7280' 
+                        }}
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page as number)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          backgroundColor: currentPage === page ? '#10b981' : '#374151',
+                          color: currentPage === page ? 'white' : '#d1d5db',
+                          border: 'none',
+                          borderRadius: '0.375rem',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: currentPage === page ? '600' : '400',
+                          minWidth: '2.5rem',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {page}
+                      </button>
+                    )
+                  ))}
+                </div>
+                
+                {/* Botão Próximo */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: currentPage === totalPages ? '#374151' : '#3b82f6',
+                    color: currentPage === totalPages ? '#6b7280' : 'white',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  Próximo →
+                </button>
+              </div>
+            </div>
+          )}
         )}
       </Content>
 
