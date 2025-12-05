@@ -994,22 +994,14 @@ export const Proposals: React.FC = () => {
           {totalPages > 1 && (
             <div style={{
               display: 'flex',
-              justifyContent: 'space-between',
+              flexDirection: 'column',
               alignItems: 'center',
               marginTop: '1.5rem',
               padding: '1rem',
               backgroundColor: '#1f2937',
               borderRadius: '0.5rem',
-              flexWrap: 'wrap',
-              gap: '1rem'
+              gap: '0.75rem'
             }}>
-              <div style={{ 
-                color: '#9ca3af', 
-                fontSize: '0.875rem' 
-              }}>
-                Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} propostas
-              </div>
-              
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1088,6 +1080,13 @@ export const Proposals: React.FC = () => {
                 >
                   Próximo →
                 </button>
+              </div>
+              
+              <div style={{ 
+                color: '#9ca3af', 
+                fontSize: '0.875rem' 
+              }}>
+                Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} propostas
               </div>
             </div>
           )}
