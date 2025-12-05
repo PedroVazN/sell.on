@@ -497,7 +497,9 @@ export const Proposals: React.FC = () => {
         validUntil: proposal.validUntil,
         observations: proposal.observations || '',
         status: proposal.status,
-        createdAt: proposal.createdAt
+        createdAt: proposal.createdAt,
+        closedAt: proposal.closedAt,
+        updatedAt: proposal.updatedAt
       };
       
       generateProposalPdf(pdfData);

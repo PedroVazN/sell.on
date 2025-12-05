@@ -37,6 +37,8 @@ export interface ProposalPdfData {
   observations?: string;
   status: string;
   createdAt: string;
+  closedAt?: string;
+  updatedAt?: string;
 }
 
 export const generateProposalPdf = (data: ProposalPdfData): void => {
@@ -67,15 +69,28 @@ export const generateProposalPdf = (data: ProposalPdfData): void => {
   doc.setFont('helvetica', 'bold');
   doc.text('Sell.On', 20, 18);
   
-  // Número da proposta e data
+  // Número da proposta e datas
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Proposta #${data.proposalNumber}`, pageWidth - 100, 12);
+  doc.text(`Proposta #${data.proposalNumber}`, pageWidth - 100, 10);
   
   const createdDate = new Date(data.createdAt).toLocaleDateString('pt-BR');
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Criada em: ${createdDate}`, pageWidth - 100, 22);
+  doc.text(`Criada em: ${createdDate}`, pageWidth - 100, 17);
+  
+  // Mostrar data de fechamento se a proposta foi finalizada
+  if (data.status !== 'negociacao') {
+    const closedDateStr = data.closedAt ? new Date(data.closedAt).toLocaleDateString('pt-BR') 
+                        : data.updatedAt ? new Date(data.updatedAt).toLocaleDateString('pt-BR') 
+                        : null;
+    if (closedDateStr) {
+      const closedLabel = data.status === 'venda_fechada' ? 'Fechada em:' 
+                        : data.status === 'venda_perdida' ? 'Perdida em:' 
+                        : 'Finalizada em:';
+      doc.text(`${closedLabel} ${closedDateStr}`, pageWidth - 100, 23);
+    }
+  }
   
   // Status badge
   const statusText = getStatusLabel(data.status);
