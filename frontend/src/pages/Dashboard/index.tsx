@@ -608,12 +608,6 @@ export const Dashboard: React.FC = () => {
         
         if (!isMounted) return;
 
-        // Filtrar propostas do mês/ano selecionado
-        const filteredProposals = proposals.filter((p: any) => {
-          const date = new Date(p.createdAt);
-          return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
-        });
-
         // Obter número de dias do mês
         const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
         
@@ -634,24 +628,43 @@ export const Dashboard: React.FC = () => {
           };
         });
 
-        // Contar propostas por dia
-        filteredProposals.forEach((p: any) => {
-          const day = new Date(p.createdAt).getDate();
-          const dayIndex = day - 1;
+        // Processar propostas - usar data correta baseada no status
+        // Geradas: usa createdAt
+        // Ganhas/Perdidas: usa closedAt (ou updatedAt como fallback) - contabiliza no mês de FECHAMENTO
+        proposals.forEach((p: any) => {
           const valor = p.total || 0;
+          const createdDate = new Date(p.createdAt);
+          // Data de fechamento: usar closedAt se existir, senão updatedAt
+          const closedDate = p.closedAt ? new Date(p.closedAt) : new Date(p.updatedAt);
           
-          dailyData[dayIndex].geradas++;
-          dailyData[dayIndex].valorGeradas += valor;
+          // Propostas GERADAS neste mês (usa createdAt)
+          if (createdDate.getMonth() + 1 === selectedMonth && createdDate.getFullYear() === selectedYear) {
+            const dayIndex = createdDate.getDate() - 1;
+            if (dayIndex >= 0 && dayIndex < daysInMonth) {
+              dailyData[dayIndex].geradas++;
+              dailyData[dayIndex].valorGeradas += valor;
+              
+              // Se está em negociação, conta como negociação no dia da criação
+              if (p.status === 'negociacao') {
+                dailyData[dayIndex].negociacao++;
+                dailyData[dayIndex].valorNegociacao += valor;
+              }
+            }
+          }
           
-          if (p.status === 'venda_fechada') {
-            dailyData[dayIndex].ganhas++;
-            dailyData[dayIndex].valorGanhas += valor;
-          } else if (p.status === 'venda_perdida') {
-            dailyData[dayIndex].perdidas++;
-            dailyData[dayIndex].valorPerdidas += valor;
-          } else if (p.status === 'negociacao') {
-            dailyData[dayIndex].negociacao++;
-            dailyData[dayIndex].valorNegociacao += valor;
+          // Propostas FECHADAS/PERDIDAS neste mês (usa closedAt/updatedAt)
+          // Contabiliza no mês em que FOI FECHADA, não criada
+          if (closedDate.getMonth() + 1 === selectedMonth && closedDate.getFullYear() === selectedYear) {
+            const dayIndex = closedDate.getDate() - 1;
+            if (dayIndex >= 0 && dayIndex < daysInMonth) {
+              if (p.status === 'venda_fechada') {
+                dailyData[dayIndex].ganhas++;
+                dailyData[dayIndex].valorGanhas += valor;
+              } else if (p.status === 'venda_perdida') {
+                dailyData[dayIndex].perdidas++;
+                dailyData[dayIndex].valorPerdidas += valor;
+              }
+            }
           }
         });
 
@@ -663,7 +676,8 @@ export const Dashboard: React.FC = () => {
         const todayStatsCalc = proposals.reduce((acc: any, p: any) => {
           const valor = p.total || 0;
           const createdDate = new Date(p.createdAt);
-          const updatedDate = new Date(p.updatedAt);
+          // Data de fechamento: usar closedAt se existir, senão updatedAt
+          const closedDate = p.closedAt ? new Date(p.closedAt) : new Date(p.updatedAt);
           const todayStr = today.toDateString();
 
           // Propostas geradas hoje (usa createdAt)
@@ -672,14 +686,14 @@ export const Dashboard: React.FC = () => {
             acc.valorGeradas += valor;
           }
 
-          // Propostas ganhas hoje (usa updatedAt)
-          if (p.status === 'venda_fechada' && updatedDate.toDateString() === todayStr) {
+          // Propostas ganhas hoje (usa closedAt ou updatedAt)
+          if (p.status === 'venda_fechada' && closedDate.toDateString() === todayStr) {
             acc.ganhas++;
             acc.valorGanhas += valor;
           }
 
-          // Propostas perdidas hoje (usa updatedAt)
-          if (p.status === 'venda_perdida' && updatedDate.toDateString() === todayStr) {
+          // Propostas perdidas hoje (usa closedAt ou updatedAt)
+          if (p.status === 'venda_perdida' && closedDate.toDateString() === todayStr) {
             acc.perdidas++;
             acc.valorPerdidas += valor;
           }
