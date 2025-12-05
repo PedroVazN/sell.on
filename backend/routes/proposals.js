@@ -112,8 +112,8 @@ router.put('/:id', async (req, res) => {
 
     const updateData = { status };
     
-    // Se a venda foi fechada, registrar a data de fechamento
-    if (status === 'venda_fechada') {
+    // Se a venda foi fechada OU perdida, registrar a data de fechamento
+    if (status === 'venda_fechada' || status === 'venda_perdida' || status === 'expirada') {
       updateData.closedAt = new Date();
     }
     
