@@ -325,6 +325,7 @@ export const Proposals: React.FC = () => {
       const headers = [
         'Número da Proposta',
         'Data de Criação',
+        'Data de Fechamento',
         'Vendedor',
         'Cliente',
         'Empresa',
@@ -371,8 +372,19 @@ export const Proposals: React.FC = () => {
         };
         const statusLabel = statusMap[proposal.status] || proposal.status;
 
-        // Formatar data
+        // Formatar datas
         const dataCreacao = new Date(proposal.createdAt).toLocaleDateString('pt-BR');
+        
+        // Data de fechamento - usa closedAt, ou updatedAt como fallback para propostas finalizadas
+        let dataFechamento = '';
+        if (proposal.status === 'venda_fechada' || proposal.status === 'venda_perdida' || proposal.status === 'expirada') {
+          if (proposal.closedAt) {
+            dataFechamento = new Date(proposal.closedAt).toLocaleDateString('pt-BR');
+          } else if (proposal.updatedAt) {
+            dataFechamento = new Date(proposal.updatedAt).toLocaleDateString('pt-BR');
+          }
+        }
+        
         const validoAte = proposal.validUntil 
           ? new Date(proposal.validUntil).toLocaleDateString('pt-BR')
           : 'Não definido';
@@ -385,6 +397,7 @@ export const Proposals: React.FC = () => {
         return [
           proposal.proposalNumber || 'N/A',
           dataCreacao,
+          dataFechamento || 'Em aberto',
           vendedor,
           proposal.client?.name || 'Não informado',
           proposal.client?.company || 'Não informado',
