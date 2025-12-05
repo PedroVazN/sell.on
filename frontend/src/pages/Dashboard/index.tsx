@@ -304,30 +304,47 @@ export const Dashboard: React.FC = () => {
         });
 
         // Agrupar propostas FILTRADAS por mês
-        const monthlyProposals = filteredProposals.reduce((acc: any, proposal: any) => {
-          const date = new Date(proposal.createdAt);
-          const month = date.getMonth() + 1;
-          const year = date.getFullYear();
-          const key = `${year}-${month}`;
+        // IMPORTANTE: Propostas geradas usa createdAt, Propostas ganhas usa closedAt
+        const monthlyProposals: any = {};
+        
+        filteredProposals.forEach((proposal: any) => {
+          // Para propostas GERADAS: usar createdAt
+          const createdDate = new Date(proposal.createdAt);
+          const createdMonth = createdDate.getMonth() + 1;
+          const createdYear = createdDate.getFullYear();
+          const createdKey = `${createdYear}-${createdMonth}`;
           
-          if (!acc[key]) {
-            acc[key] = {
-              month,
-              year,
+          if (!monthlyProposals[createdKey]) {
+            monthlyProposals[createdKey] = {
+              month: createdMonth,
+              year: createdYear,
               totalProposals: 0,
               approvedProposals: 0,
               revenue: 0
             };
           }
+          monthlyProposals[createdKey].totalProposals++;
           
-          acc[key].totalProposals++;
+          // Para propostas GANHAS: usar closedAt (data de fechamento)
           if (proposal.status === 'venda_fechada') {
-            acc[key].approvedProposals++;
-            acc[key].revenue += proposal.total || 0;
+            const closedDate = proposal.closedAt ? new Date(proposal.closedAt) : new Date(proposal.updatedAt);
+            const closedMonth = closedDate.getMonth() + 1;
+            const closedYear = closedDate.getFullYear();
+            const closedKey = `${closedYear}-${closedMonth}`;
+            
+            if (!monthlyProposals[closedKey]) {
+              monthlyProposals[closedKey] = {
+                month: closedMonth,
+                year: closedYear,
+                totalProposals: 0,
+                approvedProposals: 0,
+                revenue: 0
+              };
+            }
+            monthlyProposals[closedKey].approvedProposals++;
+            monthlyProposals[closedKey].revenue += proposal.total || 0;
           }
-          
-          return acc;
-        }, {});
+        });
 
         const monthlyData = Object.values(monthlyProposals).sort((a: any, b: any) => {
           if (a.year !== b.year) return a.year - b.year;
@@ -466,30 +483,47 @@ export const Dashboard: React.FC = () => {
         });
 
         // Agrupar propostas por mês (apenas do mês selecionado)
-        const monthlyProposals = filteredProposals.reduce((acc: any, proposal: any) => {
-          const date = new Date(proposal.createdAt);
-          const month = date.getMonth() + 1;
-          const year = date.getFullYear();
-          const key = `${year}-${month}`;
+        // IMPORTANTE: Propostas geradas usa createdAt, Propostas ganhas usa closedAt
+        const monthlyProposals: any = {};
+        
+        filteredProposals.forEach((proposal: any) => {
+          // Para propostas GERADAS: usar createdAt
+          const createdDate = new Date(proposal.createdAt);
+          const createdMonth = createdDate.getMonth() + 1;
+          const createdYear = createdDate.getFullYear();
+          const createdKey = `${createdYear}-${createdMonth}`;
           
-          if (!acc[key]) {
-            acc[key] = {
-              month,
-              year,
+          if (!monthlyProposals[createdKey]) {
+            monthlyProposals[createdKey] = {
+              month: createdMonth,
+              year: createdYear,
               totalProposals: 0,
               approvedProposals: 0,
               revenue: 0
             };
           }
+          monthlyProposals[createdKey].totalProposals++;
           
-          acc[key].totalProposals++;
+          // Para propostas GANHAS: usar closedAt (data de fechamento)
           if (proposal.status === 'venda_fechada') {
-            acc[key].approvedProposals++;
-            acc[key].revenue += proposal.total || 0;
+            const closedDate = proposal.closedAt ? new Date(proposal.closedAt) : new Date(proposal.updatedAt);
+            const closedMonth = closedDate.getMonth() + 1;
+            const closedYear = closedDate.getFullYear();
+            const closedKey = `${closedYear}-${closedMonth}`;
+            
+            if (!monthlyProposals[closedKey]) {
+              monthlyProposals[closedKey] = {
+                month: closedMonth,
+                year: closedYear,
+                totalProposals: 0,
+                approvedProposals: 0,
+                revenue: 0
+              };
+            }
+            monthlyProposals[closedKey].approvedProposals++;
+            monthlyProposals[closedKey].revenue += proposal.total || 0;
           }
-          
-          return acc;
-        }, {});
+        });
 
         const monthlyData = Object.values(monthlyProposals).sort((a: any, b: any) => {
           if (a.year !== b.year) return a.year - b.year;
