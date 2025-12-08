@@ -306,8 +306,8 @@ export const EditProposal: React.FC = () => {
     
     try {
       const cleanCnpj = cnpj.replace(/\D/g, '');
-      // Usar o parâmetro search para filtrar diretamente no backend pelo CNPJ
-      const response = await apiService.getClients(1, 500, cleanCnpj);
+      // Buscar todos os clientes e filtrar no frontend
+      const response = await apiService.getClients(1, 500);
       if (response.success && response.data) {
         const existingClient = response.data.find((c: any) => 
           c.cnpj?.replace(/\D/g, '') === cleanCnpj
