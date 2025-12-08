@@ -291,8 +291,8 @@ export const CreateProposal: React.FC = () => {
       console.log('🔍 Buscando cliente por CNPJ:', cnpj);
       const cleanCnpj = cnpj.replace(/\D/g, ''); // Remove formatação
       
-      // Buscar cliente na API
-      const response = await apiService.getClients(1, 100);
+      // Buscar cliente na API usando o parâmetro search para filtrar diretamente no backend
+      const response = await apiService.getClients(1, 100, cleanCnpj);
       const existingClient = response.data?.find((client: any) => 
         client.cnpj?.replace(/\D/g, '') === cleanCnpj
       );
@@ -591,7 +591,7 @@ export const CreateProposal: React.FC = () => {
 
       // Verificar se cliente existe e criar se necessário
       const cleanCnpj = formData.client.cnpj.replace(/\D/g, '');
-      const clientsResponse = await apiService.getClients(1, 100);
+      const clientsResponse = await apiService.getClients(1, 100, cleanCnpj);
       let existingClient = clientsResponse.data?.find((client: any) => 
         client.cnpj?.replace(/\D/g, '') === cleanCnpj
       );
