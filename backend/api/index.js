@@ -153,7 +153,8 @@ app.get('/', (req, res) => {
       events: '/api/events',
       notifications: '/api/notifications',
       priceList: '/api/price-list',
-      ai: '/api/ai'
+      ai: '/api/ai',
+      funnel: '/api/funnel'
     }
   });
 });
@@ -326,6 +327,9 @@ app.use('/api/ai', aiRouter);
 
 const priceListRouter = require('../routes/priceList');
 app.use('/api/price-list', priceListRouter);
+
+const funnelRouter = require('../routes/funnel');
+app.use('/api/funnel', funnelRouter);
 
 const noticesRouter = require('../routes/notices');
 app.use('/api/notices', noticesRouter);
