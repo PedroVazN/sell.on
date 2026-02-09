@@ -5,6 +5,8 @@ export const Container = styled.div`
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
 `;
 
 export const Header = styled.div`
@@ -47,9 +49,29 @@ export const ViewToggle = styled.div<{ $active: boolean }>`
 export const Board = styled.div`
   display: flex;
   gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 16px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  padding-bottom: 20px;
   min-height: 420px;
+  margin-bottom: 8px;
+  /* Barra de rolagem horizontal visível em baixo */
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => theme.colors.border.secondary} transparent;
+  &::-webkit-scrollbar {
+    height: 12px;
+  }
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background.glass};
+    border-radius: 6px;
+    margin: 0 32px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border.secondary};
+    border-radius: 6px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.primary};
+  }
 `;
 
 export const Column = styled.div<{ $color?: string }>`
