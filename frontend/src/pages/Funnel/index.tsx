@@ -8,6 +8,7 @@ import {
   Title,
   Toolbar,
   ViewToggle,
+  BoardWrapper,
   Board,
   Column,
   ColumnHeader,
@@ -332,6 +333,7 @@ function FunnelPageContent() {
           <Loader2 size={32} className="spin" /> Carregando funil...
         </LoadingState>
       ) : viewMode === 'kanban' ? (
+        <BoardWrapper>
         <Board>
           {openStages.map((stage) => (
             <Column key={stage._id} $color={stage.color}>
@@ -405,6 +407,7 @@ function FunnelPageContent() {
             </CardsArea>
           </Column>
         </Board>
+        </BoardWrapper>
       ) : (
         <ListTable>
           <ListHeader>

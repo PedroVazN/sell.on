@@ -46,32 +46,43 @@ export const ViewToggle = styled.div<{ $active: boolean }>`
   }
 `;
 
-export const Board = styled.div`
-  display: flex;
-  gap: 16px;
-  overflow-x: scroll;
+/** Wrapper que limita a largura e mostra a barra de rolagem horizontal em baixo */
+export const BoardWrapper = styled.div`
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 20px;
-  min-height: 420px;
+  padding-bottom: 24px;
   margin-bottom: 8px;
-  /* Barra de rolagem horizontal visível em baixo */
-  scrollbar-width: thin;
-  scrollbar-color: ${({ theme }) => theme.colors.border.secondary} transparent;
+  /* Barra sempre visível e fácil de clicar */
+  scrollbar-width: auto;
+  scrollbar-color: #64748b #e2e8f0;
   &::-webkit-scrollbar {
-    height: 12px;
+    height: 14px;
   }
   &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background.glass};
-    border-radius: 6px;
-    margin: 0 32px;
+    background: #e2e8f0;
+    border-radius: 7px;
+    margin: 0 24px;
   }
   &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border.secondary};
-    border-radius: 6px;
+    background: #64748b;
+    border-radius: 7px;
+    border: 2px solid #e2e8f0;
   }
   &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.primary};
+    background: #475569;
   }
+  &::-webkit-scrollbar-thumb:active {
+    background: #334155;
+  }
+`;
+
+export const Board = styled.div`
+  display: inline-flex;
+  gap: 16px;
+  min-height: 420px;
+  width: max-content;
 `;
 
 export const Column = styled.div<{ $color?: string }>`
