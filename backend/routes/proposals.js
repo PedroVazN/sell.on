@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
+const Client = require('../models/Client');
+const Opportunity = require('../models/Opportunity');
+const PipelineStage = require('../models/PipelineStage');
 const { auth } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
 const { proposalLimiter } = require('../middleware/security');
@@ -147,6 +150,18 @@ router.put('/:id', async (req, res) => {
     console.log('Status:', proposal.status);
     console.log('Loss Reason:', proposal.lossReason);
     console.log('Loss Description:', proposal.lossDescription);
+
+    // Integração Funil: atualizar oportunidade vinculada quando proposta ganha ou perde
+    if ((status === 'venda_fechada' || status === 'venda_perdida') && proposal.opportunity) {
+      try {
+        await Opportunity.findByIdAndUpdate(proposal.opportunity, {
+          status: status === 'venda_fechada' ? 'won' : 'lost'
+        });
+        console.log('Funil: oportunidade atualizada para', status === 'venda_fechada' ? 'ganha' : 'perdida');
+      } catch (funnelErr) {
+        console.error('Funil: erro ao atualizar oportunidade:', funnelErr.message);
+      }
+    }
 
     // Enviar notificação WhatsApp baseado no novo status (em background)
     try {
@@ -364,7 +379,41 @@ router.post('/', auth, proposalLimiter, (req, res, next) => {
 
     await proposal.save();
     console.log('Proposta salva com sucesso:', proposal._id);
-    
+
+    // Integração Funil: criar oportunidade no funil (estágio Proposta enviada)
+    try {
+      const sellerId = seller._id || proposal.createdBy;
+      const orConditions = [];
+      if (client.email) orConditions.push({ 'contato.email': client.email.toLowerCase().trim() });
+      if (client.razaoSocial && client.razaoSocial.trim()) orConditions.push({ razaoSocial: new RegExp(client.razaoSocial.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') });
+      const clientDoc = orConditions.length ? await Client.findOne({ $or: orConditions }) : null;
+      if (clientDoc && sellerId) {
+        let stageProposta = await PipelineStage.findOne({ isDeleted: { $ne: true }, name: /proposta/i }).sort({ order: 1 });
+        if (!stageProposta) stageProposta = await PipelineStage.findOne({ isDeleted: { $ne: true } }).sort({ order: 1 });
+        if (stageProposta) {
+          const opportunity = new Opportunity({
+            client: clientDoc._id,
+            responsible_user: sellerId,
+            stage: stageProposta._id,
+            title: `Proposta ${proposal.proposalNumber} - ${(client.razaoSocial || client.company || client.name || '').substring(0, 40)}`,
+            estimated_value: total || 0,
+            win_probability: 50,
+            expected_close_date: validUntil ? new Date(validUntil) : null,
+            lead_source: 'proposta',
+            description: observations ? `Proposta: ${observations}` : `Criada a partir da proposta ${proposal.proposalNumber}`,
+            status: 'open',
+            proposal: proposal._id
+          });
+          await opportunity.save();
+          proposal.opportunity = opportunity._id;
+          await proposal.save();
+          console.log('Funil: oportunidade criada a partir da proposta:', opportunity._id);
+        }
+      }
+    } catch (funnelErr) {
+      console.error('Funil: erro ao criar oportunidade a partir da proposta (não bloqueia):', funnelErr.message);
+    }
+
     await proposal.populate('createdBy', 'name email');
     console.log('Proposta populada:', proposal);
 

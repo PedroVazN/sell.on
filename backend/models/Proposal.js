@@ -177,6 +177,11 @@ const proposalSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  opportunity: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Opportunity',
+    default: null
+  },
   validUntil: {
     type: Date,
     required: true

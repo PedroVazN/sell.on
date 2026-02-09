@@ -66,6 +66,11 @@ const opportunitySchema = new mongoose.Schema({
     ref: 'Sale',
     default: null,
   },
+  proposal: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Proposal',
+    default: null,
+  },
   isDeleted: {
     type: Boolean,
     default: false,

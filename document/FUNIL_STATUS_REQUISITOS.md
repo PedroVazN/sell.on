@@ -73,3 +73,11 @@ Cada **coluna** do Kanban é uma **etapa** do pipeline (ex.: Qualificação, Pro
 6. **Busca** no backend (GET opportunities?search=).
 
 Com isso o funil fica **funcional** para o dia a dia: cadastrar oportunidades, mover no pipeline, acompanhar e fechar.
+
+---
+
+## Integração com Propostas
+
+- **Ao criar uma proposta:** o sistema tenta localizar um **cliente** no cadastro (por e-mail ou razão social). Se encontrar, cria automaticamente uma **oportunidade** no funil no estágio **Proposta enviada**, vinculada à proposta. A oportunidade usa título tipo "Proposta PROP-0001 - Nome do cliente", valor = total da proposta, origem = proposta.
+- **Ao marcar proposta como ganha ou perdida:** se existir oportunidade vinculada a essa proposta, o funil atualiza o status da oportunidade para **ganha** ou **perdida**. Elas passam a aparecer nas colunas **Ganhas** e **Perdidas** do Kanban.
+- **Funil completo:** o Kanban exibe as etapas em aberto (Leads, Primeiro atendimento, Proposta enviada, Negociação, Fechamento) e, ao final, duas colunas fixas: **Ganhas** e **Perdidas**, com todas as oportunidades nesses status.

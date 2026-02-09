@@ -239,6 +239,8 @@ function FunnelPageContent() {
   );
 
   const openStages = useMemo(() => stages.filter((s) => !s.isWon && !s.isLost), [stages]);
+  const wonOpportunities = useMemo(() => opportunities.filter((o) => o.status === 'won'), [opportunities]);
+  const lostOpportunities = useMemo(() => opportunities.filter((o) => o.status === 'lost'), [opportunities]);
 
   return (
     <Container>
@@ -358,6 +360,50 @@ function FunnelPageContent() {
               </CardsArea>
             </Column>
           ))}
+          <Column key="won" $color="#10b981">
+            <ColumnHeader>
+              <ColumnTitle>Ganhas</ColumnTitle>
+              <ColumnCount>{wonOpportunities.length}</ColumnCount>
+            </ColumnHeader>
+            <CardsArea>
+              {wonOpportunities.map((opp) => (
+                <Card
+                  key={opp._id}
+                  onClick={() => setSelectedDeal(opp)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
+                >
+                  <CardTitle>{opp.title}</CardTitle>
+                  <CardMeta>
+                    {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
+                  </CardMeta>
+                </Card>
+              ))}
+            </CardsArea>
+          </Column>
+          <Column key="lost" $color="#6b7280">
+            <ColumnHeader>
+              <ColumnTitle>Perdidas</ColumnTitle>
+              <ColumnCount>{lostOpportunities.length}</ColumnCount>
+            </ColumnHeader>
+            <CardsArea>
+              {lostOpportunities.map((opp) => (
+                <Card
+                  key={opp._id}
+                  onClick={() => setSelectedDeal(opp)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
+                >
+                  <CardTitle>{opp.title}</CardTitle>
+                  <CardMeta>
+                    {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
+                  </CardMeta>
+                </Card>
+              ))}
+            </CardsArea>
+          </Column>
         </Board>
       ) : (
         <ListTable>
