@@ -170,3 +170,111 @@ export const ErrorState = styled.div`
   color: ${({ theme }) => theme.colors.status.error};
   margin-bottom: 16px;
 `;
+
+export const FilterBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+`;
+
+export const FilterInput = styled.input`
+  padding: 8px 12px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  min-width: 160px;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+  }
+`;
+
+export const FilterSelect = styled.select`
+  padding: 8px 12px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  min-width: 140px;
+  cursor: pointer;
+`;
+
+export const BtnPrimary = styled.button`
+  padding: 8px 16px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: none;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+export const BtnSecondary = styled.button`
+  padding: 8px 16px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  cursor: pointer;
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.glass};
+  }
+`;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+`;
+
+export const ModalBox = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+`;
+
+export const ModalTitle = styled.h2`
+  margin: 0 0 20px 0;
+  font-size: 1.25rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export const FormRow = styled.div`
+  margin-bottom: 14px;
+`;
+
+export const FormLabel = styled.label`
+  display: block;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text.muted};
+  margin-bottom: 4px;
+`;
+
+export const ModalActions = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.primary};
+`;

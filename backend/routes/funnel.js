@@ -34,10 +34,11 @@ router.get('/stages', auth, authorize('admin', 'vendedor'), async (req, res) => 
     let stages = await PipelineStage.find({ isDeleted: { $ne: true } }).sort({ order: 1 });
     if (stages.length === 0) {
       const defaults = [
-        { name: 'Qualificação', order: 0, color: '#6b7280' },
-        { name: 'Proposta', order: 1, color: '#3b82f6' },
-        { name: 'Negociação', order: 2, color: '#f59e0b' },
-        { name: 'Fechamento', order: 3, color: '#10b981' },
+        { name: 'Leads / Contatos iniciais', order: 0, color: '#6b7280' },
+        { name: 'Primeiro atendimento', order: 1, color: '#3b82f6' },
+        { name: 'Proposta enviada', order: 2, color: '#8b5cf6' },
+        { name: 'Negociação', order: 3, color: '#f59e0b' },
+        { name: 'Fechamento', order: 4, color: '#10b981' },
       ];
       await PipelineStage.insertMany(defaults);
       stages = await PipelineStage.find({ isDeleted: { $ne: true } }).sort({ order: 1 });
@@ -219,7 +220,7 @@ const opportunityPopulate = [
 // GET /api/funnel/opportunities
 router.get('/opportunities', auth, authorize('admin', 'vendedor'), async (req, res) => {
   try {
-    const { seller, stage, status, dateFrom, dateTo } = req.query;
+    const { seller, stage, status, dateFrom, dateTo, search } = req.query;
     const query = buildOpportunityQuery(req);
     if (seller) query.responsible_user = seller;
     if (stage) query.stage = stage;
@@ -228,6 +229,16 @@ router.get('/opportunities', auth, authorize('admin', 'vendedor'), async (req, r
       query.expected_close_date = {};
       if (dateFrom) query.expected_close_date.$gte = new Date(dateFrom);
       if (dateTo) query.expected_close_date.$lte = new Date(dateTo);
+    }
+    if (search && search.trim()) {
+      const re = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      query.$or = [
+        { title: re },
+        { description: re },
+      ];
+      const clients = await Client.find({ $or: [{ razaoSocial: re }, { nomeFantasia: re }, { 'contato.nome': re }] }).select('_id').lean();
+      const clientIds = clients.map((c) => c._id);
+      if (clientIds.length) query.$or.push({ client: { $in: clientIds } });
     }
     const list = await Opportunity.find(query)
       .populate(opportunityPopulate)

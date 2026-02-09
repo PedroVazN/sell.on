@@ -1603,13 +1603,14 @@ class ApiService {
     return this.request(`/funnel/loss-reasons/${id}`, { method: 'DELETE' });
   }
 
-  async getOpportunities(filters?: { seller?: string; stage?: string; status?: string; dateFrom?: string; dateTo?: string }): Promise<ApiResponse<import('../types/funnel').Opportunity[]>> {
+  async getOpportunities(filters?: { seller?: string; stage?: string; status?: string; dateFrom?: string; dateTo?: string; search?: string }): Promise<ApiResponse<import('../types/funnel').Opportunity[]>> {
     const params = new URLSearchParams();
     if (filters?.seller) params.set('seller', filters.seller);
     if (filters?.stage) params.set('stage', filters.stage);
     if (filters?.status) params.set('status', filters.status);
     if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
     if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+    if (filters?.search?.trim()) params.set('search', filters.search.trim());
     const q = params.toString();
     return this.request(`/funnel/opportunities${q ? `?${q}` : ''}`);
   }

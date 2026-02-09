@@ -79,6 +79,7 @@ export interface FunnelFilters {
   status?: OpportunityStatus;
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
 }
 
 export type FunnelViewMode = 'kanban' | 'list';

@@ -70,6 +70,7 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
         status: filters.status,
         dateFrom: filters.dateFrom,
         dateTo: filters.dateTo,
+        search: filters.search,
       });
       if (res.success && res.data) setOpportunities(res.data);
     } catch (e) {
@@ -77,7 +78,7 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [filters.sellerId, filters.stageId, filters.status, filters.dateFrom, filters.dateTo]);
+  }, [filters.sellerId, filters.stageId, filters.status, filters.dateFrom, filters.dateTo, filters.search]);
 
   const fetchLossReasons = useCallback(async () => {
     try {
