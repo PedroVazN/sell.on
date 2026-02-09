@@ -1,20 +1,23 @@
 import styled from 'styled-components';
 
+export const SIDEBAR_WIDTH_EXPANDED = 280;
+export const SIDEBAR_WIDTH_COLLAPSED = 72;
+
 interface ContainerProps {
   $isOpen?: boolean;
+  $collapsed?: boolean;
 }
 
 export const Container = styled.aside<ContainerProps>`
   position: fixed;
   left: 0;
   top: 0;
-  width: 280px;
+  width: ${({ $collapsed }) => ($collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED)}px;
   height: 100vh;
   background: rgba(15, 23, 42, 0.95);
   border-right: 1px solid rgba(71, 85, 105, 0.3);
   backdrop-filter: blur(20px);
   z-index: 1000;
-  /* Reativa scroll vertical apenas no menu lateral */
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -22,11 +25,13 @@ export const Container = styled.aside<ContainerProps>`
     0 0 0 1px rgba(255, 255, 255, 0.05),
     4px 0 20px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: none;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Responsivo para mobile */
   @media (max-width: 768px) {
+    width: 280px;
     transform: translateX(${({ $isOpen }) => $isOpen ? '0' : '-100%'});
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: ${({ $isOpen }) => $isOpen 
       ? '4px 0 30px rgba(0, 0, 0, 0.3)' 
       : 'none'
@@ -68,12 +73,17 @@ export const Container = styled.aside<ContainerProps>`
   }
 `;
 
-export const Logo = styled.div`
-  padding: 32px 24px;
+export const Logo = styled.div<{ $collapsed?: boolean }>`
+  padding: ${({ $collapsed }) => ($collapsed ? '24px 12px' : '32px 24px')};
   border-bottom: 1px solid rgba(71, 85, 105, 0.3);
   text-align: center;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: ${({ $collapsed }) => ($collapsed ? '72px' : 'auto')};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   
   &::after {
     content: '';
@@ -93,7 +103,7 @@ export const Logo = styled.div`
   }
   
   h1 {
-    font-size: 2.2rem;
+    font-size: ${({ $collapsed }) => ($collapsed ? '1.25rem' : '2.2rem')};
     font-weight: 800;
     background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #10b981 100%);
     -webkit-background-clip: text;
@@ -106,14 +116,15 @@ export const Logo = styled.div`
   }
   
   span {
-    font-size: 0.9rem;
+    font-size: ${({ $collapsed }) => ($collapsed ? '0.6rem' : '0.9rem')};
     color: rgba(148, 163, 184, 0.8);
     font-weight: 600;
-    letter-spacing: 3px;
+    letter-spacing: ${({ $collapsed }) => ($collapsed ? '1px' : '3px')};
     text-transform: uppercase;
     margin-top: 4px;
     display: block;
     transition: all 0.3s ease;
+    opacity: ${({ $collapsed }) => ($collapsed ? 0.9 : 1)};
   }
 
   @keyframes logoGlow {
@@ -126,11 +137,12 @@ export const Logo = styled.div`
   }
 `;
 
-export const MenuSection = styled.div`
-  padding: 24px 0;
+export const MenuSection = styled.div<{ $collapsed?: boolean }>`
+  padding: ${({ $collapsed }) => ($collapsed ? '12px 0' : '24px 0')};
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
-export const MenuTitle = styled.h3`
+export const MenuTitle = styled.h3<{ $collapsed?: boolean }>`
   font-size: 0.7rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.4);
@@ -138,6 +150,12 @@ export const MenuTitle = styled.h3`
   letter-spacing: 2px;
   margin: 0 0 16px 24px;
   position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: ${({ $collapsed }) => ($collapsed ? 0 : 1)};
+  max-height: ${({ $collapsed }) => ($collapsed ? '0' : '24px')};
+  margin-bottom: ${({ $collapsed }) => ($collapsed ? '0' : '16px')};
+  transition: opacity 0.25s ease, max-height 0.25s ease, margin 0.25s ease;
   
   &::before {
     content: '';
@@ -152,14 +170,15 @@ export const MenuTitle = styled.h3`
   }
 `;
 
-export const MenuItem = styled.div<{ $isActive?: boolean }>`
+export const MenuItem = styled.div<{ $isActive?: boolean; $collapsed?: boolean }>`
   display: flex;
   align-items: center;
-  padding: 16px 24px;
+  padding: ${({ $collapsed }) => ($collapsed ? '14px 0' : '16px 24px')};
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  margin: 0 12px;
+  margin: 0 ${({ $collapsed }) => ($collapsed ? '8px' : '12px')};
   border-radius: 12px;
   overflow: hidden;
   
@@ -227,11 +246,12 @@ export const MenuItem = styled.div<{ $isActive?: boolean }>`
   `}
 `;
 
-export const MenuIcon = styled.div`
-  margin-right: 16px;
+export const MenuIcon = styled.div<{ $collapsed?: boolean }>`
+  margin-right: ${({ $collapsed }) => ($collapsed ? '0' : '16px')};
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
@@ -241,13 +261,47 @@ export const MenuIcon = styled.div`
   }
 `;
 
-export const MenuText = styled.span`
+export const MenuText = styled.span<{ $collapsed?: boolean }>`
   font-size: 0.9rem;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease, width 0.25s ease;
   position: relative;
   z-index: 1;
   letter-spacing: 0.025em;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: ${({ $collapsed }) => ($collapsed ? 0 : 1)};
+  width: ${({ $collapsed }) => ($collapsed ? '0' : 'auto')};
+  max-width: ${({ $collapsed }) => ($collapsed ? '0' : '200px')};
+`;
+
+export const CollapseToggle = styled.button`
+  display: none;
+  @media (min-width: 769px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    background: rgba(15, 23, 42, 0.98);
+    color: rgba(226, 232, 240, 0.9);
+    cursor: pointer;
+    z-index: 1001;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    &:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #60a5fa;
+      transform: translateY(-50%) scale(1.1);
+    }
+  }
 `;
 
 /* Overlay para fechar o menu em mobile */

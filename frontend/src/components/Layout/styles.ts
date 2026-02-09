@@ -6,14 +6,14 @@ export const Container = styled.div`
   background: ${({ theme }) => theme.colors.background.primary};
 `;
 
-export const MainContent = styled.main`
+export const MainContent = styled.main<{ $sidebarWidth?: number }>`
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 280px;
+  margin-left: ${({ $sidebarWidth = 280 }) => $sidebarWidth}px;
   background: ${({ theme }) => theme.colors.background.primary};
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Responsivo para mobile */
   @media (max-width: 768px) {
     margin-left: 0;
     width: 100%;

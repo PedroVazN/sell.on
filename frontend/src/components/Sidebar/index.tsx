@@ -23,7 +23,9 @@ import {
   X,
   FileBarChart,
   Brain,
-  Filter
+  Filter,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -36,19 +38,23 @@ import {
   MenuTitle,
   Overlay,
   MenuToggle,
-  CloseButton
+  CloseButton,
+  CollapseToggle
 } from './styles';
+
+const STORAGE_SIDEBAR_COLLAPSED = 'sidebarCollapsed';
 
 interface MenuItemProps {
   icon: React.ReactNode;
   label: string;
   path: string;
   isActive?: boolean;
+  collapsed?: boolean;
   onClick?: () => void;
-  onAfterClick?: () => void; // Callback após o click (para fechar menu em mobile)
+  onAfterClick?: () => void;
 }
 
-const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActive, onClick, onAfterClick }) => {
+const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActive, collapsed, onClick, onAfterClick }) => {
   const navigate = useNavigate();
   
   const handleClick = () => {
@@ -57,24 +63,23 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, label, path, isActiv
     } else {
       navigate(path);
     }
-    // Chamar callback após navegação (para fechar menu em mobile)
-    if (onAfterClick) {
-      onAfterClick();
-    }
+    if (onAfterClick) onAfterClick();
   };
   
   return (
-    <MenuItem 
-      onClick={handleClick} 
-      $isActive={isActive}
-    >
-      <MenuIcon>{icon}</MenuIcon>
-      <MenuText>{label}</MenuText>
+    <MenuItem onClick={handleClick} $isActive={isActive} $collapsed={collapsed} title={collapsed ? label : undefined}>
+      <MenuIcon $collapsed={collapsed}>{icon}</MenuIcon>
+      <MenuText $collapsed={collapsed}>{label}</MenuText>
     </MenuItem>
   );
 };
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCollapse }) => {
   const location = useLocation();
   const { user, hasPermission, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -142,20 +147,25 @@ export const Sidebar: React.FC = () => {
       <Overlay $isOpen={isOpen} onClick={closeMenu} />
 
       {/* Sidebar */}
-      <Container $isOpen={isOpen}>
-        {/* Botão de fechar dentro do sidebar (mobile) */}
+      <Container $isOpen={isOpen} $collapsed={collapsed}>
         <CloseButton onClick={closeMenu}>
           <X size={20} />
         </CloseButton>
 
-        <Logo>
+        {onToggleCollapse && (
+          <CollapseToggle onClick={onToggleCollapse} type="button" title={collapsed ? 'Expandir menu' : 'Recolher menu'}>
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </CollapseToggle>
+        )}
+
+        <Logo $collapsed={collapsed}>
           <h1>Sell.On</h1>
           <span>CRM</span>
         </Logo>
         
         {menuItems.map((section, index) => (
-          <MenuSection key={index}>
-            <MenuTitle>{section.title}</MenuTitle>
+          <MenuSection key={index} $collapsed={collapsed}>
+            <MenuTitle $collapsed={collapsed}>{section.title}</MenuTitle>
             {section.items.map((item, itemIndex) => (
               <MenuItemComponent
                 key={itemIndex}
@@ -163,6 +173,7 @@ export const Sidebar: React.FC = () => {
                 label={item.label}
                 path={item.path}
                 isActive={location.pathname === item.path}
+                collapsed={collapsed}
                 onClick={'onClick' in item ? item.onClick : undefined}
                 onAfterClick={closeMenu}
               />
