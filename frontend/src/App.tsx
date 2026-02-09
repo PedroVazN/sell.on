@@ -34,6 +34,7 @@ import { DistributorRegistration } from './pages/DistributorRegistration';
 import { UserRegistration } from './pages/UserRegistration';
 import NoticesAdmin from './pages/NoticesAdmin';
 import NoticesViewer from './pages/NoticesViewer';
+import FunnelPage from './pages/Funnel';
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
           <Route path="clients/register" element={<ProtectedRoute permission="admin"><ClientRegistration /></ProtectedRoute>} />
           <Route path="distributors" element={<ProtectedRoute permission="admin"><Distributors /></ProtectedRoute>} />
           <Route path="distributors/register" element={<ProtectedRoute permission="admin"><DistributorRegistration /></ProtectedRoute>} />
+          <Route path="funnel" element={<ProtectedRoute><FunnelPage /></ProtectedRoute>} />
           <Route path="proposals" element={<ProtectedRoute permission="proposals"><Proposals /></ProtectedRoute>} />
           <Route path="proposals/create" element={<ProtectedRoute permission="proposals"><CreateProposal /></ProtectedRoute>} />
           <Route path="proposals/edit/:id" element={<ProtectedRoute permission="proposals"><EditProposal /></ProtectedRoute>} />

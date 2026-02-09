@@ -1565,6 +1565,117 @@ class ApiService {
     
     return this.request(`/goals/dashboard?${params.toString()}`);
   }
+
+  // --- Sales Funnel (CRM) ---
+  async getFunnelStages(): Promise<ApiResponse<import('../types/funnel').PipelineStage[]>> {
+    return this.request('/funnel/stages');
+  }
+
+  async createFunnelStage(data: { name: string; order?: number; color?: string; isWon?: boolean; isLost?: boolean }): Promise<ApiResponse<import('../types/funnel').PipelineStage>> {
+    return this.request('/funnel/stages', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateFunnelStage(id: string, data: Partial<{ name: string; order: number; color: string; isWon: boolean; isLost: boolean }>): Promise<ApiResponse<import('../types/funnel').PipelineStage>> {
+    return this.request(`/funnel/stages/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteFunnelStage(id: string): Promise<ApiResponse<import('../types/funnel').PipelineStage>> {
+    return this.request(`/funnel/stages/${id}`, { method: 'DELETE' });
+  }
+
+  async reorderFunnelStages(orderIds: string[]): Promise<ApiResponse<import('../types/funnel').PipelineStage[]>> {
+    return this.request('/funnel/stages/reorder', { method: 'PATCH', body: JSON.stringify({ orderIds }) });
+  }
+
+  async getLossReasons(): Promise<ApiResponse<import('../types/funnel').LossReason[]>> {
+    return this.request('/funnel/loss-reasons');
+  }
+
+  async createLossReason(data: { name: string; order?: number }): Promise<ApiResponse<import('../types/funnel').LossReason>> {
+    return this.request('/funnel/loss-reasons', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateLossReason(id: string, data: Partial<{ name: string; order: number }>): Promise<ApiResponse<import('../types/funnel').LossReason>> {
+    return this.request(`/funnel/loss-reasons/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteLossReason(id: string): Promise<ApiResponse<void>> {
+    return this.request(`/funnel/loss-reasons/${id}`, { method: 'DELETE' });
+  }
+
+  async getOpportunities(filters?: { seller?: string; stage?: string; status?: string; dateFrom?: string; dateTo?: string }): Promise<ApiResponse<import('../types/funnel').Opportunity[]>> {
+    const params = new URLSearchParams();
+    if (filters?.seller) params.set('seller', filters.seller);
+    if (filters?.stage) params.set('stage', filters.stage);
+    if (filters?.status) params.set('status', filters.status);
+    if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+    const q = params.toString();
+    return this.request(`/funnel/opportunities${q ? `?${q}` : ''}`);
+  }
+
+  async getOpportunity(id: string): Promise<ApiResponse<import('../types/funnel').Opportunity>> {
+    return this.request(`/funnel/opportunities/${id}`);
+  }
+
+  async createOpportunity(data: {
+    client_id: string;
+    stage_id: string;
+    title: string;
+    estimated_value: number;
+    responsible_user_id?: string;
+    win_probability?: number;
+    expected_close_date?: string;
+    lead_source?: string;
+    description?: string;
+    next_activity_at?: string;
+  }): Promise<ApiResponse<import('../types/funnel').Opportunity>> {
+    return this.request('/funnel/opportunities', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateOpportunity(id: string, data: Partial<{
+    client_id: string;
+    stage_id: string;
+    title: string;
+    estimated_value: number;
+    responsible_user_id: string;
+    win_probability: number;
+    expected_close_date: string | null;
+    lead_source: string;
+    description: string;
+    next_activity_at: string | null;
+  }>): Promise<ApiResponse<import('../types/funnel').Opportunity>> {
+    return this.request(`/funnel/opportunities/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async moveOpportunityStage(id: string, stage_id: string): Promise<ApiResponse<import('../types/funnel').Opportunity>> {
+    return this.request(`/funnel/opportunities/${id}/stage`, { method: 'PATCH', body: JSON.stringify({ stage_id }) });
+  }
+
+  async setOpportunityStatus(id: string, status: 'won' | 'lost', loss_reason_id?: string): Promise<ApiResponse<import('../types/funnel').Opportunity>> {
+    const body = status === 'lost' && loss_reason_id ? { status, loss_reason_id } : { status };
+    return this.request(`/funnel/opportunities/${id}/status`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+
+  async convertOpportunityToSale(id: string, customer_id: string): Promise<ApiResponse<{ opportunity: import('../types/funnel').Opportunity; sale: { _id: string; saleNumber: string } }>> {
+    return this.request(`/funnel/opportunities/${id}/convert`, { method: 'POST', body: JSON.stringify({ customer_id }) });
+  }
+
+  async getOpportunityActivities(opportunityId: string): Promise<ApiResponse<import('../types/funnel').OpportunityActivity[]>> {
+    return this.request(`/funnel/opportunities/${opportunityId}/activities`);
+  }
+
+  async createOpportunityActivity(opportunityId: string, data: { type: 'task' | 'call' | 'message'; title: string; due_at?: string; notes?: string }): Promise<ApiResponse<import('../types/funnel').OpportunityActivity>> {
+    return this.request(`/funnel/opportunities/${opportunityId}/activities`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateOpportunityActivity(activityId: string, data: Partial<{ type: 'task' | 'call' | 'message'; title: string; due_at: string | null; completed_at: string | null; notes: string }>): Promise<ApiResponse<import('../types/funnel').OpportunityActivity>> {
+    return this.request(`/funnel/activities/${activityId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteOpportunityActivity(activityId: string): Promise<ApiResponse<void>> {
+    return this.request(`/funnel/activities/${activityId}`, { method: 'DELETE' });
+  }
 }
 
 export const apiService = new ApiService();

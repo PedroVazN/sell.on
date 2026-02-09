@@ -127,9 +127,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Admin tem acesso a tudo
     if (user.role === 'admin') return true;
 
-    // Vendedor tem acesso a propostas, dashboard e avisos
+    // Vendedor tem acesso a propostas, dashboard, avisos e funil de vendas (portfólio)
     if (user.role === 'vendedor') {
-      const allowedPermissions = ['proposals', 'dashboard', 'notices'];
+      const allowedPermissions = ['proposals', 'dashboard', 'notices', 'funnel'];
       return allowedPermissions.includes(permission);
     }
 

@@ -215,6 +215,9 @@ app.use('/api/ai', aiRouter);
 const priceListRouter = require('./routes/priceList');
 app.use('/api/price-list', priceListRouter);
 
+const funnelRouter = require('./routes/funnel');
+app.use('/api/funnel', funnelRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });

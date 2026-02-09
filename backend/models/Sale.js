@@ -94,6 +94,11 @@ const saleSchema = new mongoose.Schema({
     state: String,
     zipCode: String,
     country: String
+  },
+  opportunity: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Opportunity',
+    default: null
   }
 }, {
   timestamps: true
@@ -105,6 +110,7 @@ saleSchema.index({ seller: 1 });
 saleSchema.index({ createdAt: -1 });
 saleSchema.index({ status: 1 });
 saleSchema.index({ paymentStatus: 1 });
+saleSchema.index({ opportunity: 1 });
 
 // Middleware para calcular total antes de salvar
 saleSchema.pre('save', function(next) {

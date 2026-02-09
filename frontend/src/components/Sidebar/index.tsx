@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   FileBarChart,
-  Brain
+  Brain,
+  Filter
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -106,6 +107,7 @@ export const Sidebar: React.FC = () => {
           { icon: <Truck size={20} />, label: 'Distribuidores', path: '/distributors', permission: 'admin' },
           { icon: <DollarSign size={20} />, label: 'Lista de Preços', path: '/price-list', permission: 'admin' },
         ] : []),
+        { icon: <Filter size={20} />, label: 'Funil de Vendas', path: '/funnel', permission: 'funnel' },
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
         ...(hasPermission('admin') ? [
           { icon: <FileBarChart size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
