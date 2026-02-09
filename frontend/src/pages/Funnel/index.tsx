@@ -31,8 +31,13 @@ import {
   ModalOverlay,
   ModalBox,
   ModalTitle,
+  ModalSubtitle,
   FormRow,
+  FormGrid,
   FormLabel,
+  FormInput,
+  FormSelect,
+  FormTextarea,
   ModalActions,
 } from './styles';
 import { useAuth } from '../../contexts/AuthContext';
@@ -391,65 +396,72 @@ function FunnelPageContent() {
       {/* Modal Nova oportunidade */}
       {showCreateModal && (
         <ModalOverlay onClick={() => !saving && setShowCreateModal(false)}>
-          <ModalBox onClick={(e) => e.stopPropagation()}>
+          <ModalBox $wide onClick={(e) => e.stopPropagation()}>
             <ModalTitle>Nova oportunidade</ModalTitle>
+            <ModalSubtitle>
+              A nova oportunidade entra na primeira etapa do funil (ex.: Leads). Depois, clique no card e use &quot;Mover para etapa&quot; no detalhe para avançar entre Qualificação, Proposta, Negociação e Fechamento.
+            </ModalSubtitle>
             <FormRow>
               <FormLabel>Cliente *</FormLabel>
-              <FilterSelect value={formClientId} onChange={(e) => setFormClientId(e.target.value)}>
+              <FormSelect value={formClientId} onChange={(e) => setFormClientId(e.target.value)}>
                 <option value="">Selecione o cliente</option>
                 {clients.map((c) => (
                   <option key={c._id} value={c._id}>
                     {c.razaoSocial} {c.nomeFantasia ? `(${c.nomeFantasia})` : ''}
                   </option>
                 ))}
-              </FilterSelect>
+              </FormSelect>
             </FormRow>
             <FormRow>
               <FormLabel>Título da oportunidade *</FormLabel>
-              <FilterInput value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Venda licenças - Empresa X" />
+              <FormInput value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Venda licenças - Empresa X" />
             </FormRow>
-            <FormRow>
-              <FormLabel>Valor estimado (R$) *</FormLabel>
-              <FilterInput type="number" min={0} step={0.01} value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="0,00" />
-            </FormRow>
-            <FormRow>
-              <FormLabel>Probabilidade de fechamento (%)</FormLabel>
-              <FilterInput type="number" min={0} max={100} value={formProbability} onChange={(e) => setFormProbability(Number(e.target.value) || 0)} />
-            </FormRow>
-            <FormRow>
-              <FormLabel>Data prevista de fechamento</FormLabel>
-              <FilterInput type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
-            </FormRow>
-            <FormRow>
-              <FormLabel>Origem do lead</FormLabel>
-              <FilterSelect value={formLeadSource} onChange={(e) => setFormLeadSource(e.target.value)}>
-                {LEAD_SOURCES.map((s) => (
-                  <option key={s || 'vazio'} value={s}>
-                    {s || '—'}
-                  </option>
-                ))}
-              </FilterSelect>
-            </FormRow>
+            <FormGrid>
+              <FormRow>
+                <FormLabel>Valor estimado (R$) *</FormLabel>
+                <FormInput type="number" min={0} step={0.01} value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="0,00" />
+              </FormRow>
+              <FormRow>
+                <FormLabel>Probabilidade de fechamento (%)</FormLabel>
+                <FormInput type="number" min={0} max={100} value={formProbability} onChange={(e) => setFormProbability(Number(e.target.value) || 0)} />
+              </FormRow>
+            </FormGrid>
+            <FormGrid>
+              <FormRow>
+                <FormLabel>Data prevista de fechamento</FormLabel>
+                <FormInput type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+              </FormRow>
+              <FormRow>
+                <FormLabel>Origem do lead</FormLabel>
+                <FormSelect value={formLeadSource} onChange={(e) => setFormLeadSource(e.target.value)}>
+                  {LEAD_SOURCES.map((s) => (
+                    <option key={s || 'vazio'} value={s}>
+                      {s || '—'}
+                    </option>
+                  ))}
+                </FormSelect>
+              </FormRow>
+            </FormGrid>
             {isAdmin && (
               <FormRow>
                 <FormLabel>Vendedor responsável</FormLabel>
-                <FilterSelect value={formResponsibleId} onChange={(e) => setFormResponsibleId(e.target.value)}>
+                <FormSelect value={formResponsibleId} onChange={(e) => setFormResponsibleId(e.target.value)}>
                   {users.filter((u) => u.role === 'vendedor').map((u) => (
                     <option key={u._id} value={u._id}>
                       {u.name}
                     </option>
                   ))}
-                </FilterSelect>
+                </FormSelect>
               </FormRow>
             )}
             <FormRow>
               <FormLabel>Observações</FormLabel>
-              <FilterInput as="textarea" value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="Observações..." style={{ minHeight: 60 }} />
+              <FormTextarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="Anotações, histórico de contato, próximos passos..." />
             </FormRow>
             <ModalActions>
               <BtnSecondary onClick={() => !saving && setShowCreateModal(false)}>Cancelar</BtnSecondary>
               <BtnPrimary onClick={handleCreate} disabled={saving || !formClientId || !formTitle.trim()}>
-                {saving ? 'Salvando...' : 'Criar'}
+                {saving ? 'Salvando...' : 'Criar oportunidade'}
               </BtnPrimary>
             </ModalActions>
           </ModalBox>

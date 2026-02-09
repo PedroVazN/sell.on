@@ -234,47 +234,152 @@ export const BtnSecondary = styled.button`
 export const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
+  overflow-y: auto;
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
 `;
 
-export const ModalBox = styled.div`
+export const ModalBox = styled.div<{ $wide?: boolean }>`
   background: ${({ theme }) => theme.colors.background.secondary};
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
-  max-width: 520px;
+  box-shadow: ${({ theme }) => theme.shadows.large};
+  max-width: ${({ $wide }) => ($wide ? 640 : 520)}px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 24px;
+  padding: 20px;
+  margin: auto;
+  @media (min-width: 480px) {
+    padding: 28px;
+  }
 `;
 
 export const ModalTitle = styled.h2`
-  margin: 0 0 20px 0;
+  margin: 0 0 8px 0;
   font-size: 1.25rem;
+  font-weight: 600;
   color: ${({ theme }) => theme.colors.text.primary};
+  @media (min-width: 480px) {
+    font-size: 1.35rem;
+  }
+`;
+
+export const ModalSubtitle = styled.p`
+  margin: 0 0 20px 0;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text.muted};
+  line-height: 1.4;
+  @media (min-width: 480px) {
+    margin-bottom: 24px;
+  }
 `;
 
 export const FormRow = styled.div`
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+`;
+
+export const FormGrid = styled.div`
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  @media (min-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+  }
 `;
 
 export const FormLabel = styled.label`
   display: block;
   font-size: 0.8rem;
-  color: ${({ theme }) => theme.colors.text.muted};
-  margin-bottom: 4px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-bottom: 6px;
+`;
+
+export const FormInput = styled.input`
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.border.focus}40;
+  }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.text.muted};
+  }
+  @media (min-width: 480px) {
+    padding: 11px 14px;
+  }
+`;
+
+export const FormSelect = styled.select`
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+  }
+  @media (min-width: 480px) {
+    padding: 11px 14px;
+  }
+`;
+
+export const FormTextarea = styled.textarea`
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.border.focus}40;
+  }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.text.muted};
+  }
+  @media (min-width: 480px) {
+    min-height: 88px;
+    padding: 11px 14px;
+  }
 `;
 
 export const ModalActions = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid ${({ theme }) => theme.colors.border.primary};
 `;

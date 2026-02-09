@@ -5,6 +5,25 @@ Centralizar negociações em andamento, visualizar em que etapa cada cliente est
 
 ---
 
+## Como funcionam as etapas (Qualificação, Proposta, Negociação, Fechamento)
+
+Cada **coluna** do Kanban é uma **etapa** do pipeline (ex.: Qualificação, Proposta, Negociação, Fechamento). O número em cada coluna é a **quantidade de oportunidades** naquela etapa.
+
+- **Como as oportunidades entram nas colunas**
+  - Ao clicar em **Nova oportunidade** e salvar, a oportunidade é criada na **primeira etapa** (ex.: Leads / Contatos iniciais ou Qualificação).
+  - Cada oportunidade tem um campo **estágio** (`stage_id`) no banco. O card aparece na coluna cujo estágio é o mesmo desse `stage_id`.
+
+- **Como mover entre as etapas**
+  - Clique no **card** da oportunidade para abrir o **detalhe**.
+  - No detalhe, use o select **Mover para etapa** e escolha outra etapa (ex.: de Qualificação para Proposta).
+  - Ao salvar, o backend atualiza o `stage_id` da oportunidade e o **histórico** registra a mudança. O card passa a aparecer na nova coluna.
+
+- **Resumo**
+  - **Qualificação 0** = nenhuma oportunidade com estágio “Qualificação” no momento.
+  - Ao criar uma nova oportunidade, ela entra na primeira etapa; ao usar “Mover para etapa” no detalhe, ela passa para a etapa escolhida. Os números das colunas são a contagem de oportunidades por estágio.
+
+---
+
 ## Checklist de funcionalidades
 
 | Requisito | Status | Observação |
