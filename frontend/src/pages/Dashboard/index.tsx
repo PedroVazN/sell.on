@@ -195,7 +195,7 @@ export const Dashboard: React.FC = () => {
   }[]>([]);
   // Mês principal para filtro do dashboard (admin)
   // 0 = Todos os meses
-  const [dashboardMonth, setDashboardMonth] = useState<number | 0>(0);
+  const [dashboardMonth, setDashboardMonth] = useState<number | 0>(new Date().getMonth() + 1);
   const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear());
   
   // Mês para o gráfico diário (sincronizado com o principal)
