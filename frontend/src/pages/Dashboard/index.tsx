@@ -195,7 +195,7 @@ export const Dashboard: React.FC = () => {
   }[]>([]);
   // Mês principal para filtro do dashboard (admin)
   // 0 = Todos os meses
-  const [dashboardMonth, setDashboardMonth] = useState<number | 0>(new Date().getMonth() + 1);
+  const [dashboardMonth, setDashboardMonth] = useState<number | 0>(0);
   const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear());
   
   // Mês para o gráfico diário (sincronizado com o principal)
@@ -554,12 +554,22 @@ export const Dashboard: React.FC = () => {
           }
         });
 
-        const monthlyData = Object.values(monthlyProposals)
+        let monthlyData = Object.values(monthlyProposals)
           .sort((a: any, b: any) => {
             if (a.year !== b.year) return a.year - b.year;
             return a.month - b.month;
           })
-          .map((item: any) => ({ ...item, sales: item.approvedProposals || 0 })) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number; sales?: number}>;
+          .map((item: any) => ({ ...item, sales: item.approvedProposals || 0 })) as Array<{month: number; year: number; totalProposals?: number; approvedProposals?: number; revenue: number; sales?: number}>;
+
+        // "Todos os meses": usar monthlyData do backend (dashboard/sales) para ter todos os meses sem limite de 2000
+        if (dashboardMonth === 0 && salesDataResponse.data?.monthlyData?.length) {
+          monthlyData = salesDataResponse.data.monthlyData.map((d: { month: number; year: number; revenue: number; sales: number }) => ({
+            month: d.month,
+            year: d.year,
+            revenue: d.revenue,
+            sales: d.sales ?? 0
+          }));
+        }
 
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
