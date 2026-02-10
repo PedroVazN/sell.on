@@ -145,7 +145,7 @@ const proposalSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['negociacao', 'venda_fechada', 'venda_perdida', 'expirada'],
+    enum: ['negociacao', 'aguardando_pagamento', 'venda_fechada', 'venda_perdida', 'expirada'],
     default: 'negociacao'
   },
   lossReason: {

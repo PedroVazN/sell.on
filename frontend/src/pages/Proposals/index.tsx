@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, LayoutGrid, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
@@ -48,19 +48,36 @@ import {
   AddProductButton,
   TotalRow,
   TotalLabel,
-  TotalValue
+  TotalValue,
+  ViewToggleGroup,
+  ViewToggleBtn,
+  KanbanWrapper,
+  KanbanBoard,
+  KanbanColumn,
+  KanbanColumnTitle,
+  KanbanCards,
+  KanbanCard,
 } from './styles';
 
 // Funções de status
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'negociacao': return '#f59e0b';
+    case 'aguardando_pagamento': return '#8b5cf6';
     case 'venda_fechada': return '#059669';
     case 'venda_perdida': return '#dc2626';
     case 'expirada': return '#6b7280';
     default: return '#6b7280';
   }
 };
+
+type ProposalStatus = Proposal['status'];
+const KANBAN_COLUMNS: { id: string; title: string; statuses: ProposalStatus[] }[] = [
+  { id: 'criadas', title: 'Propostas criadas', statuses: ['negociacao'] },
+  { id: 'negociacao', title: 'Negociação / Aguardando pagamento', statuses: ['aguardando_pagamento'] },
+  { id: 'ganhas', title: 'Venda Fechada', statuses: ['venda_fechada'] },
+  { id: 'perdidas', title: 'Perdidas', statuses: ['venda_perdida', 'expirada'] },
+];
 
 
 export const Proposals: React.FC = () => {
@@ -86,6 +103,9 @@ export const Proposals: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('win');
   const [proposalNumber, setProposalNumber] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
+  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
+  const [draggingProposalId, setDraggingProposalId] = useState<string | null>(null);
 
   // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -365,7 +385,8 @@ export const Proposals: React.FC = () => {
 
         // Formatar status
         const statusMap: { [key: string]: string } = {
-          'negociacao': 'Em Negociação',
+          'negociacao': 'Propostas criadas',
+          'aguardando_pagamento': 'Negociação / Aguardando pagamento',
           'venda_fechada': 'Venda Fechada',
           'venda_perdida': 'Venda Perdida',
           'expirada': 'Expirada'
@@ -722,6 +743,7 @@ export const Proposals: React.FC = () => {
   const getStatusIcon = (status: Proposal['status']) => {
     switch (status) {
       case 'negociacao': return <AlertCircle size={16} />;
+      case 'aguardando_pagamento': return <Clock size={16} />;
       case 'venda_fechada': return <CheckCircle size={16} />;
       case 'venda_perdida': return <XCircle size={16} />;
       case 'expirada': return <Clock size={16} />;
@@ -732,6 +754,7 @@ export const Proposals: React.FC = () => {
   const getStatusColor = (status: Proposal['status']) => {
     switch (status) {
       case 'negociacao': return '#f59e0b';
+      case 'aguardando_pagamento': return '#8b5cf6';
       case 'venda_fechada': return '#059669';
       case 'venda_perdida': return '#dc2626';
       case 'expirada': return '#6b7280';
@@ -741,13 +764,34 @@ export const Proposals: React.FC = () => {
 
   const getStatusLabel = (status: Proposal['status']) => {
     switch (status) {
-      case 'negociacao': return 'Negociação';
+      case 'negociacao': return 'Propostas criadas';
+      case 'aguardando_pagamento': return 'Negociação / Aguardando pagamento';
       case 'venda_fechada': return 'Venda Fechada';
       case 'venda_perdida': return 'Venda Perdida';
       case 'expirada': return 'Expirada';
       default: return status;
     }
   };
+
+  const getProposalsForColumn = (column: typeof KANBAN_COLUMNS[0]) => {
+    return filteredProposals.filter((p) => column.statuses.includes(p.status));
+  };
+
+  const getTargetStatus = (columnId: string): ProposalStatus | null => {
+    const col = KANBAN_COLUMNS.find((c) => c.id === columnId);
+    if (!col) return null;
+    return col.statuses[0];
+  };
+
+  const handleKanbanDrop = useCallback(
+    async (columnId: string, proposal: Proposal) => {
+      let newStatus: ProposalStatus | null = getTargetStatus(columnId);
+      if (columnId === 'perdidas') newStatus = 'expirada';
+      if (!newStatus || proposal.status === newStatus) return;
+      await handleUpdateStatus(proposal, newStatus);
+    },
+    [handleUpdateStatus]
+  );
 
   const filteredProposals = proposals.filter(proposal => {
     if (!searchTerm) return true;
@@ -798,9 +842,20 @@ export const Proposals: React.FC = () => {
               onChange={handleSearch}
             />
           </SearchContainer>
+          <ViewToggleGroup>
+            <ViewToggleBtn $active={viewMode === 'kanban'} onClick={() => setViewMode('kanban')}>
+              <LayoutGrid size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+              Kanban
+            </ViewToggleBtn>
+            <ViewToggleBtn $active={viewMode === 'table'} onClick={() => setViewMode('table')}>
+              <List size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+              Tabela
+            </ViewToggleBtn>
+          </ViewToggleGroup>
           <Select value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
             <option value="">Todos os status</option>
-            <option value="negociacao">Negociação</option>
+            <option value="negociacao">Propostas criadas</option>
+            <option value="aguardando_pagamento">Negociação / Aguardando pagamento</option>
             <option value="venda_fechada">Venda Fechada</option>
             <option value="venda_perdida">Venda Perdida</option>
             <option value="expirada">Expirada</option>
@@ -843,6 +898,81 @@ export const Proposals: React.FC = () => {
               Nova Proposta
             </CreateButton>
           </EmptyState>
+        ) : viewMode === 'kanban' ? (
+          <KanbanWrapper>
+            <KanbanBoard>
+              {KANBAN_COLUMNS.map((column) => {
+                const columnProposals = getProposalsForColumn(column);
+                const isOver = dragOverColumnId === column.id;
+                return (
+                  <KanbanColumn
+                    key={column.id}
+                    $isOver={isOver}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverColumnId(column.id);
+                    }}
+                    onDragLeave={() => setDragOverColumnId(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOverColumnId(null);
+                      const proposalId = e.dataTransfer.getData('proposalId');
+                      const proposal = proposals.find((p) => p._id === proposalId);
+                      if (proposal) handleKanbanDrop(column.id, proposal);
+                    }}
+                  >
+                    <KanbanColumnTitle>
+                      {column.title} ({columnProposals.length})
+                    </KanbanColumnTitle>
+                    <KanbanCards>
+                      {columnProposals.map((proposal) => {
+                        const isDeleting = deletingItems.includes(proposal._id);
+                        return (
+                          <KanbanCard
+                            key={proposal._id}
+                            $isDragging={draggingProposalId === proposal._id}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggingProposalId(proposal._id);
+                              e.dataTransfer.setData('proposalId', proposal._id);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragEnd={() => setDraggingProposalId(null)}
+                            style={{ opacity: isDeleting ? 0.5 : 1 }}
+                          >
+                            <div style={{ fontWeight: 600, marginBottom: 4 }}>{proposal.proposalNumber}</div>
+                            <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{proposal.client?.name}</div>
+                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#10b981', marginTop: 4 }}>
+                              {formatCurrency(proposal.total)}
+                            </div>
+                            <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                              <ActionButton onClick={() => handleEditProposal(proposal)} title="Editar">
+                                <Edit size={14} />
+                              </ActionButton>
+                              <ActionButton onClick={() => handleGeneratePdf(proposal)} title="PDF" style={{ backgroundColor: '#059669' }}>
+                                <Download size={14} />
+                              </ActionButton>
+                              {proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento' ? (
+                                <>
+                                  <ActionButton onClick={() => handleUpdateStatus(proposal, 'venda_fechada')} title="Venda Fechada" style={{ backgroundColor: '#059669' }}>
+                                    <CheckCircle size={14} />
+                                  </ActionButton>
+                                  <ActionButton onClick={() => handleUpdateStatus(proposal, 'venda_perdida')} title="Venda Perdida" style={{ backgroundColor: '#dc2626' }}>
+                                    <XCircle size={14} />
+                                  </ActionButton>
+                                </>
+                              ) : null}
+                            </div>
+                          </KanbanCard>
+                        );
+                      })}
+                    </KanbanCards>
+                  </KanbanColumn>
+                );
+              })}
+            </KanbanBoard>
+          </KanbanWrapper>
         ) : (
           <>
           <TableWrapper>
@@ -953,7 +1083,7 @@ export const Proposals: React.FC = () => {
                               <Trash2 size={14} />
                             </ActionButton>
                           )}
-                          {proposal.status === 'negociacao' && (
+                          {(proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento') && (
                             <>
                               <ActionButton 
                                 onClick={() => handleUpdateStatus(proposal, 'venda_fechada')}

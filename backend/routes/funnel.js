@@ -757,7 +757,7 @@ router.post('/sync-proposals', auth, authorize('admin'), async (req, res) => {
         continue;
       }
 
-      // negociacao -> Negociação, status open
+      // negociacao ou aguardando_pagamento -> Negociação, status open
       const stageId = stageNegociacao._id;
       if (p.opportunity) {
         const opp = await Opportunity.findOne({ _id: p.opportunity, isDeleted: { $ne: true } });
