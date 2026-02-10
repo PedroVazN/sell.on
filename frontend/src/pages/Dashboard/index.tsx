@@ -42,6 +42,33 @@ import { generateDashboardPdf, DashboardPdfData } from '../../utils/pdfGenerator
 
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
+// Gráficos começam em outubro/2025 e vão até o mês atual
+const CHART_START_YEAR = 2025;
+const CHART_START_MONTH = 10; // Outubro
+
+function getChartMonthRange(): Array<{ month: number; year: number; label: string }> {
+  const now = new Date();
+  const start = new Date(CHART_START_YEAR, CHART_START_MONTH - 1, 1);
+  const range: Array<{ month: number; year: number; label: string }> = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cursor <= now) {
+    range.push({
+      month: cursor.getMonth() + 1,
+      year: cursor.getFullYear(),
+      label: `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return range;
+}
+
+function isDateInChartRange(date: Date): boolean {
+  const start = new Date(CHART_START_YEAR, CHART_START_MONTH - 1, 1);
+  const now = new Date();
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return d >= start && d <= now;
+}
+
 const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales?: number; totalProposals?: number; approvedProposals?: number}>) => {
   const currentYear = new Date().getFullYear();
   return monthNames.map((month, index) => {
@@ -252,11 +279,12 @@ export const Dashboard: React.FC = () => {
           proposal.createdBy?._id === user._id || proposal.createdBy === user._id
         );
 
-        // Filtrar propostas pelo mês/ano selecionado (igual ao admin)
+        // Filtrar propostas: "Todos os meses" = de out/2025 até hoje; senão pelo mês/ano selecionado
         const filteredProposals = dashboardMonth === 0
           ? vendedorProposals.filter((proposal: any) => {
-              const date = new Date(proposal.createdAt);
-              return date.getFullYear() === dashboardYear;
+              const created = new Date(proposal.createdAt);
+              const closed = proposal.closedAt ? new Date(proposal.closedAt) : new Date(proposal.updatedAt);
+              return isDateInChartRange(created) || isDateInChartRange(closed);
             })
           : vendedorProposals.filter((proposal: any) => {
               const date = new Date(proposal.createdAt);
@@ -430,12 +458,13 @@ export const Dashboard: React.FC = () => {
           apiService.getProposalsDashboardSales()
         ]);
 
-        // Filtrar propostas pelo mês/ano selecionado no dashboard (admin)
+        // Filtrar propostas: "Todos os meses" = de out/2025 até hoje; senão pelo mês/ano selecionado
         const allProposals = allProposalsResponse.data || [];
         const filteredProposals = dashboardMonth === 0
           ? allProposals.filter((proposal: any) => {
-              const date = new Date(proposal.createdAt);
-              return date.getFullYear() === dashboardYear;
+              const created = new Date(proposal.createdAt);
+              const closed = proposal.closedAt ? new Date(proposal.closedAt) : new Date(proposal.updatedAt);
+              return isDateInChartRange(created) || isDateInChartRange(closed);
             })
           : allProposals.filter((proposal: any) => {
               const date = new Date(proposal.createdAt);
@@ -525,10 +554,12 @@ export const Dashboard: React.FC = () => {
           }
         });
 
-        const monthlyData = Object.values(monthlyProposals).sort((a: any, b: any) => {
-          if (a.year !== b.year) return a.year - b.year;
-          return a.month - b.month;
-        }) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
+        const monthlyData = Object.values(monthlyProposals)
+          .sort((a: any, b: any) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.month - b.month;
+          })
+          .map((item: any) => ({ ...item, sales: item.approvedProposals || 0 })) as Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number; sales?: number}>;
 
         const dashboardData = {
           totalUsers: usersResponse.pagination?.total || 0,
@@ -800,34 +831,31 @@ export const Dashboard: React.FC = () => {
     };
   }, [selectedMonth, selectedYear, user?.role, user?._id]);
 
-  // Memoizar dados dos gráficos para evitar recálculos desnecessários
-  // Aplicar filtro de mês/ano tanto para admin quanto para vendedor
+  // Memoizar dados dos gráficos: "Todos os meses" = Out/2025 até mês atual; senão só o mês selecionado
   const salesData = useMemo(() => {
-    // Se selecionou "Todos os meses", mostrar todos do ano
     if (dashboardMonth === 0) {
-      const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
-      return monthNames.map((month, index) => {
-        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+      const range = getChartMonthRange();
+      const monthly = data?.monthlyData || [];
+      return range.map(({ month, year, label }) => {
+        const monthData = monthly.find(d => d.month === month && d.year === year);
         if (user?.role === 'vendedor') {
           return {
-            month,
+            month: label,
             propostas: monthData?.totalProposals || 0,
             aprovadas: monthData?.approvedProposals || 0,
             receita: monthData?.revenue || 0
           };
         }
         return {
-          month,
-          vendas: monthData?.sales || 0,
+          month: label,
+          vendas: monthData?.sales ?? monthData?.approvedProposals ?? 0,
           receita: monthData?.revenue || 0
         };
       });
     }
-    // Filtrar apenas o mês selecionado
-    const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
+    const filteredMonthlyData = (data?.monthlyData || []).filter(d =>
       d.month === dashboardMonth && d.year === dashboardYear
     );
-    // Criar array com 12 meses, mas apenas o mês selecionado terá dados
     return monthNames.map((month, index) => {
       if (index + 1 === dashboardMonth) {
         const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
@@ -841,54 +869,38 @@ export const Dashboard: React.FC = () => {
         }
         return {
           month,
-          vendas: monthData?.sales || 0,
+          vendas: monthData?.sales ?? monthData?.approvedProposals ?? 0,
           receita: monthData?.revenue || 0
         };
       }
       if (user?.role === 'vendedor') {
-        return {
-          month,
-          propostas: 0,
-          aprovadas: 0,
-          receita: 0
-        };
+        return { month, propostas: 0, aprovadas: 0, receita: 0 };
       }
-      return {
-        month,
-        vendas: 0,
-        receita: 0
-      };
+      return { month, vendas: 0, receita: 0 };
     });
   }, [data?.monthlyData, user?.role, dashboardMonth, dashboardYear]);
-  
+
   const revenueData = useMemo(() => {
-    // Se selecionou "Todos os meses", mostrar todos do ano (para admin e vendedor)
     if (dashboardMonth === 0) {
-      const filteredMonthlyData = (data?.monthlyData || []).filter(d => d.year === dashboardYear);
-      return monthNames.map((month, index) => {
-        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+      const range = getChartMonthRange();
+      const monthly = data?.monthlyData || [];
+      return range.map(({ month, year, label }) => {
+        const monthData = monthly.find(d => d.month === month && d.year === year);
         return {
-          month,
+          month: label,
           receita: monthData?.revenue || 0
         };
       });
     }
-    // Filtrar apenas o mês selecionado (para admin e vendedor)
-    const filteredMonthlyData = (data?.monthlyData || []).filter(d => 
+    const filteredMonthlyData = (data?.monthlyData || []).filter(d =>
       d.month === dashboardMonth && d.year === dashboardYear
     );
     return monthNames.map((month, index) => {
       if (index + 1 === dashboardMonth) {
         const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
-        return {
-          month,
-          receita: monthData?.revenue || 0
-        };
+        return { month, receita: monthData?.revenue || 0 };
       }
-      return {
-        month,
-        receita: 0
-      };
+      return { month, receita: 0 };
     });
   }, [data?.monthlyData, user?.role, dashboardMonth, dashboardYear]);
 
@@ -917,10 +929,10 @@ export const Dashboard: React.FC = () => {
               {user?.role === 'vendedor' 
                 ? `Suas propostas e performance de vendas - ${
                     dashboardMonth === 0 
-                      ? `Todos os meses de ${dashboardYear}`
+                      ? `Out/2025 até ${monthNames[new Date().getMonth()]} ${new Date().getFullYear()}`
                       : `${monthNames[dashboardMonth - 1]} ${dashboardYear}`
                   }`
-                : 'Visão geral de todas as propostas e performance da equipe'
+                : `Visão geral de todas as propostas e performance da equipe${dashboardMonth === 0 ? ` (Out/2025 até ${monthNames[new Date().getMonth()]} ${new Date().getFullYear()})` : ''}`
               }
             </Subtitle>
           </div>

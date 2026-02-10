@@ -39,29 +39,31 @@ import { Loader2, TrendingDown, TrendingUp, DollarSign, AlertTriangle, Target, B
 
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const getSalesData = (monthlyData: Array<{month: number; year: number; revenue: number; sales?: number; totalProposals?: number; approvedProposals?: number}>) => {
-  const currentYear = new Date().getFullYear();
-  return monthNames.map((month, index) => {
-    const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
-    return {
-      month,
-      propostas: monthData?.totalProposals || 0,
-      aprovadas: monthData?.approvedProposals || 0,
-      receita: monthData?.revenue || 0
-    };
-  });
-};
+const CHART_START_YEAR = 2025;
+const CHART_START_MONTH = 10;
 
-const getRevenueData = (monthlyData: Array<{month: number; year: number; revenue: number; sales?: number; totalProposals?: number; approvedProposals?: number}>) => {
-  const currentYear = new Date().getFullYear();
-  return monthNames.map((month, index) => {
-    const monthData = monthlyData.find(d => d.month === index + 1 && d.year === currentYear);
-    return {
-      month,
-      receita: monthData?.revenue || 0
-    };
-  });
-};
+function getChartMonthRange(): Array<{ month: number; year: number; label: string }> {
+  const now = new Date();
+  const start = new Date(CHART_START_YEAR, CHART_START_MONTH - 1, 1);
+  const range: Array<{ month: number; year: number; label: string }> = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cursor <= now) {
+    range.push({
+      month: cursor.getMonth() + 1,
+      year: cursor.getFullYear(),
+      label: `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return range;
+}
+
+function isDateInChartRange(date: Date): boolean {
+  const start = new Date(CHART_START_YEAR, CHART_START_MONTH - 1, 1);
+  const now = new Date();
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return d >= start && d <= now;
+}
 
 interface DashboardData {
   totalUsers: number;
@@ -175,11 +177,12 @@ export const VendedorDashboard: React.FC = () => {
         proposal.createdBy?._id === vendedorId || proposal.createdBy === vendedorId
       ) || [];
 
-      // Filtrar propostas pelo mês/ano selecionado
+      // Filtrar propostas: "Todos os meses" = Out/2025 até hoje; senão pelo mês/ano selecionado
       const filteredProposals = dashboardMonth === 0
         ? vendedorProposals.filter((proposal: any) => {
-            const date = new Date(proposal.createdAt);
-            return date.getFullYear() === dashboardYear;
+            const created = new Date(proposal.createdAt);
+            const closed = proposal.closedAt ? new Date(proposal.closedAt) : new Date(proposal.updatedAt);
+            return isDateInChartRange(created) || isDateInChartRange(closed);
           })
         : vendedorProposals.filter((proposal: any) => {
             const date = new Date(proposal.createdAt);
@@ -321,23 +324,22 @@ export const VendedorDashboard: React.FC = () => {
     }
   }, [selectedVendedorId, loadDashboardData]);
 
-  // Processar dados dos gráficos considerando o filtro de mês
+  // Gráficos: "Todos os meses" = Out/2025 até mês atual; senão só o mês selecionado
   const salesData = data ? (() => {
     if (dashboardMonth === 0) {
-      // Todos os meses - mostrar todos os meses do ano
-      const filteredMonthlyData = data.monthlyData.filter(d => d.year === dashboardYear);
-      return monthNames.map((month, index) => {
-        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
+      const range = getChartMonthRange();
+      const monthly = data.monthlyData || [];
+      return range.map(({ month, year, label }) => {
+        const monthData = monthly.find(d => d.month === month && d.year === year);
         return {
-          month,
+          month: label,
           propostas: monthData?.totalProposals || 0,
           aprovadas: monthData?.approvedProposals || 0,
           receita: monthData?.revenue || 0
         };
       });
     }
-    // Mês específico - mostrar apenas o mês selecionado
-    const filteredMonthlyData = data.monthlyData.filter(d => 
+    const filteredMonthlyData = data.monthlyData.filter(d =>
       d.month === dashboardMonth && d.year === dashboardYear
     );
     return monthNames.map((month, index) => {
@@ -350,43 +352,28 @@ export const VendedorDashboard: React.FC = () => {
           receita: monthData?.revenue || 0
         };
       }
-      return {
-        month,
-        propostas: 0,
-        aprovadas: 0,
-        receita: 0
-      };
+      return { month, propostas: 0, aprovadas: 0, receita: 0 };
     });
   })() : [];
 
   const revenueData = data ? (() => {
     if (dashboardMonth === 0) {
-      // Todos os meses - mostrar todos os meses do ano
-      const filteredMonthlyData = data.monthlyData.filter(d => d.year === dashboardYear);
-      return monthNames.map((month, index) => {
-        const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
-        return {
-          month,
-          receita: monthData?.revenue || 0
-        };
+      const range = getChartMonthRange();
+      const monthly = data.monthlyData || [];
+      return range.map(({ month, year, label }) => {
+        const monthData = monthly.find(d => d.month === month && d.year === year);
+        return { month: label, receita: monthData?.revenue || 0 };
       });
     }
-    // Mês específico - mostrar apenas o mês selecionado
-    const filteredMonthlyData = data.monthlyData.filter(d => 
+    const filteredMonthlyData = data.monthlyData.filter(d =>
       d.month === dashboardMonth && d.year === dashboardYear
     );
     return monthNames.map((month, index) => {
       if (index + 1 === dashboardMonth) {
         const monthData = filteredMonthlyData.find(d => d.month === index + 1 && d.year === dashboardYear);
-        return {
-          month,
-          receita: monthData?.revenue || 0
-        };
+        return { month, receita: monthData?.revenue || 0 };
       }
-      return {
-        month,
-        receita: 0
-      };
+      return { month, receita: 0 };
     });
   })() : [];
 
