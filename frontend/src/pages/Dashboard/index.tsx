@@ -1253,7 +1253,8 @@ export const Dashboard: React.FC = () => {
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '8px',
                   color: '#FFFFFF'
-                }} 
+                }}
+                formatter={(value: number, name: string) => [name === 'Receita' || name === 'Aprovadas' ? formatCurrency(value) : formatInteger(value), name]}
               />
               <Line 
                 type="monotone" 
@@ -1291,14 +1292,15 @@ export const Dashboard: React.FC = () => {
             <BarChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
               <XAxis dataKey="month" stroke="#A3A3A3" />
-              <YAxis stroke="#A3A3A3" />
+              <YAxis stroke="#A3A3A3" tickFormatter={(v) => formatCurrency(v)} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: '#1A1A1A', 
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '8px',
                   color: '#FFFFFF'
-                }} 
+                }}
+                formatter={(value: number) => [formatCurrency(value), 'Receita']}
               />
               <Bar 
                 dataKey="receita" 

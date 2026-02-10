@@ -1,6 +1,6 @@
 /**
- * Formata um número para o padrão brasileiro
- * Exemplo: 90000.00 -> 90.000,00
+ * Formata um número para o padrão brasileiro (R$ com 2 casas decimais)
+ * Exemplo: 90000.456 -> R$ 90.000,46
  */
 export const formatCurrency = (value: number | string | undefined | null): string => {
   if (value === undefined || value === null) return 'R$ 0,00';
@@ -9,15 +9,18 @@ export const formatCurrency = (value: number | string | undefined | null): strin
   
   if (isNaN(numValue)) return 'R$ 0,00';
   
+  const rounded = Math.round(numValue * 100) / 100;
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL'
-  }).format(numValue);
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(rounded);
 };
 
 /**
- * Formata um número sem símbolo de moeda
- * Exemplo: 90000.00 -> 90.000,00
+ * Formata um número sem símbolo de moeda (até N decimais)
+ * Exemplo: 90000.456, 2 -> 90.000,46
  */
 export const formatNumber = (value: number | string | undefined | null, decimals: number = 2): string => {
   if (value === undefined || value === null) return '0';
@@ -26,10 +29,12 @@ export const formatNumber = (value: number | string | undefined | null, decimals
   
   if (isNaN(numValue)) return '0';
   
+  const factor = 10 ** decimals;
+  const rounded = Math.round(numValue * factor) / factor;
   return new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
-  }).format(numValue);
+  }).format(rounded);
 };
 
 /**

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Goal, User } from '../../services/api';
+import { formatCurrency, formatInteger } from '../../utils/formatters';
 import { 
   Container, 
   Header, 
@@ -630,7 +631,8 @@ export const VendedorDashboard: React.FC = () => {
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '8px',
                       color: '#FFFFFF'
-                    }} 
+                    }}
+                    formatter={(value: number, name: string) => [formatInteger(value), name]}
                   />
                   <Line 
                     type="monotone" 
@@ -661,14 +663,15 @@ export const VendedorDashboard: React.FC = () => {
                 <BarChart data={revenueData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
                   <XAxis dataKey="month" stroke="#A3A3A3" />
-                  <YAxis stroke="#A3A3A3" />
+                  <YAxis stroke="#A3A3A3" tickFormatter={(v) => formatCurrency(v)} />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: '#1A1A1A', 
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '8px',
                       color: '#FFFFFF'
-                    }} 
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), 'Receita']}
                   />
                   <Bar 
                     dataKey="receita" 
