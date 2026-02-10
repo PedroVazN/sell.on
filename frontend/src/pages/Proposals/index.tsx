@@ -719,6 +719,25 @@ export const Proposals: React.FC = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const getCreatedAtLabel = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMins < 1) return 'Criada agora';
+    if (diffMins < 60) return `Criada há ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+    if (diffHours < 24) return `Criada há ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+    if (diffDays < 7) return `Criada há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+    if (diffWeeks < 4) return `Criada há ${diffWeeks} ${diffWeeks === 1 ? 'semana' : 'semanas'}`;
+    if (diffMonths < 12) return `Criada há ${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'}`;
+    const diffYears = Math.floor(diffDays / 365);
+    return `Criada há ${diffYears} ${diffYears === 1 ? 'ano' : 'anos'}`;
+  };
+
   const getStatusIcon = (status: Proposal['status']) => {
     switch (status) {
       case 'negociacao': return <AlertCircle size={16} />;
@@ -924,6 +943,9 @@ export const Proposals: React.FC = () => {
                       
                       <TableCell>
                         <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>
+                          {getCreatedAtLabel(proposal.createdAt)}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div style={{ 
