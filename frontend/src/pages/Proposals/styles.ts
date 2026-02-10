@@ -563,11 +563,25 @@ export const KanbanCard = styled.div<{ $isDragging?: boolean }>`
   background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 8px;
-  cursor: grab;
   opacity: ${({ $isDragging }) => ($isDragging ? 0.6 : 1)};
   transition: box-shadow 0.2s;
   &:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+`;
+
+export const KanbanCardDragHandle = styled.div`
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  margin: -4px 8px -4px -4px;
+  border-radius: 6px;
+  color: ${({ theme }) => theme.colors.text.muted || '#94a3b8'};
+  &:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: ${({ theme }) => theme.colors.text.primary};
   }
   &:active {
     cursor: grabbing;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, LayoutGrid, List, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
@@ -57,6 +57,7 @@ import {
   KanbanColumnTitle,
   KanbanCards,
   KanbanCard,
+  KanbanCardDragHandle,
 } from './styles';
 
 // Funções de status
@@ -900,6 +901,9 @@ export const Proposals: React.FC = () => {
           </EmptyState>
         ) : viewMode === 'kanban' ? (
           <KanbanWrapper>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 12 }}>
+              Arraste pelo ícone <GripVertical size={14} style={{ verticalAlign: 'middle' }} /> à esquerda do card para mover entre colunas.
+            </p>
             <KanbanBoard>
               {KANBAN_COLUMNS.map((column) => {
                 const columnProposals = getProposalsForColumn(column);
@@ -910,14 +914,23 @@ export const Proposals: React.FC = () => {
                     $isOver={isOver}
                     onDragOver={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       e.dataTransfer.dropEffect = 'move';
                       setDragOverColumnId(column.id);
                     }}
-                    onDragLeave={() => setDragOverColumnId(null)}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      setDragOverColumnId(column.id);
+                    }}
+                    onDragLeave={(e) => {
+                      const related = e.relatedTarget as Node | null;
+                      if (!related || !e.currentTarget.contains(related)) setDragOverColumnId(null);
+                    }}
                     onDrop={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       setDragOverColumnId(null);
-                      const proposalId = e.dataTransfer.getData('proposalId');
+                      const proposalId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('proposalId');
                       const proposal = proposals.find((p) => p._id === proposalId);
                       if (proposal) handleKanbanDrop(column.id, proposal);
                     }}
@@ -932,38 +945,48 @@ export const Proposals: React.FC = () => {
                           <KanbanCard
                             key={proposal._id}
                             $isDragging={draggingProposalId === proposal._id}
-                            draggable
-                            onDragStart={(e) => {
-                              setDraggingProposalId(proposal._id);
-                              e.dataTransfer.setData('proposalId', proposal._id);
-                              e.dataTransfer.effectAllowed = 'move';
-                            }}
-                            onDragEnd={() => setDraggingProposalId(null)}
                             style={{ opacity: isDeleting ? 0.5 : 1 }}
                           >
-                            <div style={{ fontWeight: 600, marginBottom: 4 }}>{proposal.proposalNumber}</div>
-                            <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{proposal.client?.name}</div>
-                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#10b981', marginTop: 4 }}>
-                              {formatCurrency(proposal.total)}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                              <KanbanCardDragHandle
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggingProposalId(proposal._id);
+                                e.dataTransfer.setData('text/plain', proposal._id);
+                                e.dataTransfer.setData('proposalId', proposal._id);
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              onDragEnd={() => setDraggingProposalId(null)}
+                              title="Arraste para mover entre colunas"
+                            >
+                              <GripVertical size={18} />
+                            </KanbanCardDragHandle>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, marginBottom: 4 }}>{proposal.proposalNumber}</div>
+                              <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{proposal.client?.name}</div>
+                              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#10b981', marginTop: 4 }}>
+                                {formatCurrency(proposal.total)}
+                              </div>
+                              <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                <ActionButton onClick={(ev) => { ev.preventDefault(); handleEditProposal(proposal); }} title="Editar">
+                                  <Edit size={14} />
+                                </ActionButton>
+                                <ActionButton onClick={(ev) => { ev.preventDefault(); handleGeneratePdf(proposal); }} title="PDF" style={{ backgroundColor: '#059669' }}>
+                                  <Download size={14} />
+                                </ActionButton>
+                                {proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento' ? (
+                                  <>
+                                    <ActionButton onClick={(ev) => { ev.preventDefault(); handleUpdateStatus(proposal, 'venda_fechada'); }} title="Venda Fechada" style={{ backgroundColor: '#059669' }}>
+                                      <CheckCircle size={14} />
+                                    </ActionButton>
+                                    <ActionButton onClick={(ev) => { ev.preventDefault(); handleUpdateStatus(proposal, 'venda_perdida'); }} title="Venda Perdida" style={{ backgroundColor: '#dc2626' }}>
+                                      <XCircle size={14} />
+                                    </ActionButton>
+                                  </>
+                                ) : null}
+                              </div>
                             </div>
-                            <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                              <ActionButton onClick={() => handleEditProposal(proposal)} title="Editar">
-                                <Edit size={14} />
-                              </ActionButton>
-                              <ActionButton onClick={() => handleGeneratePdf(proposal)} title="PDF" style={{ backgroundColor: '#059669' }}>
-                                <Download size={14} />
-                              </ActionButton>
-                              {proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento' ? (
-                                <>
-                                  <ActionButton onClick={() => handleUpdateStatus(proposal, 'venda_fechada')} title="Venda Fechada" style={{ backgroundColor: '#059669' }}>
-                                    <CheckCircle size={14} />
-                                  </ActionButton>
-                                  <ActionButton onClick={() => handleUpdateStatus(proposal, 'venda_perdida')} title="Venda Perdida" style={{ backgroundColor: '#dc2626' }}>
-                                    <XCircle size={14} />
-                                  </ActionButton>
-                                </>
-                              ) : null}
-                            </div>
+                          </div>
                           </KanbanCard>
                         );
                       })}
