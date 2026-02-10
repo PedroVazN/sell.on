@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, List, Loader2, Plus, Search, Settings, X } from 'lucide-react';
+import { LayoutGrid, List, Loader2, Plus, RefreshCw, Search, Settings, X } from 'lucide-react';
 import { useFunnel } from '../../contexts/FunnelContext';
 import { FunnelProvider } from '../../contexts/FunnelContext';
 import {
@@ -84,6 +84,8 @@ function FunnelPageContent() {
   const [convertCustomerId, setConvertCustomerId] = useState('');
   const [lossReasonId, setLossReasonId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   // Form state for create
   const [formClientId, setFormClientId] = useState('');
@@ -243,6 +245,26 @@ function FunnelPageContent() {
   const wonOpportunities = useMemo(() => opportunities.filter((o) => o.status === 'won'), [opportunities]);
   const lostOpportunities = useMemo(() => opportunities.filter((o) => o.status === 'lost'), [opportunities]);
 
+  const handleSyncProposals = useCallback(async () => {
+    setSyncLoading(true);
+    setSyncMessage(null);
+    try {
+      const res = await apiService.syncFunnelProposals();
+      const data = res.data as { total: number; created: number; updated: number; skippedNoClient: number } | undefined;
+      if (data) {
+        setSyncMessage(`Sincronizado: ${data.created} criadas, ${data.updated} atualizadas${data.skippedNoClient ? `, ${data.skippedNoClient} sem cliente cadastrado` : ''}.`);
+        fetchAll();
+      } else {
+        setSyncMessage('Sincronização concluída.');
+        fetchAll();
+      }
+    } catch (e: unknown) {
+      setSyncMessage((e as { message?: string })?.message || 'Erro ao sincronizar.');
+    } finally {
+      setSyncLoading(false);
+    }
+  }, [fetchAll]);
+
   return (
     <Container>
       <Header>
@@ -261,13 +283,24 @@ function FunnelPageContent() {
             Lista
           </ViewToggle>
           {isAdmin && (
-            <ViewToggle $active={false} onClick={() => {}} title="Configurar estágios (em breve)">
-              <Settings size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-              Estágios
-            </ViewToggle>
+            <>
+              <ViewToggle $active={false} onClick={syncLoading ? undefined : handleSyncProposals} title="Colocar todas as propostas no funil (criar/atualizar oportunidades)" style={{ opacity: syncLoading ? 0.7 : 1, cursor: syncLoading ? 'wait' : 'pointer' }}>
+                {syncLoading ? <Loader2 size={16} className="spin" style={{ verticalAlign: 'middle', marginRight: 6 }} /> : <RefreshCw size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />}
+                Sincronizar propostas
+              </ViewToggle>
+              <ViewToggle $active={false} onClick={() => {}} title="Configurar estágios (em breve)">
+                <Settings size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                Estágios
+              </ViewToggle>
+            </>
           )}
         </Toolbar>
       </Header>
+      {syncMessage && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'var(--color-glass)', borderRadius: 8, fontSize: '0.875rem' }}>
+          {syncMessage}
+        </div>
+      )}
 
       <FilterBar>
         <FilterInput

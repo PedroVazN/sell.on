@@ -1677,6 +1677,11 @@ class ApiService {
   async deleteOpportunityActivity(activityId: string): Promise<ApiResponse<void>> {
     return this.request(`/funnel/activities/${activityId}`, { method: 'DELETE' });
   }
+
+  /** Sincroniza todas as propostas com o funil (cria/atualiza oportunidade por proposta). Apenas admin. */
+  async syncFunnelProposals(): Promise<ApiResponse<{ total: number; created: number; updated: number; skippedNoClient: number }>> {
+    return this.request('/funnel/sync-proposals', { method: 'POST' });
+  }
 }
 
 export const apiService = new ApiService();

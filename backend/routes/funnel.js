@@ -8,6 +8,7 @@ const OpportunityHistory = require('../models/OpportunityHistory');
 const Client = require('../models/Client');
 const User = require('../models/User');
 const Sale = require('../models/Sale');
+const Proposal = require('../models/Proposal');
 const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -601,6 +602,222 @@ router.delete('/activities/:activityId', auth, authorize('admin', 'vendedor'), [
     await activity.save();
     return res.json({ success: true });
   } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- Sync: colocar todas as propostas no funil (criar/atualizar oportunidade por proposta) ---
+// POST /api/funnel/sync-proposals (apenas admin)
+// Cria ou atualiza oportunidade no funil para cada proposta: negociacao->Negociação, venda_fechada->Ganhas, venda_perdida/expirada->Perdidas
+router.post('/sync-proposals', auth, authorize('admin'), async (req, res) => {
+  try {
+    const proposals = await Proposal.find({}).sort({ createdAt: 1 }).lean();
+    let stages = await PipelineStage.find({ isDeleted: { $ne: true } }).sort({ order: 1 }).lean();
+    if (stages.length === 0) {
+      const defaults = [
+        { name: 'Leads / Contatos iniciais', order: 0, color: '#6b7280' },
+        { name: 'Primeiro atendimento', order: 1, color: '#3b82f6' },
+        { name: 'Proposta enviada', order: 2, color: '#8b5cf6' },
+        { name: 'Negociação', order: 3, color: '#f59e0b' },
+        { name: 'Fechamento', order: 4, color: '#10b981' },
+      ];
+      await PipelineStage.insertMany(defaults);
+      stages = await PipelineStage.find({ isDeleted: { $ne: true } }).sort({ order: 1 }).lean();
+    }
+    const byName = (name) => stages.find((s) => s.name.toLowerCase().includes(name.toLowerCase()));
+    const stageProposta = byName('Proposta enviada') || stages[0];
+    const stageNegociacao = byName('Negociação') || stages[Math.min(3, stages.length - 1)];
+    const stageFechamento = byName('Fechamento') || stages[stages.length - 1];
+
+    let created = 0;
+    let updated = 0;
+    let skippedNoClient = 0;
+    let errors = [];
+
+    for (const p of proposals) {
+      const orConditions = [];
+      if (p.client && p.client.email) orConditions.push({ 'contato.email': (p.client.email || '').toLowerCase().trim() });
+      if (p.client && (p.client.razaoSocial || p.client.company)) {
+        const raz = (p.client.razaoSocial || p.client.company || '').trim();
+        if (raz) orConditions.push({ razaoSocial: new RegExp(raz.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') });
+      }
+      const clientDoc = orConditions.length ? await Client.findOne({ $or: orConditions }) : null;
+      if (!clientDoc) {
+        skippedNoClient += 1;
+        continue;
+      }
+
+      const responsibleId = p.createdBy || (p.seller && p.seller._id);
+      if (!responsibleId) {
+        skippedNoClient += 1;
+        continue;
+      }
+
+      const title = `Proposta ${p.proposalNumber || p._id} - ${(p.client?.razaoSocial || p.client?.company || p.client?.name || '').toString().substring(0, 40)}`;
+      const estimatedValue = p.total != null ? Number(p.total) : 0;
+      const validUntil = p.validUntil ? new Date(p.validUntil) : null;
+
+      if (p.status === 'venda_fechada') {
+        const oppStatus = 'won';
+        const stageId = stageFechamento._id;
+        if (p.opportunity) {
+          const opp = await Opportunity.findOne({ _id: p.opportunity, isDeleted: { $ne: true } });
+          if (opp) {
+            opp.stage = stageId;
+            opp.status = oppStatus;
+            opp.estimated_value = estimatedValue;
+            await opp.save();
+            updated += 1;
+          } else {
+            const newOpp = new Opportunity({
+              client: clientDoc._id,
+              responsible_user: responsibleId,
+              stage: stageId,
+              title,
+              estimated_value: estimatedValue,
+              win_probability: 100,
+              expected_close_date: validUntil,
+              lead_source: 'proposta',
+              description: `Proposta ${p.proposalNumber || p._id} (venda fechada)`,
+              status: oppStatus,
+              proposal: p._id,
+            });
+            await newOpp.save();
+            await Proposal.updateOne({ _id: p._id }, { opportunity: newOpp._id });
+            created += 1;
+          }
+        } else {
+          const newOpp = new Opportunity({
+            client: clientDoc._id,
+            responsible_user: responsibleId,
+            stage: stageId,
+            title,
+            estimated_value: estimatedValue,
+            win_probability: 100,
+            expected_close_date: validUntil,
+            lead_source: 'proposta',
+            description: `Proposta ${p.proposalNumber || p._id} (venda fechada)`,
+            status: oppStatus,
+            proposal: p._id,
+          });
+          await newOpp.save();
+          await Proposal.updateOne({ _id: p._id }, { opportunity: newOpp._id });
+          created += 1;
+        }
+        continue;
+      }
+
+      if (p.status === 'venda_perdida' || p.status === 'expirada') {
+        const oppStatus = 'lost';
+        const stageId = stageFechamento._id;
+        if (p.opportunity) {
+          const opp = await Opportunity.findOne({ _id: p.opportunity, isDeleted: { $ne: true } });
+          if (opp) {
+            opp.stage = stageId;
+            opp.status = oppStatus;
+            opp.estimated_value = estimatedValue;
+            await opp.save();
+            updated += 1;
+          } else {
+            const newOpp = new Opportunity({
+              client: clientDoc._id,
+              responsible_user: responsibleId,
+              stage: stageId,
+              title,
+              estimated_value: estimatedValue,
+              win_probability: 0,
+              expected_close_date: validUntil,
+              lead_source: 'proposta',
+              description: `Proposta ${p.proposalNumber || p._id} (${p.status})`,
+              status: oppStatus,
+              proposal: p._id,
+            });
+            await newOpp.save();
+            await Proposal.updateOne({ _id: p._id }, { opportunity: newOpp._id });
+            created += 1;
+          }
+        } else {
+          const newOpp = new Opportunity({
+            client: clientDoc._id,
+            responsible_user: responsibleId,
+            stage: stageId,
+            title,
+            estimated_value: estimatedValue,
+            win_probability: 0,
+            expected_close_date: validUntil,
+            lead_source: 'proposta',
+            description: `Proposta ${p.proposalNumber || p._id} (${p.status})`,
+            status: oppStatus,
+            proposal: p._id,
+          });
+          await newOpp.save();
+          await Proposal.updateOne({ _id: p._id }, { opportunity: newOpp._id });
+          created += 1;
+        }
+        continue;
+      }
+
+      // negociacao -> Negociação, status open
+      const stageId = stageNegociacao._id;
+      if (p.opportunity) {
+        const opp = await Opportunity.findOne({ _id: p.opportunity, isDeleted: { $ne: true } });
+        if (opp) {
+          opp.stage = stageId;
+          opp.status = 'open';
+          opp.estimated_value = estimatedValue;
+          opp.expected_close_date = validUntil;
+          await opp.save();
+          updated += 1;
+        } else {
+          const newOpp = new Opportunity({
+            client: clientDoc._id,
+            responsible_user: responsibleId,
+            stage: stageId,
+            title,
+            estimated_value: estimatedValue,
+            win_probability: 50,
+            expected_close_date: validUntil,
+            lead_source: 'proposta',
+            description: p.observations ? `Proposta: ${p.observations}` : `Proposta ${p.proposalNumber || p._id}`,
+            status: 'open',
+            proposal: p._id,
+          });
+          await newOpp.save();
+          await Proposal.updateOne({ _id: p._id }, { opportunity: newOpp._id });
+          created += 1;
+        }
+      } else {
+        const newOpp = new Opportunity({
+          client: clientDoc._id,
+          responsible_user: responsibleId,
+          stage: stageId,
+          title,
+          estimated_value: estimatedValue,
+          win_probability: 50,
+          expected_close_date: validUntil,
+          lead_source: 'proposta',
+          description: p.observations ? `Proposta: ${p.observations}` : `Proposta ${p.proposalNumber || p._id}`,
+          status: 'open',
+          proposal: p._id,
+        });
+        await newOpp.save();
+        await Proposal.updateOne({ _id: p._id }, { opportunity: newOpp._id });
+        created += 1;
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        total: proposals.length,
+        created,
+        updated,
+        skippedNoClient,
+        errors: errors.length ? errors : undefined,
+      },
+    });
+  } catch (err) {
+    console.error('sync-proposals error:', err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
