@@ -175,7 +175,7 @@ export const ListTable = styled.div`
 
 export const ListRow = styled.div`
   display: grid;
-  grid-template-columns: 1fr 120px 80px 100px 140px;
+  grid-template-columns: 1fr 120px 80px 100px 140px 48px;
   gap: 16px;
   padding: 12px 16px;
   align-items: center;

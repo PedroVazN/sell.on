@@ -1662,6 +1662,10 @@ class ApiService {
     return this.request(`/funnel/opportunities/${id}/convert`, { method: 'POST', body: JSON.stringify({ customer_id }) });
   }
 
+  async deleteOpportunity(id: string): Promise<ApiResponse<void>> {
+    return this.request(`/funnel/opportunities/${id}`, { method: 'DELETE' });
+  }
+
   async getOpportunityActivities(opportunityId: string): Promise<ApiResponse<import('../types/funnel').OpportunityActivity[]>> {
     return this.request(`/funnel/opportunities/${opportunityId}/activities`);
   }

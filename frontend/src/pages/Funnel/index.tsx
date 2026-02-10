@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, List, Loader2, Plus, RefreshCw, Search, Settings, X, GripVertical } from 'lucide-react';
+import { LayoutGrid, List, Loader2, Plus, RefreshCw, Search, Settings, X, GripVertical, Trash2 } from 'lucide-react';
 import { useFunnel } from '../../contexts/FunnelContext';
 import { FunnelProvider } from '../../contexts/FunnelContext';
 import {
@@ -80,6 +80,7 @@ function FunnelPageContent() {
     convertToSale,
     getOpportunityById,
     addActivity,
+    deleteDeal,
   } = useFunnel();
 
   const [selectedDeal, setSelectedDeal] = useState<Opportunity | null>(null);
@@ -277,6 +278,19 @@ function FunnelPageContent() {
     [markWon, markLost, moveDeal, lossReasons]
   );
 
+  const handleDeleteDeal = useCallback(
+    async (opp: Opportunity) => {
+      if (!window.confirm(`Excluir a oportunidade "${opp.title}"? Esta ação não pode ser desfeita.`)) return;
+      try {
+        await deleteDeal(opp._id);
+        if (selectedDeal?._id === opp._id) setSelectedDeal(null);
+      } catch {
+        // erro já tratado no contexto / API
+      }
+    },
+    [deleteDeal, selectedDeal?._id]
+  );
+
   const handleSyncProposals = useCallback(async () => {
     setSyncLoading(true);
     setSyncMessage(null);
@@ -439,7 +453,7 @@ function FunnelPageContent() {
                       onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
                       style={{ opacity: draggingOppId === opp._id ? 0.6 : 1 }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                         <CardDragHandle
                           draggable
                           onClick={(ev) => ev.stopPropagation()}
@@ -463,6 +477,16 @@ function FunnelPageContent() {
                             {opp.win_probability}% · {opp.expected_close_date ? new Date(opp.expected_close_date).toLocaleDateString('pt-BR') : '—'}
                           </CardMeta>
                         </div>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteDeal(opp); }}
+                            title="Excluir oportunidade"
+                            style={{ flexShrink: 0, padding: 4, border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', borderRadius: 4 }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </Card>
                   ))}
@@ -502,7 +526,7 @@ function FunnelPageContent() {
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
                   style={{ opacity: draggingOppId === opp._id ? 0.6 : 1 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                     <CardDragHandle
                       draggable
                       onClick={(ev) => ev.stopPropagation()}
@@ -523,6 +547,16 @@ function FunnelPageContent() {
                         {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
                       </CardMeta>
                     </div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteDeal(opp); }}
+                        title="Excluir oportunidade"
+                        style={{ flexShrink: 0, padding: 4, border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', borderRadius: 4 }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -560,7 +594,7 @@ function FunnelPageContent() {
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
                   style={{ opacity: draggingOppId === opp._id ? 0.6 : 1 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                     <CardDragHandle
                       draggable
                       onClick={(ev) => ev.stopPropagation()}
@@ -581,6 +615,16 @@ function FunnelPageContent() {
                         {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
                       </CardMeta>
                     </div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteDeal(opp); }}
+                        title="Excluir oportunidade"
+                        style={{ flexShrink: 0, padding: 4, border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', borderRadius: 4 }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -596,6 +640,7 @@ function FunnelPageContent() {
             <div>Prob.</div>
             <div>Fechamento</div>
             <div>Responsável</div>
+            <div />
           </ListHeader>
           {opportunities.filter((o) => o.status === 'open').length === 0 ? (
             <EmptyState style={{ gridColumn: '1 / -1', padding: 32 }}>
@@ -616,6 +661,18 @@ function FunnelPageContent() {
                   <div>{opp.win_probability}%</div>
                   <div>{opp.expected_close_date ? new Date(opp.expected_close_date).toLocaleDateString('pt-BR') : '—'}</div>
                   <div>{(opp.responsible_user as { name?: string })?.name || '—'}</div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDeal(opp)}
+                        title="Excluir oportunidade"
+                        style={{ padding: 6, border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', borderRadius: 4 }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
                 </ListRow>
               ))
           )}
@@ -809,6 +866,35 @@ function FunnelPageContent() {
                   </div>
                 </FormRow>
               </>
+            )}
+
+            {isAdmin && (
+              <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--color-border, #334155)' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Excluir a oportunidade "${detailFull.title}"? Esta ação não pode ser desfeita.`)) {
+                      handleDeleteDeal(detailFull);
+                      setSelectedDeal(null);
+                    }
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 12px',
+                    border: '1px solid #dc2626',
+                    background: 'transparent',
+                    color: '#dc2626',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  <Trash2 size={16} />
+                  Excluir oportunidade
+                </button>
+              </div>
             )}
           </ModalBox>
         </ModalOverlay>

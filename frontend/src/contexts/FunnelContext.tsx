@@ -31,6 +31,7 @@ interface FunnelContextValue {
   convertToSale: (id: string, customerId: string) => Promise<{ saleId: string; saleNumber: string } | null>;
   getOpportunityById: (id: string) => Promise<Opportunity | null>;
   addActivity: (opportunityId: string, data: { type: 'task' | 'call' | 'message'; title: string; due_at?: string; notes?: string }) => Promise<OpportunityActivity | null>;
+  deleteDeal: (id: string) => Promise<void>;
 }
 
 const FunnelContext = createContext<FunnelContextValue | null>(null);
@@ -186,6 +187,11 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const deleteDeal = useCallback(async (id: string) => {
+    await apiService.deleteOpportunity(id);
+    setOpportunities((curr) => curr.filter((o) => o._id !== id));
+  }, []);
+
   const value = useMemo<FunnelContextValue>(
     () => ({
       stages,
@@ -209,6 +215,7 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
       convertToSale,
       getOpportunityById,
       addActivity,
+      deleteDeal,
     }),
     [
       stages,
@@ -231,6 +238,7 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
       convertToSale,
       getOpportunityById,
       addActivity,
+      deleteDeal,
     ]
   );
 
