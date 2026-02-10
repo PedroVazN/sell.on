@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, List, Loader2, Plus, RefreshCw, Search, Settings, X } from 'lucide-react';
+import { LayoutGrid, List, Loader2, Plus, RefreshCw, Search, Settings, X, GripVertical } from 'lucide-react';
 import { useFunnel } from '../../contexts/FunnelContext';
 import { FunnelProvider } from '../../contexts/FunnelContext';
 import {
@@ -40,6 +40,7 @@ import {
   FormSelect,
   FormTextarea,
   ModalActions,
+  CardDragHandle,
 } from './styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
@@ -49,6 +50,12 @@ import type { User } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 
 const LEAD_SOURCES = ['', 'site', 'indicacao', 'evento', 'whatsapp', 'telefone', 'email', 'outro'];
+
+function getStageDisplayName(name: string): string {
+  if (/proposta\s*enviada/i.test(name)) return 'Propostas criadas';
+  if (/negocia/i.test(name)) return 'Negociação / Aguardando pagamento';
+  return name;
+}
 
 function FunnelPageContent() {
   const { user } = useAuth();
@@ -86,6 +93,8 @@ function FunnelPageContent() {
   const [saving, setSaving] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [dragOverColumnKey, setDragOverColumnKey] = useState<string | null>(null);
+  const [draggingOppId, setDraggingOppId] = useState<string | null>(null);
 
   // Form state for create
   const [formClientId, setFormClientId] = useState('');
@@ -245,6 +254,29 @@ function FunnelPageContent() {
   const wonOpportunities = useMemo(() => opportunities.filter((o) => o.status === 'won'), [opportunities]);
   const lostOpportunities = useMemo(() => opportunities.filter((o) => o.status === 'lost'), [opportunities]);
 
+  const handleFunnelDrop = useCallback(
+    async (columnKey: string, opp: Opportunity) => {
+      if (columnKey === opp.stage?._id || columnKey === (opp.stage as unknown as string)) return;
+      if (columnKey === 'won') {
+        if (opp.status === 'won') return;
+        await markWon(opp._id);
+        return;
+      }
+      if (columnKey === 'lost') {
+        if (opp.status === 'lost') return;
+        const firstReason = lossReasons[0]?._id;
+        if (!firstReason) {
+          setSelectedDeal(opp);
+          return;
+        }
+        await markLost(opp._id, firstReason);
+        return;
+      }
+      await moveDeal(opp._id, columnKey);
+    },
+    [markWon, markLost, moveDeal, lossReasons]
+  );
+
   const handleSyncProposals = useCallback(async () => {
     setSyncLoading(true);
     setSyncMessage(null);
@@ -367,35 +399,95 @@ function FunnelPageContent() {
         </LoadingState>
       ) : viewMode === 'kanban' ? (
         <BoardWrapper>
+        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 12 }}>
+          Arraste pelo ícone <GripVertical size={14} style={{ verticalAlign: 'middle' }} /> para mover entre colunas.
+        </p>
         <Board>
-          {openStages.map((stage) => (
-            <Column key={stage._id} $color={stage.color}>
-              <ColumnHeader>
-                <ColumnTitle>{stage.name}</ColumnTitle>
-                <ColumnCount>{(opportunitiesByStage[stage._id] || []).length}</ColumnCount>
-              </ColumnHeader>
-              <CardsArea>
-                {(opportunitiesByStage[stage._id] || []).map((opp) => (
-                  <Card
-                    key={opp._id}
-                    onClick={() => setSelectedDeal(opp)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
-                  >
-                    <CardTitle>{opp.title}</CardTitle>
-                    <CardMeta>
-                      {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
-                    </CardMeta>
-                    <CardMeta>
-                      {opp.win_probability}% · {opp.expected_close_date ? new Date(opp.expected_close_date).toLocaleDateString('pt-BR') : '—'}
-                    </CardMeta>
-                  </Card>
-                ))}
-              </CardsArea>
-            </Column>
-          ))}
-          <Column key="won" $color="#10b981">
+          {openStages.map((stage) => {
+            const columnKey = stage._id;
+            const isOver = dragOverColumnKey === columnKey;
+            return (
+              <Column
+                key={stage._id}
+                $color={stage.color}
+                $isOver={isOver}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverColumnKey(columnKey); }}
+                onDragEnter={(e) => { e.preventDefault(); setDragOverColumnKey(columnKey); }}
+                onDragLeave={(e) => {
+                  const related = e.relatedTarget as Node | null;
+                  if (!related || !e.currentTarget.contains(related)) setDragOverColumnKey(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverColumnKey(null);
+                  const oppId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('opportunityId');
+                  const opp = opportunities.find((o) => o._id === oppId);
+                  if (opp) handleFunnelDrop(columnKey, opp);
+                }}
+              >
+                <ColumnHeader>
+                  <ColumnTitle>{getStageDisplayName(stage.name)}</ColumnTitle>
+                  <ColumnCount>{(opportunitiesByStage[stage._id] || []).length}</ColumnCount>
+                </ColumnHeader>
+                <CardsArea>
+                  {(opportunitiesByStage[stage._id] || []).map((opp) => (
+                    <Card
+                      key={opp._id}
+                      onClick={() => setSelectedDeal(opp)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
+                      style={{ opacity: draggingOppId === opp._id ? 0.6 : 1 }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                        <CardDragHandle
+                          draggable
+                          onClick={(ev) => ev.stopPropagation()}
+                          onDragStart={(e) => {
+                            setDraggingOppId(opp._id);
+                            e.dataTransfer.setData('text/plain', opp._id);
+                            e.dataTransfer.setData('opportunityId', opp._id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onDragEnd={() => setDraggingOppId(null)}
+                          title="Arraste para mover"
+                        >
+                          <GripVertical size={16} />
+                        </CardDragHandle>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <CardTitle>{opp.title}</CardTitle>
+                          <CardMeta>
+                            {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
+                          </CardMeta>
+                          <CardMeta>
+                            {opp.win_probability}% · {opp.expected_close_date ? new Date(opp.expected_close_date).toLocaleDateString('pt-BR') : '—'}
+                          </CardMeta>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </CardsArea>
+              </Column>
+            );
+          })}
+          <Column
+            key="won"
+            $color="#10b981"
+            $isOver={dragOverColumnKey === 'won'}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverColumnKey('won'); }}
+            onDragEnter={(e) => { e.preventDefault(); setDragOverColumnKey('won'); }}
+            onDragLeave={(e) => {
+              const related = e.relatedTarget as Node | null;
+              if (!related || !e.currentTarget.contains(related)) setDragOverColumnKey(null);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOverColumnKey(null);
+              const oppId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('opportunityId');
+              const opp = opportunities.find((o) => o._id === oppId);
+              if (opp) handleFunnelDrop('won', opp);
+            }}
+          >
             <ColumnHeader>
               <ColumnTitle>Ganhas</ColumnTitle>
               <ColumnCount>{wonOpportunities.length}</ColumnCount>
@@ -408,16 +500,52 @@ function FunnelPageContent() {
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
+                  style={{ opacity: draggingOppId === opp._id ? 0.6 : 1 }}
                 >
-                  <CardTitle>{opp.title}</CardTitle>
-                  <CardMeta>
-                    {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
-                  </CardMeta>
+                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                    <CardDragHandle
+                      draggable
+                      onClick={(ev) => ev.stopPropagation()}
+                      onDragStart={(e) => {
+                        setDraggingOppId(opp._id);
+                        e.dataTransfer.setData('text/plain', opp._id);
+                        e.dataTransfer.setData('opportunityId', opp._id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => setDraggingOppId(null)}
+                      title="Arraste para mover"
+                    >
+                      <GripVertical size={16} />
+                    </CardDragHandle>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <CardTitle>{opp.title}</CardTitle>
+                      <CardMeta>
+                        {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
+                      </CardMeta>
+                    </div>
+                  </div>
                 </Card>
               ))}
             </CardsArea>
           </Column>
-          <Column key="lost" $color="#6b7280">
+          <Column
+            key="lost"
+            $color="#6b7280"
+            $isOver={dragOverColumnKey === 'lost'}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverColumnKey('lost'); }}
+            onDragEnter={(e) => { e.preventDefault(); setDragOverColumnKey('lost'); }}
+            onDragLeave={(e) => {
+              const related = e.relatedTarget as Node | null;
+              if (!related || !e.currentTarget.contains(related)) setDragOverColumnKey(null);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOverColumnKey(null);
+              const oppId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('opportunityId');
+              const opp = opportunities.find((o) => o._id === oppId);
+              if (opp) handleFunnelDrop('lost', opp);
+            }}
+          >
             <ColumnHeader>
               <ColumnTitle>Perdidas</ColumnTitle>
               <ColumnCount>{lostOpportunities.length}</ColumnCount>
@@ -430,11 +558,30 @@ function FunnelPageContent() {
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedDeal(opp)}
+                  style={{ opacity: draggingOppId === opp._id ? 0.6 : 1 }}
                 >
-                  <CardTitle>{opp.title}</CardTitle>
-                  <CardMeta>
-                    {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
-                  </CardMeta>
+                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                    <CardDragHandle
+                      draggable
+                      onClick={(ev) => ev.stopPropagation()}
+                      onDragStart={(e) => {
+                        setDraggingOppId(opp._id);
+                        e.dataTransfer.setData('text/plain', opp._id);
+                        e.dataTransfer.setData('opportunityId', opp._id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => setDraggingOppId(null)}
+                      title="Arraste para mover"
+                    >
+                      <GripVertical size={16} />
+                    </CardDragHandle>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <CardTitle>{opp.title}</CardTitle>
+                      <CardMeta>
+                        {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
+                      </CardMeta>
+                    </div>
+                  </div>
                 </Card>
               ))}
             </CardsArea>

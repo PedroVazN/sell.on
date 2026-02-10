@@ -85,14 +85,30 @@ export const Board = styled.div`
   width: max-content;
 `;
 
-export const Column = styled.div<{ $color?: string }>`
+export const Column = styled.div<{ $color?: string; $isOver?: boolean }>`
   flex: 0 0 300px;
   min-width: 300px;
   background: ${({ theme }) => theme.colors.background.card};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border: 1px solid ${({ theme, $isOver }) => ($isOver ? theme.colors.primary : theme.colors.border.primary)};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: 12px;
   border-top: 3px solid ${({ $color }) => $color || '#6b7280'};
+  transition: border-color 0.2s;
+`;
+
+export const CardDragHandle = styled.div`
+  cursor: grab;
+  display: inline-flex;
+  padding: 2px 4px;
+  margin: -2px 6px -2px -2px;
+  border-radius: 4px;
+  color: ${({ theme }) => theme.colors.text.muted || '#94a3b8'};
+  &:hover {
+    background: rgba(148, 163, 184, 0.2);
+  }
+  &:active {
+    cursor: grabbing;
+  }
 `;
 
 export const ColumnHeader = styled.div`
