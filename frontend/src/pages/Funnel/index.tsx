@@ -57,6 +57,26 @@ function getStageDisplayName(name: string): string {
   return name;
 }
 
+function getCreatedAtLabel(dateString: string | undefined): string {
+  if (!dateString) return '—';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMins < 1) return 'Criado agora';
+  if (diffMins < 60) return `Criado há ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+  if (diffHours < 24) return `Criado há ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+  if (diffDays < 7) return `Criado há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+  if (diffWeeks < 4) return `Criado há ${diffWeeks} ${diffWeeks === 1 ? 'semana' : 'semanas'}`;
+  if (diffMonths < 12) return `Criado há ${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'}`;
+  const diffYears = Math.floor(diffDays / 365);
+  return `Criado há ${diffYears} ${diffYears === 1 ? 'ano' : 'anos'}`;
+}
+
 function FunnelPageContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -476,6 +496,9 @@ function FunnelPageContent() {
                           <CardMeta>
                             {opp.win_probability}% · {opp.expected_close_date ? new Date(opp.expected_close_date).toLocaleDateString('pt-BR') : '—'}
                           </CardMeta>
+                          <CardMeta style={{ fontSize: '0.7rem', opacity: 0.85 }}>
+                            {getCreatedAtLabel(opp.createdAt)}
+                          </CardMeta>
                         </div>
                         {isAdmin && (
                           <button
@@ -546,6 +569,9 @@ function FunnelPageContent() {
                       <CardMeta>
                         {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
                       </CardMeta>
+                      <CardMeta style={{ fontSize: '0.7rem', opacity: 0.85 }}>
+                        {getCreatedAtLabel(opp.createdAt)}
+                      </CardMeta>
                     </div>
                     {isAdmin && (
                       <button
@@ -614,6 +640,9 @@ function FunnelPageContent() {
                       <CardMeta>
                         {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'} · {formatCurrency(opp.estimated_value)}
                       </CardMeta>
+                      <CardMeta style={{ fontSize: '0.7rem', opacity: 0.85 }}>
+                        {getCreatedAtLabel(opp.createdAt)}
+                      </CardMeta>
                     </div>
                     {isAdmin && (
                       <button
@@ -655,6 +684,9 @@ function FunnelPageContent() {
                     <strong>{opp.title}</strong>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {opp.client?.razaoSocial || opp.client?.nomeFantasia || '—'}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', opacity: 0.9, marginTop: 2 }}>
+                      {getCreatedAtLabel(opp.createdAt)}
                     </div>
                   </div>
                   <div>{formatCurrency(opp.estimated_value)}</div>
@@ -779,6 +811,9 @@ function FunnelPageContent() {
             </p>
             <p style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
               <strong>Origem:</strong> {detailFull.lead_source || '—'} · <strong>Responsável:</strong> {(detailFull.responsible_user as { name?: string })?.name || '—'}
+            </p>
+            <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              <strong>Criado:</strong> {getCreatedAtLabel(detailFull.createdAt)}
             </p>
             {detailFull.description && (
               <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
