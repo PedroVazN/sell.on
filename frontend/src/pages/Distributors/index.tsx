@@ -35,6 +35,7 @@ export const Distributors: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDistributor, setEditingDistributor] = useState<Distributor | null>(null);
 
@@ -56,8 +57,16 @@ export const Distributors: React.FC = () => {
     loadDistributors();
   }, [loadDistributors]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputValue(e.target.value);
+  };
+
+  const applySearch = () => {
+    setSearchTerm(searchInputValue);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') applySearch();
   };
 
   const handleDeleteDistributor = async (distributor: Distributor) => {
@@ -166,12 +175,18 @@ export const Distributors: React.FC = () => {
         <Title>Distribuidores</Title>
         <Actions>
           <SearchContainer>
-            <Search size={20} />
+            <Search size={20} aria-hidden />
             <SearchInput 
-              placeholder="Pesquisar distribuidores..." 
-              value={searchTerm || ''}
-              onChange={handleSearch}
+              id="distributors-search"
+              aria-label="Pesquisar distribuidores por apelido ou razão social"
+              placeholder="Pesquisar distribuidores (Enter ou Buscar)" 
+              value={searchInputValue}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleSearchKeyDown}
             />
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando distribuidores' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
+              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            </FilterButton>
           </SearchContainer>
           <FilterButton>
             <Filter size={20} />

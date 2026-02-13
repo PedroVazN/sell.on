@@ -34,6 +34,7 @@ export const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
 
   const loadProducts = useCallback(async () => {
     try {
@@ -53,8 +54,16 @@ export const Products: React.FC = () => {
     loadProducts();
   }, [loadProducts]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputValue(e.target.value);
+  };
+
+  const applySearch = () => {
+    setSearchTerm(searchInputValue);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') applySearch();
   };
 
   const handleCreateProduct = () => {
@@ -153,12 +162,18 @@ export const Products: React.FC = () => {
         <Title>Produtos</Title>
         <Actions>
           <SearchContainer>
-            <Search size={20} />
+            <Search size={20} aria-hidden />
             <SearchInput 
-              placeholder="Pesquisar produtos..." 
-              value={searchTerm}
-              onChange={handleSearch}
+              id="products-search"
+              aria-label="Pesquisar produtos por nome ou categoria"
+              placeholder="Pesquisar produtos (Enter ou Buscar)" 
+              value={searchInputValue}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleSearchKeyDown}
             />
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando produtos' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
+              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            </FilterButton>
           </SearchContainer>
           <FilterButton>
             <Filter size={20} />

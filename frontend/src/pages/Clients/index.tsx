@@ -43,6 +43,7 @@ export const Clients: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,15 +69,24 @@ export const Clients: React.FC = () => {
   }, [searchTerm, currentPage]);
 
   useEffect(() => {
-    setCurrentPage(1); // Resetar para primeira página ao buscar
+    setCurrentPage(1);
   }, [searchTerm]);
 
   useEffect(() => {
     loadClients();
   }, [loadClients]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputValue(e.target.value);
+  };
+
+  const applySearch = () => {
+    setSearchTerm(searchInputValue);
+    if (currentPage !== 1) setCurrentPage(1);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') applySearch();
   };
 
   const handleCreateClient = () => {
@@ -192,12 +202,18 @@ export const Clients: React.FC = () => {
         <Title>Clientes</Title>
         <Actions>
           <SearchContainer>
-            <Search size={20} />
+            <Search size={20} aria-hidden />
             <SearchInput 
-              placeholder="Pesquisar clientes..." 
-              value={searchTerm || ''}
-              onChange={handleSearch}
+              id="clients-search"
+              aria-label="Pesquisar clientes por nome, razão social ou email"
+              placeholder="Pesquisar clientes (Enter ou Buscar)" 
+              value={searchInputValue}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleSearchKeyDown}
             />
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando clientes' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
+              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            </FilterButton>
           </SearchContainer>
           <FilterButton>
             <Filter size={20} />

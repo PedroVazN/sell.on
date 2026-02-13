@@ -83,11 +83,22 @@ export const GlobalStyles = createGlobalStyle`
     text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
   }
 
-  /* Focus outline - Moderno e acessível */
+  /* Focus outline - Acessível: visível ao navegar por teclado (focus-visible) */
   *:focus {
+    outline: none;
+  }
+  *:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px ${theme.colors.border.focus};
     border-radius: ${theme.borderRadius.sm};
+  }
+  /* Contraste: botões e inputs com foco visível */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex="0"]:focus-visible {
+    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
   }
 
   /* Animações globais - Suaves e fluidas */
@@ -352,6 +363,21 @@ export const GlobalStyles = createGlobalStyle`
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+  /* Skip link para navegação por teclado (opcional: adicionar elemento no HTML) */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: ${theme.colors.primary};
+    color: white;
+    padding: 0.5rem 1rem;
+    z-index: 100;
+    border-radius: ${theme.borderRadius.sm};
+    transition: top 0.2s;
+  }
+  .skip-link:focus {
+    top: 0;
   }
 
   /* Estilos globais para selects - Forçar tema escuro */

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
-import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
+import { generateProposalPdf, generateProposalsListPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -16,6 +16,9 @@ import {
   SearchInput, 
   CreateButton, 
   Content,
+  ExportWrap,
+  ExportDropdownMenu,
+  ExportDropdownItem,
   FilterRow,
   TableWrapper,
   Table,
@@ -94,6 +97,8 @@ export const Proposals: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('win');
   const [proposalNumber, setProposalNumber] = useState<string>('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -229,6 +234,17 @@ export const Proposals: React.FC = () => {
     loadData(currentPage);
   }, [currentPage, loadData]);
 
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const onOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-export-wrap]')) return;
+      setShowExportMenu(false);
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [showExportMenu]);
+
   // Resetar para página 1 quando filtros mudarem
   useEffect(() => {
     if (currentPage !== 1) {
@@ -327,143 +343,148 @@ export const Proposals: React.FC = () => {
     setStatusFilter(e.target.value);
   };
 
-  // Função para exportar propostas para CSV
-  const handleExportCSV = async () => {
+  const escapeHtml = (s: string) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  const buildExportRows = (allProposals: Proposal[]) => {
+    const headers = [
+      'Número da Proposta',
+      'Data de Criação',
+      'Data de Fechamento',
+      'Vendedor',
+      'Cliente',
+      'Empresa',
+      'Email',
+      'Telefone',
+      'Distribuidor',
+      'Produtos',
+      'Condição de Pagamento',
+      'Valor Total',
+      'Status',
+      'Válido Até',
+      'Motivo da Perda',
+      'Observações'
+    ];
+    const statusMap: { [key: string]: string } = {
+      'negociacao': 'Em Negociação',
+      'aguardando_pagamento': 'Em Negociação',
+      'venda_fechada': 'Venda Fechada',
+      'venda_perdida': 'Venda Perdida',
+      'expirada': 'Expirada'
+    };
+    const rows = allProposals.map(proposal => {
+      const produtos = proposal.items?.map(item => {
+        const nomeProduto = typeof item.product === 'object' ? item.product.name : 'Produto';
+        return `${nomeProduto} (${item.quantity} x R$ ${item.unitPrice.toFixed(2)})`;
+      }).join('; ') || 'Sem produtos';
+      let vendedor = 'Não informado';
+      if (proposal.seller && typeof proposal.seller === 'object') vendedor = proposal.seller.name;
+      else if (proposal.createdBy && typeof proposal.createdBy === 'object') vendedor = proposal.createdBy.name;
+      let distribuidor = 'Não informado';
+      if (proposal.distributor && typeof proposal.distributor === 'object')
+        distribuidor = proposal.distributor.apelido || proposal.distributor.razaoSocial || 'Não informado';
+      const statusLabel = statusMap[proposal.status] || proposal.status;
+      const dataCreacao = new Date(proposal.createdAt).toLocaleDateString('pt-BR');
+      let dataFechamento = '';
+      if (proposal.status === 'venda_fechada' || proposal.status === 'venda_perdida' || proposal.status === 'expirada') {
+        if (proposal.closedAt) dataFechamento = new Date(proposal.closedAt).toLocaleDateString('pt-BR');
+        else if (proposal.updatedAt) dataFechamento = new Date(proposal.updatedAt).toLocaleDateString('pt-BR');
+      }
+      const validoAte = proposal.validUntil ? new Date(proposal.validUntil).toLocaleDateString('pt-BR') : 'Não definido';
+      const motivoPerda = proposal.lossReason ? lossReasons.find(r => r.value === proposal.lossReason)?.label || proposal.lossReason : '';
+      return [
+        proposal.proposalNumber || 'N/A',
+        dataCreacao,
+        dataFechamento || 'Em aberto',
+        vendedor,
+        proposal.client?.name || 'Não informado',
+        proposal.client?.company || 'Não informado',
+        proposal.client?.email || 'Não informado',
+        proposal.client?.phone || 'Não informado',
+        distribuidor,
+        produtos,
+        proposal.paymentCondition || 'Não informado',
+        `R$ ${(proposal.total || 0).toFixed(2)}`,
+        statusLabel,
+        validoAte,
+        motivoPerda,
+        proposal.observations || ''
+      ];
+    });
+    return { headers, rows };
+  };
+
+  const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
+    setShowExportMenu(false);
+    setIsExporting(true);
     try {
-      // Buscar TODAS as propostas para exportação
       let allProposals: Proposal[] = [];
-      
       if (user?.role === 'vendedor') {
         const response = await apiService.getVendedorProposals(user._id, 1, 10000);
         allProposals = response.data || [];
       } else {
-        const response = await apiService.getProposals(1, 10000, statusFilter || undefined, searchTerm || undefined);
+        const response = await apiService.getProposals(
+          1, 10000,
+          statusFilter || undefined,
+          searchTerm || undefined,
+          sellerFilter || undefined,
+          dateCreatedFrom || undefined,
+          dateCreatedTo || undefined,
+          dateClosedFrom || undefined,
+          dateClosedTo || undefined
+        );
         allProposals = response.data || [];
       }
-
       if (allProposals.length === 0) {
         warning('Atenção', 'Nenhuma proposta encontrada para exportar');
         return;
       }
+      const { headers, rows } = buildExportRows(allProposals);
+      const dateStr = new Date().toISOString().split('T')[0];
 
-      // Cabeçalho do CSV
-      const headers = [
-        'Número da Proposta',
-        'Data de Criação',
-        'Data de Fechamento',
-        'Vendedor',
-        'Cliente',
-        'Empresa',
-        'Email',
-        'Telefone',
-        'Distribuidor',
-        'Produtos',
-        'Condição de Pagamento',
-        'Valor Total',
-        'Status',
-        'Válido Até',
-        'Motivo da Perda',
-        'Observações'
-      ];
-
-      // Converter propostas para linhas CSV
-      const rows = allProposals.map(proposal => {
-        // Formatar produtos: nome (qtd x preço); nome2 (qtd x preço)
-        const produtos = proposal.items?.map(item => {
-          const nomeProduto = typeof item.product === 'object' ? item.product.name : 'Produto';
-          return `${nomeProduto} (${item.quantity} x R$ ${item.unitPrice.toFixed(2)})`;
-        }).join('; ') || 'Sem produtos';
-
-        // Pegar nome do vendedor - usar o que já vem na proposta
-        let vendedor = 'Não informado';
-        if (proposal.seller && typeof proposal.seller === 'object') {
-          vendedor = proposal.seller.name;
-        } else if (proposal.createdBy && typeof proposal.createdBy === 'object') {
-          vendedor = proposal.createdBy.name;
-        }
-
-        // Pegar nome do distribuidor - usar o que já vem na proposta
-        let distribuidor = 'Não informado';
-        if (proposal.distributor && typeof proposal.distributor === 'object') {
-          distribuidor = proposal.distributor.apelido || proposal.distributor.razaoSocial || 'Não informado';
-        }
-
-        // Formatar status
-        const statusMap: { [key: string]: string } = {
-          'negociacao': 'Em Negociação',
-          'aguardando_pagamento': 'Em Negociação',
-          'venda_fechada': 'Venda Fechada',
-          'venda_perdida': 'Venda Perdida',
-          'expirada': 'Expirada'
-        };
-        const statusLabel = statusMap[proposal.status] || proposal.status;
-
-        // Formatar datas
-        const dataCreacao = new Date(proposal.createdAt).toLocaleDateString('pt-BR');
-        
-        // Data de fechamento - usa closedAt, ou updatedAt como fallback para propostas finalizadas
-        let dataFechamento = '';
-        if (proposal.status === 'venda_fechada' || proposal.status === 'venda_perdida' || proposal.status === 'expirada') {
-          if (proposal.closedAt) {
-            dataFechamento = new Date(proposal.closedAt).toLocaleDateString('pt-BR');
-          } else if (proposal.updatedAt) {
-            dataFechamento = new Date(proposal.updatedAt).toLocaleDateString('pt-BR');
-          }
-        }
-        
-        const validoAte = proposal.validUntil 
-          ? new Date(proposal.validUntil).toLocaleDateString('pt-BR')
-          : 'Não definido';
-
-        // Motivo da perda
-        const motivoPerda = proposal.lossReason 
-          ? lossReasons.find(r => r.value === proposal.lossReason)?.label || proposal.lossReason
-          : '';
-
-        return [
-          proposal.proposalNumber || 'N/A',
-          dataCreacao,
-          dataFechamento || 'Em aberto',
-          vendedor,
-          proposal.client?.name || 'Não informado',
-          proposal.client?.company || 'Não informado',
-          proposal.client?.email || 'Não informado',
-          proposal.client?.phone || 'Não informado',
-          distribuidor,
-          `"${produtos}"`, // Aspas para manter produtos na mesma célula
-          proposal.paymentCondition || 'Não informado',
-          `R$ ${(proposal.total || 0).toFixed(2)}`,
-          statusLabel,
-          validoAte,
-          motivoPerda,
-          proposal.observations ? `"${proposal.observations.replace(/"/g, '""')}"` : ''
-        ];
-      });
-
-      // Criar conteúdo CSV
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-
-      // Adicionar BOM para UTF-8 (para Excel abrir corretamente)
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-      
-      // Criar link de download
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `propostas_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      success('CSV exportado com sucesso!', `${allProposals.length} propostas exportadas`);
-    } catch (error) {
-      console.error('Erro ao exportar CSV:', error);
-      showError('Erro ao exportar CSV', 'Tente novamente');
+      if (format === 'csv') {
+        const escapeCsv = (cell: string) => (/[,"\n]/.test(cell) ? `"${String(cell).replace(/"/g, '""')}"` : cell);
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n');
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `propostas_${dateStr}.csv`;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      } else if (format === 'xlsx') {
+        const BOM = '\uFEFF';
+        const html = [
+          '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">',
+          '<head><meta charset="UTF-8"></head><body><table border="1">',
+          '<tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>',
+          ...rows.map(row => '<tr>' + row.map(c => `<td>${escapeHtml(String(c))}</td>`).join('') + '</tr>'),
+          '</table></body></html>'
+        ].join('');
+        const blob = new Blob([BOM + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `propostas_${dateStr}.xls`;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      } else {
+        generateProposalsListPdf(headers, rows);
+      }
+      success('Exportação concluída', `${allProposals.length} propostas exportadas em ${format.toUpperCase()}`);
+    } catch (err) {
+      console.error('Erro ao exportar:', err);
+      showError('Erro ao exportar', 'Tente novamente.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -846,6 +867,8 @@ export const Proposals: React.FC = () => {
           <SearchContainer>
             <Search size={20} />
             <SearchInput 
+              id="proposals-search"
+              aria-label="Pesquisar propostas por número, cliente, empresa ou email"
               placeholder="Pesquisar propostas (Enter ou Buscar)" 
               value={searchInputValue}
               onChange={handleSearchInputChange}
@@ -854,12 +877,15 @@ export const Proposals: React.FC = () => {
             <Button 
               type="button" 
               onClick={applySearch}
+              disabled={loading}
+              aria-busy={loading}
+              aria-label={loading ? 'Buscando propostas' : 'Executar busca'}
               style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}
             >
-              Buscar
+              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
             </Button>
           </SearchContainer>
-          <Select value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
+          <Select id="proposals-status" aria-label="Filtrar por status" value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
             <option value="">Todos os status</option>
             <option value="negociacao">Negociação</option>
             <option value="venda_fechada">Venda Fechada</option>
@@ -867,17 +893,37 @@ export const Proposals: React.FC = () => {
             <option value="expirada">Expirada</option>
           </Select>
           {user?.role === 'admin' && (
-            <CreateButton 
-              onClick={handleExportCSV}
-              style={{ 
-                backgroundColor: '#10b981',
-                marginRight: '0.5rem'
-              }}
-              title="Exportar propostas para Excel/CSV"
-            >
-              <Download size={20} />
-              Exportar CSV
-            </CreateButton>
+            <ExportWrap data-export-wrap>
+              <CreateButton
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isExporting}
+                aria-busy={isExporting}
+                aria-haspopup="true"
+                aria-expanded={showExportMenu}
+                aria-label={isExporting ? 'Exportando' : 'Exportar propostas (CSV, Excel ou PDF)'}
+                style={{ backgroundColor: '#10b981', marginRight: '0.5rem' }}
+                title="Exportar propostas"
+              >
+                {isExporting ? (
+                  <><Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> Exportando...</>
+                ) : (
+                  <><Download size={20} /> Exportar <ChevronDown size={16} /></>
+                )}
+              </CreateButton>
+              {showExportMenu && !isExporting && (
+                <ExportDropdownMenu>
+                  <ExportDropdownItem onClick={() => handleExport('csv')}>
+                    <Download size={18} /> CSV
+                  </ExportDropdownItem>
+                  <ExportDropdownItem onClick={() => handleExport('xlsx')}>
+                    <FileSpreadsheet size={18} /> Excel (.xls)
+                  </ExportDropdownItem>
+                  <ExportDropdownItem onClick={() => handleExport('pdf')}>
+                    <FileText size={18} /> PDF
+                  </ExportDropdownItem>
+                </ExportDropdownMenu>
+              )}
+            </ExportWrap>
           )}
           <CreateButton onClick={() => navigate('/proposals/create')}>
             <Plus size={20} />
@@ -901,35 +947,39 @@ export const Proposals: React.FC = () => {
             ))}
           </Select>
           <span>
-            <label>Data de criação: </label>
+            <label htmlFor="filter-created-from">Data de criação: </label>
             <input
+              id="filter-created-from"
               type="date"
               value={dateCreatedFrom}
               onChange={(e) => setDateCreatedFrom(e.target.value)}
-              title="De"
+              aria-label="Data de criação da proposta, início do período"
             />
-            <span style={{ margin: '0 0.25rem' }}>até</span>
+            <span style={{ margin: '0 0.25rem' }} aria-hidden="true">até</span>
             <input
+              id="filter-created-to"
               type="date"
               value={dateCreatedTo}
               onChange={(e) => setDateCreatedTo(e.target.value)}
-              title="Até"
+              aria-label="Data de criação da proposta, fim do período"
             />
           </span>
           <span>
-            <label>Data de fechamento: </label>
+            <label htmlFor="filter-closed-from">Data de fechamento: </label>
             <input
+              id="filter-closed-from"
               type="date"
               value={dateClosedFrom}
               onChange={(e) => setDateClosedFrom(e.target.value)}
-              title="De"
+              aria-label="Data de fechamento da proposta, início do período"
             />
-            <span style={{ margin: '0 0.25rem' }}>até</span>
+            <span style={{ margin: '0 0.25rem' }} aria-hidden="true">até</span>
             <input
+              id="filter-closed-to"
               type="date"
               value={dateClosedTo}
               onChange={(e) => setDateClosedTo(e.target.value)}
-              title="Até"
+              aria-label="Data de fechamento da proposta, fim do período"
             />
           </span>
         </FilterRow>

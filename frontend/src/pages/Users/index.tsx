@@ -45,6 +45,7 @@ export const Users: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
@@ -137,6 +138,14 @@ export const Users: React.FC = () => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
+  const applySearch = () => {
+    setSearchTerm(searchInputValue);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') applySearch();
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
@@ -183,12 +192,18 @@ export const Users: React.FC = () => {
         </Title>
         <Actions>
           <SearchContainer>
-            <Search size={20} />
+            <Search size={20} aria-hidden />
             <SearchInput
-              placeholder="Buscar usuários..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              id="users-search"
+              aria-label="Buscar usuários por nome ou email"
+              placeholder="Buscar usuários (Enter ou Buscar)"
+              value={searchInputValue}
+              onChange={(e) => setSearchInputValue(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
             />
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando usuários' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
+              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            </FilterButton>
           </SearchContainer>
           
           <FilterButton onClick={() => setShowFilters(!showFilters)}>

@@ -652,3 +652,57 @@ export const generateDashboardPdf = (data: DashboardPdfData): void => {
   const fileName = `dashboard-${data.month.toLowerCase()}-${data.year}.pdf`;
   doc.save(fileName);
 };
+
+/** Gera PDF com lista de propostas (tabela) para exportação */
+export const generateProposalsListPdf = (headers: string[], rows: string[][]): void => {
+  const doc = new jsPDF({ orientation: 'landscape' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const headerColor: [number, number, number] = [59, 130, 246];
+  const textColor: [number, number, number] = [31, 41, 55];
+  const borderColor: [number, number, number] = [229, 231, 235];
+  const colCount = headers.length;
+  const colWidth = (pageWidth - 2 * margin) / colCount;
+  const rowHeight = 7;
+  const fontSize = 7;
+  let y = margin;
+
+  const drawTableRow = (cells: string[], isHeader: boolean) => {
+    if (y + rowHeight > pageHeight - 20) {
+      doc.addPage('l');
+      y = margin;
+    }
+    let x = margin;
+    for (let i = 0; i < cells.length; i++) {
+      const w = i === cells.length - 1 ? pageWidth - margin - x : colWidth;
+      if (isHeader) {
+        doc.setFillColor(headerColor[0], headerColor[1], headerColor[2]);
+        doc.rect(x, y, w, rowHeight, 'F');
+        doc.setTextColor(255, 255, 255);
+      } else {
+        doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+        doc.rect(x, y, w, rowHeight, 'S');
+        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      }
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', isHeader ? 'bold' : 'normal');
+      const text = String(cells[i] ?? '').substring(0, 35);
+      doc.text(text, x + 2, y + rowHeight / 2 + 1.5);
+      x += w;
+    }
+    y += rowHeight;
+  };
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
+  doc.text('Exportação de Propostas - Sell.On', margin, y);
+  y += 12;
+
+  drawTableRow(headers, true);
+  rows.forEach((row) => drawTableRow(row, false));
+
+  const fileName = `propostas_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fileName);
+};
