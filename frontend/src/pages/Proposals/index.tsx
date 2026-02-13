@@ -77,6 +77,7 @@ export const Proposals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sellerFilter, setSellerFilter] = useState('');
   const [dateCreatedFrom, setDateCreatedFrom] = useState('');
@@ -309,8 +310,17 @@ export const Proposals: React.FC = () => {
     loadPriceList();
   }, [selectedDistributor]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputValue(e.target.value);
+  };
+
+  const applySearch = () => {
+    setSearchTerm(searchInputValue);
+    if (currentPage !== 1) setCurrentPage(1);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') applySearch();
   };
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -836,10 +846,18 @@ export const Proposals: React.FC = () => {
           <SearchContainer>
             <Search size={20} />
             <SearchInput 
-              placeholder="Pesquisar propostas..." 
-              value={searchTerm}
-              onChange={handleSearch}
+              placeholder="Pesquisar propostas (Enter ou Buscar)" 
+              value={searchInputValue}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleSearchKeyDown}
             />
+            <Button 
+              type="button" 
+              onClick={applySearch}
+              style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}
+            >
+              Buscar
+            </Button>
           </SearchContainer>
           <Select value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
             <option value="">Todos os status</option>
