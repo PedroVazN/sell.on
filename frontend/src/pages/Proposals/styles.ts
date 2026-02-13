@@ -84,6 +84,36 @@ export const CreateButton = styled.button`
   }
 `;
 
+export const FilterRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: 8px;
+
+  label {
+    font-size: 0.875rem;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    margin-right: 0.25rem;
+  }
+  input[type="date"] {
+    padding: 0.5rem;
+    border: 1px solid ${({ theme }) => theme.colors.border.primary};
+    border-radius: 6px;
+    background: ${({ theme }) => theme.colors.background.secondary};
+    color: ${({ theme }) => theme.colors.text.primary};
+    font-size: 0.875rem;
+  }
+  select {
+    padding: 0.5rem;
+    min-width: 180px;
+  }
+`;
+
 export const Content = styled.div`
   background: ${({ theme }) => theme.colors.background.card};
   border-radius: 12px;

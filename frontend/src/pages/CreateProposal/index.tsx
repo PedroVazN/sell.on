@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Sparkles, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 import { apiService, Product, Distributor, User as UserType, PriceOption } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
@@ -81,6 +82,7 @@ interface ProposalFormData {
 export const CreateProposal: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { success, error: showError, warning, info } = useToastContext();
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('created');
@@ -305,7 +307,7 @@ export const CreateProposal: React.FC = () => {
         
         // Validar se os dados essenciais estão presentes
         if (!clientEmail || !clientName) {
-          alert('Cliente encontrado, mas faltam dados essenciais (nome ou email). Por favor, preencha manualmente.');
+          warning('Dados incompletos', 'Cliente encontrado, mas faltam nome ou email. Preencha manualmente.');
         }
         
         setFormData(prev => ({
@@ -321,7 +323,7 @@ export const CreateProposal: React.FC = () => {
         }));
         
         if (clientEmail && clientName) {
-          alert('Cliente encontrado! Dados preenchidos automaticamente.');
+          info('Cliente encontrado', 'Dados preenchidos automaticamente.');
         }
       } else {
         console.log('ℹ️ Cliente não encontrado. Novo cliente será criado.');
@@ -552,40 +554,40 @@ export const CreateProposal: React.FC = () => {
       
       // Validar seller (obrigatório e deve ter _id válido)
       if (!formData.seller._id || !formData.seller.name || !user?._id) {
-        alert('Erro: dados do vendedor não estão carregados. Por favor, faça login novamente.');
+        showError('Erro', 'Dados do vendedor não carregados. Faça login novamente.');
         return;
       }
       
       // Validar dados obrigatórios do cliente
       if (!formData.client.cnpj || !formData.client.name || !formData.client.email || !formData.client.razaoSocial) {
-        alert('CNPJ, nome do contato, email e razão social são obrigatórios');
+        warning('Campos obrigatórios', 'CNPJ, nome do contato, email e razão social são obrigatórios.');
         return;
       }
       
       // Validar formato do email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.client.email)) {
-        alert('Email do cliente inválido');
+        warning('Email inválido', 'Informe um email válido para o cliente.');
         return;
       }
       
       if (!formData.distributor._id) {
-        alert('Distribuidor é obrigatório');
+        warning('Campo obrigatório', 'Selecione o distribuidor.');
         return;
       }
       
       if (formData.items.some(item => !item.product)) {
-        alert('Todos os produtos devem ser selecionados');
+        warning('Produtos', 'Todos os produtos devem ser selecionados.');
         return;
       }
       
       if (!formData.paymentCondition) {
-        alert('Condição de pagamento é obrigatória');
+        warning('Campo obrigatório', 'Condição de pagamento é obrigatória.');
         return;
       }
       
       if (!formData.validUntil) {
-        alert('Data de validade é obrigatória');
+        warning('Campo obrigatório', 'Data de validade é obrigatória.');
         return;
       }
 
@@ -628,7 +630,7 @@ export const CreateProposal: React.FC = () => {
           console.log('✅ Cliente criado com sucesso:', createResponse.data);
           existingClient = createResponse.data;
         } else {
-          alert('Erro ao criar cliente. Tente novamente.');
+          showError('Erro ao criar cliente', 'Tente novamente.');
           return;
         }
       } else {
@@ -695,13 +697,13 @@ export const CreateProposal: React.FC = () => {
       
       // Validar dados críticos antes de enviar
       if (!proposalData.seller._id || !isValidObjectId(proposalData.seller._id)) {
-        alert('Erro: ID do vendedor inválido. Por favor, faça login novamente.');
+        showError('Erro', 'ID do vendedor inválido. Faça login novamente.');
         setSaving(false);
         return;
       }
       
       if (!proposalData.distributor._id || !isValidObjectId(proposalData.distributor._id)) {
-        alert('Erro: ID do distribuidor inválido.');
+        showError('Erro', 'ID do distribuidor inválido.');
         setSaving(false);
         return;
       }
@@ -711,7 +713,7 @@ export const CreateProposal: React.FC = () => {
         !item.product._id || !isValidObjectId(item.product._id)
       );
       if (invalidProductIds.length > 0) {
-        alert(`Erro: IDs de produtos inválidos. Verifique os produtos selecionados.`);
+        showError('Erro', 'IDs de produtos inválidos. Verifique os produtos selecionados.');
         setSaving(false);
         return;
       }
@@ -730,7 +732,7 @@ export const CreateProposal: React.FC = () => {
           navigate('/proposals');
         }, 3000);
       } else {
-        alert('Erro ao criar proposta');
+        showError('Erro ao criar proposta', 'Tente novamente.');
       }
     } catch (error: any) {
       console.error('Erro ao salvar proposta:', error);
@@ -754,7 +756,7 @@ export const CreateProposal: React.FC = () => {
         }
       }
       
-      alert(errorMessage);
+      showError('Erro', errorMessage);
     } finally {
       setSaving(false);
     }
@@ -766,12 +768,12 @@ export const CreateProposal: React.FC = () => {
       
       // Validar se há dados suficientes para gerar PDF
       if (!formData.client.name || !formData.distributor._id) {
-        alert('Preencha os dados básicos antes de gerar o PDF');
+        warning('PDF', 'Preencha os dados básicos antes de gerar o PDF.');
         return;
       }
       
       if (formData.items.some(item => !item.product)) {
-        alert('Selecione todos os produtos antes de gerar o PDF');
+        warning('PDF', 'Selecione todos os produtos antes de gerar o PDF.');
         return;
       }
       
@@ -809,7 +811,7 @@ export const CreateProposal: React.FC = () => {
       
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      alert('Erro ao gerar PDF');
+      showError('Erro ao gerar PDF', 'Não foi possível gerar o arquivo.');
     } finally {
       setGeneratingPdf(false);
     }
@@ -846,7 +848,7 @@ export const CreateProposal: React.FC = () => {
       handleDistributorChange(distributors[0]._id);
     } else {
       console.log('Nenhum distribuidor disponível');
-      alert('Nenhum distribuidor encontrado! Verifique se há distribuidores cadastrados.');
+      warning('Sem distribuidores', 'Nenhum distribuidor encontrado. Cadastre distribuidores primeiro.');
       return;
     }
 
@@ -890,7 +892,7 @@ export const CreateProposal: React.FC = () => {
       observations: 'Proposta válida por 30 dias. Entrega em até 15 dias úteis após confirmação do pedido.'
     }));
 
-    alert('Dados de teste preenchidos com sucesso!');
+    success('Dados de teste', 'Formulário preenchido com sucesso.');
   };
 
   if (loading) {

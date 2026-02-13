@@ -3,7 +3,8 @@ import { Target, Plus, Search, Filter, Edit, Trash2, Loader2, TrendingUp, Calend
 import { apiService, Goal } from '../../services/api';
 import { GoalModal } from '../../components/GoalModal';
 import { ProgressModal } from '../../components/ProgressModal';
-import { useToast } from '../../hooks/useToast';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { 
   Container, 
   Header, 
@@ -44,7 +45,8 @@ import {
 } from './styles';
 
 export const Goals: React.FC = () => {
-  const { addToast } = useToast();
+  const { success, error: showError, info } = useToastContext();
+  const { confirm } = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,43 +118,45 @@ export const Goals: React.FC = () => {
   };
 
   const handleDeleteGoal = async (goal: Goal) => {
-    if (!window.confirm(`Tem certeza que deseja excluir a meta "${goal.title}"?`)) {
-      return;
-    }
-
+    const ok = await confirm({
+      title: 'Excluir meta',
+      message: `Tem certeza que deseja excluir a meta "${goal.title}"?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       const response = await apiService.deleteGoal(goal._id);
       if (response.success) {
         await loadGoals();
         await loadDashboard();
+        success('Meta excluída', 'A meta foi removida com sucesso.');
       } else {
-        alert('Erro ao excluir meta');
+        showError('Erro ao excluir', 'Não foi possível excluir a meta.');
       }
     } catch (err) {
       console.error('Erro ao excluir meta:', err);
-      alert('Erro ao excluir meta');
+      showError('Erro ao excluir', 'Não foi possível excluir a meta.');
     }
   };
 
   const handleRecalculateGoals = async () => {
-    if (!window.confirm('Deseja recalcular TODAS as metas baseado nas vendas reais? Isso corrigirá valores duplicados.')) {
-      return;
-    }
-
+    const ok = await confirm({
+      title: 'Recalcular metas',
+      message: 'Deseja recalcular TODAS as metas com base nas vendas reais? Isso pode corrigir valores duplicados.',
+      confirmLabel: 'Recalcular',
+    });
+    if (!ok) return;
     try {
       setRecalculating(true);
-      addToast('info', 'Recalculando Metas', 'Aguarde, estamos recalculando todas as metas...');
-      
+      info('Recalculando metas', 'Aguarde...');
       const response = await apiService.recalculateAllGoals();
-      
       if (response.success && response.data) {
         const results = response.data;
         const totalGoals = results.length;
         const totalCorrected = results.filter(r => r.oldValue !== r.newValue).length;
-        
-        addToast(
-          'success',
-          'Metas Recalculadas!',
+        success(
+          'Metas recalculadas',
           `${totalGoals} metas recalculadas. ${totalCorrected} correções aplicadas.`,
           6000
         );
@@ -169,11 +173,11 @@ export const Goals: React.FC = () => {
         await loadGoals();
         await loadDashboard();
       } else {
-        addToast('error', 'Erro', 'Não foi possível recalcular as metas');
+        showError('Erro', 'Não foi possível recalcular as metas');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao recalcular metas:', err);
-      addToast('error', 'Erro', err.message || 'Erro ao recalcular metas');
+      showError('Erro', err instanceof Error ? err.message : 'Erro ao recalcular metas');
     } finally {
       setRecalculating(false);
     }
@@ -186,11 +190,11 @@ export const Goals: React.FC = () => {
         await loadGoals();
         await loadDashboard();
       } else {
-        alert('Erro ao atualizar progresso');
+        showError('Erro', 'Não foi possível atualizar o progresso.');
       }
     } catch (err) {
       console.error('Erro ao atualizar progresso:', err);
-      alert('Erro ao atualizar progresso');
+      showError('Erro', 'Não foi possível atualizar o progresso.');
     }
   };
 
@@ -218,11 +222,11 @@ export const Goals: React.FC = () => {
         await loadGoals();
         await loadDashboard();
       } else {
-        alert('Erro ao atualizar status');
+        showError('Erro', 'Não foi possível atualizar o status.');
       }
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
-      alert('Erro ao atualizar status');
+      showError('Erro', 'Não foi possível atualizar o status.');
     }
   };
 

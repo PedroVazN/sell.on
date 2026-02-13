@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiService, Product, Distributor, User as UserType, Proposal, PriceOption, PriceListItem as PriceListItemType } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { 
@@ -79,6 +80,7 @@ interface ProposalFormData {
 export const EditProposal: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { success, error: showError, warning } = useToastContext();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -460,37 +462,31 @@ export const EditProposal: React.FC = () => {
       
       // Validar dados obrigatórios
       if (!formData.client.name || !formData.client.email) {
-        alert('Nome e email do cliente são obrigatórios');
+        warning('Dados obrigatórios', 'Nome e email do cliente são obrigatórios.');
         return;
       }
-      
       if (!formData.seller._id) {
-        alert('Vendedor é obrigatório');
+        warning('Dados obrigatórios', 'Vendedor é obrigatório.');
         return;
       }
-      
       if (!formData.distributor._id) {
-        alert('Distribuidor é obrigatório');
+        warning('Dados obrigatórios', 'Distribuidor é obrigatório.');
         return;
       }
-      
       if (formData.items.some(item => !item.product)) {
-        alert('Todos os produtos devem ser selecionados');
+        warning('Dados obrigatórios', 'Todos os produtos devem ser selecionados.');
         return;
       }
-      
       if (!formData.paymentCondition) {
-        alert('Condição de pagamento é obrigatória');
+        warning('Dados obrigatórios', 'Condição de pagamento é obrigatória.');
         return;
       }
-      
       if (!formData.validUntil) {
-        alert('Data de validade é obrigatória');
+        warning('Dados obrigatórios', 'Data de validade é obrigatória.');
         return;
       }
-
       if (!id) {
-        alert('ID da proposta não encontrado');
+        showError('Erro', 'ID da proposta não encontrado.');
         return;
       }
 
@@ -533,14 +529,14 @@ export const EditProposal: React.FC = () => {
           }
         }
         
-        alert('Proposta atualizada com sucesso!');
+        success('Proposta atualizada', 'As alterações foram salvas com sucesso.');
         navigate('/proposals');
       } else {
-        alert('Erro ao atualizar proposta');
+        showError('Erro', 'Não foi possível atualizar a proposta.');
       }
-    } catch (error) {
-      console.error('Erro ao salvar proposta:', error);
-      alert('Erro ao salvar proposta');
+    } catch (err) {
+      console.error('Erro ao salvar proposta:', err);
+      showError('Erro ao salvar', 'Não foi possível salvar a proposta.');
     } finally {
       setSaving(false);
     }
@@ -551,7 +547,7 @@ export const EditProposal: React.FC = () => {
       setGeneratingPdf(true);
       
       if (!proposal) {
-        alert('Proposta não encontrada');
+        showError('Erro', 'Proposta não encontrada.');
         return;
       }
       
@@ -584,9 +580,9 @@ export const EditProposal: React.FC = () => {
       // Gerar PDF
       generateProposalPdf(pdfData);
       
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      alert('Erro ao gerar PDF');
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+      showError('Erro ao gerar PDF', 'Não foi possível gerar o arquivo.');
     } finally {
       setGeneratingPdf(false);
     }

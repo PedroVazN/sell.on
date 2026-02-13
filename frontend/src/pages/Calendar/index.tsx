@@ -18,6 +18,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { apiService, Event } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import EventModal from '../../components/EventModal';
 import { 
   Container, 
@@ -61,6 +63,8 @@ type PriorityFilter = 'all' | Event['priority'];
 type StatusFilter = 'all' | Event['status'];
 
 export const Calendar: React.FC = () => {
+  const { success, error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [events, setEvents] = useState<Event[]>([]);
@@ -163,14 +167,20 @@ export const Calendar: React.FC = () => {
   };
 
   const handleDeleteEvent = async (event: Event) => {
-    if (window.confirm(`Tem certeza que deseja excluir o evento "${event.title}"?`)) {
-      try {
-        await apiService.deleteEvent(event._id);
-        loadEvents();
-      } catch (err) {
-        alert('Erro ao excluir evento');
-        console.error('Erro ao excluir evento:', err);
-      }
+    const ok = await confirm({
+      title: 'Excluir evento',
+      message: `Tem certeza que deseja excluir o evento "${event.title}"?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteEvent(event._id);
+      loadEvents();
+      success('Evento excluído', 'O evento foi removido com sucesso.');
+    } catch (err) {
+      showError('Erro ao excluir evento', 'Tente novamente.');
+      console.error('Erro ao excluir evento:', err);
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Save, Package, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { 
   Container, 
   Card,
@@ -43,6 +44,7 @@ const categories = [
 
 export const CreateProduct: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: showError, warning } = useToastContext();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -59,33 +61,24 @@ export const CreateProduct: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.category || !formData.description || formData.description.trim().length < 5) {
-      alert('Por favor, preencha todos os campos obrigatórios (nome, categoria e descrição com pelo menos 5 caracteres)');
+      warning('Campos obrigatórios', 'Preencha nome, categoria e descrição (mín. 5 caracteres).');
       return;
     }
-
     try {
       setLoading(true);
-      
-      // Enviar apenas os campos essenciais
       const productData = {
         name: formData.name,
         category: formData.category,
         description: formData.description,
-        stock: {
-          current: 0,
-          min: 0,
-          max: 0
-        },
+        stock: { current: 0, min: 0, max: 0 },
         isActive: true
       };
-      
-      console.log('Dados do formulário:', productData);
       await apiService.createProduct(productData);
-      alert('Produto criado com sucesso!');
+      success('Produto criado', 'O produto foi cadastrado com sucesso.');
       navigate('/products');
-    } catch (error) {
-      console.error('Erro ao criar produto:', error);
-      alert('Erro ao criar produto. Tente novamente.');
+    } catch (err) {
+      console.error('Erro ao criar produto:', err);
+      showError('Erro ao criar produto', 'Tente novamente.');
     } finally {
       setLoading(false);
     }

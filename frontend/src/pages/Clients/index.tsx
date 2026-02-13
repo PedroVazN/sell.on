@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { UserCheck, Plus, Search, Filter, Edit, Trash2, Loader2 } from 'lucide-react';
 import { apiService, Client } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { ClientModal } from '../../components/ClientModal';
 import { 
   Container, 
@@ -34,6 +36,8 @@ import {
 export const Clients: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { success, error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const isSeller = user?.role === 'vendedor';
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,15 +91,21 @@ export const Clients: React.FC = () => {
   };
 
   const handleDeleteClient = async (client: Client) => {
-    if (isSeller) return; // vendedor não deleta
-    if (window.confirm(`Tem certeza que deseja excluir o cliente ${client.razaoSocial}?`)) {
-      try {
-        await apiService.deleteClient(client._id);
-        loadClients();
-      } catch (err) {
-        alert('Erro ao excluir cliente');
-        console.error('Erro ao excluir cliente:', err);
-      }
+    if (isSeller) return;
+    const ok = await confirm({
+      title: 'Excluir cliente',
+      message: `Tem certeza que deseja excluir o cliente ${client.razaoSocial}?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteClient(client._id);
+      loadClients();
+      success('Cliente excluído', 'O cliente foi removido com sucesso.');
+    } catch (err) {
+      showError('Erro ao excluir cliente', 'Tente novamente.');
+      console.error('Erro ao excluir cliente:', err);
     }
   };
 

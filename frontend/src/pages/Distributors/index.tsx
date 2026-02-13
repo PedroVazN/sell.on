@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, Plus, Search, Filter, Edit, Trash2, Loader2 } from 'lucide-react';
 import { apiService, Distributor } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { DistributorModal } from '../../components/DistributorModal';
 import { 
   Container, 
@@ -27,6 +29,8 @@ import {
 
 export const Distributors: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,14 +61,20 @@ export const Distributors: React.FC = () => {
   };
 
   const handleDeleteDistributor = async (distributor: Distributor) => {
-    if (window.confirm(`Tem certeza que deseja excluir o distribuidor ${distributor.apelido || 'N/A'}?`)) {
-      try {
-        await apiService.deleteDistributor(distributor._id);
-        loadDistributors();
-      } catch (err) {
-        alert('Erro ao excluir distribuidor');
-        console.error('Erro ao excluir distribuidor:', err);
-      }
+    const ok = await confirm({
+      title: 'Excluir distribuidor',
+      message: `Tem certeza que deseja excluir o distribuidor ${distributor.apelido || 'N/A'}?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteDistributor(distributor._id);
+      loadDistributors();
+      success('Distribuidor excluído', 'O distribuidor foi removido com sucesso.');
+    } catch (err) {
+      showError('Erro ao excluir distribuidor', 'Tente novamente.');
+      console.error('Erro ao excluir distribuidor:', err);
     }
   };
 

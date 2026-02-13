@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Plus, Search, Filter, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Product } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { 
   Container, 
   Header, 
@@ -26,6 +28,8 @@ import {
 
 export const Products: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,14 +62,20 @@ export const Products: React.FC = () => {
   };
 
   const handleDeleteProduct = async (product: Product) => {
-    if (window.confirm(`Tem certeza que deseja excluir o produto ${product.name}?`)) {
-      try {
-        await apiService.deleteProduct(product._id);
-        loadProducts();
-      } catch (err) {
-        alert('Erro ao excluir produto');
-        console.error('Erro ao excluir produto:', err);
-      }
+    const ok = await confirm({
+      title: 'Excluir produto',
+      message: `Tem certeza que deseja excluir o produto ${product.name}?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteProduct(product._id);
+      loadProducts();
+      success('Produto excluído', 'O produto foi removido com sucesso.');
+    } catch (err) {
+      showError('Erro ao excluir produto', 'Tente novamente.');
+      console.error('Erro ao excluir produto:', err);
     }
   };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService, Client, User } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 import { X, Loader2 } from 'lucide-react';
 import styled from 'styled-components';
 import { theme } from '../../styles/theme';
@@ -267,6 +268,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
   client
 }) => {
   const { user } = useAuth();
+  const { error: showError } = useToastContext();
   const isAdmin = user?.role === 'admin';
   const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
@@ -463,9 +465,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({
       
       onSave(response.data);
       onClose();
-    } catch (error) {
-      console.error('Erro ao salvar cliente:', error);
-      alert('Erro ao salvar cliente. Verifique o console para mais detalhes.');
+    } catch (err) {
+      console.error('Erro ao salvar cliente:', err);
+      showError('Erro ao salvar cliente', 'Verifique os dados e tente novamente.');
     } finally {
       setIsLoading(false);
     }

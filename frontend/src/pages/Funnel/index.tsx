@@ -43,6 +43,7 @@ import {
   CardDragHandle,
 } from './styles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { apiService } from '../../services/api';
 import type { Opportunity } from '../../types/funnel';
 import type { Client } from '../../services/api';
@@ -79,6 +80,7 @@ function getCreatedAtLabel(dateString: string | undefined): string {
 
 function FunnelPageContent() {
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const isAdmin = user?.role === 'admin';
   const {
     stages,
@@ -300,7 +302,13 @@ function FunnelPageContent() {
 
   const handleDeleteDeal = useCallback(
     async (opp: Opportunity) => {
-      if (!window.confirm(`Excluir a oportunidade "${opp.title}"? Esta ação não pode ser desfeita.`)) return;
+      const ok = await confirm({
+        title: 'Excluir oportunidade',
+        message: `Excluir a oportunidade "${opp.title}"? Esta ação não pode ser desfeita.`,
+        confirmLabel: 'Excluir',
+        variant: 'danger',
+      });
+      if (!ok) return;
       try {
         await deleteDeal(opp._id);
         if (selectedDeal?._id === opp._id) setSelectedDeal(null);
@@ -308,7 +316,7 @@ function FunnelPageContent() {
         // erro já tratado no contexto / API
       }
     },
-    [deleteDeal, selectedDeal?._id]
+    [confirm, deleteDeal, selectedDeal?._id]
   );
 
   const handleSyncProposals = useCallback(async () => {
@@ -907,12 +915,7 @@ function FunnelPageContent() {
               <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--color-border, #334155)' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm(`Excluir a oportunidade "${detailFull.title}"? Esta ação não pode ser desfeita.`)) {
-                      handleDeleteDeal(detailFull);
-                      setSelectedDeal(null);
-                    }
-                  }}
+                  onClick={() => handleDeleteDeal(detailFull)}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',

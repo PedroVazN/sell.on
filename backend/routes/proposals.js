@@ -30,22 +30,46 @@ router.get('/', async (req, res) => {
       });
     }
 
-    const { page = 1, limit = 10, status, search } = req.query;
+    const { page = 1, limit = 10, status, search, seller, dateFrom, dateTo, closedDateFrom, closedDateTo } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = {}; // Buscar todas as propostas
-    
-    if (status) {
-      query.status = status;
-    }
-    
-    if (search) {
+    let query = {};
+    if (status) query.status = status;
+    if (seller) {
       query.$or = [
+        { 'seller._id': seller },
+        { createdBy: seller }
+      ];
+    }
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom + 'T00:00:00.000Z');
+      if (dateTo) query.createdAt.$lte = new Date(dateTo + 'T23:59:59.999Z');
+    }
+    if (closedDateFrom || closedDateTo) {
+      query.closedAt = { $exists: true, $ne: null };
+      if (closedDateFrom) query.closedAt.$gte = new Date(closedDateFrom + 'T00:00:00.000Z');
+      if (closedDateTo) query.closedAt.$lte = new Date(closedDateTo + 'T23:59:59.999Z');
+    }
+    if (search) {
+      query.$or = query.$or || [];
+      const searchOr = [
         { proposalNumber: { $regex: search, $options: 'i' } },
         { 'client.name': { $regex: search, $options: 'i' } },
         { 'client.email': { $regex: search, $options: 'i' } },
         { 'client.company': { $regex: search, $options: 'i' } }
       ];
+      if (query.$or.length) query.$and = [{ $or: query.$or }, { $or: searchOr }];
+      else query.$or = searchOr;
+    }
+    if (query.$and) {
+      const andCopy = query.$and;
+      delete query.$or;
+      query.$and = andCopy;
+    } else if (seller && query.$or) {
+      const sellerOr = query.$or;
+      delete query.$or;
+      query.$or = sellerOr;
     }
 
     const proposals = await Proposal.find(query)

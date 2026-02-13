@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 import { apiService, Goal } from '../../services/api';
 import { formatCurrency, formatInteger } from '../../utils/formatters';
 import { 
@@ -183,6 +184,7 @@ const LoadingSkeleton: React.FC = () => (
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { error: showError } = useToastContext();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -653,9 +655,9 @@ export const Dashboard: React.FC = () => {
       };
       
       generateDashboardPdf(pdfData);
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      alert('Erro ao gerar PDF do dashboard');
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+      showError('Erro ao gerar PDF', 'Não foi possível gerar o PDF do dashboard.');
     } finally {
       setIsGeneratingPdf(false);
     }

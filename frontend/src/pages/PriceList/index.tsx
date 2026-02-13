@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Plus, Search, Edit, Trash2, Loader2, Download, Save, X } from 'lucide-react';
 import { apiService, PriceList as PriceListInterface, Distributor, Product } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { 
   Container, 
   Header, 
@@ -58,6 +60,8 @@ interface NewPriceList {
 
 export const PriceList: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [priceLists, setPriceLists] = useState<PriceListInterface[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -128,26 +132,27 @@ export const PriceList: React.FC = () => {
   };
 
   const handleDeletePriceList = async (priceList: PriceListInterface) => {
-    if (window.confirm(`Tem certeza que deseja excluir esta lista de preços do distribuidor "${priceList.distributor?.apelido || priceList.distributor?.razaoSocial}"?`)) {
-      try {
-        setLoading(true);
-        
-        // Deletar a lista de preços via API
-        const response = await apiService.deletePriceList(priceList._id);
-        
-        if (response.success) {
-          // Recarregar os dados para refletir a exclusão
-          await loadData();
-          alert('Lista de preços excluída com sucesso!');
-        } else {
-          throw new Error('Falha ao excluir lista de preços');
-        }
-      } catch (error) {
-        console.error('Erro ao excluir lista de preços:', error);
-        alert('Erro ao excluir lista de preços. Tente novamente.');
-      } finally {
-        setLoading(false);
+    const ok = await confirm({
+      title: 'Excluir lista de preços',
+      message: `Tem certeza que deseja excluir esta lista do distribuidor "${priceList.distributor?.apelido || priceList.distributor?.razaoSocial}"?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      setLoading(true);
+      const response = await apiService.deletePriceList(priceList._id);
+      if (response.success) {
+        await loadData();
+        success('Lista excluída', 'Lista de preços excluída com sucesso.');
+      } else {
+        throw new Error('Falha ao excluir lista de preços');
       }
+    } catch (err) {
+      console.error('Erro ao excluir lista de preços:', err);
+      showError('Erro ao excluir', 'Não foi possível excluir a lista. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -231,10 +236,10 @@ export const PriceList: React.FC = () => {
       setShowEditModal(false);
       setEditingPriceList(null);
       setOriginalPriceList(null);
-      alert('Lista de preços atualizada com sucesso!');
-    } catch (error) {
-      console.error('Erro ao salvar lista de preços:', error);
-      alert('Erro ao salvar lista de preços. Tente novamente.');
+      success('Lista atualizada', 'Lista de preços atualizada com sucesso.');
+    } catch (err) {
+      console.error('Erro ao salvar lista de preços:', err);
+      showError('Erro ao salvar', 'Não foi possível salvar. Tente novamente.');
     } finally {
       setSaving(false);
     }

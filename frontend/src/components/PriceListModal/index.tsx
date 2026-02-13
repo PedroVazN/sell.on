@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService, PriceListItem, Distributor, Product } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { X, Trash2, Loader2 } from 'lucide-react';
 import styled from 'styled-components';
 import { theme } from '../../styles/theme';
@@ -330,6 +331,7 @@ export const PriceListModal: React.FC<PriceListModalProps> = ({
   products,
   priceItem
 }) => {
+  const { error: showError } = useToastContext();
   const [formData, setFormData] = useState({
     distributor: '',
     validFrom: '',
@@ -480,9 +482,9 @@ export const PriceListModal: React.FC<PriceListModalProps> = ({
       }
       
       onClose();
-    } catch (error) {
-      console.error('Erro ao salvar preços:', error);
-      alert('Erro ao salvar preços. Verifique o console para mais detalhes.');
+    } catch (err) {
+      console.error('Erro ao salvar preços:', err);
+      showError('Erro ao salvar preços', 'Verifique os dados e tente novamente.');
     } finally {
       setIsLoading(false);
     }

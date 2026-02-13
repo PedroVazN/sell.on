@@ -5,6 +5,7 @@ import { apiService, Proposal, Product, Distributor, User as UserType } from '..
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
 import { 
   Container, 
@@ -15,6 +16,7 @@ import {
   SearchInput, 
   CreateButton, 
   Content,
+  FilterRow,
   TableWrapper,
   Table,
   TableHeader,
@@ -66,6 +68,7 @@ export const Proposals: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { success, error: showError, warning } = useToastContext();
+  const { confirm } = useConfirm();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -75,6 +78,11 @@ export const Proposals: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [sellerFilter, setSellerFilter] = useState('');
+  const [dateCreatedFrom, setDateCreatedFrom] = useState('');
+  const [dateCreatedTo, setDateCreatedTo] = useState('');
+  const [dateClosedFrom, setDateClosedFrom] = useState('');
+  const [dateClosedTo, setDateClosedTo] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [deletingItems, setDeletingItems] = useState<string[]>([]);
@@ -169,9 +177,17 @@ export const Proposals: React.FC = () => {
         console.log('👤 Carregando propostas do vendedor:', user._id);
         proposalsRes = await apiService.getVendedorProposals(user._id, page, itemsPerPage);
       } else {
-        // Se for admin, carregar todas as propostas
-        console.log('👑 Carregando todas as propostas (admin)');
-        proposalsRes = await apiService.getProposals(page, itemsPerPage, statusFilter || undefined, searchTerm || undefined);
+        proposalsRes = await apiService.getProposals(
+          page,
+          itemsPerPage,
+          statusFilter || undefined,
+          searchTerm || undefined,
+          sellerFilter || undefined,
+          dateCreatedFrom || undefined,
+          dateCreatedTo || undefined,
+          dateClosedFrom || undefined,
+          dateClosedTo || undefined
+        );
       }
 
       // Removido cálculo de Score IA na listagem para otimização
@@ -205,7 +221,7 @@ export const Proposals: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, statusFilter, user]);
+  }, [searchTerm, statusFilter, sellerFilter, dateCreatedFrom, dateCreatedTo, dateClosedFrom, dateClosedTo, user]);
 
   // Carregar dados quando a página mudar
   useEffect(() => {
@@ -220,7 +236,7 @@ export const Proposals: React.FC = () => {
       loadData(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, sellerFilter, dateCreatedFrom, dateCreatedTo, dateClosedFrom, dateClosedTo]);
 
   // Função para mudar de página
   const handlePageChange = (page: number) => {
@@ -459,17 +475,22 @@ export const Proposals: React.FC = () => {
   };
 
   const handleDeleteProposal = async (proposal: Proposal) => {
-    if (window.confirm(`Tem certeza que deseza excluir a proposta ${proposal.proposalNumber}?`)) {
-      try {
-        setDeletingItems(prev => [...prev, proposal._id]);
-        await apiService.deleteProposal(proposal._id);
-        setDeletingItems(prev => prev.filter(id => id !== proposal._id));
-        await loadData(currentPage);
-        success('Sucesso!', 'Proposta excluída com sucesso!');
-      } catch (err) {
-        console.error('Erro ao deletar proposta:', err);
-        showError('Erro!', `Erro ao deletar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-      }
+    const ok = await confirm({
+      title: 'Excluir proposta',
+      message: `Tem certeza que deseja excluir a proposta ${proposal.proposalNumber}?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      setDeletingItems(prev => [...prev, proposal._id]);
+      await apiService.deleteProposal(proposal._id);
+      setDeletingItems(prev => prev.filter(id => id !== proposal._id));
+      await loadData(currentPage);
+      success('Proposta excluída', 'A proposta foi removida com sucesso.');
+    } catch (err) {
+      console.error('Erro ao deletar proposta:', err);
+      showError('Erro ao excluir', err instanceof Error ? err.message : 'Não foi possível excluir a proposta.');
     }
   };
 
@@ -846,7 +867,56 @@ export const Proposals: React.FC = () => {
           </CreateButton>
         </Actions>
       </Header>
-      
+
+      {user?.role === 'admin' && (
+        <FilterRow>
+          <label htmlFor="filter-seller">Vendedor</label>
+          <Select
+            id="filter-seller"
+            value={sellerFilter}
+            onChange={(e) => setSellerFilter(e.target.value)}
+            style={{ minWidth: '180px' }}
+          >
+            <option value="">Todos os vendedores</option>
+            {sellers.map((s) => (
+              <option key={s._id} value={s._id}>{s.name}</option>
+            ))}
+          </Select>
+          <span>
+            <label>Data de criação: </label>
+            <input
+              type="date"
+              value={dateCreatedFrom}
+              onChange={(e) => setDateCreatedFrom(e.target.value)}
+              title="De"
+            />
+            <span style={{ margin: '0 0.25rem' }}>até</span>
+            <input
+              type="date"
+              value={dateCreatedTo}
+              onChange={(e) => setDateCreatedTo(e.target.value)}
+              title="Até"
+            />
+          </span>
+          <span>
+            <label>Data de fechamento: </label>
+            <input
+              type="date"
+              value={dateClosedFrom}
+              onChange={(e) => setDateClosedFrom(e.target.value)}
+              title="De"
+            />
+            <span style={{ margin: '0 0.25rem' }}>até</span>
+            <input
+              type="date"
+              value={dateClosedTo}
+              onChange={(e) => setDateClosedTo(e.target.value)}
+              title="Até"
+            />
+          </span>
+        </FilterRow>
+      )}
+
       <Content>
         {filteredProposals.length === 0 ? (
           <EmptyState>

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 // App principal do sistema
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 import { ToastContainer } from './components/ToastContainer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
@@ -41,6 +42,7 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
+        <ConfirmProvider>
         <Routes>
         <Route 
           path="/login" 
@@ -87,6 +89,7 @@ function App() {
         </Route>
         </Routes>
         <ToastContainer />
+        </ConfirmProvider>
       </ToastProvider>
     </AuthProvider>
   );

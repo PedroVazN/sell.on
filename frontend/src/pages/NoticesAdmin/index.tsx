@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { apiService, Notice } from '../../services/api';
 import { 
   Plus, 
@@ -19,6 +20,7 @@ import * as S from './styles';
 const NoticesAdmin: React.FC = () => {
   const { user } = useAuth();
   const { success, error, warning } = useToastContext();
+  const { confirm } = useConfirm();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -100,15 +102,20 @@ const NoticesAdmin: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja deletar este aviso?')) {
-      try {
-        await apiService.deleteNotice(id);
-        success('Sucesso!', 'Aviso deletado com sucesso!');
-        loadNotices();
-      } catch (err) {
-        console.error('Erro ao deletar aviso:', err);
-        error('Erro!', 'Erro ao deletar aviso');
-      }
+    const ok = await confirm({
+      title: 'Excluir aviso',
+      message: 'Tem certeza que deseja excluir este aviso?',
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteNotice(id);
+      success('Aviso excluído', 'O aviso foi removido com sucesso.');
+      loadNotices();
+    } catch (err) {
+      console.error('Erro ao deletar aviso:', err);
+      error('Erro', 'Não foi possível excluir o aviso.');
     }
   };
 

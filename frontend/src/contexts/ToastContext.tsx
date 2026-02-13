@@ -1,7 +1,17 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useToast } from '../hooks/useToast';
 
+export interface ToastData {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  duration?: number;
+}
+
 interface ToastContextType {
+  toasts: ToastData[];
+  removeToast: (id: string) => void;
   success: (title: string, message: string, duration?: number) => void;
   error: (title: string, message: string, duration?: number) => void;
   warning: (title: string, message: string, duration?: number) => void;
@@ -23,10 +33,10 @@ interface ToastProviderProps {
 }
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
-  const { success, error, warning, info } = useToast();
+  const { toasts, removeToast, success, error, warning, info } = useToast();
 
   return (
-    <ToastContext.Provider value={{ success, error, warning, info }}>
+    <ToastContext.Provider value={{ toasts, removeToast, success, error, warning, info }}>
       {children}
     </ToastContext.Provider>
   );

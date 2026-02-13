@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Users as UsersIcon, Plus, Search, Filter, Edit, Trash2, Loader2, UserCheck, UserX, Shield, User } from 'lucide-react';
 import { apiService, User as UserType } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { UserModal } from '../../components/UserModal';
 import { 
   Container, 
@@ -37,6 +39,8 @@ import {
 export const Users: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { success, error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,21 +106,25 @@ export const Users: React.FC = () => {
   };
 
   const handleDeleteUser = async (user: UserType) => {
-    if (!window.confirm(`Tem certeza que deseja deletar o usuário ${user.name}?`)) {
-      return;
-    }
-
+    const ok = await confirm({
+      title: 'Excluir usuário',
+      message: `Tem certeza que deseja excluir o usuário ${user.name}?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       const response = await apiService.deleteUser(user._id);
       if (response.success) {
         await loadUsers();
         await loadStats();
+        success('Usuário excluído', 'O usuário foi removido com sucesso.');
       } else {
-        alert('Erro ao deletar usuário');
+        showError('Erro ao excluir', 'Não foi possível excluir o usuário.');
       }
     } catch (err) {
       console.error('Erro ao deletar usuário:', err);
-      alert('Erro ao deletar usuário');
+      showError('Erro ao excluir', 'Não foi possível excluir o usuário.');
     }
   };
 

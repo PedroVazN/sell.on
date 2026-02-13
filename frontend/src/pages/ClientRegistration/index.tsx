@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserCheck, Loader2, CheckCircle } from 'lucide-react';
 import { apiService, Client, User } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { 
   Container, 
   Header, 
@@ -25,6 +26,7 @@ import {
 
 export const ClientRegistration: React.FC = () => {
   const navigate = useNavigate();
+  const { error: showError } = useToastContext();
   const [formData, setFormData] = useState({
     cnpj: '',
     razaoSocial: '',
@@ -155,9 +157,9 @@ export const ClientRegistration: React.FC = () => {
       setTimeout(() => {
         navigate('/clients');
       }, 2000);
-    } catch (error) {
-      console.error('Erro ao salvar cliente:', error);
-      alert('Erro ao salvar cliente. Verifique o console para mais detalhes.');
+    } catch (err) {
+      console.error('Erro ao salvar cliente:', err);
+      showError('Erro ao salvar cliente', 'Verifique os dados e tente novamente.');
     } finally {
       setIsLoading(false);
     }

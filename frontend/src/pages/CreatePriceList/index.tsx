@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Save, X } from 'lucide-react';
 import { apiService, Distributor, Product } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { 
   Container, 
   Header, 
@@ -44,6 +45,7 @@ interface PriceListProduct {
 
 export const CreatePriceList: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: showError, warning } = useToastContext();
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,9 +176,9 @@ export const CreatePriceList: React.FC = () => {
       }));
       
       setSelectedProducts(allProductsInactive);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      alert('Erro ao carregar dados. Tente novamente.');
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      showError('Erro ao carregar', 'Não foi possível carregar os dados. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -186,13 +188,12 @@ export const CreatePriceList: React.FC = () => {
     const activeProducts = selectedProducts.filter(p => p.isActive);
     
     if (!selectedDistributor || activeProducts.length === 0) {
-      alert('Selecione um distribuidor e ative pelo menos um produto');
+      warning('Dados incompletos', 'Selecione um distribuidor e ative pelo menos um produto.');
       return;
     }
-
     const distributor = distributors.find(d => d._id === selectedDistributor);
     if (!distributor) {
-      alert('Distribuidor não encontrado');
+      showError('Erro', 'Distribuidor não encontrado.');
       return;
     }
 
@@ -212,12 +213,11 @@ export const CreatePriceList: React.FC = () => {
       };
 
       await apiService.createPriceList(priceListData);
-      
-      alert('Lista de preços criada com sucesso!');
+      success('Lista criada', 'Lista de preços criada com sucesso.');
       navigate('/price-list');
-    } catch (error) {
-      console.error('Erro ao criar lista de preços:', error);
-      alert('Erro ao criar lista de preços. Tente novamente.');
+    } catch (err) {
+      console.error('Erro ao criar lista de preços:', err);
+      showError('Erro ao criar lista', 'Tente novamente.');
     } finally {
       setSaving(false);
     }

@@ -778,11 +778,25 @@ class ApiService {
   }
 
   // Propostas
-  async getProposals(page = 1, limit = 10, status?: string, search?: string): Promise<ApiResponse<Proposal[]>> {
+  async getProposals(
+    page = 1,
+    limit = 10,
+    status?: string,
+    search?: string,
+    seller?: string,
+    dateFrom?: string,
+    dateTo?: string,
+    closedDateFrom?: string,
+    closedDateTo?: string
+  ): Promise<ApiResponse<Proposal[]>> {
     let url = `/proposals?page=${page}&limit=${limit}`;
     if (status) url += `&status=${status}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
-    
+    if (seller) url += `&seller=${encodeURIComponent(seller)}`;
+    if (dateFrom) url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+    if (dateTo) url += `&dateTo=${encodeURIComponent(dateTo)}`;
+    if (closedDateFrom) url += `&closedDateFrom=${encodeURIComponent(closedDateFrom)}`;
+    if (closedDateTo) url += `&closedDateTo=${encodeURIComponent(closedDateTo)}`;
     return this.request<Proposal[]>(url);
   }
 

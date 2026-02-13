@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Loader2, CheckCircle } from 'lucide-react';
 import { apiService, Distributor } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { 
   Container, 
   Header, 
@@ -25,6 +26,7 @@ import {
 
 export const DistributorRegistration: React.FC = () => {
   const navigate = useNavigate();
+  const { error: showError } = useToastContext();
   const [formData, setFormData] = useState({
     apelido: '',
     razaoSocial: '',
@@ -206,9 +208,9 @@ export const DistributorRegistration: React.FC = () => {
       setTimeout(() => {
         navigate('/distributors');
       }, 2000);
-    } catch (error) {
-      console.error('Erro ao salvar distribuidor:', error);
-      alert('Erro ao salvar distribuidor. Verifique o console para mais detalhes.');
+    } catch (err) {
+      console.error('Erro ao salvar distribuidor:', err);
+      showError('Erro ao salvar distribuidor', 'Verifique os dados e tente novamente.');
     } finally {
       setIsLoading(false);
     }
