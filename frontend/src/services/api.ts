@@ -171,6 +171,8 @@ export interface Client {
   observacoes?: string;
   isActive: boolean;
   createdBy: User;
+  /** Vendedor responsável pela carteira (gestão de carteira) */
+  assignedTo?: User | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -818,13 +820,22 @@ class ApiService {
   }
 
   // Clientes
-  async getClients(page = 1, limit = 10, search?: string, uf?: string, classificacao?: string, isActive?: boolean): Promise<ApiResponse<Client[]>> {
+  async getClients(
+    page = 1,
+    limit = 10,
+    search?: string,
+    uf?: string,
+    classificacao?: string,
+    isActive?: boolean,
+    carteira?: 'me' | string
+  ): Promise<ApiResponse<Client[]>> {
     let url = `/clients?page=${page}&limit=${limit}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (uf) url += `&uf=${uf}`;
     if (classificacao) url += `&classificacao=${classificacao}`;
     if (isActive !== undefined) url += `&isActive=${isActive}`;
-    
+    if (carteira === 'me') url += '&carteira=me';
+    else if (carteira) url += `&assignedTo=${encodeURIComponent(carteira)}`;
     return this.request<Client[]>(url);
   }
 
@@ -852,8 +863,9 @@ class ApiService {
     });
   }
 
-  async getClientStats(): Promise<ApiResponse<any>> {
-    return this.request<any>('/clients/stats/summary');
+  async getClientStats(carteira?: 'me'): Promise<ApiResponse<any>> {
+    const url = carteira === 'me' ? '/clients/stats/summary?carteira=me' : '/clients/stats/summary';
+    return this.request<any>(url);
   }
 
   // Distribuidores

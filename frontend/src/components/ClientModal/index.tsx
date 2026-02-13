@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, Client } from '../../services/api';
+import { apiService, Client, User } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { X, Loader2 } from 'lucide-react';
 import styled from 'styled-components';
 import { theme } from '../../styles/theme';
@@ -265,6 +266,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({
   onSave,
   client
 }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
     cnpj: '',
     razaoSocial: '',
@@ -285,14 +289,24 @@ export const ClientModal: React.FC<ClientModalProps> = ({
       uf: ''
     },
     classificacao: 'OUTROS',
-    observacoes: ''
+    observacoes: '',
+    assignedTo: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (isOpen && isAdmin) {
+      apiService.getUsers(1, 200).then((r) => r.data && setUsers(r.data));
+    }
+  }, [isOpen, isAdmin]);
+
+  useEffect(() => {
     if (isOpen) {
       if (client) {
+        const assignedId = typeof client.assignedTo === 'object' && client.assignedTo !== null
+          ? (client.assignedTo as User)._id
+          : (client.assignedTo != null ? String(client.assignedTo) : '');
         setFormData({
           cnpj: client.cnpj,
           razaoSocial: client.razaoSocial,
@@ -313,7 +327,8 @@ export const ClientModal: React.FC<ClientModalProps> = ({
             uf: client.endereco.uf
           },
           classificacao: client.classificacao,
-          observacoes: client.observacoes || ''
+          observacoes: client.observacoes || '',
+          assignedTo: assignedId
         });
       } else {
         setFormData({
@@ -336,7 +351,8 @@ export const ClientModal: React.FC<ClientModalProps> = ({
             uf: ''
           },
           classificacao: 'OUTROS',
-          observacoes: ''
+          observacoes: '',
+          assignedTo: ''
         });
       }
       setErrors({});
@@ -420,7 +436,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
 
     setIsLoading(true);
     try {
-      const clientData = {
+      const clientData: Partial<Client> = {
         cnpj: formData.cnpj,
         razaoSocial: formData.razaoSocial,
         nomeFantasia: formData.nomeFantasia || undefined,
@@ -430,12 +446,19 @@ export const ClientModal: React.FC<ClientModalProps> = ({
         observacoes: formData.observacoes || undefined,
         isActive: true
       };
+      if (isAdmin) {
+        (clientData as Record<string, unknown>).assignedTo = formData.assignedTo || null;
+      }
 
       let response;
       if (client) {
-        response = await apiService.updateClient(client._id, clientData);
+        response = await apiService.updateClient(client._id, clientData as Partial<Client>);
       } else {
-        response = await apiService.createClient(clientData);
+        const createPayload = {
+          ...clientData,
+          isActive: true as boolean
+        };
+        response = await apiService.createClient(createPayload as Parameters<typeof apiService.createClient>[0]);
       }
       
       onSave(response.data);
@@ -685,6 +708,24 @@ export const ClientModal: React.FC<ClientModalProps> = ({
                 <option value="OUTROS">OUTROS</option>
               </Select>
             </FormGroup>
+
+            {isAdmin && (
+              <FormGroup>
+                <Label>Vendedor responsável (carteira)</Label>
+                <Select
+                  name="assignedTo"
+                  value={formData.assignedTo}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Nenhum / Não atribuído</option>
+                  {users.filter((u) => u.role === 'vendedor').map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} {u.email ? `(${u.email})` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            )}
 
             <FormGroup>
               <Label>Observações</Label>

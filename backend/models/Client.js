@@ -97,6 +97,12 @@ const clientSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  // Vendedor responsável pela carteira (gestão de carteira por vendedor)
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   }
 }, {
   timestamps: true
@@ -109,6 +115,7 @@ clientSchema.index({ 'endereco.uf': 1 });
 clientSchema.index({ classificacao: 1 });
 clientSchema.index({ isActive: 1 });
 clientSchema.index({ createdBy: 1 });
+clientSchema.index({ assignedTo: 1 });
 
 // Middleware para formatar CNPJ
 clientSchema.pre('save', function(next) {

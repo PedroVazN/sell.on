@@ -21,25 +21,41 @@ router.get('/', auth, async (req, res) => {
       });
     }
 
-    const { page = 1, limit = 10, search, uf, classificacao, isActive } = req.query;
+    const { page = 1, limit = 10, search, uf, classificacao, isActive, carteira, assignedTo } = req.query;
     const skip = (page - 1) * limit;
 
     let query = {};
+    const andConditions = [];
     
-    // VENDEDOR: Pode buscar TODOS os clientes para criar propostas
-    // (mas só pode gerenciar/editar os que ele criou - ver rotas POST/PUT/DELETE)
-    // Admin vê todos os clientes (sem filtro)
+    // Carteira: vendedor vê só clientes da sua carteira (assignedTo = eu, ou sem assignedTo e createdBy = eu)
+    // Admin pode filtrar por assignedTo=userId para ver carteira de um vendedor
+    if (carteira === 'me' && req.user.role === 'vendedor') {
+      andConditions.push({
+        $or: [
+          { assignedTo: req.user.id },
+          { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
+        ]
+      });
+    } else if (assignedTo && req.user.role === 'admin') {
+      query.assignedTo = assignedTo;
+    }
+    
     console.log(`👤 Usuário ${req.user.email} (${req.user.role}) buscando clientes`);
     
     if (search) {
-      query.$or = [
-        { razaoSocial: { $regex: search, $options: 'i' } },
-        { nomeFantasia: { $regex: search, $options: 'i' } },
-        { cnpj: { $regex: search, $options: 'i' } },
-        { 'contato.nome': { $regex: search, $options: 'i' } },
-        { 'contato.email': { $regex: search, $options: 'i' } }
-      ];
+      const searchCondition = {
+        $or: [
+          { razaoSocial: { $regex: search, $options: 'i' } },
+          { nomeFantasia: { $regex: search, $options: 'i' } },
+          { cnpj: { $regex: search, $options: 'i' } },
+          { 'contato.nome': { $regex: search, $options: 'i' } },
+          { 'contato.email': { $regex: search, $options: 'i' } }
+        ]
+      };
+      if (andConditions.length) andConditions.push(searchCondition);
+      else query.$or = searchCondition.$or;
     }
+    if (andConditions.length) query.$and = andConditions;
     
     if (uf) {
       query['endereco.uf'] = uf;
@@ -55,6 +71,7 @@ router.get('/', auth, async (req, res) => {
 
     const clients = await Client.find(query)
       .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email')
       .sort({ razaoSocial: 1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -92,7 +109,8 @@ router.get('/:id', auth, async (req, res) => {
     // (mas só pode editar os que ele criou - ver rotas PUT/DELETE)
     
     const client = await Client.findOne(query)
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email');
 
     if (!client) {
       return res.status(404).json({ 
@@ -125,7 +143,8 @@ router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
       contato,
       endereco,
       classificacao,
-      observacoes
+      observacoes,
+      assignedTo
     } = req.body;
 
     // Validações básicas
@@ -143,7 +162,7 @@ router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
       });
     }
 
-    const client = new Client({
+    const clientData = {
       cnpj,
       razaoSocial,
       nomeFantasia,
@@ -151,11 +170,16 @@ router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
       endereco,
       classificacao: classificacao || 'OUTROS',
       observacoes,
-      createdBy: req.user.id // Usar o ID do usuário autenticado
-    });
+      createdBy: req.user.id
+    };
+    if (assignedTo !== undefined) {
+      if (req.user.role === 'admin') clientData.assignedTo = assignedTo || null;
+      else if (req.user.role === 'vendedor' && assignedTo === req.user.id) clientData.assignedTo = req.user.id;
+    }
+    const client = new Client(clientData);
 
     await client.save();
-    await client.populate('createdBy', 'name email');
+    await client.populate('createdBy', 'name email').populate('assignedTo', 'name email');
 
     console.log(`✅ Cliente ${client.razaoSocial} criado por ${req.user.email} (${req.user.role})`);
 
@@ -178,8 +202,8 @@ router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
   }
 });
 
-// PUT /api/clients/:id - Atualizar cliente (somente admin)
-router.put('/:id', auth, authorize('admin'), async (req, res) => {
+// PUT /api/clients/:id - Atualizar cliente (admin ou vendedor da carteira)
+router.put('/:id', auth, authorize('admin', 'vendedor'), async (req, res) => {
   try {
     const {
       cnpj,
@@ -189,23 +213,29 @@ router.put('/:id', auth, authorize('admin'), async (req, res) => {
       endereco,
       classificacao,
       isActive,
-      observacoes
+      observacoes,
+      assignedTo
     } = req.body;
 
-    let query = { _id: req.params.id };
-    
-    // FILTRO POR VENDEDOR: Se for vendedor, só pode atualizar clientes que ele criou
-    if (req.user.role === 'vendedor') {
-      query.createdBy = req.user.id;
-    }
-    
-    const client = await Client.findOne(query);
+    const client = await Client.findOne({ _id: req.params.id });
 
     if (!client) {
       return res.status(404).json({ 
         success: false,
-        message: 'Cliente não encontrado ou você não tem permissão para editá-lo' 
+        message: 'Cliente não encontrado' 
       });
+    }
+
+    // Vendedor só pode editar clientes da sua carteira (assignedTo = eu ou sem assignedTo e createdBy = eu)
+    if (req.user.role === 'vendedor') {
+      const inCarteira = (client.assignedTo && client.assignedTo.toString() === req.user.id) ||
+        (!client.assignedTo && client.createdBy.toString() === req.user.id);
+      if (!inCarteira) {
+        return res.status(403).json({ 
+          success: false,
+          message: 'Você não tem permissão para editar este cliente' 
+        });
+      }
     }
 
     // Atualizar campos se fornecidos
@@ -217,9 +247,10 @@ router.put('/:id', auth, authorize('admin'), async (req, res) => {
     if (classificacao) client.classificacao = classificacao;
     if (isActive !== undefined) client.isActive = isActive;
     if (observacoes !== undefined) client.observacoes = observacoes;
+    if (req.user.role === 'admin' && assignedTo !== undefined) client.assignedTo = assignedTo || null;
 
     await client.save();
-    await client.populate('createdBy', 'name email');
+    await client.populate('createdBy', 'name email').populate('assignedTo', 'name email');
 
     console.log(`✅ Cliente ${client.razaoSocial} atualizado por ${req.user.email}`);
 
@@ -276,13 +307,19 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-// GET /api/clients/stats/summary - Estatísticas dos clientes (filtrado por vendedor se necessário)
+// GET /api/clients/stats/summary - Estatísticas dos clientes (filtrado por vendedor/carteira se necessário)
 router.get('/stats/summary', auth, async (req, res) => {
   try {
+    const { carteira } = req.query;
     let query = {};
     
-    // FILTRO POR VENDEDOR: Se for vendedor, só conta clientes que ele criou
-    if (req.user.role === 'vendedor') {
+    // Carteira: vendedor pedindo stats da "minha carteira" (assignedTo = eu ou sem assignedTo e createdBy = eu)
+    if (carteira === 'me' && req.user.role === 'vendedor') {
+      query.$or = [
+        { assignedTo: req.user.id },
+        { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
+      ];
+    } else if (req.user.role === 'vendedor') {
       query.createdBy = req.user.id;
     }
     

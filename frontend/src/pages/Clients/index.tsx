@@ -226,6 +226,7 @@ export const Clients: React.FC = () => {
                 <TableCell>Contato</TableCell>
                 <TableCell>UF</TableCell>
                 <TableCell>Classificação</TableCell>
+                {!isSeller && <TableCell>Vendedor (carteira)</TableCell>}
                 <TableCell>Status</TableCell>
                 {!isSeller && (<TableCell>Ações</TableCell>)}
               </TableRow>
@@ -257,6 +258,15 @@ export const Clients: React.FC = () => {
                   </TableCell>
                   <TableCell>{client.endereco.uf}</TableCell>
                   <TableCell>{client.classificacao}</TableCell>
+                  {!isSeller && (
+                    <TableCell>
+                      {client.assignedTo && typeof client.assignedTo === 'object' && 'name' in client.assignedTo
+                        ? client.assignedTo.name
+                        : client.assignedTo
+                          ? String(client.assignedTo)
+                          : '—'}
+                    </TableCell>
+                  )}
                   <TableCell>
                     <StatusBadge $isActive={client.isActive}>
                       {client.isActive ? 'Ativo' : 'Inativo'}

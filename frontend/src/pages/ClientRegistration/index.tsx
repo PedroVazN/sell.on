@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserCheck, Loader2, CheckCircle } from 'lucide-react';
-import { apiService, Client } from '../../services/api';
+import { apiService, Client, User } from '../../services/api';
 import { 
   Container, 
   Header, 
@@ -45,11 +45,17 @@ export const ClientRegistration: React.FC = () => {
       uf: ''
     },
     classificacao: 'OUTROS',
-    observacoes: ''
+    observacoes: '',
+    assignedTo: ''
   });
+  const [users, setUsers] = useState<User[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    apiService.getUsers(1, 200).then((r) => r.data && setUsers(r.data));
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -128,7 +134,7 @@ export const ClientRegistration: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const clientData = {
+      const clientData: Parameters<typeof apiService.createClient>[0] = {
         cnpj: formData.cnpj,
         razaoSocial: formData.razaoSocial,
         nomeFantasia: formData.nomeFantasia || undefined,
@@ -138,6 +144,9 @@ export const ClientRegistration: React.FC = () => {
         observacoes: formData.observacoes || undefined,
         isActive: true
       };
+      if (formData.assignedTo) {
+        (clientData as Record<string, unknown>).assignedTo = formData.assignedTo;
+      }
 
       await apiService.createClient(clientData);
       setIsSuccess(true);
@@ -417,6 +426,22 @@ export const ClientRegistration: React.FC = () => {
                 <option value="PROVEDOR">PROVEDOR</option>
                 <option value="REVENDA">REVENDA</option>
                 <option value="OUTROS">OUTROS</option>
+              </Select>
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Vendedor responsável (carteira)</Label>
+              <Select
+                name="assignedTo"
+                value={formData.assignedTo}
+                onChange={handleInputChange}
+              >
+                <option value="">Nenhum / Não atribuído</option>
+                {users.filter((u) => u.role === 'vendedor').map((u) => (
+                  <option key={u._id} value={u._id}>
+                    {u.name} {u.email ? `(${u.email})` : ''}
+                  </option>
+                ))}
               </Select>
             </FormGroup>
 

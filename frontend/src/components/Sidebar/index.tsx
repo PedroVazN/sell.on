@@ -25,7 +25,8 @@ import {
   Brain,
   Filter,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -111,6 +112,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
           { icon: <UserCheck size={20} />, label: 'Clientes', path: '/clients', permission: 'admin' },
           { icon: <Truck size={20} />, label: 'Distribuidores', path: '/distributors', permission: 'admin' },
           { icon: <DollarSign size={20} />, label: 'Lista de Preços', path: '/price-list', permission: 'admin' },
+        ] : []),
+        ...(user?.role === 'vendedor' ? [
+          { icon: <Briefcase size={20} />, label: 'Minha Carteira', path: '/carteira', permission: 'proposals' },
         ] : []),
         { icon: <Filter size={20} />, label: 'Funil de Vendas', path: '/funnel', permission: 'funnel' },
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
