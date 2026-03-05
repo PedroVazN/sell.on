@@ -1,0 +1,722 @@
+const express = require('express');
+const router = express.Router();
+const Goal = require('../models/Goal');
+const Proposal = require('../models/Proposal');
+const { auth } = require('../middleware/auth');
+const mongoose = require('mongoose');
+
+/**
+ * Função para recalcular automaticamente uma meta baseado em TODAS as propostas fechadas
+ * Usa a mesma lógica do recalculate-goals.js mas para uma meta específica
+ * EXPORTADA para ser usada em outras rotas (ex: proposals.js)
+ */
+async function recalculateGoalAutomatically(goal) {
+  try {
+    const vendorId = goal.assignedTo;
+    const oldValue = goal.currentValue; // Guardar valor antigo antes de recalcular
+    
+    // Buscar TODAS as propostas fechadas do vendedor no período da meta
+    // Usar closedAt (data de fechamento) ou updatedAt como fallback para propostas antigas
+    const closedProposals = await Proposal.find({
+      $or: [
+        { 'createdBy._id': new mongoose.Types.ObjectId(vendorId) },
+        { createdBy: new mongoose.Types.ObjectId(vendorId) }
+      ],
+      status: 'venda_fechada',
+      $expr: {
+        $and: [
+          { $gte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.startDate)] },
+          { $lte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.endDate)] }
+        ]
+      }
+    }).lean();
+
+    // Calcular valor total baseado em TODAS as propostas
+    const totalValue = closedProposals.reduce((sum, p) => sum + (p.total || 0), 0);
+    
+    // Coletar IDs das propostas
+    const proposalIds = closedProposals.map(p => p._id.toString());
+
+    // Atualizar meta com cálculo completo
+    goal.currentValue = totalValue;
+    goal.progress.percentage = Math.min(100, (totalValue / goal.targetValue) * 100);
+    goal.progress.countedProposals = proposalIds;
+
+    // Verificar se atingiu a meta ou se deixou de atingir
+    if (goal.currentValue >= goal.targetValue) {
+      // Meta atingida - marcar como concluída
+      if (goal.status === 'active') {
+        goal.status = 'completed';
+        console.log(`✅ Meta "${goal.title}" atingida após recálculo!`);
+      }
+    } else {
+      // Meta não atingida - se estava completa, reativar
+      if (goal.status === 'completed') {
+        goal.status = 'active';
+        console.log(`🔄 Meta "${goal.title}" reativada após recálculo (valor abaixo da meta)`);
+      }
+    }
+
+    await goal.save();
+    
+    return {
+      goalId: goal._id,
+      title: goal.title,
+      oldValue: oldValue,
+      newValue: totalValue,
+      proposalsCount: closedProposals.length,
+      percentage: goal.progress.percentage
+    };
+  } catch (error) {
+    console.error(`Erro ao recalcular meta ${goal._id}:`, error);
+    return null;
+  }
+}
+
+// Rota de recálculo SEM autenticação (para manutenção)
+router.post('/recalculate', async (req, res) => {
+  try {
+    const Proposal = require('../models/Proposal');
+    
+    console.log('🔄 Iniciando recálculo de metas...');
+    
+    // Buscar todas as metas ativas de vendas
+    const goals = await Goal.find({
+      category: 'sales',
+      unit: 'currency'
+    });
+
+    console.log(`📊 Encontradas ${goals.length} metas para recalcular`);
+
+    const results = [];
+
+    for (const goal of goals) {
+      const vendorId = goal.assignedTo;
+      
+      // Buscar todas as propostas fechadas do vendedor no período da meta
+      // Usar closedAt (data de fechamento) ou updatedAt como fallback para propostas antigas
+      const closedProposals = await Proposal.find({
+        $or: [
+          { 'createdBy._id': vendorId },
+          { createdBy: vendorId }
+        ],
+        status: 'venda_fechada',
+        $expr: {
+          $and: [
+            { $gte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.startDate)] },
+            { $lte: [{ $ifNull: ['$closedAt', '$updatedAt'] }, new Date(goal.period.endDate)] }
+          ]
+        }
+      });
+
+      console.log(`Vendedor ${vendorId}: ${closedProposals.length} vendas fechadas`);
+
+      // Calcular valor total
+      const totalValue = closedProposals.reduce((sum, p) => sum + (p.total || 0), 0);
+      
+      // Coletar IDs das propostas
+      const proposalIds = closedProposals.map(p => p._id.toString());
+
+      // Atualizar meta
+      const oldValue = goal.currentValue;
+      goal.currentValue = totalValue;
+      goal.progress.percentage = Math.min(100, (totalValue / goal.targetValue) * 100);
+      goal.progress.countedProposals = proposalIds;
+      
+      // Adicionar marco de recálculo
+      goal.progress.milestones.push({
+        date: new Date().toISOString().split('T')[0],
+        value: totalValue,
+        description: `Recálculo: ${closedProposals.length} vendas totalizando R$ ${totalValue.toLocaleString('pt-BR')}`
+      });
+
+      // Verificar se atingiu a meta ou se deixou de atingir
+      if (goal.currentValue >= goal.targetValue) {
+        // Meta atingida - marcar como concluída
+        if (goal.status === 'active') {
+          goal.status = 'completed';
+          console.log(`✅ Meta "${goal.title}" atingida após recálculo!`);
+        }
+      } else {
+        // Meta não atingida - se estava completa, reativar
+        if (goal.status === 'completed') {
+          goal.status = 'active';
+          console.log(`🔄 Meta "${goal.title}" reativada após recálculo (valor abaixo da meta)`);
+        }
+      }
+
+      await goal.save();
+
+      results.push({
+        goalId: goal._id,
+        title: goal.title,
+        vendorId,
+        oldValue,
+        newValue: totalValue,
+        proposalsCount: closedProposals.length,
+        percentage: goal.progress.percentage
+      });
+
+      console.log(`✅ Meta "${goal.title}": R$ ${oldValue} → R$ ${totalValue} (${closedProposals.length} vendas)`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Metas recalculadas com sucesso',
+      data: results
+    });
+  } catch (error) {
+    console.error('Erro ao recalcular metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao recalcular metas',
+      error: error.message
+    });
+  }
+});
+
+// Middleware de autenticação para todas as outras rotas
+router.use(auth);
+
+// GET /api/goals - Listar metas com paginação e filtros
+router.get('/', async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      search = '',
+      type,
+      category,
+      status,
+      assignedTo,
+      startDate,
+      endDate
+    } = req.query;
+
+    const query = {};
+
+    // Filtro por usuário (admin pode ver todas, usuário comum vê apenas as suas)
+    if (req.user.role === 'admin') {
+      if (assignedTo) {
+        query.assignedTo = assignedTo;
+      }
+    } else {
+      query.assignedTo = req.user.id;
+    }
+
+    // Filtro de busca
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Filtros específicos
+    if (type) query.type = type;
+    if (category) query.category = category;
+    if (status) query.status = status;
+
+    // Filtro por período
+    if (startDate && endDate) {
+      query['period.startDate'] = { $gte: startDate };
+      query['period.endDate'] = { $lte: endDate };
+    } else if (startDate) {
+      query['period.startDate'] = { $gte: startDate };
+    } else if (endDate) {
+      query['period.endDate'] = { $lte: endDate };
+    }
+
+    // Se estiver buscando metas ativas de vendas, PRIMEIRO buscar e recalcular também as completas
+    // Isso garante que metas completas que foram recalculadas e não bateram mais sejam reativadas
+    if (status === 'active' && (!category || category === 'sales')) {
+      // Buscar metas completas do mesmo usuário/período para também recalcular
+      const completedQuery = { ...query };
+      completedQuery.status = 'completed';
+      
+      const completedGoals = await Goal.find(completedQuery)
+        .populate('assignedTo', 'name email role')
+        .populate('createdBy', 'name email')
+        .limit(100); // Limitar para não sobrecarregar
+      
+      // Recalcular metas completas primeiro (podem ser reativadas)
+      const completedSalesGoals = completedGoals.filter(g => 
+        g.category === 'sales' && g.unit === 'currency'
+      );
+      
+      if (completedSalesGoals.length > 0) {
+        console.log(`🔄 Recalculando ${completedSalesGoals.length} meta(s) completa(s) que podem precisar ser reativadas...`);
+        await Promise.all(completedSalesGoals.map(goal => recalculateGoalAutomatically(goal)));
+      }
+    }
+
+    // Agora buscar as metas conforme o query original
+    let goals = await Goal.find(query)
+      .populate('assignedTo', 'name email role')
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    // Recalcular metas ativas de vendas
+    if ((status === 'active' || !status) && (!category || category === 'sales')) {
+      const salesGoals = goals.filter(g => 
+        g.category === 'sales' && 
+        g.unit === 'currency' && 
+        g.status === 'active'
+      );
+      
+      if (salesGoals.length > 0) {
+        console.log(`🔄 Recalculando automaticamente ${salesGoals.length} meta(s) ativa(s) de vendas...`);
+        
+        // Recalcular cada meta ativa em paralelo
+        const recalculationPromises = salesGoals.map(goal => recalculateGoalAutomatically(goal));
+        await Promise.all(recalculationPromises);
+        
+        // Buscar novamente para ter os valores atualizados (pode incluir metas que foram reativadas)
+        goals = await Goal.find(query)
+          .populate('assignedTo', 'name email role')
+          .populate('createdBy', 'name email')
+          .sort({ createdAt: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+        
+        console.log('✅ Metas recalculadas automaticamente');
+      }
+    }
+
+    const total = await Goal.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: goals,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// GET /api/goals/dashboard - Dashboard de metas
+router.get('/dashboard', async (req, res) => {
+  try {
+    const { period = 'month', userId } = req.query;
+    const targetUser = userId || req.user.id;
+
+    // Verificar permissão
+    if (req.user.role !== 'admin' && targetUser !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso negado'
+      });
+    }
+
+    const now = new Date();
+    let startDate, endDate;
+
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const startOfWeek = now.getDate() - now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), startOfWeek);
+        endDate = new Date(now.getFullYear(), now.getMonth(), startOfWeek + 7);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+
+    const goals = await Goal.find({
+      assignedTo: targetUser,
+      'period.startDate': { $gte: startDate.toISOString().split('T')[0] },
+      'period.endDate': { $lte: endDate.toISOString().split('T')[0] },
+      status: { $in: ['active', 'completed'] }
+    }).populate('assignedTo', 'name email');
+
+    // Calcular estatísticas
+    const stats = {
+      total: goals.length,
+      completed: goals.filter(g => g.isAchieved()).length,
+      active: goals.filter(g => !g.isAchieved() && g.status === 'active').length,
+      averageProgress: goals.length > 0 ? 
+        Math.round(goals.reduce((sum, g) => sum + g.progress.percentage, 0) / goals.length) : 0,
+      totalTarget: goals.reduce((sum, g) => sum + g.targetValue, 0),
+      totalCurrent: goals.reduce((sum, g) => sum + g.currentValue, 0)
+    };
+
+    // Metas por categoria
+    const byCategory = goals.reduce((acc, goal) => {
+      if (!acc[goal.category]) {
+        acc[goal.category] = { total: 0, completed: 0, current: 0, target: 0 };
+      }
+      acc[goal.category].total++;
+      acc[goal.category].current += goal.currentValue;
+      acc[goal.category].target += goal.targetValue;
+      if (goal.isAchieved()) acc[goal.category].completed++;
+      return acc;
+    }, {});
+
+    // Metas por tipo
+    const byType = goals.reduce((acc, goal) => {
+      if (!acc[goal.type]) {
+        acc[goal.type] = { total: 0, completed: 0, current: 0, target: 0 };
+      }
+      acc[goal.type].total++;
+      acc[goal.type].current += goal.currentValue;
+      acc[goal.type].target += goal.targetValue;
+      if (goal.isAchieved()) acc[goal.type].completed++;
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      data: {
+        stats,
+        goals,
+        byCategory,
+        byType,
+        period: {
+          start: startDate.toISOString().split('T')[0],
+          end: endDate.toISOString().split('T')[0]
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dashboard de metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// GET /api/goals/:id - Buscar meta específica
+router.get('/:id', async (req, res) => {
+  try {
+    const goal = await Goal.findOne({
+      _id: req.params.id,
+      assignedTo: req.user.role === 'admin' ? { $exists: true } : req.user.id
+    })
+      .populate('assignedTo', 'name email role')
+      .populate('createdBy', 'name email');
+
+    if (!goal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meta não encontrada'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: goal
+    });
+  } catch (error) {
+    console.error('Erro ao buscar meta:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// POST /api/goals - Criar nova meta
+router.post('/', async (req, res) => {
+  try {
+    const goalData = {
+      ...req.body,
+      createdBy: req.user.id
+    };
+
+    // Validar datas
+    if (new Date(goalData.period.startDate) >= new Date(goalData.period.endDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data de início deve ser anterior à data de fim'
+      });
+    }
+
+    const goal = new Goal(goalData);
+    await goal.save();
+
+    const populatedGoal = await Goal.findById(goal._id)
+      .populate('assignedTo', 'name email role')
+      .populate('createdBy', 'name email');
+
+    res.status(201).json({
+      success: true,
+      data: populatedGoal,
+      message: 'Meta criada com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao criar meta:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Erro ao criar meta'
+    });
+  }
+});
+
+// PUT /api/goals/:id - Atualizar meta
+router.put('/:id', async (req, res) => {
+  try {
+    const goal = await Goal.findOneAndUpdate(
+      { 
+        _id: req.params.id,
+        $or: [
+          { assignedTo: req.user.id },
+          { createdBy: req.user.id },
+          { createdBy: req.user.role === 'admin' ? { $exists: true } : req.user.id }
+        ]
+      },
+      req.body,
+      { new: true, runValidators: true }
+    ).populate('assignedTo', 'name email role').populate('createdBy', 'name email');
+
+    if (!goal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meta não encontrada ou sem permissão'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: goal,
+      message: 'Meta atualizada com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar meta:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Erro ao atualizar meta'
+    });
+  }
+});
+
+// PATCH /api/goals/:id/progress - Atualizar progresso da meta
+router.patch('/:id/progress', async (req, res) => {
+  try {
+    const { value, description } = req.body;
+
+    if (value === undefined || value < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valor do progresso é obrigatório e deve ser positivo'
+      });
+    }
+
+    const goal = await Goal.findOne({
+      _id: req.params.id,
+      $or: [
+        { assignedTo: req.user.id },
+        { createdBy: req.user.id }
+      ]
+    });
+
+    if (!goal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meta não encontrada'
+      });
+    }
+
+    await goal.updateProgress(value, description);
+
+    const updatedGoal = await Goal.findById(goal._id)
+      .populate('assignedTo', 'name email role')
+      .populate('createdBy', 'name email');
+
+    res.json({
+      success: true,
+      data: updatedGoal,
+      message: 'Progresso atualizado com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar progresso:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Erro ao atualizar progresso'
+    });
+  }
+});
+
+// PATCH /api/goals/:id/status - Atualizar status da meta
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!['active', 'completed', 'paused', 'cancelled'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status inválido'
+      });
+    }
+
+    const goal = await Goal.findOneAndUpdate(
+      { 
+        _id: req.params.id,
+        $or: [
+          { assignedTo: req.user.id },
+          { createdBy: req.user.id },
+          { createdBy: req.user.role === 'admin' ? { $exists: true } : req.user.id }
+        ]
+      },
+      { status },
+      { new: true, runValidators: true }
+    ).populate('assignedTo', 'name email role').populate('createdBy', 'name email');
+
+    if (!goal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meta não encontrada ou sem permissão'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: goal,
+      message: 'Status atualizado com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar status:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Erro ao atualizar status'
+    });
+  }
+});
+
+// POST /api/goals/update-on-proposal-close - Atualizar metas quando proposta é fechada
+router.post('/update-on-proposal-close', async (req, res) => {
+  try {
+    const { sellerId, proposalValue } = req.body;
+
+    if (!sellerId || proposalValue === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'sellerId e proposalValue são obrigatórios'
+      });
+    }
+
+    // Buscar metas ativas do vendedor para vendas (category: 'sales')
+    const activeGoals = await Goal.find({
+      assignedTo: sellerId,
+      category: 'sales',
+      status: 'active',
+      unit: 'currency'
+    });
+
+    if (activeGoals.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Nenhuma meta ativa encontrada para o vendedor',
+        updatedGoals: []
+      });
+    }
+
+    const updatedGoals = [];
+
+    // Atualizar cada meta ativa
+    for (const goal of activeGoals) {
+      const newCurrentValue = goal.currentValue + proposalValue;
+      
+      // Adicionar marco de progresso
+      goal.progress.milestones.push({
+        date: new Date().toISOString().split('T')[0],
+        value: newCurrentValue,
+        description: `Proposta fechada: R$ ${proposalValue.toLocaleString('pt-BR')}`
+      });
+
+      // Manter apenas os últimos 10 marcos
+      if (goal.progress.milestones.length > 10) {
+        goal.progress.milestones = goal.progress.milestones.slice(-10);
+      }
+
+      // Atualizar valor atual
+      goal.currentValue = newCurrentValue;
+      
+      // Verificar se a meta foi atingida
+      if (goal.currentValue >= goal.targetValue) {
+        goal.status = 'completed';
+      }
+
+      await goal.save();
+      updatedGoals.push(goal);
+    }
+
+    res.json({
+      success: true,
+      message: `Metas atualizadas com sucesso. Valor adicionado: R$ ${proposalValue.toLocaleString('pt-BR')}`,
+      updatedGoals: updatedGoals.map(goal => ({
+        id: goal._id,
+        title: goal.title,
+        currentValue: goal.currentValue,
+        targetValue: goal.targetValue,
+        percentage: goal.progress.percentage,
+        status: goal.status
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar metas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+
+// DELETE /api/goals/:id - Excluir meta
+router.delete('/:id', async (req, res) => {
+  try {
+    const goal = await Goal.findOneAndDelete({
+      _id: req.params.id,
+      $or: [
+        { createdBy: req.user.id },
+        { createdBy: req.user.role === 'admin' ? { $exists: true } : req.user.id }
+      ]
+    });
+
+    if (!goal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meta não encontrada ou sem permissão'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Meta excluída com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao excluir meta:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Exportar função de recálculo para ser usada em outras rotas
+module.exports = router;
+module.exports.recalculateGoalAutomatically = recalculateGoalAutomatically;

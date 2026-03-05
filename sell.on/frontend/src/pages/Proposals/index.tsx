@@ -1,0 +1,1606 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2, ChevronDown, FileSpreadsheet, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
+import { generateProposalPdf, generateProposalsListPdf, ProposalPdfData } from '../../utils/pdfGenerator';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
+import { ProposalChatModal } from '../../components/ProposalChatModal';
+import { 
+  Container, 
+  Header, 
+  Title, 
+  Actions, 
+  SearchContainer, 
+  SearchInput, 
+  CreateButton, 
+  Content,
+  ExportWrap,
+  ExportDropdownMenu,
+  ExportDropdownItem,
+  FilterRow,
+  TableWrapper,
+  Table,
+  TableHeader,
+  TableRow,
+  TableCell,
+  TableBody,
+  ActionButton,
+  StatusBadge,
+  EmptyState,
+  LoadingState,
+  ErrorState,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+  ModalFooter,
+  FormGroup,
+  Label,
+  Select,
+  Input,
+  Button,
+  ProductItem,
+  ProductHeader,
+  ProductName,
+  ProductDetails,
+  PriceRow,
+  PriceLabel,
+  PriceInput,
+  RemoveButton,
+  AddProductButton,
+  TotalRow,
+  TotalLabel,
+  TotalValue,
+} from './styles';
+
+// Funções de status
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'negociacao': return '#f59e0b';
+    case 'venda_fechada': return '#059669';
+    case 'venda_perdida': return '#dc2626';
+    case 'expirada': return '#6b7280';
+    default: return '#6b7280';
+  }
+};
+
+export const Proposals: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { success, error: showError, warning } = useToastContext();
+  const { confirm } = useConfirm();
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  
+  const [products, setProducts] = useState<Product[]>([]);
+  const [distributors, setDistributors] = useState<Distributor[]>([]);
+  const [sellers, setSellers] = useState<UserType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sellerFilter, setSellerFilter] = useState('');
+  const [dateCreatedFrom, setDateCreatedFrom] = useState('');
+  const [dateCreatedTo, setDateCreatedTo] = useState('');
+  const [dateClosedFrom, setDateClosedFrom] = useState('');
+  const [dateClosedTo, setDateClosedTo] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
+  const [deletingItems, setDeletingItems] = useState<string[]>([]);
+  const [showLossModal, setShowLossModal] = useState(false);
+  const [proposalToLose, setProposalToLose] = useState<Proposal | null>(null);
+  const [lossReason, setLossReason] = useState('');
+  const [lossDescription, setLossDescription] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalType, setSuccessModalType] = useState<'created' | 'win' | 'loss'>('win');
+  const [proposalNumber, setProposalNumber] = useState<string>('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [proposalForChat, setProposalForChat] = useState<Proposal | null>(null);
+
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+
+  // Opções de motivo da perda
+  const lossReasons = [
+    { value: 'preco_concorrente', label: 'Preço Concorrente' },
+    { value: 'condicao_pagamento', label: 'Condição de Pagamento' },
+    { value: 'sem_retorno', label: 'Sem Retorno' },
+    { value: 'credito_negado', label: 'Crédito Negado' },
+    { value: 'concorrencia_marca', label: 'Concorrência (Marca)' },
+    { value: 'adiamento_compra', label: 'Adiamento de Compra' },
+    { value: 'cotacao_preco', label: 'Cotação de Preço' },
+    { value: 'perca_preco', label: 'Perda de Preço' },
+    { value: 'urgencia_comprou_local', label: 'Urgência / Comprou Localmente' },
+    { value: 'golpe', label: 'Golpe' },
+    { value: 'licitacao', label: 'Licitação' },
+    { value: 'fechado_outro_parceiro', label: 'Fechado em Outro Parceiro' }
+  ];
+
+  // Opções de condição de pagamento
+  const paymentConditions = [
+    { value: 'À vista', label: 'À vista' },
+    { value: 'Crédito - 1x', label: 'Crédito - 1x' },
+    { value: 'Crédito - 2x', label: 'Crédito - 2x' },
+    { value: 'Crédito - 3x', label: 'Crédito - 3x' },
+    { value: 'Crédito - 4x', label: 'Crédito - 4x' },
+    { value: 'Crédito - 5x', label: 'Crédito - 5x' },
+    { value: 'Crédito - 6x', label: 'Crédito - 6x' },
+    { value: 'Crédito - 7x', label: 'Crédito - 7x' },
+    { value: 'Crédito - 8x', label: 'Crédito - 8x' },
+    { value: 'Crédito - 9x', label: 'Crédito - 9x' },
+    { value: 'Crédito - 10x', label: 'Crédito - 10x' },
+    { value: 'Crédito - 11x', label: 'Crédito - 11x' },
+    { value: 'Crédito - 12x', label: 'Crédito - 12x' },
+    { value: 'Boleto - 1x', label: 'Boleto - 1x' },
+    { value: 'Boleto - 2x', label: 'Boleto - 2x' },
+    { value: 'Boleto - 3x', label: 'Boleto - 3x' },
+    { value: 'Boleto - 4x', label: 'Boleto - 4x' },
+    { value: 'Boleto - 5x', label: 'Boleto - 5x' },
+    { value: 'Boleto - 6x', label: 'Boleto - 6x' },
+    { value: 'Boleto - 7x', label: 'Boleto - 7x' },
+    { value: 'Boleto - 8x', label: 'Boleto - 8x' },
+    { value: 'Boleto - 9x', label: 'Boleto - 9x' },
+    { value: 'Boleto - 10x', label: 'Boleto - 10x' }
+  ];
+
+  // Form states
+  const [selectedClient, setSelectedClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: ''
+  });
+  const [selectedSeller, setSelectedSeller] = useState('');
+  const [selectedDistributor, setSelectedDistributor] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    discount: number;
+    total: number;
+  }[]>([]);
+  const [paymentCondition, setPaymentCondition] = useState('');
+  const [observations, setObservations] = useState('');
+  const [validUntil, setValidUntil] = useState('');
+  const [availablePriceList, setAvailablePriceList] = useState<any[]>([]);
+
+  const loadData = useCallback(async (page: number = 1) => {
+    try {
+      setLoading(true);
+      console.log('🔍 Carregando propostas para usuário:', user?.email, 'Role:', user?.role, 'Página:', page);
+      
+      let proposalsRes;
+      
+      // Se for vendedor, carregar apenas suas propostas
+      if (user?.role === 'vendedor') {
+        console.log('👤 Carregando propostas do vendedor:', user._id);
+        proposalsRes = await apiService.getVendedorProposals(user._id, page, itemsPerPage);
+      } else {
+        proposalsRes = await apiService.getProposals(
+          page,
+          itemsPerPage,
+          statusFilter || undefined,
+          searchTerm || undefined,
+          sellerFilter || undefined,
+          dateCreatedFrom || undefined,
+          dateCreatedTo || undefined,
+          dateClosedFrom || undefined,
+          dateClosedTo || undefined
+        );
+      }
+
+      // Removido cálculo de Score IA na listagem para otimização
+      
+      const [productsRes, distributorsRes, sellersRes] = await Promise.all([
+        apiService.getProducts(1, 1000),
+        apiService.getDistributors(1, 1000), // Aumentado para garantir que todos apareçam
+        apiService.getUsers(1, 1000)
+      ]);
+
+      setProposals(proposalsRes.data || []);
+      setProducts(productsRes.data);
+      setDistributors(distributorsRes.data);
+      setSellers(sellersRes.data.filter(user => user.role === 'vendedor' || user.role === 'admin'));
+      
+      // Atualizar informações de paginação
+      if (proposalsRes.pagination) {
+        setTotalPages(proposalsRes.pagination.pages || 1);
+        setTotalItems(proposalsRes.pagination.total || proposalsRes.data?.length || 0);
+      } else {
+        // Fallback se não tiver paginação
+        const total = proposalsRes.data?.length || 0;
+        setTotalItems(total);
+        setTotalPages(Math.ceil(total / itemsPerPage) || 1);
+      }
+      
+      console.log('📊 Propostas carregadas:', proposalsRes.data?.length || 0, 'Total:', proposalsRes.pagination?.total || 'N/A');
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, statusFilter, sellerFilter, dateCreatedFrom, dateCreatedTo, dateClosedFrom, dateClosedTo, user]);
+
+  // Carregar dados quando a página mudar
+  useEffect(() => {
+    loadData(currentPage);
+  }, [currentPage, loadData]);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const onOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-export-wrap]')) return;
+      setShowExportMenu(false);
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [showExportMenu]);
+
+  // Resetar para página 1 quando filtros mudarem
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadData(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, sellerFilter, dateCreatedFrom, dateCreatedTo, dateClosedFrom, dateClosedTo]);
+
+  // Função para mudar de página
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Gera array de páginas para exibir
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Sempre mostra a primeira página
+      pages.push(1);
+      
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+      
+      // Páginas ao redor da atual
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) {
+          pages.push(i);
+        }
+      }
+      
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+      
+      // Sempre mostra a última página
+      if (!pages.includes(totalPages)) {
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  // Carregar lista de preços quando o distribuidor for selecionado
+  useEffect(() => {
+    const loadPriceList = async () => {
+      if (selectedDistributor) {
+        try {
+          console.log('📋 Carregando lista de preços para distribuidor:', selectedDistributor);
+          const response = await apiService.getPriceListByDistributor(selectedDistributor, 1, 1000);
+          if (response.success && response.data) {
+            setAvailablePriceList(response.data);
+            console.log('✅ Lista de preços carregada:', response.data.length, 'itens');
+          }
+        } catch (error) {
+          console.error('❌ Erro ao carregar lista de preços:', error);
+          setAvailablePriceList([]);
+        }
+      } else {
+        setAvailablePriceList([]);
+      }
+    };
+
+    loadPriceList();
+  }, [selectedDistributor]);
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputValue(e.target.value);
+  };
+
+  const applySearch = () => {
+    setSearchTerm(searchInputValue);
+    if (currentPage !== 1) setCurrentPage(1);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') applySearch();
+  };
+
+  const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
+
+  const escapeHtml = (s: string) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  const buildExportRows = (allProposals: Proposal[]) => {
+    const headers = [
+      'Número da Proposta',
+      'Data de Criação',
+      'Data de Fechamento',
+      'Vendedor',
+      'Cliente',
+      'Empresa',
+      'Email',
+      'Telefone',
+      'Distribuidor',
+      'Produtos',
+      'Condição de Pagamento',
+      'Valor Total',
+      'Status',
+      'Válido Até',
+      'Motivo da Perda',
+      'Observações'
+    ];
+    const statusMap: { [key: string]: string } = {
+      'negociacao': 'Em Negociação',
+      'aguardando_pagamento': 'Em Negociação',
+      'venda_fechada': 'Venda Fechada',
+      'venda_perdida': 'Venda Perdida',
+      'expirada': 'Expirada'
+    };
+    const rows = allProposals.map(proposal => {
+      const produtos = proposal.items?.map(item => {
+        const nomeProduto = typeof item.product === 'object' ? item.product.name : 'Produto';
+        return `${nomeProduto} (${item.quantity} x R$ ${item.unitPrice.toFixed(2)})`;
+      }).join('; ') || 'Sem produtos';
+      let vendedor = 'Não informado';
+      if (proposal.seller && typeof proposal.seller === 'object') vendedor = proposal.seller.name;
+      else if (proposal.createdBy && typeof proposal.createdBy === 'object') vendedor = proposal.createdBy.name;
+      let distribuidor = 'Não informado';
+      if (proposal.distributor && typeof proposal.distributor === 'object')
+        distribuidor = proposal.distributor.apelido || proposal.distributor.razaoSocial || 'Não informado';
+      const statusLabel = statusMap[proposal.status] || proposal.status;
+      const dataCreacao = new Date(proposal.createdAt).toLocaleDateString('pt-BR');
+      let dataFechamento = '';
+      if (proposal.status === 'venda_fechada' || proposal.status === 'venda_perdida' || proposal.status === 'expirada') {
+        if (proposal.closedAt) dataFechamento = new Date(proposal.closedAt).toLocaleDateString('pt-BR');
+        else if (proposal.updatedAt) dataFechamento = new Date(proposal.updatedAt).toLocaleDateString('pt-BR');
+      }
+      const validoAte = proposal.validUntil ? new Date(proposal.validUntil).toLocaleDateString('pt-BR') : 'Não definido';
+      const motivoPerda = proposal.lossReason ? lossReasons.find(r => r.value === proposal.lossReason)?.label || proposal.lossReason : '';
+      return [
+        proposal.proposalNumber || 'N/A',
+        dataCreacao,
+        dataFechamento || 'Em aberto',
+        vendedor,
+        proposal.client?.name || 'Não informado',
+        proposal.client?.company || 'Não informado',
+        proposal.client?.email || 'Não informado',
+        proposal.client?.phone || 'Não informado',
+        distribuidor,
+        produtos,
+        proposal.paymentCondition || 'Não informado',
+        `R$ ${(proposal.total || 0).toFixed(2)}`,
+        statusLabel,
+        validoAte,
+        motivoPerda,
+        proposal.observations || ''
+      ];
+    });
+    return { headers, rows };
+  };
+
+  const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
+    setShowExportMenu(false);
+    setIsExporting(true);
+    try {
+      let allProposals: Proposal[] = [];
+      if (user?.role === 'vendedor') {
+        const response = await apiService.getVendedorProposals(user._id, 1, 10000);
+        allProposals = response.data || [];
+      } else {
+        const response = await apiService.getProposals(
+          1, 10000,
+          statusFilter || undefined,
+          searchTerm || undefined,
+          sellerFilter || undefined,
+          dateCreatedFrom || undefined,
+          dateCreatedTo || undefined,
+          dateClosedFrom || undefined,
+          dateClosedTo || undefined
+        );
+        allProposals = response.data || [];
+      }
+      if (allProposals.length === 0) {
+        warning('Atenção', 'Nenhuma proposta encontrada para exportar');
+        return;
+      }
+      const { headers, rows } = buildExportRows(allProposals);
+      const dateStr = new Date().toISOString().split('T')[0];
+
+      if (format === 'csv') {
+        const escapeCsv = (cell: string) => (/[,"\n]/.test(cell) ? `"${String(cell).replace(/"/g, '""')}"` : cell);
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n');
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `propostas_${dateStr}.csv`;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      } else if (format === 'xlsx') {
+        const BOM = '\uFEFF';
+        const html = [
+          '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">',
+          '<head><meta charset="UTF-8"></head><body><table border="1">',
+          '<tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>',
+          ...rows.map(row => '<tr>' + row.map(c => `<td>${escapeHtml(String(c))}</td>`).join('') + '</tr>'),
+          '</table></body></html>'
+        ].join('');
+        const blob = new Blob([BOM + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `propostas_${dateStr}.xls`;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      } else {
+        generateProposalsListPdf(headers, rows);
+      }
+      success('Exportação concluída', `${allProposals.length} propostas exportadas em ${format.toUpperCase()}`);
+    } catch (err) {
+      console.error('Erro ao exportar:', err);
+      showError('Erro ao exportar', 'Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleCreateProposal = () => {
+    setEditingProposal(null);
+    setSelectedClient({ name: '', email: '', phone: '', company: '' });
+    // Se for vendedor, selecionar automaticamente ele mesmo
+    setSelectedSeller(user?.role === 'vendedor' ? user._id : '');
+    setSelectedDistributor('');
+    setSelectedProducts([]);
+    setPaymentCondition('');
+    setObservations('');
+    setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    setShowModal(true);
+  };
+
+  const handleEditProposal = (proposal: Proposal) => {
+    navigate(`/proposals/edit/${proposal._id}`);
+  };
+
+  const handleDeleteProposal = async (proposal: Proposal) => {
+    const ok = await confirm({
+      title: 'Excluir proposta',
+      message: `Tem certeza que deseja excluir a proposta ${proposal.proposalNumber}?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      setDeletingItems(prev => [...prev, proposal._id]);
+      await apiService.deleteProposal(proposal._id);
+      setDeletingItems(prev => prev.filter(id => id !== proposal._id));
+      await loadData(currentPage);
+      success('Proposta excluída', 'A proposta foi removida com sucesso.');
+    } catch (err) {
+      console.error('Erro ao deletar proposta:', err);
+      showError('Erro ao excluir', err instanceof Error ? err.message : 'Não foi possível excluir a proposta.');
+    }
+  };
+
+  const handleGeneratePdf = (proposal: Proposal) => {
+    try {
+      const pdfData: ProposalPdfData = {
+        proposalNumber: proposal.proposalNumber,
+        client: proposal.client,
+        seller: proposal.seller,
+        distributor: proposal.distributor,
+        items: proposal.items.map(item => ({
+          product: {
+            name: item.product.name,
+            description: item.product.description || ''
+          },
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          total: item.total
+        })),
+        subtotal: proposal.subtotal,
+        discount: proposal.discount,
+        total: proposal.total,
+        paymentCondition: proposal.paymentCondition,
+        validUntil: proposal.validUntil,
+        observations: proposal.observations || '',
+        status: proposal.status,
+        createdAt: proposal.createdAt,
+        closedAt: proposal.closedAt,
+        updatedAt: proposal.updatedAt
+      };
+      
+      generateProposalPdf(pdfData);
+      success('PDF Gerado!', 'PDF da proposta gerado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      showError('Erro!', 'Erro ao gerar PDF da proposta');
+    }
+  };
+
+  const handleUpdateStatus = async (proposal: Proposal, newStatus: Proposal['status']) => {
+    // Se for venda perdida, mostrar modal para capturar motivo
+    if (newStatus === 'venda_perdida') {
+      setProposalToLose(proposal);
+      setLossReason('');
+      setLossDescription('');
+      setShowLossModal(true);
+      return;
+    }
+
+    // Para outros status, atualizar diretamente
+    try {
+      await apiService.updateProposalStatus(proposal._id, newStatus);
+      
+      // Atualizar metas se a proposta foi fechada
+      if (newStatus === 'venda_fechada' && proposal.seller?._id) {
+        try {
+          await apiService.updateGoalsOnProposalClose(proposal.seller._id, proposal.total || 0);
+        } catch (error) {
+          console.warn('Erro ao atualizar metas:', error);
+        }
+      }
+      
+      await loadData(currentPage);
+      
+      // Mostrar modal de sucesso se venda foi fechada
+      if (newStatus === 'venda_fechada') {
+        setProposalNumber(proposal.proposalNumber || 'N/A');
+        setSuccessModalType('win');
+        setShowSuccessModal(true);
+      } else {
+        success('Status Atualizado!', 'Status da proposta atualizado com sucesso!');
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar status:', err);
+      showError('Erro!', `Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+    }
+  };
+
+  const handleConfirmLoss = async () => {
+    if (!proposalToLose || !lossReason) {
+      warning('Atenção!', 'Selecione um motivo para a perda da venda');
+      return;
+    }
+
+    try {
+      await apiService.updateProposalStatus(
+        proposalToLose._id, 
+        'venda_perdida', 
+        lossReason, 
+        lossDescription
+      );
+      await loadData(currentPage);
+      setShowLossModal(false);
+      
+      // Mostrar modal de perda
+      setProposalNumber(proposalToLose.proposalNumber || 'N/A');
+      setSuccessModalType('loss');
+      setShowSuccessModal(true);
+      
+      setProposalToLose(null);
+      setLossReason('');
+      setLossDescription('');
+    } catch (err) {
+      console.error('Erro ao marcar como venda perdida:', err);
+      showError('Erro!', `Erro ao marcar como venda perdida: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+    }
+  };
+
+  const addProduct = () => {
+    if (products.length > 0) {
+      setSelectedProducts(prev => [...prev, {
+        productId: products[0]._id,
+        productName: products[0].name,
+        quantity: 1,
+        unitPrice: products[0].price || 0,
+        discount: 0,
+        total: products[0].price || 0
+      }]);
+    }
+  };
+
+  const updateProduct = (index: number, field: string, value: any) => {
+    setSelectedProducts(prev => prev.map((product, i) => {
+      if (i === index) {
+        const updated = { ...product, [field]: value };
+        
+        // Se mudou o produto, buscar o preço da lista de preços
+        if (field === 'productId') {
+          const selectedProduct = products.find(p => p._id === value);
+          if (selectedProduct) {
+            updated.productName = selectedProduct.name;
+            
+            // Buscar preço da lista de preços do distribuidor
+            const priceListItem = availablePriceList.find(item => item.product._id === value);
+            if (priceListItem) {
+              // Usar preço da lista conforme condição de pagamento selecionada
+              let price = selectedProduct.price || 0;
+              if (paymentCondition === 'À vista' && priceListItem.pricing.aVista) {
+                price = priceListItem.pricing.aVista;
+              } else if (paymentCondition.startsWith('Crédito') && priceListItem.pricing.credito) {
+                price = priceListItem.pricing.credito;
+              } else if (paymentCondition.startsWith('Boleto') && priceListItem.pricing.boleto) {
+                price = priceListItem.pricing.boleto;
+              }
+              updated.unitPrice = price;
+              console.log(`💰 Preço aplicado da lista: ${price} para produto ${selectedProduct.name}`);
+            } else {
+              updated.unitPrice = selectedProduct.price || 0;
+              console.log(`⚠️ Produto não encontrado na lista de preços, usando preço padrão`);
+            }
+          }
+        }
+        
+        if (field === 'quantity' || field === 'unitPrice' || field === 'discount' || field === 'productId') {
+          updated.total = updated.quantity * updated.unitPrice * (1 - updated.discount / 100);
+        }
+        return updated;
+      }
+      return product;
+    }));
+  };
+
+  const removeProduct = (index: number) => {
+    setSelectedProducts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const calculateTotals = () => {
+    const subtotal = selectedProducts.reduce((sum, product) => sum + product.total, 0);
+    const discount = 0; // Pode ser implementado desconto geral
+    const total = subtotal - discount;
+    return { subtotal, discount, total };
+  };
+
+  const handleSaveProposal = async () => {
+    try {
+      if (!selectedClient.name || !selectedSeller || !selectedDistributor || selectedProducts.length === 0 || !paymentCondition) {
+        warning('Atenção!', 'Preencha todos os campos obrigatórios');
+        return;
+      }
+
+      const { subtotal, discount, total } = calculateTotals();
+      const selectedDistributorData = distributors.find(d => d._id === selectedDistributor);
+      const selectedSellerData = sellers.find(s => s._id === selectedSeller);
+
+      if (!selectedDistributorData || !selectedSellerData) {
+        showError('Erro!', 'Distribuidor ou vendedor não encontrado');
+        return;
+      }
+
+      const proposalData = {
+        client: selectedClient,
+        seller: {
+          _id: selectedSellerData._id,
+          name: selectedSellerData.name,
+          email: selectedSellerData.email
+        },
+        distributor: {
+          _id: selectedDistributorData._id,
+          apelido: selectedDistributorData.apelido || selectedDistributorData.name || '',
+          razaoSocial: selectedDistributorData.razaoSocial || selectedDistributorData.name || '',
+          cnpj: selectedDistributorData.cnpj || ''
+        },
+        items: selectedProducts.map(item => ({
+          product: products.find(p => p._id === item.productId)!,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          total: item.total
+        })),
+        subtotal,
+        discount,
+        total,
+        paymentCondition,
+        observations,
+        status: 'negociacao' as const,
+        validUntil: new Date(validUntil).toISOString()
+      };
+
+      console.log('📝 Dados da proposta sendo enviados:', proposalData);
+      console.log('💳 Condição de pagamento:', paymentCondition);
+
+      if (editingProposal) {
+        await apiService.updateProposal(editingProposal._id, proposalData);
+        success('Sucesso!', 'Proposta atualizada com sucesso!');
+      } else {
+        await apiService.createProposal(proposalData);
+        success('Sucesso!', 'Proposta criada com sucesso!');
+      }
+
+      setShowModal(false);
+      await loadData(currentPage);
+    } catch (err) {
+      console.error('Erro ao salvar proposta:', err);
+      showError('Erro!', `Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const getCreatedAtLabel = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMins < 1) return 'Criada agora';
+    if (diffMins < 60) return `Criada há ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+    if (diffHours < 24) return `Criada há ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+    if (diffDays < 7) return `Criada há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+    if (diffWeeks < 4) return `Criada há ${diffWeeks} ${diffWeeks === 1 ? 'semana' : 'semanas'}`;
+    if (diffMonths < 12) return `Criada há ${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'}`;
+    const diffYears = Math.floor(diffDays / 365);
+    return `Criada há ${diffYears} ${diffYears === 1 ? 'ano' : 'anos'}`;
+  };
+
+  const getStatusIcon = (status: Proposal['status']) => {
+    switch (status) {
+      case 'negociacao': return <AlertCircle size={16} />;
+      case 'aguardando_pagamento': return <AlertCircle size={16} />;
+      case 'venda_fechada': return <CheckCircle size={16} />;
+      case 'venda_perdida': return <XCircle size={16} />;
+      case 'expirada': return <Clock size={16} />;
+      default: return <AlertCircle size={16} />;
+    }
+  };
+
+  const getStatusColor = (status: Proposal['status']) => {
+    switch (status) {
+      case 'negociacao': return '#f59e0b';
+      case 'aguardando_pagamento': return '#f59e0b';
+      case 'venda_fechada': return '#059669';
+      case 'venda_perdida': return '#dc2626';
+      case 'expirada': return '#6b7280';
+      default: return '#6b7280';
+    }
+  };
+
+  const getStatusLabel = (status: Proposal['status']) => {
+    switch (status) {
+      case 'negociacao': return 'Em Negociação';
+      case 'aguardando_pagamento': return 'Em Negociação';
+      case 'venda_fechada': return 'Venda Fechada';
+      case 'venda_perdida': return 'Venda Perdida';
+      case 'expirada': return 'Expirada';
+      default: return status;
+    }
+  };
+
+  const filteredProposals = proposals.filter(proposal => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      proposal.proposalNumber.toLowerCase().includes(search) ||
+      proposal.client.name.toLowerCase().includes(search) ||
+      proposal.client.company?.toLowerCase().includes(search) ||
+      proposal.seller.name.toLowerCase().includes(search) ||
+      (proposal.distributor.apelido || '').toLowerCase().includes(search) ||
+      (proposal.distributor.razaoSocial || '').toLowerCase().includes(search)
+    );
+  });
+
+  if (loading) {
+    return (
+      <Container>
+        <LoadingState>
+          <div>Carregando propostas...</div>
+        </LoadingState>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container>
+        <ErrorState>
+          <div>{error}</div>
+          <Button onClick={() => loadData(1)}>Tentar novamente</Button>
+        </ErrorState>
+      </Container>
+    );
+  }
+
+  return (
+    <Container>
+      <Header>
+        <Title>
+          {user?.role === 'vendedor' ? 'Minhas Propostas' : 'Propostas Comerciais'}
+        </Title>
+        <Actions>
+          <SearchContainer>
+            <Search size={20} />
+            <SearchInput 
+              id="proposals-search"
+              aria-label="Pesquisar propostas por número, cliente, empresa ou email"
+              placeholder="Pesquisar propostas (Enter ou Buscar)" 
+              value={searchInputValue}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleSearchKeyDown}
+            />
+            <Button 
+              type="button" 
+              onClick={applySearch}
+              disabled={loading}
+              aria-busy={loading}
+              aria-label={loading ? 'Buscando propostas' : 'Executar busca'}
+              style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}
+            >
+              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            </Button>
+          </SearchContainer>
+          <Select id="proposals-status" aria-label="Filtrar por status" value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
+            <option value="">Todos os status</option>
+            <option value="negociacao">Negociação</option>
+            <option value="venda_fechada">Venda Fechada</option>
+            <option value="venda_perdida">Venda Perdida</option>
+            <option value="expirada">Expirada</option>
+          </Select>
+          {user?.role === 'admin' && (
+            <ExportWrap data-export-wrap>
+              <CreateButton
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isExporting}
+                aria-busy={isExporting}
+                aria-haspopup="true"
+                aria-expanded={showExportMenu}
+                aria-label={isExporting ? 'Exportando' : 'Exportar propostas (CSV, Excel ou PDF)'}
+                style={{ backgroundColor: '#10b981', marginRight: '0.5rem' }}
+                title="Exportar propostas"
+              >
+                {isExporting ? (
+                  <><Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> Exportando...</>
+                ) : (
+                  <><Download size={20} /> Exportar <ChevronDown size={16} /></>
+                )}
+              </CreateButton>
+              {showExportMenu && !isExporting && (
+                <ExportDropdownMenu>
+                  <ExportDropdownItem onClick={() => handleExport('csv')}>
+                    <Download size={18} /> CSV
+                  </ExportDropdownItem>
+                  <ExportDropdownItem onClick={() => handleExport('xlsx')}>
+                    <FileSpreadsheet size={18} /> Excel (.xls)
+                  </ExportDropdownItem>
+                  <ExportDropdownItem onClick={() => handleExport('pdf')}>
+                    <FileText size={18} /> PDF
+                  </ExportDropdownItem>
+                </ExportDropdownMenu>
+              )}
+            </ExportWrap>
+          )}
+          <CreateButton onClick={() => navigate('/proposals/create')}>
+            <Plus size={20} />
+            Nova Proposta
+          </CreateButton>
+        </Actions>
+      </Header>
+
+      {user?.role === 'admin' && (
+        <FilterRow>
+          <label htmlFor="filter-seller">Vendedor</label>
+          <Select
+            id="filter-seller"
+            value={sellerFilter}
+            onChange={(e) => setSellerFilter(e.target.value)}
+            style={{ minWidth: '180px' }}
+          >
+            <option value="">Todos os vendedores</option>
+            {sellers.map((s) => (
+              <option key={s._id} value={s._id}>{s.name}</option>
+            ))}
+          </Select>
+          <span>
+            <label htmlFor="filter-created-from">Data de criação: </label>
+            <input
+              id="filter-created-from"
+              type="date"
+              value={dateCreatedFrom}
+              onChange={(e) => setDateCreatedFrom(e.target.value)}
+              aria-label="Data de criação da proposta, início do período"
+            />
+            <span style={{ margin: '0 0.25rem' }} aria-hidden="true">até</span>
+            <input
+              id="filter-created-to"
+              type="date"
+              value={dateCreatedTo}
+              onChange={(e) => setDateCreatedTo(e.target.value)}
+              aria-label="Data de criação da proposta, fim do período"
+            />
+          </span>
+          <span>
+            <label htmlFor="filter-closed-from">Data de fechamento: </label>
+            <input
+              id="filter-closed-from"
+              type="date"
+              value={dateClosedFrom}
+              onChange={(e) => setDateClosedFrom(e.target.value)}
+              aria-label="Data de fechamento da proposta, início do período"
+            />
+            <span style={{ margin: '0 0.25rem' }} aria-hidden="true">até</span>
+            <input
+              id="filter-closed-to"
+              type="date"
+              value={dateClosedTo}
+              onChange={(e) => setDateClosedTo(e.target.value)}
+              aria-label="Data de fechamento da proposta, fim do período"
+            />
+          </span>
+        </FilterRow>
+      )}
+
+      <Content>
+        {filteredProposals.length === 0 ? (
+          <EmptyState>
+            <FileText size={48} />
+            <h3>
+              {user?.role === 'vendedor' ? 'Você ainda não criou nenhuma proposta' : 'Nenhuma proposta encontrada'}
+            </h3>
+            <p>
+              {user?.role === 'vendedor' 
+                ? 'Crie sua primeira proposta comercial para começar a vender' 
+                : 'Crie sua primeira proposta comercial'
+              }
+            </p>
+            <CreateButton onClick={() => navigate('/proposals/create')}>
+              <Plus size={20} />
+              Nova Proposta
+            </CreateButton>
+          </EmptyState>
+        ) : (
+          <>
+          <TableWrapper>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableCell>Número</TableCell>
+                  <TableCell>Cliente</TableCell>
+                  <TableCell>Vendedor</TableCell>
+                  <TableCell>Distribuidor</TableCell>
+                  <TableCell>Produtos</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Data de Criação</TableCell>
+                  <TableCell>Ações</TableCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProposals.map((proposal) => {
+                  const isDeleting = deletingItems.includes(proposal._id);
+                  return (
+                    <TableRow key={proposal._id} style={{ opacity: isDeleting ? 0.5 : 1 }}>
+                      <TableCell>
+                        <div style={{ fontWeight: 'bold' }}>{proposal.proposalNumber}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div style={{ fontWeight: 'bold' }}>{proposal.client.name}</div>
+                          <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                            {proposal.client.company || proposal.client.email}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ fontSize: '0.875rem' }}>{proposal.seller.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div style={{ fontWeight: 'bold' }}>
+                            {proposal.distributor?.apelido || proposal.distributor?.razaoSocial || 'N/A'}
+                          </div>
+                          <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                            {proposal.distributor?.razaoSocial || proposal.distributor?.apelido || ''}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          {proposal.items.map((item, index) => (
+                            <div key={index} style={{ marginBottom: '0.25rem', fontSize: '0.875rem' }}>
+                              {item.product.name} x{item.quantity}
+                            </div>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ fontWeight: 'bold', color: '#10b981' }}>
+                          {formatCurrency(proposal.total)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge 
+                          $isActive={proposal.status === 'venda_fechada'} 
+                          style={{ 
+                            backgroundColor: getStatusColor(proposal.status),
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          {getStatusIcon(proposal.status)}
+                          {getStatusLabel(proposal.status)}
+                        </StatusBadge>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>
+                          {getCreatedAtLabel(proposal.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(4, 1fr)', 
+                          gap: '0.25rem',
+                          minWidth: '140px'
+                        }}>
+                          <ActionButton 
+                            onClick={() => handleEditProposal(proposal)}
+                            disabled={isDeleting}
+                            title="Editar"
+                          >
+                            <Edit size={14} />
+                          </ActionButton>
+                          <ActionButton 
+                            onClick={() => setProposalForChat(proposal)}
+                            disabled={isDeleting}
+                            title={user?.role === 'vendedor' ? 'Chat com Admin' : 'Chat com Vendedor'}
+                            style={{ backgroundColor: '#6366f1' }}
+                          >
+                            <MessageCircle size={14} />
+                          </ActionButton>
+                          <ActionButton 
+                            onClick={() => handleGeneratePdf(proposal)}
+                            disabled={isDeleting}
+                            title="Gerar PDF"
+                            style={{ backgroundColor: '#059669' }}
+                          >
+                            <Download size={14} />
+                          </ActionButton>
+                          {user?.role === 'admin' && (
+                            <ActionButton 
+                              onClick={() => handleDeleteProposal(proposal)}
+                              disabled={isDeleting}
+                              title="Excluir"
+                            >
+                              <Trash2 size={14} />
+                            </ActionButton>
+                          )}
+                          {(proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento') && (
+                            <>
+                              <ActionButton 
+                                onClick={() => handleUpdateStatus(proposal, 'venda_fechada')}
+                                disabled={isDeleting}
+                                title="Venda Fechada"
+                                style={{ backgroundColor: '#059669' }}
+                              >
+                                <CheckCircle size={14} />
+                              </ActionButton>
+                              <ActionButton 
+                                onClick={() => handleUpdateStatus(proposal, 'venda_perdida')}
+                                disabled={isDeleting}
+                                title="Venda Perdida"
+                                style={{ backgroundColor: '#dc2626' }}
+                              >
+                                <XCircle size={14} />
+                              </ActionButton>
+                              <ActionButton 
+                                onClick={() => handleUpdateStatus(proposal, 'expirada')}
+                                disabled={isDeleting}
+                                title="Marcar como Expirada"
+                                style={{ backgroundColor: '#6b7280' }}
+                              >
+                                <Clock size={14} />
+                              </ActionButton>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableWrapper>
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#1f2937',
+              borderRadius: '0.5rem',
+              gap: '0.75rem'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem' 
+              }}>
+                {/* Botão Anterior */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: currentPage === 1 ? '#374151' : '#3b82f6',
+                    color: currentPage === 1 ? '#6b7280' : 'white',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  ← Anterior
+                </button>
+                
+                {/* Números das páginas */}
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {getPageNumbers().map((page, index) => (
+                    page === '...' ? (
+                      <span 
+                        key={`ellipsis-${index}`} 
+                        style={{ 
+                          padding: '0.5rem', 
+                          color: '#6b7280' 
+                        }}
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page as number)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          backgroundColor: currentPage === page ? '#10b981' : '#374151',
+                          color: currentPage === page ? 'white' : '#d1d5db',
+                          border: 'none',
+                          borderRadius: '0.375rem',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: currentPage === page ? '600' : '400',
+                          minWidth: '2.5rem',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {page}
+                      </button>
+                    )
+                  ))}
+                </div>
+                
+                {/* Botão Próximo */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: currentPage === totalPages ? '#374151' : '#3b82f6',
+                    color: currentPage === totalPages ? '#6b7280' : 'white',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  Próximo →
+                </button>
+              </div>
+              
+              <div style={{ 
+                color: '#9ca3af', 
+                fontSize: '0.875rem' 
+              }}>
+                Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} propostas
+              </div>
+            </div>
+          )}
+          </>
+        )}
+      </Content>
+
+      {/* Modal para criar/editar proposta */}
+      {showModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                {editingProposal ? 'Editar Proposta' : 'Nova Proposta'}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              {/* Dados do Cliente */}
+              <FormGroup>
+                <Label>Dados do Cliente *</Label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <Input
+                    placeholder="Nome do cliente"
+                    value={selectedClient.name || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Email"
+                    type="email"
+                    value={selectedClient.email || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Telefone"
+                    value={selectedClient.phone || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Empresa"
+                    value={selectedClient.company || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedClient(prev => ({ ...prev, company: e.target.value }))}
+                  />
+                </div>
+              </FormGroup>
+
+              {/* Vendedor e Distribuidor */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <FormGroup>
+                  <Label>Vendedor *</Label>
+                  <Select
+                    value={selectedSeller || ''}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeller(e.target.value)}
+                    disabled={user?.role === 'vendedor'}
+                    style={{ 
+                      backgroundColor: user?.role === 'vendedor' ? '#f3f4f6' : 'white',
+                      cursor: user?.role === 'vendedor' ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <option value="">Selecione o vendedor</option>
+                    {sellers.map(seller => (
+                      <option key={seller._id} value={seller._id}>
+                        {seller.name}
+                      </option>
+                    ))}
+                  </Select>
+                  {user?.role === 'vendedor' && (
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      Você será automaticamente selecionado como vendedor
+                    </div>
+                  )}
+                </FormGroup>
+                <FormGroup>
+                  <Label>Distribuidor *</Label>
+                  <Select
+                    value={selectedDistributor || ''}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedDistributor(e.target.value)}
+                  >
+                    <option value="">Selecione o distribuidor</option>
+                    {distributors.map(distributor => (
+                      <option key={distributor._id} value={distributor._id}>
+                        {distributor.apelido || 'N/A'} - {distributor.razaoSocial || 'N/A'} {distributor.cnpj ? `(CNPJ: ${distributor.cnpj})` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                </FormGroup>
+              </div>
+
+              {/* Produtos */}
+              <FormGroup>
+                <Label>Produtos *</Label>
+                {selectedProducts.map((product, index) => (
+                  <ProductItem key={index}>
+                    <ProductHeader>
+                      <ProductName>
+                        <Select
+                          value={product.productId || ''}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                            const selectedProduct = products.find(p => p._id === e.target.value);
+                            if (selectedProduct) {
+                              updateProduct(index, 'productId', selectedProduct._id);
+                              updateProduct(index, 'productName', selectedProduct.name);
+                              updateProduct(index, 'unitPrice', selectedProduct.price || 0);
+                            }
+                          }}
+                        >
+                          <option value="">Selecione o produto</option>
+                          {products.map(p => (
+                            <option key={p._id} value={p._id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </ProductName>
+                      <RemoveButton onClick={() => removeProduct(index)}>
+                        <Trash2 size={16} />
+                      </RemoveButton>
+                    </ProductHeader>
+                    <ProductDetails>
+                      <PriceRow>
+                        <PriceLabel>Quantidade:</PriceLabel>
+                        <PriceInput
+                          type="number"
+                          min="1"
+                          value={product.quantity || 1}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(index, 'quantity', parseInt(e.target.value) || 1)}
+                        />
+                      </PriceRow>
+                      <PriceRow>
+                        <PriceLabel>Preço Unit.:</PriceLabel>
+                        <PriceInput
+                          type="number"
+                          step="0.01"
+                          value={product.unitPrice || 0}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                        />
+                      </PriceRow>
+                      <PriceRow>
+                        <PriceLabel>Desconto (%):</PriceLabel>
+                        <PriceInput
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={product.discount || 0}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(index, 'discount', parseFloat(e.target.value) || 0)}
+                        />
+                      </PriceRow>
+                      <PriceRow>
+                        <PriceLabel>Total:</PriceLabel>
+                        <PriceInput
+                          type="number"
+                          step="0.01"
+                          value={product.total || 0}
+                          readOnly
+                          style={{ backgroundColor: '#f3f4f6' }}
+                        />
+                      </PriceRow>
+                    </ProductDetails>
+                  </ProductItem>
+                ))}
+                <AddProductButton onClick={addProduct}>
+                  <Plus size={16} />
+                  Adicionar Produto
+                </AddProductButton>
+              </FormGroup>
+
+              {/* Totais */}
+              <TotalRow>
+                <TotalLabel>Subtotal:</TotalLabel>
+                <TotalValue>{formatCurrency(calculateTotals().subtotal)}</TotalValue>
+              </TotalRow>
+              <TotalRow>
+                <TotalLabel>Desconto:</TotalLabel>
+                <TotalValue>{formatCurrency(calculateTotals().discount)}</TotalValue>
+              </TotalRow>
+              <TotalRow style={{ borderTop: '2px solid #e5e7eb', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                <TotalLabel>Total:</TotalLabel>
+                <TotalValue style={{ color: '#10b981' }}>{formatCurrency(calculateTotals().total)}</TotalValue>
+              </TotalRow>
+
+              {/* Condições de Pagamento e Observações */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <FormGroup>
+                  <Label>Condição de Pagamento</Label>
+                  <Select
+                    value={paymentCondition || ''}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPaymentCondition(e.target.value)}
+                  >
+                    <option value="">Selecione a condição de pagamento</option>
+                    {paymentConditions.map(condition => (
+                      <option key={condition.value} value={condition.value}>
+                        {condition.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormGroup>
+                <FormGroup>
+                  <Label>Válido Até</Label>
+                  <Input
+                    type="date"
+                    value={validUntil || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValidUntil(e.target.value)}
+                  />
+                </FormGroup>
+              </div>
+
+              <FormGroup>
+                <Label>Observações</Label>
+                <Input
+                  placeholder="Observações adicionais..."
+                  value={observations || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setObservations(e.target.value)}
+                />
+              </FormGroup>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={() => setShowModal(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveProposal}
+                style={{ backgroundColor: '#10b981' }}
+              >
+                {editingProposal ? 'Atualizar' : 'Criar'} Proposta
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Modal de motivo da perda */}
+      {showLossModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Motivo da Perda da Venda</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <FormGroup>
+                <Label>Motivo da Perda *</Label>
+                <Select
+                  value={lossReason}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLossReason(e.target.value)}
+                >
+                  <option value="">Selecione o motivo da perda</option>
+                  {lossReasons.map(reason => (
+                    <option key={reason.value} value={reason.value}>
+                      {reason.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Descrição Adicional (Opcional)</Label>
+                <Input
+                  placeholder="Descreva mais detalhes sobre a perda da venda..."
+                  value={lossDescription}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLossDescription(e.target.value)}
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                />
+              </FormGroup>
+
+              {proposalToLose && (
+                <div style={{ 
+                  backgroundColor: '#1f2937', 
+                  border: '1px solid #374151',
+                  padding: '1rem', 
+                  borderRadius: '0.5rem',
+                  marginTop: '1rem'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    marginBottom: '0.5rem' 
+                  }}>
+                    <FileText size={16} style={{ marginRight: '0.5rem', color: '#9ca3af' }} />
+                    <h4 style={{ 
+                      margin: '0', 
+                      fontSize: '0.875rem', 
+                      fontWeight: '600',
+                      color: '#ffffff'
+                    }}>
+                      {proposalToLose.proposalNumber}
+                    </h4>
+                  </div>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr', 
+                    gap: '0.5rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <div>
+                      <span style={{ color: '#9ca3af', fontWeight: '500' }}>Cliente:</span>
+                      <span style={{ color: '#ffffff', marginLeft: '0.25rem' }}>
+                        {proposalToLose.client.name}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: '#9ca3af', fontWeight: '500' }}>Total:</span>
+                      <span style={{ 
+                        color: '#f87171', 
+                        fontWeight: '600', 
+                        marginLeft: '0.25rem' 
+                      }}>
+                        {formatCurrency(proposalToLose.total)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={() => setShowLossModal(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleConfirmLoss}
+                style={{ backgroundColor: '#dc2626' }}
+                disabled={!lossReason}
+              >
+                Confirmar Perda
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
+      <ProposalSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        type={successModalType}
+        proposalNumber={proposalNumber}
+      />
+
+      {proposalForChat && (
+        <ProposalChatModal
+          isOpen={!!proposalForChat}
+          onClose={() => setProposalForChat(null)}
+          proposal={proposalForChat}
+        />
+      )}
+    </Container>
+  );
+};

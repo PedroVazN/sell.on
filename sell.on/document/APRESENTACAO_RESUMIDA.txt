@@ -1,0 +1,150 @@
+🚀 SELL.ON - SISTEMA DE GESTÃO COMERCIAL
+============================================
+
+SLIDE 1: VISÃO GERAL
+====================
+• Sistema completo de gestão comercial e vendas
+• Plataforma web moderna e responsiva
+• Tecnologias: React + Node.js + MongoDB
+• Hospedagem: Vercel (Frontend + Backend)
+• Segurança: JWT + Validação + Rate Limiting
+
+SLIDE 2: FUNCIONALIDADES PRINCIPAIS
+===================================
+• Criação de propostas personalizadas
+• Gestão de clientes e produtos
+• Listas de preços flexíveis (À Vista, Boleto, Cartão)
+• Dashboard com métricas em tempo real
+• Sistema de notificações e avisos
+• Controle de usuários (Admin/Vendedor)
+
+SLIDE 3: SEGURANÇA E CONFORMIDADE LGPD
+======================================
+• Autenticação JWT obrigatória
+• Senhas hashadas com bcrypt
+• Validação robusta de dados
+• Rate limiting em todas as rotas
+• Headers de segurança completos
+• Monitoramento de ataques em tempo real
+• Logs sanitizados sem dados sensíveis
+• CONFORMIDADE LGPD COMPLETA:
+  - Dados pessoais criptografados
+  - Acesso restrito por roles
+  - Auditoria completa de acessos
+  - Backup seguro no MongoDB Atlas
+  - Exclusão de dados quando solicitado
+  - Transparência no uso dos dados
+
+SLIDE 4: DASHBOARD E MÉTRICAS
+=============================
+• Propostas Geradas (total e hoje)
+• Propostas Ganhas/Perdidas
+• Propostas em Negociação
+• Ticket Médio por proposta
+• Gráfico de propostas diárias
+• Top produtos vendidos
+• Metas de vendas com progresso
+
+SLIDE 5: GESTÃO DE PROPOSTAS
+============================
+• Formulário intuitivo e responsivo
+• Seleção de produtos com preços automáticos
+• Cálculos automáticos de totais
+• Validação de dados em tempo real
+• Preview da proposta antes de salvar
+• Histórico completo por cliente
+
+SLIDE 6: LISTAS DE PREÇOS
+=========================
+• Múltiplas opções de pagamento
+• À Vista com desconto
+• Boleto parcelado
+• Cartão de Crédito parcelado
+• Ativação seletiva de produtos
+• Configuração flexível de parcelas
+
+SLIDE 7: SISTEMA DE NOTIFICAÇÕES
+================================
+• Avisos administrativos para vendedores
+• Upload de imagens (Base64)
+• Prioridades configuráveis
+• Expiração automática
+• Interface em grid 4x4
+• Cards clicáveis para detalhes
+
+SLIDE 8: CONFORMIDADE LGPD - TRANQUILIDADE TOTAL
+================================================
+• DADOS PESSOAIS PROTEGIDOS:
+  - Criptografia de ponta a ponta
+  - Acesso apenas com autenticação
+  - Senhas nunca armazenadas em texto
+  - Logs sem exposição de dados sensíveis
+
+• CONTROLE DE ACESSO:
+  - Usuários só veem seus dados
+  - Admin tem acesso controlado
+  - Auditoria de todas as ações
+  - Sessões com expiração automática
+
+• BACKUP E SEGURANÇA:
+  - MongoDB Atlas (servidor seguro)
+  - Backup automático diário
+  - Criptografia em repouso
+  - Conformidade internacional
+
+• DIREITOS DO USUÁRIO:
+  - Exclusão de dados quando solicitado
+  - Portabilidade dos dados
+  - Transparência no uso
+  - Consentimento explícito
+
+• IMPLEMENTAÇÕES TÉCNICAS:
+  - Sanitização automática de logs
+  - Validação de entrada de dados
+  - Rate limiting contra ataques
+  - Headers de segurança HTTP
+  - Monitoramento de tentativas de acesso
+  - Criptografia JWT com expiração
+
+SLIDE 9: PERFORMANCE E TECNOLOGIA
+=================================
+• Carregamento rápido (< 3s)
+• Interface responsiva (mobile-first)
+• Arquitetura modular e escalável
+• Banco MongoDB Atlas
+• Deploy automático via Git
+• Monitoramento de recursos
+
+SLIDE 10: VANTAGENS COMPETITIVAS
+================================
+• Desenvolvimento customizado
+• Sem licenças caras de terceiros
+• Manutenção simplificada
+• Evolução contínua e ágil
+• Segurança de nível empresarial
+• CONFORMIDADE LGPD GARANTIDA
+• ROI comprovado em 3-6 meses
+
+SLIDE 11: IMPLEMENTAÇÃO E RESULTADOS
+====================================
+• Deploy automático via Vercel
+• Treinamento da equipe incluído
+• Suporte técnico especializado
+• Aumento na produtividade
+• Melhoria no controle de vendas
+• Redução de erros manuais
+• Insights para tomada de decisão
+• TRANQUILIDADE TOTAL COM LGPD
+
+============================================
+🎯 SISTEMA PRONTO PARA PRODUÇÃO!
+============================================
+
+Links:
+• Frontend: https://sell-on-dt.vercel.app
+• Backend: https://backend-sable-eta-89.vercel.app
+• GitHub: https://github.com/PedroVazN/sell.on
+
+Contato:
+• Desenvolvedor: PedroVazN
+• Email: vaznascimento23@gmail.com

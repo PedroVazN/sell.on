@@ -1,0 +1,434 @@
+import styled from 'styled-components';
+
+export const Container = styled.div`
+  padding: 24px 32px;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+`;
+
+export const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+export const Title = styled.h1`
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin: 0;
+`;
+
+export const Toolbar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+export const ViewToggle = styled.div<{ $active: boolean }>`
+  padding: 8px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  background: ${({ theme, $active }) => ($active ? theme.colors.background.glassHover : theme.colors.background.glass)};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  color: ${({ theme, $active }) => ($active ? theme.colors.text.primary : theme.colors.text.muted)};
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: ${({ theme }) => theme.transitions.fast};
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.glassHover};
+  }
+`;
+
+/** Wrapper que limita a largura e mostra a barra de rolagem horizontal em baixo */
+export const BoardWrapper = styled.div`
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 24px;
+  margin-bottom: 8px;
+  /* Barra sempre visível e fácil de clicar */
+  scrollbar-width: auto;
+  scrollbar-color: #64748b #e2e8f0;
+  &::-webkit-scrollbar {
+    height: 14px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 7px;
+    margin: 0 24px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border-radius: 7px;
+    border: 2px solid #e2e8f0;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+  &::-webkit-scrollbar-thumb:active {
+    background: #334155;
+  }
+`;
+
+export const Board = styled.div`
+  display: inline-flex;
+  gap: 16px;
+  min-height: 420px;
+  width: max-content;
+`;
+
+export const Column = styled.div<{ $color?: string; $isOver?: boolean }>`
+  flex: 0 0 300px;
+  min-width: 300px;
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme, $isOver }) => ($isOver ? theme.colors.primary : theme.colors.border.primary)};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  padding: 12px;
+  border-top: 3px solid ${({ $color }) => $color || '#6b7280'};
+  transition: border-color 0.2s;
+`;
+
+export const CardDragHandle = styled.div`
+  cursor: grab;
+  display: inline-flex;
+  padding: 2px 4px;
+  margin: -2px 6px -2px -2px;
+  border-radius: 4px;
+  color: ${({ theme }) => theme.colors.text.muted || '#94a3b8'};
+  &:hover {
+    background: rgba(148, 163, 184, 0.2);
+  }
+  &:active {
+    cursor: grabbing;
+  }
+`;
+
+export const ColumnHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
+`;
+
+export const ColumnTitle = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+`;
+
+export const ColumnCount = styled.span`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text.muted};
+  background: ${({ theme }) => theme.colors.background.glass};
+  padding: 2px 8px;
+  border-radius: 8px;
+`;
+
+export const CardsArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+`;
+
+export const Card = styled.div`
+  background: ${({ theme }) => theme.colors.background.glass};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  padding: 12px;
+  cursor: pointer;
+  transition: ${({ theme }) => theme.transitions.fast};
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.glassHover};
+    border-color: ${({ theme }) => theme.colors.border.secondary};
+  }
+`;
+
+export const CardTitle = styled.div`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+`;
+
+export const CardMeta = styled.div`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
+export const ListTable = styled.div`
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  overflow: hidden;
+`;
+
+export const ListRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 120px 80px 100px 140px 48px;
+  gap: 16px;
+  padding: 12px 16px;
+  align-items: center;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
+  cursor: pointer;
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.glass};
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+export const ListHeader = styled(ListRow)`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  font-size: 0.8rem;
+  cursor: default;
+  &:hover {
+    background: transparent;
+  }
+`;
+
+export const EmptyState = styled.div`
+  text-align: center;
+  padding: 48px 24px;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
+export const LoadingState = styled.div`
+  text-align: center;
+  padding: 48px;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
+export const ErrorState = styled.div`
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid ${({ theme }) => theme.colors.status.error};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  color: ${({ theme }) => theme.colors.status.error};
+  margin-bottom: 16px;
+`;
+
+export const FilterBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+`;
+
+export const FilterInput = styled.input`
+  padding: 8px 12px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  min-width: 160px;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+  }
+`;
+
+export const FilterSelect = styled.select`
+  padding: 8px 12px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  min-width: 140px;
+  cursor: pointer;
+`;
+
+export const BtnPrimary = styled.button`
+  padding: 8px 16px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: none;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+export const BtnSecondary = styled.button`
+  padding: 8px 16px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  cursor: pointer;
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.glass};
+  }
+`;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
+`;
+
+export const ModalBox = styled.div<{ $wide?: boolean }>`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  box-shadow: ${({ theme }) => theme.shadows.large};
+  max-width: ${({ $wide }) => ($wide ? 640 : 520)}px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  margin: auto;
+  @media (min-width: 480px) {
+    padding: 28px;
+  }
+`;
+
+export const ModalTitle = styled.h2`
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+  @media (min-width: 480px) {
+    font-size: 1.35rem;
+  }
+`;
+
+export const ModalSubtitle = styled.p`
+  margin: 0 0 20px 0;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text.muted};
+  line-height: 1.4;
+  @media (min-width: 480px) {
+    margin-bottom: 24px;
+  }
+`;
+
+export const FormRow = styled.div`
+  margin-bottom: 16px;
+`;
+
+export const FormGrid = styled.div`
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  @media (min-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+  }
+`;
+
+export const FormLabel = styled.label`
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-bottom: 6px;
+`;
+
+export const FormInput = styled.input`
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.border.focus}40;
+  }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.text.muted};
+  }
+  @media (min-width: 480px) {
+    padding: 11px 14px;
+  }
+`;
+
+export const FormSelect = styled.select`
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+  }
+  @media (min-width: 480px) {
+    padding: 11px 14px;
+  }
+`;
+
+export const FormTextarea = styled.textarea`
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 14px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.glass};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.border.focus}40;
+  }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.text.muted};
+  }
+  @media (min-width: 480px) {
+    min-height: 88px;
+    padding: 11px 14px;
+  }
+`;
+
+export const ModalActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.primary};
+`;
