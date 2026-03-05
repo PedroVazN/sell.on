@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['goal_achieved', 'goal_milestone', 'goal_created', 'goal_updated', 'goal_completed', 'system', 'warning', 'info', 'notice'],
+    enum: ['goal_achieved', 'goal_milestone', 'goal_created', 'goal_updated', 'goal_completed', 'system', 'warning', 'info', 'notice', 'chat_message'],
     required: true
   },
   priority: {

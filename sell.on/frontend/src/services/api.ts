@@ -489,7 +489,7 @@ export interface Notification {
   _id: string;
   title: string;
   message: string;
-  type: 'goal_achieved' | 'goal_milestone' | 'goal_created' | 'goal_updated' | 'goal_completed' | 'system' | 'warning' | 'info' | 'notice';
+  type: 'goal_achieved' | 'goal_milestone' | 'goal_created' | 'goal_updated' | 'goal_completed' | 'system' | 'warning' | 'info' | 'notice' | 'chat_message';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   recipient: string;
   sender: string;

@@ -3,6 +3,8 @@ const router = express.Router();
 const { auth } = require('../middleware/auth');
 const ProposalChat = require('../models/ProposalChat');
 const Proposal = require('../models/Proposal');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // GET /api/proposal-chats?proposalId=xxx — obter ou criar chat da proposta (vendedor: só suas propostas; admin: qualquer)
 router.get('/', auth, async (req, res) => {
@@ -123,6 +125,34 @@ router.post('/:id/messages', auth, async (req, res) => {
       text: text.trim().slice(0, 2000)
     });
     await chat.save();
+
+    // Se o vendedor enviou, notificar todos os admins
+    if (req.user.role === 'vendedor') {
+      try {
+        const admins = await User.find({ role: 'admin' }).select('_id').lean();
+        const proposal = await Proposal.findById(chat.proposal).populate('seller', 'name').lean();
+        const proposalNumber = proposal?.proposalNumber || 'N/A';
+        const vendedorName = req.user.name || proposal?.seller?.name || 'Vendedor';
+        const messagePreview = text.trim().slice(0, 80) + (text.trim().length > 80 ? '…' : '');
+        const fullMessage = `${vendedorName} na proposta ${proposalNumber}: ${messagePreview}`.slice(0, 500);
+
+        for (const admin of admins) {
+          await Notification.create({
+            title: 'Nova mensagem no chat',
+            message: fullMessage,
+            type: 'chat_message',
+            priority: 'medium',
+            recipient: admin._id.toString(),
+            sender: req.user._id.toString(),
+            relatedEntity: chat.proposal?.toString?.(),
+            relatedEntityType: 'proposal',
+            data: { chatId: chat._id.toString(), proposalId: chat.proposal?.toString?.(), proposalNumber, vendedorName }
+          });
+        }
+      } catch (notifErr) {
+        console.error('Erro ao criar notificação de chat para admin:', notifErr);
+      }
+    }
 
     const updated = await ProposalChat.findById(chat._id)
       .populate('vendedor', 'name email')

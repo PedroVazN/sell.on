@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, Trash2, Loader2, Sparkles } from 'lucide-react';
 import { apiService, Notification } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import * as S from './styles';
 
 interface NotificationBellProps {
@@ -8,21 +9,26 @@ interface NotificationBellProps {
 }
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
+  const { success: toastSuccess } = useToastContext();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const previousUnreadRef = useRef<number | null>(null);
 
   // Carregar notificações não lidas
   const loadUnreadCount = async () => {
     try {
-      console.log('🔔 Carregando contador de notificações não lidas...');
       const response = await apiService.getUnreadNotificationCount();
       if (response.success) {
-        console.log(`🔔 Contador carregado: ${response.data.count} notificações não lidas`);
-        setUnreadCount(response.data.count);
+        const newCount = response.data.count;
+        if (previousUnreadRef.current !== null && newCount > previousUnreadRef.current) {
+          toastSuccess('Nova mensagem no chat', 'Você tem novas notificações. Clique no sino para ver.');
+        }
+        previousUnreadRef.current = newCount;
+        setUnreadCount(newCount);
       }
     } catch (err) {
       console.error('Erro ao carregar contador de notificações:', err);
@@ -159,9 +165,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     loadUnreadCount();
   }, []);
 
-  // Atualizar contador a cada 30 segundos
+  // Atualizar contador a cada 15 segundos (inclui novas mensagens de chat para admin)
   useEffect(() => {
-    const interval = setInterval(loadUnreadCount, 30000);
+    const interval = setInterval(loadUnreadCount, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -183,6 +189,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         return 'ℹ️';
       case 'notice':
         return '📢';
+      case 'chat_message':
+        return '💬';
       default:
         return '🔔';
     }
