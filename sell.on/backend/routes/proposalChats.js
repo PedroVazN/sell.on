@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { auth, authorize } = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 const ProposalChat = require('../models/ProposalChat');
 const Proposal = require('../models/Proposal');
 
@@ -50,10 +50,13 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// GET /api/proposal-chats/list — listar todos os chats (apenas admin)
-router.get('/list', auth, authorize('admin'), async (req, res) => {
+// GET /api/proposal-chats/list — admin: todos os chats; vendedor: apenas os seus
+router.get('/list', auth, async (req, res) => {
   try {
-    const chats = await ProposalChat.find()
+    const isAdmin = req.user.role === 'admin';
+    const filter = isAdmin ? {} : { vendedor: req.user._id };
+
+    const chats = await ProposalChat.find(filter)
       .populate('proposal', 'proposalNumber client seller status createdAt')
       .populate('vendedor', 'name email')
       .sort({ updatedAt: -1 })
@@ -131,6 +134,30 @@ router.post('/:id/messages', auth, async (req, res) => {
   } catch (err) {
     console.error('Erro ao enviar mensagem:', err);
     res.status(500).json({ success: false, message: err.message || 'Erro ao enviar mensagem' });
+  }
+});
+
+// DELETE /api/proposal-chats/:id — admin: qualquer chat; vendedor: apenas o próprio
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const chat = await ProposalChat.findById(req.params.id);
+    if (!chat) {
+      return res.status(404).json({ success: false, message: 'Chat não encontrado' });
+    }
+
+    const isAdmin = req.user.role === 'admin';
+    const vendedorId = chat.vendedor?.toString?.();
+    const isVendedorOwner = req.user.role === 'vendedor' && req.user._id.toString() === vendedorId;
+
+    if (!isAdmin && !isVendedorOwner) {
+      return res.status(403).json({ success: false, message: 'Sem permissão para excluir este chat' });
+    }
+
+    await ProposalChat.findByIdAndDelete(req.params.id);
+    return res.json({ success: true, message: 'Chat excluído' });
+  } catch (err) {
+    console.error('Erro ao excluir chat:', err);
+    res.status(500).json({ success: false, message: err.message || 'Erro ao excluir chat' });
   }
 });
 

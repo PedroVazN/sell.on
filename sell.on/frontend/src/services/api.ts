@@ -1278,7 +1278,7 @@ class ApiService {
     return this.request<ProposalChat>(`/proposal-chats?proposalId=${encodeURIComponent(proposalId)}`);
   }
 
-  /** Listar todos os chats de propostas (apenas admin) */
+  /** Listar chats: admin = todos, vendedor = apenas os seus */
   async getProposalChatList(): Promise<{ success: boolean; data: ProposalChat[] }> {
     return this.request<ProposalChat[]>(`/proposal-chats/list`);
   }
@@ -1294,6 +1294,11 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ text }),
     });
+  }
+
+  /** Excluir chat da proposta (admin: qualquer; vendedor: apenas o próprio) */
+  async deleteProposalChat(chatId: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/proposal-chats/${chatId}`, { method: 'DELETE' });
   }
 
   // Eventos do Calendário

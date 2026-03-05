@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Trash2 } from 'lucide-react';
 import { apiService, ProposalChat, ProposalChatMessage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { Proposal } from '../../services/api';
 import * as S from './styles';
 
@@ -23,6 +24,7 @@ const formatMessageTime = (dateStr: string) => {
 export const ProposalChatModal: React.FC<ProposalChatModalProps> = ({ isOpen, onClose, proposal }) => {
   const { user } = useAuth();
   const { error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [chat, setChat] = useState<ProposalChat | null>(null);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -79,6 +81,24 @@ export const ProposalChatModal: React.FC<ProposalChatModalProps> = ({ isOpen, on
     }
   };
 
+  const handleDeleteChat = async () => {
+    if (!chat?._id) return;
+    const ok = await confirm({
+      title: 'Excluir conversa',
+      message: 'Tem certeza que deseja excluir esta conversa? As mensagens serão removidas permanentemente.',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteProposalChat(chat._id);
+      onClose();
+    } catch {
+      showError('Erro', 'Não foi possível excluir a conversa.');
+    }
+  };
+
   if (!isOpen) return null;
 
   const title = isAdmin
@@ -93,9 +113,16 @@ export const ProposalChatModal: React.FC<ProposalChatModalProps> = ({ isOpen, on
             <MessageCircle size={22} />
             <S.Title>{title}</S.Title>
           </S.TitleWrap>
-          <S.CloseButton type="button" onClick={onClose} aria-label="Fechar">
-            <X size={20} />
-          </S.CloseButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            {chat?._id && (
+              <S.CloseButton type="button" onClick={handleDeleteChat} aria-label="Excluir conversa" title="Excluir conversa">
+                <Trash2 size={18} />
+              </S.CloseButton>
+            )}
+            <S.CloseButton type="button" onClick={onClose} aria-label="Fechar">
+              <X size={20} />
+            </S.CloseButton>
+          </div>
         </S.Header>
         <S.Body>
           {loading ? (

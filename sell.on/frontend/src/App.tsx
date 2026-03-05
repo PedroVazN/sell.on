@@ -37,6 +37,7 @@ import { UserRegistration } from './pages/UserRegistration';
 import NoticesAdmin from './pages/NoticesAdmin';
 import NoticesViewer from './pages/NoticesViewer';
 import FunnelPage from './pages/Funnel';
+import { Chats } from './pages/Chats';
 
 function App() {
   return (
@@ -86,6 +87,7 @@ function App() {
           <Route path="price-list/create" element={<ProtectedRoute permission="admin"><CreatePriceList /></ProtectedRoute>} />
           <Route path="notices-admin" element={<ProtectedRoute permission="admin"><NoticesAdmin /></ProtectedRoute>} />
           <Route path="notices" element={<ProtectedRoute permission="notices"><NoticesViewer /></ProtectedRoute>} />
+          <Route path="chats" element={<ProtectedRoute permission="admin"><Chats /></ProtectedRoute>} />
         </Route>
         </Routes>
         <ToastContainer />

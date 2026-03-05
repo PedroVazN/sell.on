@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, ArrowLeft, Trash2 } from 'lucide-react';
 import { apiService, ProposalChat, ProposalChatMessage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import * as S from './styles';
 
 const formatTime = (dateStr: string) => {
@@ -24,6 +25,7 @@ const formatMessageTime = (dateStr: string) => {
 export const AdminChatWidget: React.FC = () => {
   const { user } = useAuth();
   const { error: showError } = useToastContext();
+  const { confirm } = useConfirm();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<'list' | 'thread'>('list');
   const [chats, setChats] = useState<ProposalChat[]>([]);
@@ -35,9 +37,11 @@ export const AdminChatWidget: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.role === 'admin';
+  const isVendedor = user?.role === 'vendedor';
+  const showWidget = isAdmin || isVendedor;
 
   useEffect(() => {
-    if (!open || !isAdmin) return;
+    if (!open) return;
     if (view === 'list') {
       let cancelled = false;
       setLoadingList(true);
@@ -56,7 +60,7 @@ export const AdminChatWidget: React.FC = () => {
         });
       return () => { cancelled = true; };
     }
-  }, [open, view, isAdmin, showError]);
+  }, [open, view, showError]);
 
   useEffect(() => {
     if (view !== 'thread' || !selectedChat?._id) return;
@@ -90,12 +94,28 @@ export const AdminChatWidget: React.FC = () => {
     setView('list');
     setSelectedChat(null);
     setMessageText('');
-    // Recarrega a lista ao voltar para refletir novas mensagens
-    if (isAdmin) {
-      setLoadingList(true);
-      apiService.getProposalChatList()
-        .then((res) => { if (res.success && Array.isArray(res.data)) setChats(res.data); })
-        .finally(() => setLoadingList(false));
+    // Recarrega a lista ao voltar
+    setLoadingList(true);
+    apiService.getProposalChatList()
+      .then((res) => { if (res.success && Array.isArray(res.data)) setChats(res.data); })
+      .finally(() => setLoadingList(false));
+  };
+
+  const handleDeleteChat = async () => {
+    if (!selectedChat?._id) return;
+    const ok = await confirm({
+      title: 'Excluir conversa',
+      message: 'Tem certeza que deseja excluir esta conversa? As mensagens serão removidas permanentemente.',
+      confirmLabel: 'Excluir',
+      cancelLabel: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await apiService.deleteProposalChat(selectedChat._id);
+      handleBack();
+    } catch {
+      showError('Erro', 'Não foi possível excluir a conversa.');
     }
   };
 
@@ -131,7 +151,7 @@ export const AdminChatWidget: React.FC = () => {
     return '';
   };
 
-  if (!isAdmin) return null;
+  if (!showWidget) return null;
 
   return (
     <S.WidgetWrap>
@@ -155,7 +175,7 @@ export const AdminChatWidget: React.FC = () => {
               <S.PanelHeader>
                 <S.PanelTitle>
                   <MessageCircle size={20} />
-                  Mensagens
+                  {isAdmin ? 'Mensagens' : 'Meus chats'}
                 </S.PanelTitle>
                 <S.HeaderButton type="button" onClick={() => setOpen(false)} aria-label="Fechar">
                   <X size={20} />
@@ -200,6 +220,9 @@ export const AdminChatWidget: React.FC = () => {
                 <S.PanelTitle>
                   {selectedChat ? `${proposalNumber(selectedChat)} · ${vendedorName(selectedChat)}` : 'Chat'}
                 </S.PanelTitle>
+                <S.HeaderButton type="button" onClick={handleDeleteChat} aria-label="Excluir conversa" title="Excluir conversa">
+                  <Trash2 size={18} />
+                </S.HeaderButton>
                 <S.HeaderButton type="button" onClick={() => setOpen(false)} aria-label="Fechar">
                   <X size={20} />
                 </S.HeaderButton>
@@ -234,7 +257,7 @@ export const AdminChatWidget: React.FC = () => {
                   </S.ThreadMessages>
                   <S.ThreadInputWrap>
                     <S.ThreadInput
-                      placeholder="Mensagem para o vendedor..."
+                      placeholder={isAdmin ? 'Mensagem para o vendedor...' : 'Mensagem para o admin...'}
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
