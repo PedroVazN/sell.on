@@ -137,18 +137,19 @@ const corsConfig = (req, res, next) => {
     'https://sellon-novo.vercel.app',
     'https://sellon-novo-git-main-pedrovazn.vercel.app',
     'https://sell-on-dt.vercel.app',
+    'https://sell-on-v2.vercel.app',
     process.env.FRONTEND_URL
   ].filter(Boolean);
 
-  // Verificar se a origem é permitida
-  if (allowedOrigins.includes(origin)) {
+  // Verificar se a origem é permitida (inclui qualquer *.vercel.app para previews)
+  const isAllowed = allowedOrigins.includes(origin) ||
+    (origin && origin.endsWith('.vercel.app'));
+  if (isAllowed) {
     res.header('Access-Control-Allow-Origin', origin);
   } else if (process.env.NODE_ENV === 'development') {
-    // Em desenvolvimento, permitir localhost
     res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
   } else {
-    // Em produção, não permitir origens não listadas
-    res.header('Access-Control-Allow-Origin', 'https://sellon-novo.vercel.app');
+    res.header('Access-Control-Allow-Origin', 'https://sell-on-v2.vercel.app');
   }
 
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
