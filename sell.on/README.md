@@ -502,7 +502,7 @@ NODE_ENV=production
 ### URLs de Produção
 
 - **Frontend**: https://sell-on-dt.vercel.app
-- **Backend**: https://backend-sable-eta-89.vercel.app
+- **Backend**: https://backendsellon.vercel.app
 
 ---
 
@@ -738,7 +738,7 @@ Este projeto é **proprietário** e de uso interno. Todos os direitos reservados
 ### Links Úteis
 
 - **Frontend (Produção)**: https://sell-on-dt.vercel.app
-- **Backend (Produção)**: https://backend-sable-eta-89.vercel.app
+- **Backend (Produção)**: https://backendsellon.vercel.app
 - **Documentação Adicional**: Ver pasta `/docs`
 
 ---

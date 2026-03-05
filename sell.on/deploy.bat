@@ -21,7 +21,7 @@ git push origin main
 echo [4/4] Deploy concluído!
 echo.
 echo ✅ Frontend: https://sellonn.vercel.app
-echo ✅ Backend: https://backend-sable-eta-89.vercel.app
+echo ✅ Backend: https://backendsellon.vercel.app
 echo.
 echo Aguarde alguns minutos para o Vercel processar as alterações...
 pause

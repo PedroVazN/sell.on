@@ -4,11 +4,11 @@ function testAPI() {
   console.log('🧪 Testando API no Vercel...\n');
 
   const testUrls = [
-    'https://backend-sable-eta-89.vercel.app/',
-    'https://backend-sable-eta-89.vercel.app/api',
-    'https://backend-sable-eta-89.vercel.app/api/test',
-    'https://backend-sable-eta-89.vercel.app/api/products',
-    'https://backend-sable-eta-89.vercel.app/api/clients'
+    'https://backendsellon.vercel.app/',
+    'https://backendsellon.vercel.app/api',
+    'https://backendsellon.vercel.app/api/test',
+    'https://backendsellon.vercel.app/api/products',
+    'https://backendsellon.vercel.app/api/clients'
   ];
 
   testUrls.forEach((url, index) => {
@@ -16,9 +16,9 @@ function testAPI() {
       console.log(`🔍 Testando ${url}...`);
       
       const options = {
-        hostname: 'backend-sable-eta-89.vercel.app',
+        hostname: 'backendsellon.vercel.app',
         port: 443,
-        path: url.replace('https://backend-sable-eta-89.vercel.app', ''),
+        path: url.replace('https://backendsellon.vercel.app', ''),
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

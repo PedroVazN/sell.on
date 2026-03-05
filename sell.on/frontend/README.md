@@ -55,7 +55,7 @@ Edite o arquivo `src/services/api.ts` com a URL da API:
 ```typescript
 const api = axios.create({
   baseURL: 'http://localhost:3001/api', // Desenvolvimento
-  // baseURL: 'https://backend-sable-eta-89.vercel.app/api', // Produção
+  // baseURL: 'https://backendsellon.vercel.app/api', // Produção
 });
 ```
 
@@ -325,7 +325,7 @@ vercel --prod
 ### Variáveis de Ambiente (Vercel Dashboard)
 
 ```
-REACT_APP_API_URL=https://backend-sable-eta-89.vercel.app/api
+REACT_APP_API_URL=https://backendsellon.vercel.app/api
 ```
 
 ### Build Manual
@@ -338,7 +338,7 @@ npm run build
 ## 🌐 URLs
 
 - **Produção**: https://sell-on-dt.vercel.app
-- **Backend**: https://backend-sable-eta-89.vercel.app/api
+- **Backend**: https://backendsellon.vercel.app/api
 
 ## 📝 Licença
 

@@ -8,10 +8,10 @@
 ## 🌐 URLs de Produção
 
 ### Backend (API)
-- **URL Principal**: https://backend-sable-eta-89.vercel.app
-- **API Base**: https://backend-sable-eta-89.vercel.app/api
-- **Teste**: https://backend-sable-eta-89.vercel.app/api/test
-- **Health Check**: https://backend-sable-eta-89.vercel.app/health
+- **URL Principal**: https://backendsellon.vercel.app
+- **API Base**: https://backendsellon.vercel.app/api
+- **Teste**: https://backendsellon.vercel.app/api/test
+- **Health Check**: https://backendsellon.vercel.app/health
 
 ### Frontend (Interface)
 - **URL Principal**: https://frontend-sigma-rouge-40.vercel.app
@@ -35,12 +35,12 @@
 
 O frontend está configurado para se comunicar com o backend através da URL:
 ```
-https://backend-sable-eta-89.vercel.app/api
+https://backendsellon.vercel.app/api
 ```
 
 Esta configuração está no arquivo `frontend/src/services/api.ts`:
 ```typescript
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backend-sable-eta-89.vercel.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backendsellon.vercel.app/api';
 ```
 
 ## 🛠️ Scripts de Deploy
@@ -87,7 +87,7 @@ vercel --prod --yes
 
 ### Backend
 ```bash
-curl https://backend-sable-eta-89.vercel.app/api/test
+curl https://backendsellon.vercel.app/api/test
 ```
 
 ### Frontend

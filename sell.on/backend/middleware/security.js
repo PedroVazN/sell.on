@@ -11,7 +11,7 @@ const securityHeaders = helmet({
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://backend-sable-eta-89.vercel.app"],
+      connectSrc: ["'self'", "https://backendsellon.vercel.app"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],

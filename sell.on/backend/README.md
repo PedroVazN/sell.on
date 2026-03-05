@@ -140,7 +140,7 @@ vercel --prod
 ## 🌐 Acesso
 
 - **API Local:** http://localhost:3001/api
-- **API Produção:** https://backend-sable-eta-89.vercel.app/api
+- **API Produção:** https://backendsellon.vercel.app/api
 - **Health Check:** GET `/api/health`
 
 ## 📁 Estrutura do Projeto
