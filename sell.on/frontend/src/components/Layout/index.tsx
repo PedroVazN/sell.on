@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
 import { Header } from '../Header';
 import { Clock } from '../Clock';
+import { AdminChatWidget } from '../AdminChatWidget';
 import { SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '../Sidebar/styles';
 import { Container, MainContent } from './styles';
 
@@ -39,6 +40,7 @@ export const Layout: React.FC = () => {
         <Header />
         <Outlet />
       </MainContent>
+      <AdminChatWidget />
     </Container>
   );
 };
