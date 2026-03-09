@@ -5,6 +5,8 @@ const Proposal = require('../models/Proposal');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
 const Client = require('../models/Client');
+const ClientAccessRequest = require('../models/ClientAccessRequest');
+const Notification = require('../models/Notification');
 const Opportunity = require('../models/Opportunity');
 const PipelineStage = require('../models/PipelineStage');
 const { auth } = require('../middleware/auth');
@@ -379,6 +381,67 @@ router.post('/', auth, proposalLimiter, (req, res, next) => {
       status,
       validUntil
     } = req.body;
+
+    const currentUserId = req.user?.id || seller?._id;
+    const currentUserRole = req.user?.role;
+
+    // Verificar se o cliente já existe e pertence a outro vendedor (carteira) — exige aprovação
+    const cleanCnpj = (client?.cnpj || '').replace(/\D/g, '');
+    if (cleanCnpj.length === 14 && currentUserRole === 'vendedor') {
+      const allByCnpj = await Client.find({}).limit(5000).lean();
+      const clientDocFound = allByCnpj.find((c) => (c.cnpj || '').replace(/\D/g, '') === cleanCnpj);
+
+      if (clientDocFound) {
+        const ownerId = (clientDocFound.assignedTo && clientDocFound.assignedTo.toString()) || (clientDocFound.createdBy && clientDocFound.createdBy.toString()) || null;
+        const sellerIdStr = (seller?._id || currentUserId || '').toString();
+        if (ownerId && ownerId !== sellerIdStr) {
+          const approved = await ClientAccessRequest.findOne({
+            client: clientDocFound._id,
+            requestedBy: sellerIdStr,
+            status: 'approved'
+          }).lean();
+          if (!approved) {
+            let accessRequest = await ClientAccessRequest.findOne({
+              client: clientDocFound._id,
+              requestedBy: sellerIdStr,
+              status: 'pending'
+            });
+            if (!accessRequest) {
+              accessRequest = await ClientAccessRequest.create({
+                client: clientDocFound._id,
+                requestedBy: sellerIdStr,
+                status: 'pending'
+              });
+              await Notification.create({
+                title: 'Solicitação de uso de cliente',
+                message: `${req.user?.name || 'Um vendedor'} solicitou usar o cliente ${(clientDocFound.razaoSocial || clientDocFound.nomeFantasia || 'CNPJ ' + (clientDocFound.cnpj || '')).substring(0, 50)} para criar proposta. Aceite para liberar o uso.`,
+                type: 'client_access_request',
+                priority: 'high',
+                recipient: ownerId,
+                sender: sellerIdStr,
+                relatedEntity: accessRequest._id.toString(),
+                relatedEntityType: 'client_access_request',
+                data: {
+                  requestId: accessRequest._id.toString(),
+                  clientId: clientDocFound._id.toString(),
+                  clientRazao: clientDocFound.razaoSocial,
+                  requestedByName: req.user?.name,
+                  requestedByEmail: req.user?.email
+                }
+              });
+            }
+            const owner = await User.findById(ownerId).select('name').lean();
+            return res.status(200).json({
+              success: false,
+              needsApproval: true,
+              requestId: accessRequest._id.toString(),
+              ownerName: owner?.name || 'Dono da carteira',
+              message: 'Este cliente pertence à carteira de outro vendedor. Foi enviada uma solicitação de uso. Você poderá criar a proposta após a aprovação.'
+            });
+          }
+        }
+      }
+    }
 
     // Dados já validados pelo middleware validateProposal
 

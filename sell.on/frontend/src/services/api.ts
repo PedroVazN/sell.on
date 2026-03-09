@@ -177,6 +177,17 @@ export interface Client {
   updatedAt: string;
 }
 
+export interface ClientAccessRequest {
+  _id: string;
+  client: { _id: string; razaoSocial?: string; nomeFantasia?: string; cnpj?: string; contato?: { nome?: string; email?: string } };
+  requestedBy: { _id: string; name?: string; email?: string };
+  status: 'pending' | 'approved' | 'rejected';
+  respondedAt?: string | null;
+  respondedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Distributor {
   _id: string;
   apelido?: string;
@@ -489,15 +500,15 @@ export interface Notification {
   _id: string;
   title: string;
   message: string;
-  type: 'goal_achieved' | 'goal_milestone' | 'goal_created' | 'goal_updated' | 'goal_completed' | 'system' | 'warning' | 'info' | 'notice' | 'chat_message';
+  type: 'goal_achieved' | 'goal_milestone' | 'goal_created' | 'goal_updated' | 'goal_completed' | 'system' | 'warning' | 'info' | 'notice' | 'chat_message' | 'client_access_request';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   recipient: string;
   sender: string;
   relatedEntity?: string;
-  relatedEntityType?: 'goal' | 'sale' | 'proposal' | 'client' | 'distributor' | 'notice';
+  relatedEntityType?: 'goal' | 'sale' | 'proposal' | 'client' | 'distributor' | 'notice' | 'client_access_request';
   isRead: boolean;
   readAt?: string;
-  data: any;
+  data?: { requestId?: string; clientId?: string; clientRazao?: string; requestedByName?: string; requestedByEmail?: string };
   expiresAt?: string;
   isActive: boolean;
   createdAt: string;
@@ -898,6 +909,22 @@ class ApiService {
   async getClientStats(carteira?: 'me'): Promise<ApiResponse<any>> {
     const url = carteira === 'me' ? '/clients/stats/summary?carteira=me' : '/clients/stats/summary';
     return this.request<any>(url);
+  }
+
+  /** Solicitações de uso de cliente (onde eu sou o dono da carteira) */
+  async getClientAccessRequests(): Promise<ApiResponse<ClientAccessRequest[]>> {
+    return this.request<ClientAccessRequest[]>('/clients/access-requests');
+  }
+
+  async approveClientAccessRequest(requestId: string): Promise<ApiResponse<ClientAccessRequest>> {
+    return this.request<ClientAccessRequest>(`/clients/access-requests/${requestId}/approve`, { method: 'POST' });
+  }
+
+  async rejectClientAccessRequest(requestId: string, message?: string): Promise<ApiResponse<ClientAccessRequest>> {
+    return this.request<ClientAccessRequest>(`/clients/access-requests/${requestId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(message != null ? { message } : {}),
+    });
   }
 
   // Distribuidores

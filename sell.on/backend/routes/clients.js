@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Client = require('../models/Client');
+const User = require('../models/User');
+const ClientAccessRequest = require('../models/ClientAccessRequest');
+const Notification = require('../models/Notification');
 const { auth, authorize } = require('../middleware/auth');
+
+// Dono do cliente: assignedTo ou createdBy
+function getClientOwner(client) {
+  const ownerId = (client.assignedTo && client.assignedTo._id ? client.assignedTo._id : client.assignedTo) || client.createdBy;
+  return ownerId ? ownerId.toString() : null;
+}
 
 // GET /api/clients - Listar clientes (filtrado por vendedor se necessário)
 router.get('/', auth, async (req, res) => {
@@ -97,6 +106,87 @@ router.get('/', auth, async (req, res) => {
       error: 'Erro interno do servidor',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+// GET /api/clients/access-requests - Listar solicitações de uso de cliente (onde eu sou o dono do cliente)
+router.get('/access-requests', auth, async (req, res) => {
+  try {
+    const clientsOwnedByMe = await Client.find({
+      $or: [
+        { assignedTo: req.user.id },
+        { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
+      ]
+    }).select('_id');
+    const clientIds = clientsOwnedByMe.map(c => c._id);
+
+    const requests = await ClientAccessRequest.find({
+      client: { $in: clientIds },
+      status: 'pending'
+    })
+      .populate('client', 'razaoSocial nomeFantasia cnpj contato')
+      .populate('requestedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: requests
+    });
+  } catch (err) {
+    console.error('Erro ao listar solicitações de uso:', err);
+    res.status(500).json({ success: false, message: 'Erro ao listar solicitações' });
+  }
+});
+
+// POST /api/clients/access-requests/:id/approve - Aprovar uso do cliente
+router.post('/access-requests/:id/approve', auth, async (req, res) => {
+  try {
+    const request = await ClientAccessRequest.findById(req.params.id)
+      .populate('client');
+    if (!request || request.status !== 'pending') {
+      return res.status(404).json({ success: false, message: 'Solicitação não encontrada ou já respondida' });
+    }
+    const client = await Client.findById(request.client._id || request.client);
+    const ownerId = getClientOwner(client);
+    if (ownerId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Apenas o dono da carteira pode aprovar' });
+    }
+    request.status = 'approved';
+    request.respondedAt = new Date();
+    request.respondedBy = req.user.id;
+    await request.save();
+
+    res.json({ success: true, data: request, message: 'Uso do cliente aprovado' });
+  } catch (err) {
+    console.error('Erro ao aprovar solicitação:', err);
+    res.status(500).json({ success: false, message: 'Erro ao aprovar' });
+  }
+});
+
+// POST /api/clients/access-requests/:id/reject - Rejeitar uso do cliente
+router.post('/access-requests/:id/reject', auth, async (req, res) => {
+  try {
+    const request = await ClientAccessRequest.findById(req.params.id)
+      .populate('client');
+    if (!request || request.status !== 'pending') {
+      return res.status(404).json({ success: false, message: 'Solicitação não encontrada ou já respondida' });
+    }
+    const client = await Client.findById(request.client._id || request.client);
+    const ownerId = getClientOwner(client);
+    if (ownerId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Apenas o dono da carteira pode rejeitar' });
+    }
+    request.status = 'rejected';
+    request.respondedAt = new Date();
+    request.respondedBy = req.user.id;
+    if (req.body.message) request.message = req.body.message;
+    await request.save();
+
+    res.json({ success: true, data: request, message: 'Solicitação rejeitada' });
+  } catch (err) {
+    console.error('Erro ao rejeitar solicitação:', err);
+    res.status(500).json({ success: false, message: 'Erro ao rejeitar' });
   }
 });
 

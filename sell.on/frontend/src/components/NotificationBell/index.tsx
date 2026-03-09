@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, X, Check, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { Bell, X, Check, Trash2, Loader2, Sparkles, UserCheck, UserX } from 'lucide-react';
 import { apiService, Notification } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
 import * as S from './styles';
@@ -8,13 +8,17 @@ interface NotificationBellProps {
   className?: string;
 }
 
+const requestIdForNotification = (n: Notification) =>
+  (n.data && (n.data as any).requestId) || n.relatedEntity || '';
+
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
-  const { success: toastSuccess } = useToastContext();
+  const { success: toastSuccess, error: toastError } = useToastContext();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const previousUnreadRef = useRef<number | null>(null);
 
@@ -139,6 +143,48 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     }
   };
 
+  const handleApproveClientAccess = async (notification: Notification) => {
+    const requestId = requestIdForNotification(notification);
+    if (!requestId) return;
+    setProcessingId(notification._id);
+    try {
+      const res = await apiService.approveClientAccessRequest(requestId);
+      if (res.success) {
+        toastSuccess('Aprovado', 'Uso do cliente liberado para o vendedor.');
+        await apiService.deleteNotification(notification._id);
+        setNotifications((prev) => prev.filter((n) => n._id !== notification._id));
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } else {
+        toastError('Erro', res.message || 'Não foi possível aprovar.');
+      }
+    } catch (err: any) {
+      toastError('Erro', err.message || 'Não foi possível aprovar.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectClientAccess = async (notification: Notification) => {
+    const requestId = requestIdForNotification(notification);
+    if (!requestId) return;
+    setProcessingId(notification._id);
+    try {
+      const res = await apiService.rejectClientAccessRequest(requestId);
+      if (res.success) {
+        toastSuccess('Rejeitado', 'Solicitação de uso do cliente rejeitada.');
+        await apiService.deleteNotification(notification._id);
+        setNotifications((prev) => prev.filter((n) => n._id !== notification._id));
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } else {
+        toastError('Erro', res.message || 'Não foi possível rejeitar.');
+      }
+    } catch (err: any) {
+      toastError('Erro', err.message || 'Não foi possível rejeitar.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   // Abrir dropdown
   const handleToggle = () => {
     if (!isOpen) {
@@ -191,6 +237,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         return '📢';
       case 'chat_message':
         return '💬';
+      case 'client_access_request':
+        return '👤';
       default:
         return '🔔';
     }
@@ -278,7 +326,25 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
                     </S.NotificationTime>
                   </S.NotificationContent>
                   <S.NotificationActions>
-                    {!notification.isRead && (
+                    {notification.type === 'client_access_request' && (
+                      <>
+                        <S.ActionButton
+                          onClick={() => handleApproveClientAccess(notification)}
+                          title="Aceitar uso do cliente"
+                          disabled={processingId === notification._id}
+                        >
+                          {processingId === notification._id ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
+                        </S.ActionButton>
+                        <S.ActionButton
+                          onClick={() => handleRejectClientAccess(notification)}
+                          title="Rejeitar"
+                          disabled={processingId === notification._id}
+                        >
+                          <UserX size={14} />
+                        </S.ActionButton>
+                      </>
+                    )}
+                    {!notification.isRead && notification.type !== 'client_access_request' && (
                       <S.ActionButton
                         onClick={() => markAsRead(notification)}
                         title="Marcar como lida"

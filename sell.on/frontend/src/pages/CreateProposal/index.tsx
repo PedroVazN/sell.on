@@ -601,7 +601,7 @@ export const CreateProposal: React.FC = () => {
       // Se cliente não existe, criar novo
       if (!existingClient) {
         console.log('📝 Criando novo cliente...');
-        const newClientData = {
+        const newClientData: any = {
           cnpj: formData.client.cnpj,
           razaoSocial: formData.client.razaoSocial,
           nomeFantasia: formData.client.company || formData.client.razaoSocial,
@@ -624,7 +624,7 @@ export const CreateProposal: React.FC = () => {
           observacoes: `Cliente criado automaticamente via proposta em ${new Date().toLocaleDateString()}`,
           isActive: true
         };
-        
+        if (user?._id) newClientData.assignedTo = user._id;
         const createResponse = await apiService.createClient(newClientData);
         if (createResponse.success) {
           console.log('✅ Cliente criado com sucesso:', createResponse.data);
@@ -718,7 +718,7 @@ export const CreateProposal: React.FC = () => {
         return;
       }
 
-      const response = await apiService.createProposal(proposalData);
+      const response = await apiService.createProposal(proposalData) as any;
       
       if (response.success) {
         // Pegar o número da proposta da resposta
@@ -731,8 +731,13 @@ export const CreateProposal: React.FC = () => {
         setTimeout(() => {
           navigate('/proposals');
         }, 3000);
+      } else if (response.needsApproval) {
+        info(
+          'Solicitação enviada',
+          response.message || `Foi enviada uma solicitação para ${response.ownerName || 'o dono da carteira'}. Você poderá criar a proposta após a aprovação.`
+        );
       } else {
-        showError('Erro ao criar proposta', 'Tente novamente.');
+        showError('Erro ao criar proposta', response.message || 'Tente novamente.');
       }
     } catch (error: any) {
       console.error('Erro ao salvar proposta:', error);

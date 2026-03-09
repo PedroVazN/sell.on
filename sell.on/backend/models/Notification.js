@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['goal_achieved', 'goal_milestone', 'goal_created', 'goal_updated', 'goal_completed', 'system', 'warning', 'info', 'notice', 'chat_message'],
+    enum: ['goal_achieved', 'goal_milestone', 'goal_created', 'goal_updated', 'goal_completed', 'system', 'warning', 'info', 'notice', 'chat_message', 'client_access_request'],
     required: true
   },
   priority: {
@@ -37,7 +37,7 @@ const notificationSchema = new mongoose.Schema({
   },
   relatedEntityType: {
     type: String,
-    enum: ['goal', 'sale', 'proposal', 'client', 'distributor', 'notice'],
+    enum: ['goal', 'sale', 'proposal', 'client', 'distributor', 'notice', 'client_access_request'],
     required: false
   },
   isRead: {

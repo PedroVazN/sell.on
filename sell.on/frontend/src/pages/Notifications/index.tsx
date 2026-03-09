@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Filter, Check, Trash2, Loader2, Sparkles, X } from 'lucide-react';
+import { Bell, Search, Filter, Check, Trash2, Loader2, Sparkles, X, UserCheck, UserX } from 'lucide-react';
 import { apiService, Notification } from '../../services/api';
+import { useToastContext } from '../../contexts/ToastContext';
 import { 
   Container, 
   Header, 
@@ -31,11 +32,13 @@ import {
 } from './styles';
 
 export const Notifications: React.FC = () => {
+  const { success: toastSuccess, error: toastError } = useToastContext();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Carregar notificações
   const loadNotifications = async () => {
@@ -111,6 +114,49 @@ export const Notifications: React.FC = () => {
     }
   };
 
+  const requestIdForNotification = (n: Notification) =>
+    (n.data && (n.data as any).requestId) || n.relatedEntity || '';
+
+  const handleApproveClientAccess = async (notification: Notification) => {
+    const requestId = requestIdForNotification(notification);
+    if (!requestId) return;
+    setProcessingId(notification._id);
+    try {
+      const res = await apiService.approveClientAccessRequest(requestId);
+      if (res.success) {
+        toastSuccess('Aprovado', 'Uso do cliente liberado para o vendedor.');
+        await apiService.deleteNotification(notification._id);
+        setNotifications((prev) => prev.filter((n) => n._id !== notification._id));
+      } else {
+        toastError('Erro', res.message || 'Não foi possível aprovar.');
+      }
+    } catch (err: any) {
+      toastError('Erro', err.message || 'Não foi possível aprovar.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectClientAccess = async (notification: Notification) => {
+    const requestId = requestIdForNotification(notification);
+    if (!requestId) return;
+    setProcessingId(notification._id);
+    try {
+      const res = await apiService.rejectClientAccessRequest(requestId);
+      if (res.success) {
+        toastSuccess('Rejeitado', 'Solicitação de uso do cliente rejeitada.');
+        await apiService.deleteNotification(notification._id);
+        setNotifications((prev) => prev.filter((n) => n._id !== notification._id));
+      } else {
+        toastError('Erro', res.message || 'Não foi possível rejeitar.');
+      }
+    } catch (err: any) {
+      toastError('Erro', err.message || 'Não foi possível rejeitar.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   useEffect(() => {
     loadNotifications();
   }, []);
@@ -133,6 +179,8 @@ export const Notifications: React.FC = () => {
         return 'ℹ️';
       case 'notice':
         return '📢';
+      case 'client_access_request':
+        return '👤';
       default:
         return '🔔';
     }
@@ -236,7 +284,25 @@ export const Notifications: React.FC = () => {
                   </NotificationTime>
                 </NotificationContent>
                 <NotificationActions>
-                  {!notification.isRead && (
+                  {notification.type === 'client_access_request' && (
+                    <>
+                      <ActionButton
+                        onClick={() => handleApproveClientAccess(notification)}
+                        title="Aceitar uso do cliente"
+                        disabled={processingId === notification._id}
+                      >
+                        {processingId === notification._id ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => handleRejectClientAccess(notification)}
+                        title="Rejeitar"
+                        disabled={processingId === notification._id}
+                      >
+                        <UserX size={14} />
+                      </ActionButton>
+                    </>
+                  )}
+                  {!notification.isRead && notification.type !== 'client_access_request' && (
                     <ActionButton
                       onClick={() => markAsRead(notification)}
                       title="Marcar como lida"
