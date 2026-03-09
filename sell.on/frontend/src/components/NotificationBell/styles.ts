@@ -155,8 +155,14 @@ export const ActionButton = styled.button`
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
+  opacity: 1;
 
-  &:hover {
+  svg {
+    color: inherit;
+    opacity: 1;
+  }
+
+  &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.25);
     transform: scale(1.1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -164,6 +170,44 @@ export const ActionButton = styled.button`
 
   &:active {
     transform: scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+/** Botões dentro do item de notificação (lista) — fundo claro para ícones visíveis */
+export const ListActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+
+  svg {
+    color: inherit;
+    opacity: 1;
+  }
+
+  &:hover:not(:disabled) {
+    background: #667eea;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `;
 

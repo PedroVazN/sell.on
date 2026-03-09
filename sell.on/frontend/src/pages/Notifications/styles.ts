@@ -220,17 +220,32 @@ export const ActionButton = styled.button`
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: ${({ theme }) => theme.colors.background.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: #334155;
+  border: 1px solid #475569;
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: #e2e8f0;
   cursor: pointer;
   transition: all 0.2s ease;
-  
-  &:hover {
+  opacity: 1;
+
+  svg {
+    color: #e2e8f0;
+    opacity: 1;
+  }
+
+  &:hover:not(:disabled) {
     background: ${({ theme }) => theme.colors.primary};
     color: white;
     border-color: ${({ theme }) => theme.colors.primary};
+  }
+
+  &:hover:not(:disabled) svg {
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `;
 

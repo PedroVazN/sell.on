@@ -328,36 +328,36 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
                   <S.NotificationActions>
                     {notification.type === 'client_access_request' && (
                       <>
-                        <S.ActionButton
+                        <S.ListActionButton
                           onClick={() => handleApproveClientAccess(notification)}
                           title="Aceitar uso do cliente"
                           disabled={processingId === notification._id}
                         >
                           {processingId === notification._id ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
-                        </S.ActionButton>
-                        <S.ActionButton
+                        </S.ListActionButton>
+                        <S.ListActionButton
                           onClick={() => handleRejectClientAccess(notification)}
                           title="Rejeitar"
                           disabled={processingId === notification._id}
                         >
                           <UserX size={14} />
-                        </S.ActionButton>
+                        </S.ListActionButton>
                       </>
                     )}
                     {!notification.isRead && notification.type !== 'client_access_request' && (
-                      <S.ActionButton
+                      <S.ListActionButton
                         onClick={() => markAsRead(notification)}
                         title="Marcar como lida"
                       >
                         <Check size={14} />
-                      </S.ActionButton>
+                      </S.ListActionButton>
                     )}
-                    <S.ActionButton
+                    <S.ListActionButton
                       onClick={() => deleteNotification(notification)}
                       title="Remover"
                     >
                       <Trash2 size={14} />
-                    </S.ActionButton>
+                    </S.ListActionButton>
                   </S.NotificationActions>
                 </S.NotificationItem>
               ))
