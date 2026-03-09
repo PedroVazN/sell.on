@@ -220,16 +220,16 @@ export const ActionButton = styled.button`
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: #334155;
-  border: 1px solid #475569;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  color: #e2e8f0;
+  color: #0f172a;
   cursor: pointer;
   transition: all 0.2s ease;
   opacity: 1;
 
   svg {
-    color: #e2e8f0;
+    color: #0f172a;
     opacity: 1;
   }
 

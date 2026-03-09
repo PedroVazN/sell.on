@@ -178,7 +178,7 @@ export const ActionButton = styled.button`
   }
 `;
 
-/** Botões dentro do item de notificação (lista) — fundo claro para ícones visíveis */
+/** Botões dentro do item de notificação (lista) — ícones pretos em fundo claro */
 export const ListActionButton = styled.button`
   display: flex;
   align-items: center;
@@ -187,14 +187,14 @@ export const ListActionButton = styled.button`
   height: 36px;
   border: none;
   border-radius: 10px;
-  background: #e2e8f0;
-  color: #334155;
+  background: #f1f5f9;
+  color: #0f172a;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 1;
 
   svg {
-    color: inherit;
+    color: #0f172a;
     opacity: 1;
   }
 
@@ -203,6 +203,10 @@ export const ListActionButton = styled.button`
     color: white;
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+
+  &:hover:not(:disabled) svg {
+    color: white;
   }
 
   &:disabled {
