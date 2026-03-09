@@ -219,3 +219,157 @@ export const Ellipsis = styled.span`
   color: rgba(255, 255, 255, 0.5);
   padding: 0 4px;
 `;
+
+// Modal Transferir clientes
+export const TransferButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  color: #a78bfa;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover {
+    background: rgba(139, 92, 246, 0.3);
+    border-color: #8b5cf6;
+    color: #c4b5fd;
+  }
+`;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+`;
+
+export const ModalBox = styled.div`
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+export const ModalHeader = styled.div`
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  h2 { margin: 0; font-size: 1.25rem; color: #fff; }
+`;
+
+export const ModalClose = styled.button`
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 4px;
+  &:hover { color: #fff; }
+`;
+
+export const ModalBody = styled.div`
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+`;
+
+export const SelectAllRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+`;
+
+export const SelectAllBtn = styled.button`
+  padding: 8px 14px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  &:hover { background: rgba(59, 130, 246, 0.25); }
+`;
+
+export const TransferList = styled.div`
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  margin-bottom: 20px;
+`;
+
+export const TransferListItem = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(255, 255, 255, 0.04); }
+  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+`;
+
+export const TransferSelect = styled.select`
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  option { background: #1f2937; color: #fff; }
+`;
+
+export const ModalFooter = styled.div`
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+`;
+
+export const ModalCancel = styled.button`
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  &:hover { background: rgba(255, 255, 255, 0.1); }
+`;
+
+export const ModalConfirm = styled.button`
+  padding: 10px 18px;
+  background: #8b5cf6;
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover:not(:disabled) { background: #7c3aed; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+`;

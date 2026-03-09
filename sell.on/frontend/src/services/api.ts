@@ -927,6 +927,14 @@ class ApiService {
     });
   }
 
+  /** Transferir clientes da carteira para outro vendedor */
+  async transferClients(clientIds: string[], targetUserId: string): Promise<ApiResponse<{ modifiedCount: number; message: string }>> {
+    return this.request<{ modifiedCount: number; message: string }>('/clients/transfer', {
+      method: 'POST',
+      body: JSON.stringify({ clientIds, targetUserId }),
+    });
+  }
+
   // Distribuidores
   async getDistributors(page = 1, limit = 10, search?: string, origem?: string, isActive?: boolean): Promise<ApiResponse<Distributor[]>> {
     let url = `/distributors?page=${page}&limit=${limit}`;

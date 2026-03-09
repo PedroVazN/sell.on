@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserCheck, Search, Edit, Loader2 } from 'lucide-react';
+import { UserCheck, Search, Edit, Loader2, UserPlus, X } from 'lucide-react';
 import { apiService, Client } from '../../services/api';
+import type { User } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 import { ClientModal } from '../../components/ClientModal';
 import {
   Container,
@@ -29,12 +31,27 @@ import {
   PaginationNumbers,
   PaginationNumber,
   Ellipsis,
+  TransferButton,
+  ModalOverlay,
+  ModalBox,
+  ModalHeader,
+  ModalClose,
+  ModalBody,
+  SelectAllRow,
+  SelectAllBtn,
+  TransferList,
+  TransferListItem,
+  TransferSelect,
+  ModalFooter,
+  ModalCancel,
+  ModalConfirm,
 } from './styles';
 
 const ITEMS_PER_PAGE = 10;
 
 export const Carteira: React.FC = () => {
   const { user } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToastContext();
   const [clients, setClients] = useState<Client[]>([]);
   const [stats, setStats] = useState<{ totalClients: number; activeClients: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +61,14 @@ export const Carteira: React.FC = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferClientsList, setTransferClientsList] = useState<Client[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sellers, setSellers] = useState<User[]>([]);
+  const [targetSellerId, setTargetSellerId] = useState('');
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [loadingTransferList, setLoadingTransferList] = useState(false);
 
   const loadClients = useCallback(async () => {
     try {
@@ -108,6 +133,68 @@ export const Carteira: React.FC = () => {
     setEditingClient(null);
   };
 
+  const openTransferModal = useCallback(async () => {
+    setShowTransferModal(true);
+    setSelectedIds(new Set());
+    setTargetSellerId('');
+    setLoadingTransferList(true);
+    try {
+      const [clientsRes, usersRes] = await Promise.all([
+        apiService.getClients(1, 5000, undefined, undefined, undefined, undefined, 'me'),
+        apiService.getUsers(1, 200, '', 'vendedor')
+      ]);
+      setTransferClientsList(clientsRes.data || []);
+      const list = (usersRes.data || []).filter((u) => u._id !== user?._id);
+      setSellers(list);
+      if (list.length > 0 && !targetSellerId) setTargetSellerId(list[0]._id);
+    } catch (e) {
+      toastError('Erro', 'Não foi possível carregar a lista para transferência.');
+      setShowTransferModal(false);
+    } finally {
+      setLoadingTransferList(false);
+    }
+  }, [user?._id, toastError]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === transferClientsList.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transferClientsList.map((c) => c._id)));
+    }
+  };
+
+  const toggleClient = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleTransfer = async () => {
+    if (selectedIds.size === 0 || !targetSellerId) {
+      toastError('Campos obrigatórios', 'Selecione ao menos um cliente e o vendedor de destino.');
+      return;
+    }
+    setTransferLoading(true);
+    try {
+      const res = await apiService.transferClients(Array.from(selectedIds), targetSellerId);
+      if (res.success) {
+        toastSuccess('Transferência concluída', res.message || 'Clientes transferidos.');
+        setShowTransferModal(false);
+        loadClients();
+        loadStats();
+      } else {
+        toastError('Erro', res.message || 'Não foi possível transferir.');
+      }
+    } catch (e: any) {
+      toastError('Erro', e?.message || 'Não foi possível transferir.');
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
   const formatCNPJ = (cnpj: string) => {
     if (!cnpj) return '—';
     const digits = cnpj.replace(/\D/g, '');
@@ -146,6 +233,10 @@ export const Carteira: React.FC = () => {
           <Subtitle>Clientes atribuídos à sua gestão</Subtitle>
         </div>
         <Actions>
+          <TransferButton type="button" onClick={openTransferModal} title="Transferir clientes para outro vendedor">
+            <UserPlus size={18} />
+            Transferir clientes
+          </TransferButton>
           <SearchContainer>
             <Search size={20} />
             <SearchInput
@@ -282,6 +373,89 @@ export const Carteira: React.FC = () => {
         onSave={handleSaveClient}
         client={editingClient}
       />
+
+      {showTransferModal && (
+        <ModalOverlay onClick={() => !transferLoading && setShowTransferModal(false)}>
+          <ModalBox onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <h2>Transferir clientes</h2>
+              <ModalClose type="button" onClick={() => !transferLoading && setShowTransferModal(false)} aria-label="Fechar">
+                <X size={22} />
+              </ModalClose>
+            </ModalHeader>
+            <ModalBody>
+              {loadingTransferList ? (
+                <LoadingState>
+                  <Loader2 size={28} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span style={{ marginLeft: 12 }}>Carregando clientes...</span>
+                </LoadingState>
+              ) : transferClientsList.length === 0 ? (
+                <EmptyState>
+                  <p>Nenhum cliente na sua carteira para transferir.</p>
+                </EmptyState>
+              ) : (
+                <>
+                  <SelectAllRow>
+                    <SelectAllBtn type="button" onClick={toggleSelectAll}>
+                      {selectedIds.size === transferClientsList.length ? 'Desmarcar todos' : 'Selecionar todos os clientes da carteira'}
+                    </SelectAllBtn>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+                      {selectedIds.size} de {transferClientsList.length} selecionado(s)
+                    </span>
+                  </SelectAllRow>
+                  <TransferList>
+                    {transferClientsList.map((c) => (
+                      <TransferListItem key={c._id}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(c._id)}
+                          onChange={() => toggleClient(c._id)}
+                        />
+                        <span>{c.razaoSocial}</span>
+                        {c.nomeFantasia && <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>({c.nomeFantasia})</span>}
+                      </TransferListItem>
+                    ))}
+                  </TransferList>
+                  <label style={{ display: 'block', marginBottom: 8, color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>
+                    Transferir para o vendedor
+                  </label>
+                  <TransferSelect
+                    value={targetSellerId}
+                    onChange={(e) => setTargetSellerId(e.target.value)}
+                    aria-label="Escolher vendedor de destino"
+                  >
+                    <option value="">Selecione o vendedor</option>
+                    {sellers.map((s) => (
+                      <option key={s._id} value={s._id}>{s.name} {s.email ? `(${s.email})` : ''}</option>
+                    ))}
+                  </TransferSelect>
+                </>
+              )}
+            </ModalBody>
+            {!loadingTransferList && transferClientsList.length > 0 && (
+              <ModalFooter>
+                <ModalCancel type="button" onClick={() => setShowTransferModal(false)} disabled={transferLoading}>
+                  Cancelar
+                </ModalCancel>
+                <ModalConfirm
+                  type="button"
+                  onClick={handleTransfer}
+                  disabled={transferLoading || selectedIds.size === 0 || !targetSellerId}
+                >
+                  {transferLoading ? (
+                    <>
+                      <Loader2 size={18} style={{ display: 'inline', animation: 'spin 1s linear infinite', marginRight: 8 }} />
+                      Transferindo...
+                    </>
+                  ) : (
+                    'Transferir'
+                  )}
+                </ModalConfirm>
+              </ModalFooter>
+            )}
+          </ModalBox>
+        </ModalOverlay>
+      )}
     </Container>
   );
 };

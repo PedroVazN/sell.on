@@ -190,6 +190,46 @@ router.post('/access-requests/:id/reject', auth, async (req, res) => {
   }
 });
 
+// POST /api/clients/transfer - Transferir clientes da carteira para outro vendedor
+router.post('/transfer', auth, authorize('admin', 'vendedor'), async (req, res) => {
+  try {
+    const { clientIds, targetUserId } = req.body;
+    if (!Array.isArray(clientIds) || clientIds.length === 0 || !targetUserId) {
+      return res.status(400).json({ success: false, message: 'Envie clientIds (array) e targetUserId.' });
+    }
+    const target = await User.findById(targetUserId).select('name role').lean();
+    if (!target) {
+      return res.status(400).json({ success: false, message: 'Vendedor de destino não encontrado.' });
+    }
+    if (target.role !== 'vendedor' && req.user.role !== 'admin') {
+      return res.status(400).json({ success: false, message: 'Destino deve ser um vendedor.' });
+    }
+    if (targetUserId === req.user.id) {
+      return res.status(400).json({ success: false, message: 'Escolha outro vendedor (não você).' });
+    }
+    const query = { _id: { $in: clientIds } };
+    if (req.user.role === 'vendedor') {
+      query.$or = [
+        { assignedTo: req.user.id },
+        { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
+      ];
+    }
+    const result = await Client.updateMany(query, { $set: { assignedTo: targetUserId } });
+    if (result.matchedCount === 0) {
+      return res.status(403).json({ success: false, message: 'Nenhum cliente da sua carteira foi encontrado com os IDs informados.' });
+    }
+    console.log(`✅ ${result.modifiedCount} cliente(s) transferido(s) para ${target.name} por ${req.user.email}`);
+    return res.json({
+      success: true,
+      message: `${result.modifiedCount} cliente(s) transferido(s) para ${target.name}.`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (err) {
+    console.error('Erro ao transferir clientes:', err);
+    res.status(500).json({ success: false, message: 'Erro ao transferir clientes.' });
+  }
+});
+
 // GET /api/clients/:id - Buscar cliente específico (filtrado por vendedor se necessário)
 router.get('/:id', auth, async (req, res) => {
   try {
