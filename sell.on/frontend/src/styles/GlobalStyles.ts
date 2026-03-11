@@ -83,7 +83,7 @@ export const GlobalStyles = createGlobalStyle`
     text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
   }
 
-  /* Focus outline - Acessível: visível ao navegar por teclado (focus-visible) */
+  /* Focus outline - Acessível: visível ao navegar por teclado (focus-visible) - Item 6 */
   *:focus {
     outline: none;
   }
@@ -92,13 +92,35 @@ export const GlobalStyles = createGlobalStyle`
     box-shadow: 0 0 0 3px ${theme.colors.border.focus};
     border-radius: ${theme.borderRadius.sm};
   }
-  /* Contraste: botões e inputs com foco visível */
   button:focus-visible,
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,
   [tabindex="0"]:focus-visible {
     box-shadow: 0 0 0 3px ${theme.colors.border.focus};
+  }
+  input, select, textarea {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  /* Formulários - Item 6: labels sempre visíveis */
+  form label, label.form-label {
+    color: ${theme.colors.text.secondary};
+  }
+  form label:not([class]) {
+    color: ${theme.colors.text.secondary};
+  }
+
+  /* Erro em campos: borda suave + mensagem com theme.colors.error */
+  input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
+    border-color: ${theme.colors.error} !important;
+    box-shadow: 0 0 0 1px ${theme.colors.error};
+  }
+  .form-error-message {
+    color: ${theme.colors.error};
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    line-height: 1.3;
   }
 
   /* Microinterações - Item 9 MELHORIAS_VISUAIS */

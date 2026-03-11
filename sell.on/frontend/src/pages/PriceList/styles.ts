@@ -266,7 +266,7 @@ export const ErrorState = styled.div`
   }
 `;
 
-// Modal styles
+// Modal styles - Item 5: overlay blur, conteúdo com animação
 export const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -274,6 +274,8 @@ export const Modal = styled.div`
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,6 +293,8 @@ export const ModalContent = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 `;
 
 export const ModalHeader = styled.div`

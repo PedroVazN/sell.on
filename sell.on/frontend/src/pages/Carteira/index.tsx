@@ -5,6 +5,7 @@ import type { User } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import { ClientModal } from '../../components/ClientModal';
+import { TableSkeleton } from '../../components/TableSkeleton';
 import {
   Container,
   Header,
@@ -262,10 +263,7 @@ export const Carteira: React.FC = () => {
 
       <Content>
         {loading ? (
-          <LoadingState>
-            <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
-            <span style={{ marginLeft: 12 }}>Carregando carteira...</span>
-          </LoadingState>
+          <TableSkeleton rows={8} cols={7} />
         ) : clients.length === 0 ? (
           <EmptyState>
             <UserCheck size={48} />

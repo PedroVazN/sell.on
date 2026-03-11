@@ -7,8 +7,9 @@ export const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,7 +159,7 @@ export const FormRow = styled.div`
 `;
 
 export const Label = styled.label`
-  color: ${theme.colors.text.primary};
+  color: ${theme.colors.text.secondary};
   font-weight: 600;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
@@ -167,7 +168,7 @@ export const Label = styled.label`
 
 export const Input = styled.input<{ $hasError?: boolean }>`
   padding: 0.75rem;
-  border: 2px solid ${({ $hasError }) => $hasError ? theme.colors.error : theme.colors.border.primary};
+  border: 1px solid ${({ $hasError }) => $hasError ? theme.colors.error : theme.colors.border.primary};
   border-radius: ${theme.borderRadius.sm};
   background: ${theme.colors.background.secondary};
   color: ${theme.colors.text.primary};
@@ -179,6 +180,9 @@ export const Input = styled.input<{ $hasError?: boolean }>`
     outline: none;
     border-color: ${theme.colors.primary};
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
   }
   
   &::placeholder {
@@ -192,7 +196,7 @@ export const Input = styled.input<{ $hasError?: boolean }>`
 
 export const Select = styled.select<{ $hasError?: boolean }>`
   padding: 0.75rem;
-  border: 2px solid ${({ $hasError }) => $hasError ? theme.colors.error : theme.colors.border.primary};
+  border: 1px solid ${({ $hasError }) => $hasError ? theme.colors.error : theme.colors.border.primary};
   border-radius: ${theme.borderRadius.sm};
   background: ${theme.colors.background.secondary};
   color: ${theme.colors.text.primary};
@@ -205,6 +209,9 @@ export const Select = styled.select<{ $hasError?: boolean }>`
     outline: none;
     border-color: ${theme.colors.primary};
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
   }
   
   &:hover:not(:focus) {
@@ -407,8 +414,9 @@ export const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
 
 export const ErrorMessage = styled.span`
   color: ${theme.colors.error};
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
+  margin-top: 0.25rem;
   display: flex;
   align-items: center;
   gap: 0.25rem;

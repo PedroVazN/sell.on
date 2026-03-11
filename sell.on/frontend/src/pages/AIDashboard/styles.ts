@@ -57,7 +57,7 @@ export const Container = styled.div`
   ${glow}
   
   padding: ${({ theme }) => theme.spacing.xxl};
-  background: #0a0a0f;
+  background: ${({ theme }) => theme.colors.background.main};
   min-height: 100vh;
   position: relative;
   animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -151,7 +151,7 @@ export const MetricCard = styled.div`
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(99, 102, 241, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  transition: all ${({ theme }) => theme.transitions.normal};
   position: relative;
   overflow: visible;
   min-height: 140px;
@@ -674,6 +674,7 @@ export const ModalContent = styled.div`
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   position: relative;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 `;
 
 export const ModalHeader = styled.div`

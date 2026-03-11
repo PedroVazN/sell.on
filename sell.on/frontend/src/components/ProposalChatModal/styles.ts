@@ -1,9 +1,12 @@
 import styled from 'styled-components';
+import { theme } from '../../styles/theme';
 
 export const Overlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,15 +15,16 @@ export const Overlay = styled.div`
 `;
 
 export const ModalBox = styled.div`
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 12px;
+  background: ${theme.colors.background.tertiary};
+  border: 1px solid ${theme.colors.border.secondary};
+  border-radius: ${theme.borderRadius.md};
   width: 100%;
   max-width: 520px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  box-shadow: ${theme.shadows.medium};
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   .spin {
     animation: spin 0.8s linear infinite;
@@ -140,16 +144,17 @@ export const Input = styled.textarea`
   padding: 0.6rem 0.9rem;
   border: 1px solid #4b5563;
   border-radius: 8px;
-  background: #111827;
-  color: #fff;
+  background: ${theme.colors.background.secondary};
+  color: ${theme.colors.text.primary};
   font-size: 0.9rem;
   resize: none;
   outline: none;
+  transition: border-color ${theme.transitions.normal};
   &::placeholder {
-    color: #6b7280;
+    color: ${theme.colors.text.muted};
   }
   &:focus {
-    border-color: #3b82f6;
+    border-color: ${theme.colors.primary};
   }
 `;
 

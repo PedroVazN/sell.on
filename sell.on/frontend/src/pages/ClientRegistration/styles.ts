@@ -186,7 +186,7 @@ export const FormGroup = styled.div`
 `;
 
 export const Label = styled.label`
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-weight: 600;
   font-size: 1rem;
   display: flex;
@@ -196,7 +196,7 @@ export const Label = styled.label`
 
 export const Input = styled.input<{ $hasError?: boolean }>`
   padding: ${({ theme }) => theme.spacing.md};
-  border: 2px solid ${({ $hasError, theme }) => $hasError ? theme.colors.error : theme.colors.border.primary};
+  border: 1px solid ${({ $hasError, theme }) => $hasError ? theme.colors.error : theme.colors.border.primary};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   background: ${({ theme }) => theme.colors.background.secondary};
   color: ${({ theme }) => theme.colors.text.primary};
@@ -208,8 +208,10 @@ export const Input = styled.input<{ $hasError?: boolean }>`
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus};
   }
   
   &::placeholder {
@@ -224,7 +226,7 @@ export const Input = styled.input<{ $hasError?: boolean }>`
 
 export const Select = styled.select<{ $hasError?: boolean }>`
   padding: ${({ theme }) => theme.spacing.md};
-  border: 2px solid ${({ $hasError, theme }) => $hasError ? theme.colors.error : theme.colors.border.primary};
+  border: 1px solid ${({ $hasError, theme }) => $hasError ? theme.colors.error : theme.colors.border.primary};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   background: ${({ theme }) => theme.colors.background.secondary};
   color: ${({ theme }) => theme.colors.text.primary};
@@ -236,8 +238,10 @@ export const Select = styled.select<{ $hasError?: boolean }>`
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus};
   }
   
   &:hover:not(:focus) {
@@ -253,7 +257,7 @@ export const Select = styled.select<{ $hasError?: boolean }>`
 
 export const Textarea = styled.textarea`
   padding: ${({ theme }) => theme.spacing.md};
-  border: 2px solid ${({ theme }) => theme.colors.border.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   background: ${({ theme }) => theme.colors.background.secondary};
   color: ${({ theme }) => theme.colors.text.primary};
@@ -267,8 +271,10 @@ export const Textarea = styled.textarea`
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus};
   }
   
   &::placeholder {
@@ -283,12 +289,13 @@ export const Textarea = styled.textarea`
 
 export const ErrorMessage = styled.span`
   color: ${({ theme }) => theme.colors.error};
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
-  
+
   &::before {
     content: '⚠';
     font-size: 0.75rem;

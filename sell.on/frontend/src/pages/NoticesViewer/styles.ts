@@ -1,8 +1,9 @@
 import styled from 'styled-components';
+import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
-  padding: 2rem;
-  background: #0f172a;
+  padding: ${theme.spacing.xl};
+  background: ${theme.colors.background.secondary};
   min-height: 100vh;
   position: relative;
 `;
@@ -59,19 +60,19 @@ export const Filters = styled.div`
 export const FilterButton = styled.button<{ $active: boolean }>`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: ${({ $active }) => $active ? '#3b82f6' : '#334155'};
-  color: ${({ $active }) => $active ? 'white' : '#cbd5e1'};
-  border: 1px solid ${({ $active }) => $active ? '#3b82f6' : '#475569'};
-  border-radius: 0.5rem;
+  gap: ${theme.spacing.sm};
+  padding: ${theme.spacing.md} ${theme.spacing.md};
+  background: ${({ $active }) => $active ? theme.colors.primary : theme.colors.background.tertiary};
+  color: ${({ $active }) => $active ? 'white' : theme.colors.text.muted};
+  border: 1px solid ${({ $active }) => $active ? theme.colors.primary : theme.colors.border.secondary};
+  border-radius: ${theme.borderRadius.sm};
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all ${theme.transitions.normal};
 
   &:hover {
-    background: ${({ $active }) => $active ? '#2563eb' : '#475569'};
-    border-color: ${({ $active }) => $active ? '#2563eb' : '#64748b'};
+    background: ${({ $active }) => $active ? '#2563eb' : theme.colors.background.glassHover};
+    border-color: ${({ $active }) => $active ? '#2563eb' : theme.colors.border.secondary};
   }
 `;
 
@@ -99,33 +100,33 @@ export const NoticeCard = styled.div<{
   $inactive?: boolean; 
 }>`
   background: ${({ $expired, $inactive }) => 
-    $expired ? '#1f2937' : 
+    $expired ? theme.colors.background.tertiary : 
     $inactive ? '#374151' : 
-    '#1e293b'
+    theme.colors.background.tertiary
   };
-  border-radius: 0.75rem;
-  padding: 1.5rem;
+  border-radius: ${theme.borderRadius.md};
+  padding: ${theme.spacing.lg};
   border-left: 4px solid ${({ $priority }) => {
     switch ($priority) {
-      case 'urgent': return '#ef4444';
+      case 'urgent': return theme.colors.error;
       case 'high': return '#f97316';
       case 'medium': return '#eab308';
-      case 'low': return '#10b981';
+      case 'low': return theme.colors.success;
       default: return '#6b7280';
     }
   }};
   border: 1px solid ${({ $expired, $inactive }) => 
-    $expired ? '#374151' : 
+    $expired ? theme.colors.border.secondary : 
     $inactive ? '#4b5563' : 
-    '#334155'
+    theme.colors.border.secondary
   };
-  transition: all 0.2s;
+  transition: all ${theme.transitions.normal};
   opacity: ${({ $expired, $inactive }) => 
     $expired || $inactive ? 0.7 : 1
   };
 
   &:hover {
-    border-color: #475569;
+    border-color: ${theme.colors.border.secondary};
     transform: translateY(-1px);
     opacity: 1;
   }
@@ -245,7 +246,9 @@ export const Modal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,26 +257,28 @@ export const Modal = styled.div`
 `;
 
 export const ModalContent = styled.div`
-  background: #1e293b;
-  border-radius: 1rem;
+  background: ${theme.colors.background.tertiary};
+  border-radius: ${theme.borderRadius.lg};
   max-width: 800px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid #334155;
+  border: 1px solid ${theme.colors.border.secondary};
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: ${theme.shadows.large};
 `;
 
 export const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #334155;
-  gap: 1rem;
+  padding: ${theme.spacing.lg};
+  border-bottom: 1px solid ${theme.colors.border.secondary};
+  gap: ${theme.spacing.md};
 `;
 
 export const ModalTitle = styled.h2`
-  color: #f8fafc;
+  color: ${theme.colors.text.secondary};
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0;
@@ -283,17 +288,17 @@ export const ModalImage = styled.img`
   width: 100%;
   max-height: 400px;
   object-fit: contain;
-  background: #0f172a;
+  background: ${theme.colors.background.secondary};
 `;
 
 export const ModalBody = styled.div`
-  padding: 1.5rem;
+  padding: ${theme.spacing.lg};
 `;
 
 export const ModalText = styled.p`
-  color: #e2e8f0;
+  color: ${theme.colors.text.secondary};
   line-height: 1.8;
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 ${theme.spacing.lg} 0;
   white-space: pre-wrap;
   font-size: 1rem;
 `;
@@ -301,29 +306,29 @@ export const ModalText = styled.p`
 export const ModalInfo = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: #0f172a;
-  border-radius: 0.5rem;
-  border: 1px solid #334155;
+  gap: ${theme.spacing.md};
+  padding: ${theme.spacing.md};
+  background: ${theme.colors.background.secondary};
+  border-radius: ${theme.borderRadius.sm};
+  border: 1px solid ${theme.colors.border.secondary};
 `;
 
 export const ModalFooter = styled.div`
-  padding: 1.5rem;
-  border-top: 1px solid #334155;
+  padding: ${theme.spacing.lg};
+  border-top: 1px solid ${theme.colors.border.secondary};
   display: flex;
   justify-content: flex-end;
 
   button {
-    background: #2563eb;
+    background: ${theme.colors.primary};
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: ${theme.spacing.md} ${theme.spacing.lg};
     border: none;
-    border-radius: 0.5rem;
+    border-radius: ${theme.borderRadius.sm};
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background ${theme.transitions.normal};
 
     &:hover {
       background: #1d4ed8;

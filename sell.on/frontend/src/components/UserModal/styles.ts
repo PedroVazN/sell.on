@@ -8,12 +8,13 @@ export const ModalOverlay = styled.div`
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: ${theme.spacing.xl};
   animation: fadeIn 0.3s ease;
 
   @keyframes fadeIn {
@@ -27,9 +28,9 @@ export const ModalOverlay = styled.div`
 `;
 
 export const ModalContainer = styled.div`
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(71, 85, 105, 0.3);
-  border-radius: 16px;
+  background: ${theme.colors.background.modal};
+  border: 1px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.lg};
   box-shadow: 
     0 25px 80px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -158,17 +159,17 @@ export const Label = styled.label`
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: ${theme.colors.text.secondary};
   margin-bottom: 8px;
 `;
 
 export const Input = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid rgba(71, 85, 105, 0.3);
+  border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 8px;
   font-size: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(10px);
   color: #f8fafc;
@@ -176,10 +177,11 @@ export const Input = styled.input`
   &:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 
-      0 0 0 3px rgba(59, 130, 246, 0.1),
-      0 4px 12px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     background: rgba(15, 23, 42, 0.8);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
   }
 
   &::placeholder {
@@ -190,10 +192,10 @@ export const Input = styled.input`
 export const Select = styled.select`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid rgba(71, 85, 105, 0.3);
+  border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 8px;
   font-size: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(10px);
   cursor: pointer;
@@ -202,20 +204,22 @@ export const Select = styled.select`
   &:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 
-      0 0 0 3px rgba(59, 130, 246, 0.1),
-      0 4px 12px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     background: rgba(15, 23, 42, 0.8);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
   }
 `;
 
 export const ErrorMessage = styled.div`
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  color: ${theme.colors.error};
   padding: 12px 16px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
   margin-bottom: 20px;
   backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
@@ -246,21 +250,21 @@ export const CancelButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px;
-  border: 2px solid rgba(71, 85, 105, 0.3);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.6);
-  color: #94a3b8;
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  border: 2px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.sm};
+  background: ${theme.colors.background.card};
+  color: ${theme.colors.text.muted};
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all ${theme.transitions.normal};
   backdrop-filter: blur(10px);
 
   &:hover {
-    border-color: rgba(71, 85, 105, 0.5);
-    color: #e2e8f0;
-    background: rgba(15, 23, 42, 0.8);
+    border-color: ${theme.colors.border.secondary};
+    color: ${theme.colors.text.secondary};
+    background: ${theme.colors.background.cardHover};
     transform: translateY(-1px);
   }
 
@@ -273,17 +277,17 @@ export const SaveButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: ${theme.spacing.sm};
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: ${theme.borderRadius.sm};
+  background: linear-gradient(135deg, ${theme.colors.primary}, #1d4ed8);
   color: white;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  transition: all ${theme.transitions.normal};
+  box-shadow: ${theme.shadows.small};
   backdrop-filter: blur(10px);
 
   &:hover:not(:disabled) {

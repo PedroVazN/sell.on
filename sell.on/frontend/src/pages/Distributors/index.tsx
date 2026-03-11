@@ -5,6 +5,7 @@ import { apiService, Distributor } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { DistributorModal } from '../../components/DistributorModal';
+import { TableSkeleton } from '../../components/TableSkeleton';
 import { 
   Container, 
   Header, 
@@ -23,7 +24,6 @@ import {
   ActionButton,
   StatusBadge,
   EmptyState,
-  LoadingState,
   ErrorState
 } from './styles';
 
@@ -109,36 +109,6 @@ export const Distributors: React.FC = () => {
     return phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   };
 
-  if (loading) {
-    return (
-      <Container>
-        <Header>
-          <Title>Distribuidores</Title>
-          <Actions>
-            <SearchContainer>
-              <Search size={20} />
-              <SearchInput placeholder="Pesquisar distribuidores..." disabled />
-            </SearchContainer>
-            <FilterButton disabled>
-              <Filter size={20} />
-              Filtros
-            </FilterButton>
-            <CreateButton disabled>
-              <Plus size={20} />
-              Novo Distribuidor
-            </CreateButton>
-          </Actions>
-        </Header>
-        <Content>
-          <LoadingState>
-            <Loader2 size={32} />
-            <p>Carregando distribuidores...</p>
-          </LoadingState>
-        </Content>
-      </Container>
-    );
-  }
-
   if (error) {
     return (
       <Container>
@@ -184,8 +154,8 @@ export const Distributors: React.FC = () => {
               onChange={handleSearchInputChange}
               onKeyDown={handleSearchKeyDown}
             />
-            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando distribuidores' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
-              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando distribuidores' : 'Executar busca'} style={{ marginLeft: '0.5rem', minWidth: loading ? 130 : undefined }}>
+              {loading ? <><Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} /> Buscando...</> : 'Buscar'}
             </FilterButton>
           </SearchContainer>
           <FilterButton>
@@ -200,7 +170,9 @@ export const Distributors: React.FC = () => {
       </Header>
       
       <Content>
-        {distributors.length === 0 ? (
+        {loading ? (
+          <TableSkeleton rows={8} cols={5} />
+        ) : distributors.length === 0 ? (
           <EmptyState>
             <Truck size={48} />
             <h3>Nenhum distribuidor encontrado</h3>

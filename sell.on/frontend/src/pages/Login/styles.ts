@@ -470,7 +470,7 @@ export const InputWrapper = styled.div`
 export const InputLabel = styled.label`
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.3px;
   margin-left: 4px;
 `;
@@ -483,10 +483,10 @@ export const InputField = styled.input`
   font-weight: 400;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   
   &::placeholder {
     color: rgba(255, 255, 255, 0.3);
@@ -500,10 +500,10 @@ export const InputField = styled.input`
   &:focus {
     border-color: #3B82F6;
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: 
-      0 0 0 4px rgba(59, 130, 246, 0.1),
-      0 8px 24px rgba(59, 130, 246, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
   }
   
   &:disabled {

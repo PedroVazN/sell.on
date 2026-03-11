@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 import styled from 'styled-components';
 
-const ToastContainer = styled.div<{ $isVisible: boolean; $type: 'success' | 'error' | 'warning' | 'info' }>`
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
+const ToastWrapper = styled.div<{ $isVisible: boolean; $type: 'success' | 'error' | 'warning' | 'info' }>`
+  position: relative;
   background: ${props => {
     switch (props.$type) {
       case 'success': return '#10b981';
@@ -19,14 +16,15 @@ const ToastContainer = styled.div<{ $isVisible: boolean; $type: 'success' | 'err
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-width: 300px;
-  max-width: 500px;
-  transform: ${props => props.$isVisible ? 'translateX(0)' : 'translateX(100%)'};
-  transition: transform 0.3s ease-in-out;
+  min-width: 280px;
+  max-width: 100%;
+  transform: ${props => props.$isVisible ? 'translateX(0)' : 'translateX(calc(100% + 2rem))'};
+  opacity: ${props => props.$isVisible ? 1 : 0};
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease-out;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 `;
 
@@ -107,7 +105,7 @@ export const Toast: React.FC<ToastProps> = ({
   };
 
   return (
-    <ToastContainer $isVisible={isVisible} $type={type}>
+    <ToastWrapper $isVisible={isVisible} $type={type}>
       {getIcon()}
       <ToastContent>
         <ToastTitle>{title}</ToastTitle>
@@ -115,10 +113,10 @@ export const Toast: React.FC<ToastProps> = ({
       </ToastContent>
       <CloseButton onClick={() => {
         setIsVisible(false);
-        setTimeout(onClose, 300);
+        setTimeout(onClose, 350);
       }}>
         <X size={16} />
       </CloseButton>
-    </ToastContainer>
+    </ToastWrapper>
   );
 };

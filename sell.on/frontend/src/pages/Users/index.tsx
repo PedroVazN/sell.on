@@ -201,8 +201,8 @@ export const Users: React.FC = () => {
               onChange={(e) => setSearchInputValue(e.target.value)}
               onKeyDown={handleSearchKeyDown}
             />
-            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando usuários' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
-              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando usuários' : 'Executar busca'} style={{ marginLeft: '0.5rem', minWidth: loading ? 130 : undefined }}>
+              {loading ? <><Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} /> Buscando...</> : 'Buscar'}
             </FilterButton>
           </SearchContainer>
           

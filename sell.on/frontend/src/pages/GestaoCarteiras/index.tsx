@@ -3,6 +3,7 @@ import { Eye, ArrowRightLeft, Loader2, X } from 'lucide-react';
 import { apiService, Client } from '../../services/api';
 import type { User } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
+import { TableSkeleton } from '../../components/TableSkeleton';
 import {
   Container,
   Header,
@@ -188,10 +189,7 @@ export const GestaoCarteiras: React.FC = () => {
 
       <Content>
         {loading ? (
-          <LoadingState>
-            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-            <span>Carregando carteiras...</span>
-          </LoadingState>
+          <TableSkeleton rows={6} cols={4} />
         ) : error ? (
           <EmptyState>
             <p>{error}</p>

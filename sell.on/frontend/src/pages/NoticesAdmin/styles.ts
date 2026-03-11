@@ -1,8 +1,9 @@
 import styled from 'styled-components';
+import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
-  padding: 2rem;
-  background: #0f172a;
+  padding: ${theme.spacing.xl};
+  background: ${theme.colors.background.secondary};
   min-height: 100vh;
   position: relative;
 `;
@@ -30,15 +31,15 @@ export const Subtitle = styled.p`
 export const CreateButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  gap: ${theme.spacing.sm};
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: linear-gradient(135deg, ${theme.colors.primary}, #1d4ed8);
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: ${theme.borderRadius.sm};
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all ${theme.transitions.normal};
 
   &:hover {
     background: linear-gradient(135deg, #2563eb, #1e40af);
@@ -52,7 +53,9 @@ export const Modal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,21 +63,23 @@ export const Modal = styled.div`
 `;
 
 export const ModalContent = styled.div`
-  background: #1e293b;
-  border-radius: 1rem;
+  background: ${theme.colors.background.tertiary};
+  border-radius: ${theme.borderRadius.lg};
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid #334155;
+  border: 1px solid ${theme.colors.border.secondary};
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: ${theme.shadows.large};
 `;
 
 export const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #334155;
+  padding: ${theme.spacing.lg};
+  border-bottom: 1px solid ${theme.colors.border.secondary};
 `;
 
 export const ModalTitle = styled.h2`
@@ -207,17 +212,18 @@ export const ModalFooter = styled.div`
 `;
 
 export const CancelButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: #475569;
-  color: #f8fafc;
-  border: none;
-  border-radius: 0.5rem;
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: transparent;
+  color: ${theme.colors.text.secondary};
+  border: 1px solid ${theme.colors.border.secondary};
+  border-radius: ${theme.borderRadius.sm};
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background ${theme.transitions.normal}, border-color ${theme.transitions.normal};
 
   &:hover {
-    background: #64748b;
+    background: ${theme.colors.background.glassHover};
+    border-color: ${theme.colors.text.muted};
   }
 `;
 

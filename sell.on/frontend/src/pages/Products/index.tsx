@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiService, Product } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
+import { TableSkeleton } from '../../components/TableSkeleton';
 import { 
   Container, 
   Header, 
@@ -22,7 +23,6 @@ import {
   ActionButton,
   StatusBadge,
   EmptyState,
-  LoadingState,
   ErrorState
 } from './styles';
 
@@ -96,36 +96,6 @@ export const Products: React.FC = () => {
   };
 
 
-  if (loading) {
-    return (
-      <Container>
-        <Header>
-          <Title>Produtos</Title>
-          <Actions>
-            <SearchContainer>
-              <Search size={20} />
-              <SearchInput placeholder="Pesquisar produtos..." disabled />
-            </SearchContainer>
-            <FilterButton disabled>
-              <Filter size={20} />
-              Filtros
-            </FilterButton>
-            <CreateButton disabled>
-              <Plus size={20} />
-              Novo Produto
-            </CreateButton>
-          </Actions>
-        </Header>
-        <Content>
-          <LoadingState>
-            <Loader2 size={32} />
-            <p>Carregando produtos...</p>
-          </LoadingState>
-        </Content>
-      </Container>
-    );
-  }
-
   if (error) {
     return (
       <Container>
@@ -171,8 +141,8 @@ export const Products: React.FC = () => {
               onChange={handleSearchInputChange}
               onKeyDown={handleSearchKeyDown}
             />
-            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando produtos' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
-              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando produtos' : 'Executar busca'} style={{ marginLeft: '0.5rem', minWidth: loading ? 130 : undefined }}>
+              {loading ? <><Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} /> Buscando...</> : 'Buscar'}
             </FilterButton>
           </SearchContainer>
           <FilterButton>
@@ -187,7 +157,9 @@ export const Products: React.FC = () => {
       </Header>
       
       <Content>
-        {products.length === 0 ? (
+        {loading ? (
+          <TableSkeleton rows={8} cols={5} />
+        ) : products.length === 0 ? (
           <EmptyState>
             <Package size={48} />
             <h3>Nenhum produto encontrado</h3>

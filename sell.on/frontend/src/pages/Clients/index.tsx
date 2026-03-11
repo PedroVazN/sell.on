@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { ClientModal } from '../../components/ClientModal';
+import { TableSkeleton } from '../../components/TableSkeleton';
 import { 
   Container, 
   Header, 
@@ -24,7 +25,6 @@ import {
   ActionButton,
   StatusBadge,
   EmptyState,
-  LoadingState,
   ErrorState,
   Pagination,
   PaginationButton,
@@ -132,38 +132,6 @@ export const Clients: React.FC = () => {
     return phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   };
 
-  if (loading) {
-    return (
-      <Container>
-        <Header>
-          <Title>Clientes</Title>
-          <Actions>
-            <SearchContainer>
-              <Search size={20} />
-              <SearchInput placeholder="Pesquisar clientes..." disabled />
-            </SearchContainer>
-            <FilterButton disabled>
-              <Filter size={20} />
-              Filtros
-            </FilterButton>
-          {!isSeller && (
-          <CreateButton disabled>
-              <Plus size={20} />
-              Novo Cliente
-            </CreateButton>
-          )}
-          </Actions>
-        </Header>
-        <Content>
-          <LoadingState>
-            <Loader2 size={32} />
-            <p>Carregando clientes...</p>
-          </LoadingState>
-        </Content>
-      </Container>
-    );
-  }
-
   if (error) {
     return (
       <Container>
@@ -211,8 +179,8 @@ export const Clients: React.FC = () => {
               onChange={handleSearchInputChange}
               onKeyDown={handleSearchKeyDown}
             />
-            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando clientes' : 'Executar busca'} style={{ marginLeft: '0.5rem' }}>
-              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+            <FilterButton type="button" onClick={applySearch} disabled={loading} aria-busy={loading} aria-label={loading ? 'Buscando clientes' : 'Executar busca'} style={{ marginLeft: '0.5rem', minWidth: loading ? 130 : undefined }}>
+              {loading ? <><Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} /> Buscando...</> : 'Buscar'}
             </FilterButton>
           </SearchContainer>
           <FilterButton>
@@ -229,7 +197,9 @@ export const Clients: React.FC = () => {
       </Header>
       
       <Content>
-        {clients.length === 0 ? (
+        {loading ? (
+          <TableSkeleton rows={8} cols={6} />
+        ) : clients.length === 0 ? (
           <EmptyState>
             <UserCheck size={48} />
             <h3>Nenhum cliente encontrado</h3>

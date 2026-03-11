@@ -8,6 +8,7 @@ import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
 import { ProposalChatModal } from '../../components/ProposalChatModal';
+import { TableSkeleton } from '../../components/TableSkeleton';
 import { 
   Container, 
   Header, 
@@ -838,16 +839,6 @@ export const Proposals: React.FC = () => {
     );
   });
 
-  if (loading) {
-    return (
-      <Container>
-        <LoadingState>
-          <div>Carregando propostas...</div>
-        </LoadingState>
-      </Container>
-    );
-  }
-
   if (error) {
     return (
       <Container>
@@ -882,9 +873,9 @@ export const Proposals: React.FC = () => {
               disabled={loading}
               aria-busy={loading}
               aria-label={loading ? 'Buscando propostas' : 'Executar busca'}
-              style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}
+              style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem', minWidth: loading ? 130 : undefined }}
             >
-              {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Buscando...</> : 'Buscar'}
+              {loading ? <><Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} /> Buscando...</> : 'Buscar'}
             </Button>
           </SearchContainer>
           <Select id="proposals-status" aria-label="Filtrar por status" value={statusFilter} onChange={handleStatusFilter} style={{ marginRight: '0.5rem' }}>
@@ -907,7 +898,7 @@ export const Proposals: React.FC = () => {
                 title="Exportar propostas"
               >
                 {isExporting ? (
-                  <><Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> Exportando...</>
+                  <><Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} /> Exportando...</>
                 ) : (
                   <><Download size={20} /> Exportar <ChevronDown size={16} /></>
                 )}
@@ -988,7 +979,11 @@ export const Proposals: React.FC = () => {
       )}
 
       <Content>
-        {filteredProposals.length === 0 ? (
+        {loading ? (
+          <TableWrapper>
+            <TableSkeleton rows={8} cols={9} />
+          </TableWrapper>
+        ) : filteredProposals.length === 0 ? (
           <EmptyState>
             <FileText size={48} />
             <h3>

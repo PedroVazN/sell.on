@@ -1,8 +1,9 @@
 import styled from 'styled-components';
+import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
-  padding: 1rem 1.25rem;
-  background: #0a0a0f;
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: ${theme.colors.background.main};
   min-height: 100vh;
   position: relative;
   &::before {
@@ -52,24 +53,28 @@ export const StatsRow = styled.div`
 `;
 
 export const StatsCard = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 12px 16px;
+  background: ${theme.colors.background.card};
+  border: 1px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.md};
+  padding: ${theme.spacing.md} ${theme.spacing.md};
   min-width: 140px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  p { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; }
-  strong { font-size: 1.25rem; color: #fff; }
+  box-shadow: ${theme.shadows.small};
+  transition: box-shadow ${theme.transitions.normal};
+  &:hover { box-shadow: ${theme.shadows.medium}; }
+  p { margin: 0; color: ${theme.colors.text.muted}; font-size: 0.8rem; }
+  strong { font-size: 1.25rem; color: ${theme.colors.text.primary}; }
 `;
 
 export const Content = styled.div`
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: ${theme.colors.background.card};
+  border: 1px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.md};
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: ${theme.shadows.small};
+  transition: box-shadow ${theme.transitions.normal};
+  &:hover { box-shadow: ${theme.shadows.medium}; }
 `;
 
 export const Table = styled.table`
@@ -78,12 +83,12 @@ export const Table = styled.table`
 `;
 
 export const TableHeader = styled.thead`
-  background: rgba(255, 255, 255, 0.06);
+  background: ${theme.colors.background.cardHover};
   th {
-    padding: 0.5rem 0.75rem;
+    padding: ${theme.spacing.sm} ${theme.spacing.md};
     text-align: left;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.65);
+    color: ${theme.colors.text.muted};
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -91,14 +96,15 @@ export const TableHeader = styled.thead`
 `;
 
 export const TableRow = styled.tr`
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  &:hover { background: rgba(255, 255, 255, 0.04); }
+  border-bottom: 1px solid ${theme.colors.border.primary};
+  transition: background ${theme.transitions.normal};
+  &:hover { background: ${theme.colors.background.card}; }
   &:last-child { border-bottom: none; }
 `;
 
 export const TableCell = styled.td`
-  padding: 0.6rem 0.75rem;
-  color: #fff;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+  color: ${theme.colors.text.primary};
   font-size: 0.85rem;
 `;
 
@@ -107,17 +113,17 @@ export const TableBody = styled.tbody``;
 export const ActionButton = styled.button`
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: ${theme.colors.text.muted};
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: ${theme.spacing.sm} ${theme.spacing.sm};
+  border-radius: ${theme.borderRadius.sm};
   font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
+  gap: ${theme.spacing.xs};
+  transition: all ${theme.transitions.normal};
   &:hover {
-    color: #3b82f6;
+    color: ${theme.colors.primary};
     background: rgba(59, 130, 246, 0.15);
   }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -125,8 +131,8 @@ export const ActionButton = styled.button`
 
 export const EmptyState = styled.div`
   text-align: center;
-  padding: 2rem 1.25rem;
-  color: rgba(255, 255, 255, 0.6);
+  padding: ${theme.spacing.xl} ${theme.spacing.lg};
+  color: ${theme.colors.text.muted};
   p { margin: 0; font-size: 0.9rem; }
 `;
 
@@ -134,9 +140,9 @@ export const LoadingState = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
-  gap: 0.5rem;
+  padding: ${theme.spacing.xl};
+  color: ${theme.colors.text.muted};
+  gap: ${theme.spacing.sm};
 `;
 
 /* Modais */
@@ -150,13 +156,13 @@ export const ModalOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 24px;
+  padding: ${theme.spacing.lg};
 `;
 
 export const ModalBox = styled.div`
-  background: #111827;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  background: ${theme.colors.background.secondary};
+  border: 1px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.lg};
   max-width: 520px;
   width: 100%;
   max-height: 90vh;
@@ -164,73 +170,76 @@ export const ModalBox = styled.div`
   flex-direction: column;
   overflow: hidden;
   animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: ${theme.shadows.large};
 `;
 
 export const ModalHeader = styled.div`
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: ${theme.spacing.md} ${theme.spacing.md};
+  border-bottom: 1px solid ${theme.colors.border.primary};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  h2 { margin: 0; font-size: 1.1rem; color: #fff; }
+  h2 { margin: 0; font-size: 1.1rem; color: ${theme.colors.text.primary}; }
 `;
 
 export const ModalClose = styled.button`
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: ${theme.colors.text.muted};
   cursor: pointer;
-  padding: 4px;
-  &:hover { color: #fff; }
+  padding: ${theme.spacing.xs};
+  transition: color ${theme.transitions.normal};
+  &:hover { color: ${theme.colors.text.primary}; }
 `;
 
 export const ModalBody = styled.div`
-  padding: 12px 16px;
+  padding: ${theme.spacing.md} ${theme.spacing.md};
   overflow-y: auto;
   flex: 1;
   max-height: 60vh;
 `;
 
 export const ModalFooter = styled.div`
-  padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: ${theme.spacing.md} ${theme.spacing.md};
+  border-top: 1px solid ${theme.colors.border.primary};
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: ${theme.spacing.md};
 `;
 
 export const ModalCancel = styled.button`
-  padding: 8px 14px;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 10px;
+  border: 1px solid ${theme.colors.border.secondary};
+  color: ${theme.colors.text.secondary};
+  border-radius: ${theme.borderRadius.md};
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
-  &:hover { background: rgba(255, 255, 255, 0.08); }
+  transition: all ${theme.transitions.normal};
+  &:hover { background: ${theme.colors.background.glassHover}; }
 `;
 
 export const ModalConfirm = styled.button`
-  padding: 8px 14px;
-  background: #8b5cf6;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+  background: ${theme.colors.secondary};
   border: none;
-  color: #fff;
-  border-radius: 10px;
+  color: ${theme.colors.text.primary};
+  border-radius: ${theme.borderRadius.md};
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  &:hover:not(:disabled) { background: #7c3aed; }
+  transition: all ${theme.transitions.normal};
+  &:hover:not(:disabled) { filter: brightness(1.1); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 `;
 
 export const TransferList = styled.div`
   max-height: 240px;
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  margin-bottom: 12px;
+  border: 1px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.md};
+  margin-bottom: ${theme.spacing.md};
 `;
 
 export const TransferListItem = styled.label`

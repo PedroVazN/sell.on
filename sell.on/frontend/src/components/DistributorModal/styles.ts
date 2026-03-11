@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { theme } from '../../styles/theme';
 
 export const ModalOverlay = styled.div`
   position: fixed;
@@ -10,13 +11,13 @@ export const ModalOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: ${theme.spacing.xl};
 `;
 
 export const ModalContainer = styled.div`
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-radius: ${theme.borderRadius.md};
+  box-shadow: ${theme.shadows.medium};
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
@@ -175,7 +176,7 @@ export const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all ${theme.transitions.normal};
   border: none;
 
   ${({ variant = 'primary' }) => {
@@ -195,11 +196,13 @@ export const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
       `;
     } else {
       return `
-        background-color: #f3f4f6;
+        background-color: transparent;
         color: #374151;
+        border: 1px solid #d1d5db;
         
         &:hover:not(:disabled) {
-          background-color: #e5e7eb;
+          background-color: rgba(0, 0, 0, 0.04);
+          border-color: #9ca3af;
         }
       `;
     }
