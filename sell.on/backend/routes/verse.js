@@ -29,8 +29,24 @@ const BOOKS = [
   { abbrev: 'hb', chapters: 13, name: 'Hebreus' },
 ];
 
+const FALLBACK_VERSES = [
+  { text: 'O Senhor é meu pastor; nada me faltará.', reference: 'Salmos 23:1' },
+  { text: 'Tudo posso naquele que me fortalece.', reference: 'Filipenses 4:13' },
+  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.', reference: 'Salmos 37:5' },
+  { text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.', reference: 'João 3:16' },
+  { text: 'O que for feito com as mãos prosperará.', reference: 'Provérbios 31:31' },
+];
+
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function sendFallback(res) {
+  const v = pickRandom(FALLBACK_VERSES);
+  return res.json({
+    success: true,
+    data: { book: '', chapter: 0, number: '', text: v.text, reference: v.reference },
+  });
 }
 
 /**
@@ -43,21 +59,15 @@ router.get('/random', async (req, res) => {
     const chapter = 1 + Math.floor(Math.random() * Math.min(book.chapters, 50));
     const url = `${API_BASE}/verses/${VERSION}/${book.abbrev}/${chapter}`;
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      return res.status(502).json({
-        success: false,
-        message: 'Não foi possível obter o versículo.',
-      });
+    const response = await fetch(url).catch(() => null);
+    if (!response || !response.ok) {
+      return sendFallback(res);
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     const verses = data.verses || data.chapter?.verses || [];
     if (verses.length === 0) {
-      return res.status(502).json({
-        success: false,
-        message: 'Nenhum versículo encontrado.',
-      });
+      return sendFallback(res);
     }
 
     const verse = pickRandom(verses);
@@ -76,10 +86,7 @@ router.get('/random', async (req, res) => {
     });
   } catch (err) {
     console.error('Erro ao buscar versículo:', err);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao buscar versículo.',
-    });
+    return sendFallback(res);
   }
 });
 

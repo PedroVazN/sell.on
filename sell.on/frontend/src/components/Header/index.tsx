@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationBell } from '../NotificationBell';
@@ -8,17 +8,26 @@ import {
   Container, 
   HeaderRow,
   VerseBar,
-  SearchContainer, 
-  SearchInput, 
   ActionsContainer, 
   UserButton,
-  UserMenu,
-  UserMenuItem
 } from './styles';
+
+// Fallback quando a API do versículo falhar (ex.: Vercel/ABíbliaDigital)
+const FALLBACK_VERSES: { text: string; reference: string }[] = [
+  { text: 'O Senhor é meu pastor; nada me faltará.', reference: 'Salmos 23:1' },
+  { text: 'Tudo posso naquele que me fortalece.', reference: 'Filipenses 4:13' },
+  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.', reference: 'Salmos 37:5' },
+  { text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.', reference: 'João 3:16' },
+  { text: 'O que for feito com as mãos prosperará.', reference: 'Provérbios 31:31' },
+];
+
+function pickRandomVerse() {
+  return FALLBACK_VERSES[Math.floor(Math.random() * FALLBACK_VERSES.length)];
+}
 
 export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [verse, setVerse] = useState<{ text: string; reference: string } | null>(null);
+  const [verse, setVerse] = useState<{ text: string; reference: string }>(() => pickRandomVerse());
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -26,11 +35,15 @@ export const Header: React.FC = () => {
     let cancelled = false;
     apiService.getRandomVerse()
       .then((res) => {
-        if (cancelled || !res.success || !res.data) return;
-        const d = res.data;
-        if (d.text && d.reference) setVerse({ text: d.text, reference: d.reference });
+        if (cancelled) return;
+        const d = (res && (res as { data?: { text?: string; reference?: string } }).data) || null;
+        if (d?.text && d?.reference) {
+          setVerse({ text: d.text, reference: d.reference });
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setVerse(pickRandomVerse());
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -64,11 +77,6 @@ export const Header: React.FC = () => {
   return (
     <Container>
       <HeaderRow>
-        <SearchContainer>
-          <Search size={20} />
-          <SearchInput placeholder="Pesquisar..." />
-        </SearchContainer>
-
         <ActionsContainer>
         <NotificationBell />
         
@@ -128,12 +136,10 @@ export const Header: React.FC = () => {
       </ActionsContainer>
       </HeaderRow>
 
-      {verse && (
-        <VerseBar title={verse.reference}>
+      <VerseBar title={verse.reference}>
           <strong>“{verse.text}”</strong>
-          {verse.reference && <span> — {verse.reference}</span>}
-        </VerseBar>
-      )}
+        <span> — {verse.reference}</span>
+      </VerseBar>
     </Container>
   );
 };

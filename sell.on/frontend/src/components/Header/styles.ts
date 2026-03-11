@@ -68,101 +68,11 @@ export const Container = styled.header`
   }
 `;
 
-export const SearchContainer = styled.div`
-  display: flex;
-  align-items: center;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.3);
-  border-radius: 16px;
-  padding: 12px 20px;
-  min-width: 350px;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-
-  /* Responsivo para mobile */
-  @media (max-width: 768px) {
-    display: none; /* Ocultar busca em mobile por enquanto */
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05));
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
-  
-  &:hover {
-    border-color: rgba(71, 85, 105, 0.5);
-    background: rgba(15, 23, 42, 0.9);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
-    &::before {
-      opacity: 1;
-    }
-  }
-  
-  &:focus-within {
-    border-color: #3b82f6;
-    background: rgba(15, 23, 42, 0.95);
-    box-shadow: 
-      0 0 0 3px rgba(59, 130, 246, 0.1),
-      0 8px 25px rgba(59, 130, 246, 0.15);
-    transform: translateY(-2px);
-    
-    &::before {
-      opacity: 1;
-    }
-  }
-  
-  svg {
-    color: rgba(148, 163, 184, 0.6);
-    margin-right: 12px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    z-index: 1;
-  }
-  
-  &:focus-within svg {
-    color: #60a5fa;
-    transform: scale(1.1);
-  }
-`;
-
-export const SearchInput = styled.input`
-  background: transparent;
-  border: none;
-  outline: none;
-  color: rgba(248, 250, 252, 0.9);
-  font-size: 0.95rem;
-  flex: 1;
-  font-weight: 500;
-  position: relative;
-  z-index: 1;
-  transition: all 0.3s ease;
-  
-  &::placeholder {
-    color: rgba(148, 163, 184, 0.6);
-    font-weight: 400;
-    transition: all 0.3s ease;
-  }
-  
-  &:focus::placeholder {
-    color: rgba(148, 163, 184, 0.4);
-  }
-`;
-
 export const ActionsContainer = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.md};
+  margin-left: auto;
 
   /* Responsivo para mobile */
   @media (max-width: 768px) {
