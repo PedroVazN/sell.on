@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationBell } from '../NotificationBell';
+import { apiService } from '../../services/api';
 import { 
   Container, 
+  HeaderRow,
+  VerseBar,
   SearchContainer, 
   SearchInput, 
   ActionsContainer, 
@@ -15,8 +18,21 @@ import {
 
 export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [verse, setVerse] = useState<{ text: string; reference: string } | null>(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    let cancelled = false;
+    apiService.getRandomVerse()
+      .then((res) => {
+        if (cancelled || !res.success || !res.data) return;
+        const d = res.data;
+        if (d.text && d.reference) setVerse({ text: d.text, reference: d.reference });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -47,12 +63,13 @@ export const Header: React.FC = () => {
 
   return (
     <Container>
-      <SearchContainer>
-        <Search size={20} />
-        <SearchInput placeholder="Pesquisar..." />
-      </SearchContainer>
-      
-      <ActionsContainer>
+      <HeaderRow>
+        <SearchContainer>
+          <Search size={20} />
+          <SearchInput placeholder="Pesquisar..." />
+        </SearchContainer>
+
+        <ActionsContainer>
         <NotificationBell />
         
         <div style={{ position: 'relative' }}>
@@ -109,6 +126,14 @@ export const Header: React.FC = () => {
           })()}
         </div>
       </ActionsContainer>
+      </HeaderRow>
+
+      {verse && (
+        <VerseBar title={verse.reference}>
+          <strong>“{verse.text}”</strong>
+          {verse.reference && <span> — {verse.reference}</span>}
+        </VerseBar>
+      )}
     </Container>
   );
 };

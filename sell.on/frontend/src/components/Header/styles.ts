@@ -1,9 +1,33 @@
 import styled from 'styled-components';
 
-export const Container = styled.header`
+export const HeaderRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+`;
+
+export const VerseBar = styled.div`
+  width: 100%;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
+  & strong { color: rgba(255, 255, 255, 0.95); font-weight: 600; }
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+`;
+
+export const Container = styled.header`
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.xl};
   background: rgba(15, 23, 42, 0.95);
   border-bottom: 1px solid rgba(71, 85, 105, 0.3);

@@ -948,6 +948,17 @@ class ApiService {
     return this.request(`/proposals/ranking/${sellerId}/detail${q}`);
   }
 
+  /** Versículo aleatório (ABíbliaDigital via backend) */
+  async getRandomVerse(): Promise<ApiResponse<{
+    book: string;
+    chapter: number;
+    number: string;
+    text: string;
+    reference: string;
+  }>> {
+    return this.request('/verse/random');
+  }
+
   async getProposalStats(): Promise<ApiResponse<ProposalStats>> {
     return this.request<ProposalStats>('/proposals/stats/summary');
   }

@@ -337,6 +337,9 @@ app.use('/api/funnel', funnelRouter);
 const noticesRouter = require('../routes/notices');
 app.use('/api/notices', noticesRouter);
 
+const verseRouter = require('../routes/verse');
+app.use('/api/verse', verseRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });
