@@ -8,19 +8,25 @@ export const HeaderRow = styled.div`
 `;
 
 export const VerseBar = styled.div`
-  width: 100%;
-  margin-top: ${({ theme }) => theme.spacing.sm};
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   background: rgba(59, 130, 246, 0.08);
-  border-radius: 8px;
-  border-left: 3px solid rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.85);
-  line-height: 1.4;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   & strong { color: rgba(255, 255, 255, 0.95); font-weight: 600; }
   @media (max-width: 768px) {
     font-size: 0.75rem;
     padding: 8px 12px;
+    max-width: 180px;
   }
 `;
 

@@ -77,6 +77,10 @@ export const Header: React.FC = () => {
   return (
     <Container>
       <HeaderRow>
+        <VerseBar title={verse.reference}>
+          <strong>"{verse.text}"</strong>
+          <span> â€” {verse.reference}</span>
+        </VerseBar>
         <ActionsContainer>
         <NotificationBell />
         
@@ -135,11 +139,6 @@ export const Header: React.FC = () => {
         </div>
       </ActionsContainer>
       </HeaderRow>
-
-      <VerseBar title={verse.reference}>
-          <strong>“{verse.text}”</strong>
-        <span> — {verse.reference}</span>
-      </VerseBar>
     </Container>
   );
 };
