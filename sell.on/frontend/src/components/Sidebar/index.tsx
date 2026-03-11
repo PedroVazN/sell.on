@@ -27,7 +27,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Briefcase,
-  MessageCircle
+  MessageCircle,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -122,6 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
         ...(hasPermission('admin') ? [
           { icon: <FileBarChart size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
+          { icon: <Trophy size={20} />, label: 'Ranking', path: '/ranking', permission: 'admin' },
         ] : []),
       ]
     },

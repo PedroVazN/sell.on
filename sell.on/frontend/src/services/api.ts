@@ -898,6 +898,56 @@ class ApiService {
     });
   }
 
+  /** Ranking de vendedores: vendas fechadas, perdidas, valor no período */
+  async getProposalsRanking(dateFrom?: string, dateTo?: string): Promise<ApiResponse<{
+    data: Array<{
+      _id: string;
+      name: string;
+      email: string;
+      position: number;
+      totalPropostas: number;
+      vendasFechadas: number;
+      vendasPerdidas: number;
+      valorFechado: number;
+    }>;
+    dateFrom: string;
+    dateTo: string;
+  }>> {
+    const params = new URLSearchParams();
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/proposals/ranking${q}`);
+  }
+
+  /** Detalhe do ranking por vendedor: mensal out/2025 até agora */
+  async getProposalsRankingDetail(sellerId: string, dateFrom?: string, dateTo?: string): Promise<ApiResponse<{
+    seller: { _id: string; name: string; email: string };
+    monthly: Array<{
+      year: number;
+      month: number;
+      label: string;
+      totalPropostas: number;
+      vendasFechadas: number;
+      vendasPerdidas: number;
+      valorFechado: number;
+    }>;
+    summary: {
+      totalPropostas: number;
+      vendasFechadas: number;
+      vendasPerdidas: number;
+      valorFechado: number;
+    };
+    dateFrom: string;
+    dateTo: string;
+  }>> {
+    const params = new URLSearchParams();
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/proposals/ranking/${sellerId}/detail${q}`);
+  }
+
   async getProposalStats(): Promise<ApiResponse<ProposalStats>> {
     return this.request<ProposalStats>('/proposals/stats/summary');
   }

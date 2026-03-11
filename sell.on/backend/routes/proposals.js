@@ -9,7 +9,7 @@ const ClientAccessRequest = require('../models/ClientAccessRequest');
 const Notification = require('../models/Notification');
 const Opportunity = require('../models/Opportunity');
 const PipelineStage = require('../models/PipelineStage');
-const { auth } = require('../middleware/auth');
+const { auth, authorize } = require('../middleware/auth');
 const { validateProposal, validateMongoId, validatePagination } = require('../middleware/validation');
 const { proposalLimiter } = require('../middleware/security');
 const { calculateProposalScore, calculateProposalScoreWithComparison } = require('../services/proposalScore');
@@ -99,6 +99,119 @@ router.get('/', async (req, res) => {
       error: 'Erro interno do servidor',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+// GET /api/proposals/ranking - Ranking de vendedores (admin): vendas fechadas, perdidas, valor no período
+router.get('/ranking', auth, authorize('admin'), async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({ success: true, data: [], message: 'MongoDB não conectado.' });
+    }
+    const { dateFrom, dateTo } = req.query;
+    const start = dateFrom ? new Date(dateFrom + 'T00:00:00.000Z') : new Date(2025, 9, 1); // 1º out 2025
+    const end = dateTo ? new Date(dateTo + 'T23:59:59.999Z') : new Date();
+
+    const vendedores = await User.find({ role: 'vendedor', isActive: true }).select('_id name email').lean();
+    const list = await Promise.all(vendedores.map(async (v) => {
+      const [totalPropostas, vendasFechadas, vendasPerdidas, valorFechado] = await Promise.all([
+        Proposal.countDocuments({ createdBy: v._id, createdAt: { $gte: start, $lte: end } }),
+        Proposal.countDocuments({ createdBy: v._id, status: 'venda_fechada', createdAt: { $gte: start, $lte: end } }),
+        Proposal.countDocuments({ createdBy: v._id, status: 'venda_perdida', createdAt: { $gte: start, $lte: end } }),
+        Proposal.aggregate([
+          { $match: { createdBy: v._id, status: 'venda_fechada', createdAt: { $gte: start, $lte: end } } },
+          { $group: { _id: null, total: { $sum: '$total' } } }
+        ]).then(r => (r[0] && r[0].total) || 0)
+      ]);
+      return {
+        _id: v._id,
+        name: v.name,
+        email: v.email,
+        totalPropostas,
+        vendasFechadas,
+        vendasPerdidas,
+        valorFechado: Array.isArray(valorFechado) ? 0 : valorFechado
+      };
+    }));
+
+    const withPosition = list
+      .sort((a, b) => (b.valorFechado || 0) - (a.valorFechado || 0))
+      .map((item, index) => ({ ...item, position: index + 1 }));
+
+    return res.json({ success: true, data: withPosition, dateFrom: start, dateTo: end });
+  } catch (err) {
+    console.error('Erro ao buscar ranking:', err);
+    res.status(500).json({ success: false, message: 'Erro ao buscar ranking.' });
+  }
+});
+
+// GET /api/proposals/ranking/:sellerId/detail - Detalhe por vendedor: propostas por mês (out/2025 até agora), ganhas, perdidas
+router.get('/ranking/:sellerId/detail', auth, authorize('admin'), async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({ success: true, monthly: [], summary: {}, message: 'MongoDB não conectado.' });
+    }
+    const { sellerId } = req.params;
+    const { dateFrom, dateTo } = req.query;
+    const start = dateFrom ? new Date(dateFrom + 'T00:00:00.000Z') : new Date(2025, 9, 1);
+    const end = dateTo ? new Date(dateTo + 'T23:59:59.999Z') : new Date();
+
+    const seller = await User.findById(sellerId).select('name email').lean();
+    if (!seller) return res.status(404).json({ success: false, message: 'Vendedor não encontrado.' });
+
+    const months = [];
+    const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    while (cursor <= end) {
+      const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+      const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59, 999);
+      const [total, fechadas, perdidas, valor] = await Promise.all([
+        Proposal.countDocuments({ createdBy: sellerId, createdAt: { $gte: monthStart, $lte: monthEnd } }),
+        Proposal.countDocuments({ createdBy: sellerId, status: 'venda_fechada', createdAt: { $gte: monthStart, $lte: monthEnd } }),
+        Proposal.countDocuments({ createdBy: sellerId, status: 'venda_perdida', createdAt: { $gte: monthStart, $lte: monthEnd } }),
+        Proposal.aggregate([
+          { $match: { createdBy: sellerId, status: 'venda_fechada', createdAt: { $gte: monthStart, $lte: monthEnd } } },
+          { $group: { _id: null, total: { $sum: '$total' } } }
+        ]).then(r => (r[0] && r[0].total) || 0)
+      ]);
+      months.push({
+        year: cursor.getFullYear(),
+        month: cursor.getMonth() + 1,
+        label: `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`,
+        totalPropostas: total,
+        vendasFechadas: fechadas,
+        vendasPerdidas: perdidas,
+        valorFechado: Array.isArray(valor) ? 0 : valor
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    const [totalPropostas, totalFechadas, totalPerdidas, valorTotal] = await Promise.all([
+      Proposal.countDocuments({ createdBy: sellerId, createdAt: { $gte: start, $lte: end } }),
+      Proposal.countDocuments({ createdBy: sellerId, status: 'venda_fechada', createdAt: { $gte: start, $lte: end } }),
+      Proposal.countDocuments({ createdBy: sellerId, status: 'venda_perdida', createdAt: { $gte: start, $lte: end } }),
+      Proposal.aggregate([
+        { $match: { createdBy: sellerId, status: 'venda_fechada', createdAt: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: '$total' } } }
+      ]).then(r => (r[0] && r[0].total) || 0)
+    ]);
+
+    return res.json({
+      success: true,
+      seller: { _id: sellerId, name: seller.name, email: seller.email },
+      monthly: months,
+      summary: {
+        totalPropostas,
+        vendasFechadas: totalFechadas,
+        vendasPerdidas: totalPerdidas,
+        valorFechado: Array.isArray(valorTotal) ? 0 : valorTotal
+      },
+      dateFrom: start,
+      dateTo: end
+    });
+  } catch (err) {
+    console.error('Erro ao buscar detalhe ranking:', err);
+    res.status(500).json({ success: false, message: 'Erro ao buscar detalhe do vendedor.' });
   }
 });
 
