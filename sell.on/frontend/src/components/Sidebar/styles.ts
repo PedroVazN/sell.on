@@ -74,12 +74,12 @@ export const Container = styled.aside<ContainerProps>`
 `;
 
 export const Logo = styled.div<{ $collapsed?: boolean }>`
-  padding: ${({ $collapsed }) => ($collapsed ? '24px 12px' : '32px 24px')};
+  padding: ${({ $collapsed }) => ($collapsed ? '16px 10px' : '20px 18px')};
   border-bottom: 1px solid rgba(71, 85, 105, 0.3);
   text-align: center;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: ${({ $collapsed }) => ($collapsed ? '72px' : 'auto')};
+  min-height: ${({ $collapsed }) => ($collapsed ? '56px' : 'auto')};
   display: flex;
   flex-direction: column;
   align-items: center;

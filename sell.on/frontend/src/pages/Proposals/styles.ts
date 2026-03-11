@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: 2rem;
+  padding: 1rem 1.25rem;
   background: ${({ theme }) => theme.colors.background};
   min-height: 100vh;
 `;
@@ -10,13 +10,13 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 `;
 
 export const Title = styled.h1`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
@@ -25,7 +25,7 @@ export const Title = styled.h1`
 export const Actions = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 `;
 
@@ -36,8 +36,8 @@ export const SearchContainer = styled.div`
   background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 8px;
-  padding: 0.5rem 1rem;
-  min-width: 300px;
+  padding: 0.4rem 0.75rem;
+  min-width: 240px;
 
   svg {
     color: ${({ theme }) => theme.colors.text.secondary};
@@ -61,13 +61,14 @@ export const SearchInput = styled.input`
 export const CreateButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
   background: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
 
@@ -129,30 +130,31 @@ export const ExportDropdownItem = styled.button`
 export const FilterRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
-  padding: 1rem;
+  padding: 0.6rem 0.75rem;
   background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 8px;
 
   label {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: ${({ theme }) => theme.colors.text.secondary};
-    margin-right: 0.25rem;
+    margin-right: 0.2rem;
   }
   input[type="date"] {
-    padding: 0.5rem;
+    padding: 0.35rem 0.5rem;
     border: 1px solid ${({ theme }) => theme.colors.border.primary};
     border-radius: 6px;
     background: ${({ theme }) => theme.colors.background.secondary};
     color: ${({ theme }) => theme.colors.text.primary};
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
   select {
-    padding: 0.5rem;
-    min-width: 180px;
+    padding: 0.35rem 0.5rem;
+    min-width: 140px;
+    font-size: 0.8rem;
   }
 `;
 
@@ -172,7 +174,6 @@ export const TableWrapper = styled.div`
   overflow-x: auto;
   width: 100%;
   -webkit-overflow-scrolling: touch;
-  zoom: 0.9;
   
   &::-webkit-scrollbar {
     height: 8px;
@@ -195,11 +196,11 @@ export const TableWrapper = styled.div`
 
 export const Table = styled.table`
   width: 100%;
-  min-width: 1200px;
+  min-width: 900px;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   background: ${({ theme }) => theme.colors.background.card};
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 `;
@@ -225,15 +226,15 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: 0.5rem 0.6rem;
   text-align: left;
   vertical-align: middle;
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   &:last-child {
     white-space: normal;
-    min-width: 140px;
+    min-width: 100px;
   }
   &:nth-child(5) {
     text-align: center;
@@ -288,25 +289,26 @@ export const EmptyState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 2rem 1.5rem;
   text-align: center;
   color: ${({ theme }) => theme.colors.text.secondary};
   svg {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
     opacity: 0.6;
-    width: 56px;
-    height: 56px;
+    width: 40px;
+    height: 40px;
   }
   h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.25rem;
+    margin: 0 0 0.35rem 0;
+    font-size: 1.05rem;
     font-weight: 600;
     color: ${({ theme }) => theme.colors.text.primary};
   }
   p {
-    margin: 0 0 2rem 0;
-    line-height: 1.5;
-    max-width: 360px;
+    margin: 0 0 1rem 0;
+    line-height: 1.45;
+    max-width: 320px;
+    font-size: 0.85rem;
   }
 `;
 
@@ -314,7 +316,7 @@ export const LoadingState = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 2rem 1.5rem;
   color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
@@ -323,12 +325,11 @@ export const ErrorState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 2rem 1.5rem;
   text-align: center;
   color: ${({ theme }) => theme.colors.text.secondary};
-
   div {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 `;
 

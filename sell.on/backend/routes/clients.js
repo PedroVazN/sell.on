@@ -230,6 +230,38 @@ router.post('/transfer', auth, authorize('admin', 'vendedor'), async (req, res) 
   }
 });
 
+// GET /api/clients/carteiras/summary - Admin: lista vendedores com total de clientes na carteira de cada um
+router.get('/carteiras/summary', auth, authorize('admin'), async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({ success: true, data: [], message: 'MongoDB não conectado.' });
+    }
+    const vendedores = await User.find({ role: 'vendedor', isActive: true }).select('_id name email').sort({ name: 1 }).lean();
+    const list = await Promise.all(
+      vendedores.map(async (v) => {
+        const totalClients = await Client.countDocuments({ assignedTo: v._id });
+        return { _id: v._id, name: v.name, email: v.email, totalClients };
+      })
+    );
+    const semCarteira = await Client.countDocuments({
+      $or: [
+        { assignedTo: { $in: [null, undefined] } },
+        { assignedTo: { $exists: false } }
+      ]
+    });
+    return res.json({
+      success: true,
+      data: list,
+      semCarteira,
+      message: 'Resumo das carteiras por vendedor.'
+    });
+  } catch (err) {
+    console.error('Erro ao listar carteiras:', err);
+    res.status(500).json({ success: false, message: 'Erro ao listar carteiras.' });
+  }
+});
+
 // GET /api/clients/:id - Buscar cliente específico (filtrado por vendedor se necessário)
 router.get('/:id', auth, async (req, res) => {
   try {

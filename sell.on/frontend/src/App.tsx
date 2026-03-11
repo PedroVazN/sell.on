@@ -24,6 +24,7 @@ import { Configurations } from './pages/Configurations';
 import { Products } from './pages/Products';
 import { Clients } from './pages/Clients';
 import { Carteira } from './pages/Carteira';
+import { GestaoCarteiras } from './pages/GestaoCarteiras';
 import { Distributors } from './pages/Distributors';
 import { PriceList } from './pages/PriceList';
 import { Proposals } from './pages/Proposals';
@@ -76,6 +77,7 @@ function App() {
           <Route path="products/create" element={<ProtectedRoute permission="admin"><CreateProduct /></ProtectedRoute>} />
           <Route path="clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
           <Route path="carteira" element={<ProtectedRoute><Carteira /></ProtectedRoute>} />
+          <Route path="gestao-carteiras" element={<ProtectedRoute permission="admin"><GestaoCarteiras /></ProtectedRoute>} />
           <Route path="clients/register" element={<ProtectedRoute permission="admin"><ClientRegistration /></ProtectedRoute>} />
           <Route path="distributors" element={<ProtectedRoute permission="admin"><Distributors /></ProtectedRoute>} />
           <Route path="distributors/register" element={<ProtectedRoute permission="admin"><DistributorRegistration /></ProtectedRoute>} />

@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: 2rem;
+  padding: 1rem 1.25rem;
   background: ${({ theme }) => theme.colors.background};
   min-height: 100vh;
 `;
@@ -10,13 +10,13 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 `;
 
 export const Title = styled.h1`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
@@ -25,7 +25,7 @@ export const Title = styled.h1`
 export const Actions = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 `;
 
@@ -103,10 +103,10 @@ export const TableWrapper = styled.div`
 export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
-  min-width: 1200px;
+  font-size: 0.8rem;
+  min-width: 900px;
   background: ${({ theme }) => theme.colors.background.card};
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 `;
@@ -132,11 +132,11 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: 0.5rem 0.6rem;
   text-align: left;
   vertical-align: middle;
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   border-right: 1px solid ${({ theme }) => theme.colors.border.secondary};
   &:last-child {

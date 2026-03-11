@@ -111,6 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         ...(hasPermission('admin') ? [
           { icon: <Package size={20} />, label: 'Produtos', path: '/products', permission: 'admin' },
           { icon: <UserCheck size={20} />, label: 'Clientes', path: '/clients', permission: 'admin' },
+          { icon: <Briefcase size={20} />, label: 'Gestão de Carteiras', path: '/gestao-carteiras', permission: 'admin' },
           { icon: <Truck size={20} />, label: 'Distribuidores', path: '/distributors', permission: 'admin' },
           { icon: <DollarSign size={20} />, label: 'Lista de Preços', path: '/price-list', permission: 'admin' },
         ] : []),

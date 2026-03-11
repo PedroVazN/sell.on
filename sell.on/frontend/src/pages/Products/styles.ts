@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: ${({ theme }) => theme.spacing.xl};
+  padding: 1rem 1.25rem;
   background: ${({ theme }) => theme.colors.background.primary};
   min-height: 100vh;
 `;
@@ -10,11 +10,11 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${({ theme }) => theme.spacing.xxl};
+  margin-bottom: 1rem;
 `;
 
 export const Title = styled.h1`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
@@ -23,7 +23,7 @@ export const Title = styled.h1`
 export const Actions = styled.div`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
+  gap: 0.75rem;
 `;
 
 export const SearchContainer = styled.div`
@@ -32,8 +32,8 @@ export const SearchContainer = styled.div`
   background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  min-width: 300px;
+  padding: 0.4rem 0.75rem;
+  min-width: 220px;
   
   svg {
     color: ${({ theme }) => theme.colors.text.tertiary};

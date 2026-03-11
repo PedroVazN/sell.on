@@ -935,6 +935,11 @@ class ApiService {
     });
   }
 
+  /** Admin: resumo das carteiras por vendedor (total de clientes em cada carteira) */
+  async getCarteirasSummary(): Promise<ApiResponse<{ _id: string; name: string; email: string; totalClients: number }[]>> {
+    return this.request<{ _id: string; name: string; email: string; totalClients: number }[]>('/clients/carteiras/summary');
+  }
+
   // Distribuidores
   async getDistributors(page = 1, limit = 10, search?: string, origem?: string, isActive?: boolean): Promise<ApiResponse<Distributor[]>> {
     let url = `/distributors?page=${page}&limit=${limit}`;

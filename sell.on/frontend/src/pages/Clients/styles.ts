@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: 32px;
+  padding: 1rem 1.25rem;
   background: #0a0a0f;
   min-height: 100vh;
   position: relative;
@@ -22,13 +22,13 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 1rem;
   position: relative;
   z-index: 1;
 `;
 
 export const Title = styled.h1`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -38,7 +38,7 @@ export const Title = styled.h1`
 export const Actions = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0.75rem;
 `;
 
 export const SearchContainer = styled.div`
@@ -46,13 +46,13 @@ export const SearchContainer = styled.div`
   align-items: center;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px 16px;
-  min-width: 300px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 220px;
   
   svg {
     color: rgba(255, 255, 255, 0.5);
-    margin-right: 12px;
+    margin-right: 8px;
   }
   
   &:focus-within {
@@ -69,7 +69,7 @@ export const SearchInput = styled.input`
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   flex: 1;
   font-weight: 400;
   
@@ -81,14 +81,14 @@ export const SearchInput = styled.input`
 export const FilterButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px 16px;
+  border-radius: 10px;
+  padding: 8px 12px;
   color: #ffffff;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
   
@@ -106,14 +106,14 @@ export const FilterButton = styled.button`
 export const CreateButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: 10px;
+  padding: 8px 16px;
   color: white;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
   
@@ -131,8 +131,8 @@ export const CreateButton = styled.button`
 export const Content = styled.div`
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
   position: relative;
   z-index: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -171,10 +171,10 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
   text-align: left;
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 400;
   strong {
     font-weight: 600;

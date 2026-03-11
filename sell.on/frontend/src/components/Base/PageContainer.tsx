@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { theme } from '../../styles/theme';
 
 export const PageContainer = styled.div`
-  padding: 2rem;
+  padding: 1rem 1.25rem;
   background: ${theme.colors.gradients.background};
   min-height: 100vh;
   position: relative;
@@ -36,28 +36,28 @@ export const PageContainer = styled.div`
 `;
 
 export const PageHeader = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   position: relative;
   z-index: 1;
 `;
 
 export const PageTitle = styled.h1`
-  font-size: 2.5rem;
+  font-size: 1.6rem;
   font-weight: 800;
   background: ${theme.colors.gradients.primary};
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   text-shadow: ${theme.shadows.glow};
   
   @media (max-width: ${theme.breakpoints.mobile}) {
-    font-size: 2rem;
+    font-size: 1.35rem;
   }
 `;
 
 export const PageSubtitle = styled.p`
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: ${theme.colors.text.secondary};
   margin: 0;
   font-weight: 500;

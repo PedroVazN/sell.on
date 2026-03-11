@@ -108,7 +108,7 @@ export const Button = styled.button<ButtonProps>`
   }
 
   &:active:not(:disabled) {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
 
   &::before {

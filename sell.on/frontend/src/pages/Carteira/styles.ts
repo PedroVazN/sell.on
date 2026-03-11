@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: 32px;
+  padding: 1rem 1.25rem;
   background: #0a0a0f;
   min-height: 100vh;
   position: relative;
@@ -21,13 +21,13 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 1rem;
   position: relative;
   z-index: 1;
 `;
 
 export const Title = styled.h1`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -35,15 +35,15 @@ export const Title = styled.h1`
 `;
 
 export const Subtitle = styled.p`
-  margin: 8px 0 0;
-  font-size: 0.95rem;
+  margin: 4px 0 0;
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
 `;
 
 export const Actions = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0.75rem;
 `;
 
 export const SearchContainer = styled.div`
@@ -51,10 +51,10 @@ export const SearchContainer = styled.div`
   align-items: center;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px 16px;
-  min-width: 280px;
-  svg { color: rgba(255, 255, 255, 0.5); margin-right: 12px; }
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 220px;
+  svg { color: rgba(255, 255, 255, 0.5); margin-right: 8px; }
   &:focus-within { border-color: rgba(59, 130, 246, 0.5); svg { color: #3b82f6; } }
 `;
 
@@ -63,7 +63,7 @@ export const SearchInput = styled.input`
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   flex: 1;
   &::placeholder { color: rgba(255, 255, 255, 0.4); }
 `;
@@ -71,9 +71,9 @@ export const SearchInput = styled.input`
 export const StatsCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 20px 24px;
-  margin-bottom: 24px;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 1rem;
   position: relative;
   z-index: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -81,8 +81,8 @@ export const StatsCard = styled.div`
   &:hover {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
-  p { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; }
-  strong { font-size: 1.5rem; color: #fff; }
+  p { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; }
+  strong { font-size: 1.25rem; color: #fff; }
 `;
 
 export const Content = styled.div`
@@ -117,23 +117,23 @@ export const TableRow = styled.tr`
 `;
 
 export const TableCell = styled.td`
-  padding: 1rem 1rem;
+  padding: 0.5rem 0.75rem;
   color: #ffffff;
-  font-size: 0.9rem;
-  &:first-child { padding-left: 20px; }
-  &:last-child { padding-right: 20px; }
+  font-size: 0.8rem;
+  &:first-child { padding-left: 12px; }
+  &:last-child { padding-right: 12px; }
 `;
 
 export const TableHeadCell = styled.th`
-  padding: 1rem 1rem;
+  padding: 0.5rem 0.75rem;
   text-align: left;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  &:first-child { padding-left: 20px; }
-  &:last-child { padding-right: 20px; }
+  &:first-child { padding-left: 12px; }
+  &:last-child { padding-right: 12px; }
 `;
 
 export const TableBody = styled.tbody``;
@@ -169,18 +169,18 @@ export const StatusBadge = styled.span<{ $isActive: boolean }>`
 
 export const EmptyState = styled.div`
   text-align: center;
-  padding: 64px 24px;
+  padding: 2rem 1.25rem;
   color: rgba(255, 255, 255, 0.6);
-  svg { margin-bottom: 20px; opacity: 0.6; width: 56px; height: 56px; }
-  h3 { color: #fff; margin: 0 0 10px; font-size: 1.25rem; font-weight: 600; }
-  p { margin: 0; font-size: 0.95rem; line-height: 1.5; max-width: 360px; margin-left: auto; margin-right: auto; }
+  svg { margin-bottom: 0.75rem; opacity: 0.6; width: 40px; height: 40px; }
+  h3 { color: #fff; margin: 0 0 0.5rem; font-size: 1.05rem; font-weight: 600; }
+  p { margin: 0; font-size: 0.85rem; line-height: 1.45; max-width: 320px; margin-left: auto; margin-right: auto; }
 `;
 
 export const LoadingState = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 64px;
+  padding: 2rem;
   color: rgba(255, 255, 255, 0.6);
 `;
 
@@ -286,12 +286,12 @@ export const ModalBox = styled.div`
 `;
 
 export const ModalHeader = styled.div`
-  padding: 20px 24px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  h2 { margin: 0; font-size: 1.25rem; color: #fff; }
+  h2 { margin: 0; font-size: 1.1rem; color: #fff; }
 `;
 
 export const ModalClose = styled.button`
@@ -304,7 +304,7 @@ export const ModalClose = styled.button`
 `;
 
 export const ModalBody = styled.div`
-  padding: 20px 24px;
+  padding: 12px 16px;
   overflow-y: auto;
   flex: 1;
 `;
@@ -349,10 +349,21 @@ export const TransferListItem = styled.label`
   cursor: pointer;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
   &:last-child { border-bottom: none; }
   &:hover { background: rgba(255, 255, 255, 0.06); }
-  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    accent-color: #8b5cf6;
+  }
+  input[type="checkbox"]:checked {
+    transform: scale(1.05);
+  }
 `;
 
 export const TransferSelect = styled.select`
@@ -368,33 +379,33 @@ export const TransferSelect = styled.select`
 `;
 
 export const ModalFooter = styled.div`
-  padding: 16px 24px;
+  padding: 12px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 0.75rem;
 `;
 
 export const ModalCancel = styled.button`
-  padding: 10px 18px;
+  padding: 8px 14px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   transition: all 0.2s ease;
   &:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.35); }
 `;
 
 export const ModalConfirm = styled.button`
-  padding: 10px 18px;
+  padding: 8px 14px;
   background: #8b5cf6;
   border: none;
   color: #fff;
   border-radius: 10px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;

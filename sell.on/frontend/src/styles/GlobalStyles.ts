@@ -9,7 +9,7 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   html {
-    font-size: 16px;
+    font-size: 14px;
     scroll-behavior: smooth;
   }
 
@@ -99,6 +99,18 @@ export const GlobalStyles = createGlobalStyle`
   textarea:focus-visible,
   [tabindex="0"]:focus-visible {
     box-shadow: 0 0 0 3px ${theme.colors.border.focus};
+  }
+
+  /* Microinterações - Item 9 MELHORIAS_VISUAIS */
+  button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  a {
+    transition: color 0.2s ease;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   /* Animações globais - Suaves e fluidas */
