@@ -174,13 +174,13 @@ export const CreateProposal: React.FC = () => {
       console.log('=== CARREGANDO DADOS ===');
       
       const promises: Promise<any>[] = [
-        apiService.getProducts(1, 1000),
-        apiService.getDistributors(1, 1000)
+        apiService.getProducts(1, 200),
+        apiService.getDistributors(1, 200)
       ];
 
       // Se for admin, carregar lista de vendedores também
       if (user?.role === 'admin') {
-        promises.push(apiService.getUsers(1, 1000));
+        promises.push(apiService.getUsers(1, 200));
       }
 
       const responses = await Promise.all(promises);
@@ -658,19 +658,21 @@ export const CreateProposal: React.FC = () => {
           razaoSocial: formData.distributor.razaoSocial || '',
           cnpj: formData.distributor.cnpj || ''
         },
-        items: formData.items.map(item => ({
-          product: {
-            _id: item.product!._id,
-            name: item.product!.name,
-            description: item.product!.description || '',
-            category: item.product!.category || '',
-            price: item.product!.price || 0
-          },
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discount: item.discount,
-          total: item.total
-        })),
+        items: formData.items
+          .filter((item): item is typeof item & { product: NonNullable<typeof item.product> } => !!item.product)
+          .map(item => ({
+            product: {
+              _id: item.product._id,
+              name: item.product.name,
+              description: item.product.description || '',
+              category: item.product.category || '',
+              price: item.product.price || 0
+            },
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: item.discount,
+            total: item.total
+          })),
         subtotal,
         discount: totalDiscount,
         total,
@@ -791,16 +793,18 @@ export const CreateProposal: React.FC = () => {
           ...formData.distributor,
           cnpj: formData.distributor.cnpj || ''
         },
-        items: formData.items.map(item => ({
-          product: {
-            name: item.product!.name,
-            description: item.product!.description || ''
-          },
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discount: item.discount,
-          total: item.total
-        })),
+        items: formData.items
+          .filter((item): item is typeof item & { product: NonNullable<typeof item.product> } => !!item.product)
+          .map(item => ({
+            product: {
+              name: item.product.name,
+              description: item.product.description || ''
+            },
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: item.discount,
+            total: item.total
+          })),
         subtotal,
         discount: totalDiscount,
         total,
@@ -1040,7 +1044,7 @@ export const CreateProposal: React.FC = () => {
         <FormSection>
           <SectionTitle>Produtos</SectionTitle>
           {formData.items.map((item, index) => (
-            <ProductItem key={index}>
+            <ProductItem key={item.product?._id ?? `item-${index}`}>
               <ProductHeader>
                 <h4>Produto {index + 1}</h4>
                 {formData.items.length > 1 && (

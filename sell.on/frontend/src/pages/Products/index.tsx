@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Package, Plus, Search, Filter, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Product } from '../../services/api';
@@ -25,6 +25,39 @@ import {
   EmptyState,
   ErrorState
 } from './styles';
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+
+const ProductRow = memo(function ProductRow({
+  product,
+  onEdit,
+  onDelete,
+}: {
+  product: Product;
+  onEdit: (p: Product) => void;
+  onDelete: (p: Product) => void;
+}) {
+  return (
+    <TableRow>
+      <TableCell>
+        <div>
+          <strong>{product.name}</strong>
+          {product.description && <div style={{ fontSize: '0.9rem', color: '#666' }}>{product.description}</div>}
+        </div>
+      </TableCell>
+      <TableCell>{product.category}</TableCell>
+      <TableCell><strong style={{ color: '#10b981' }}>{formatPrice(product.price || 0)}</strong></TableCell>
+      <TableCell>
+        <StatusBadge $isActive={product.isActive}>{product.isActive ? 'Ativo' : 'Inativo'}</StatusBadge>
+      </TableCell>
+      <TableCell>
+        <ActionButton onClick={() => onEdit(product)}><Edit size={16} /></ActionButton>
+        <ActionButton onClick={() => onDelete(product)}><Trash2 size={16} /></ActionButton>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 export const Products: React.FC = () => {
   const navigate = useNavigate();
@@ -70,7 +103,11 @@ export const Products: React.FC = () => {
     navigate('/products/create');
   };
 
-  const handleDeleteProduct = async (product: Product) => {
+  const handleEditProduct = useCallback((product: Product) => {
+    navigate(`/products/create?edit=${product._id}`);
+  }, [navigate]);
+
+  const handleDeleteProduct = useCallback(async (product: Product) => {
     const ok = await confirm({
       title: 'Excluir produto',
       message: `Tem certeza que deseja excluir o produto ${product.name}?`,
@@ -86,15 +123,7 @@ export const Products: React.FC = () => {
       showError('Erro ao excluir produto', 'Tente novamente.');
       console.error('Erro ao excluir produto:', err);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
-  };
-
+  }, [confirm, loadProducts, success, showError]);
 
   if (error) {
     return (
@@ -181,41 +210,14 @@ export const Products: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => {
-                return (
-                  <TableRow key={product._id}>
-                    <TableCell>
-                      <div>
-                        <strong>{product.name}</strong>
-                        {product.description && (
-                          <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                            {product.description}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>
-                      <strong style={{ color: '#10b981' }}>
-                        {formatPrice(product.price || 0)}
-                      </strong>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge $isActive={product.isActive}>
-                        {product.isActive ? 'Ativo' : 'Inativo'}
-                      </StatusBadge>
-                    </TableCell>
-                    <TableCell>
-                      <ActionButton>
-                        <Edit size={16} />
-                      </ActionButton>
-                      <ActionButton onClick={() => handleDeleteProduct(product)}>
-                        <Trash2 size={16} />
-                      </ActionButton>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {products.map((product) => (
+                <ProductRow
+                  key={product._id}
+                  product={product}
+                  onEdit={handleEditProduct}
+                  onDelete={handleDeleteProduct}
+                />
+              ))}
             </TableBody>
           </Table>
         )}

@@ -107,7 +107,8 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await apiService.moveOpportunityStage(opportunityId, stageId);
       if (res.success && res.data) {
-        setOpportunities((current) => current.map((o) => (o._id === opportunityId ? res.data! : o)));
+        const updated = res.data;
+        setOpportunities((current) => current.map((o) => (o._id === opportunityId ? updated : o)));
       }
     } catch {
       setOpportunities(prev);
@@ -120,8 +121,9 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await apiService.createOpportunity(data);
         if (res.success && res.data) {
-          setOpportunities((curr) => [res.data!, ...curr]);
-          return res.data;
+          const created = res.data;
+          setOpportunities((curr) => [created, ...curr]);
+          return created;
         }
       } catch {
         // caller can show toast
@@ -135,8 +137,9 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await apiService.updateOpportunity(id, data);
       if (res.success && res.data) {
-        setOpportunities((curr) => curr.map((o) => (o._id === id ? res.data! : o)));
-        return res.data;
+        const updated = res.data;
+        setOpportunities((curr) => curr.map((o) => (o._id === id ? updated : o)));
+        return updated;
       }
     } catch {
       //
@@ -146,19 +149,26 @@ export function FunnelProvider({ children }: { children: React.ReactNode }) {
 
   const markWon = useCallback(async (id: string) => {
     const res = await apiService.setOpportunityStatus(id, 'won');
-    if (res.success && res.data) setOpportunities((curr) => curr.map((o) => (o._id === id ? res.data! : o)));
+    if (res.success && res.data) {
+      const updated = res.data;
+      setOpportunities((curr) => curr.map((o) => (o._id === id ? updated : o)));
+    }
   }, []);
 
   const markLost = useCallback(async (id: string, lossReasonId: string) => {
     const res = await apiService.setOpportunityStatus(id, 'lost', lossReasonId);
-    if (res.success && res.data) setOpportunities((curr) => curr.map((o) => (o._id === id ? res.data! : o)));
+    if (res.success && res.data) {
+      const updated = res.data;
+      setOpportunities((curr) => curr.map((o) => (o._id === id ? updated : o)));
+    }
   }, []);
 
   const convertToSale = useCallback(async (id: string, customerId: string) => {
     try {
       const res = await apiService.convertOpportunityToSale(id, customerId);
-      if (res.success && res.data) {
-        setOpportunities((curr) => curr.map((o) => (o._id === id ? res.data!.opportunity : o)));
+      if (res.success && res.data?.opportunity) {
+        const updated = res.data.opportunity;
+        setOpportunities((curr) => curr.map((o) => (o._id === id ? updated : o)));
         const sale = res.data.sale;
         return sale ? { saleId: sale._id, saleNumber: sale.saleNumber } : null;
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Plus, Search, Filter, Edit, Trash2, Loader2 } from 'lucide-react';
 import { apiService, Client } from '../../services/api';
@@ -32,6 +32,66 @@ import {
   PaginationNumber,
   Ellipsis
 } from './styles';
+
+const formatCNPJ = (cnpj: string) => {
+  const digits = cnpj.replace(/\D/g, '');
+  return digits.length >= 14 ? `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}` : cnpj;
+};
+const formatPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length >= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length >= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return phone;
+};
+
+const ClientRow = memo(function ClientRow({
+  client,
+  isSeller,
+  onEdit,
+  onDelete,
+}: {
+  client: Client;
+  isSeller: boolean;
+  onEdit: (c: Client) => void;
+  onDelete: (c: Client) => void;
+}) {
+  return (
+    <TableRow>
+      <TableCell>
+        <div>
+          <strong>{client.razaoSocial}</strong>
+          {client.nomeFantasia && <div style={{ fontSize: '0.9rem', color: '#666' }}>{client.nomeFantasia}</div>}
+        </div>
+      </TableCell>
+      <TableCell>{formatCNPJ(client.cnpj)}</TableCell>
+      <TableCell>
+        <div>
+          <div>{client.contato.nome}</div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>{client.contato.email}</div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>{formatPhone(client.contato.telefone)}</div>
+        </div>
+      </TableCell>
+      <TableCell>{client.endereco.uf}</TableCell>
+      <TableCell>{client.classificacao}</TableCell>
+      {!isSeller && (
+        <TableCell>
+          {client.assignedTo && typeof client.assignedTo === 'object' && 'name' in client.assignedTo
+            ? client.assignedTo.name
+            : client.assignedTo ? String(client.assignedTo) : '—'}
+        </TableCell>
+      )}
+      <TableCell>
+        <StatusBadge $isActive={client.isActive}>{client.isActive ? 'Ativo' : 'Inativo'}</StatusBadge>
+      </TableCell>
+      {!isSeller && (
+        <TableCell>
+          <ActionButton onClick={() => onEdit(client)}><Edit size={16} /></ActionButton>
+          <ActionButton onClick={() => onDelete(client)}><Trash2 size={16} /></ActionButton>
+        </TableCell>
+      )}
+    </TableRow>
+  );
+});
 
 export const Clients: React.FC = () => {
   const navigate = useNavigate();
@@ -94,13 +154,13 @@ export const Clients: React.FC = () => {
     navigate('/clients/register');
   };
 
-  const handleEditClient = (client: Client) => {
-    if (isSeller) return; // vendedor não edita
+  const handleEditClient = useCallback((client: Client) => {
+    if (isSeller) return;
     setEditingClient(client);
     setShowModal(true);
-  };
+  }, [isSeller]);
 
-  const handleDeleteClient = async (client: Client) => {
+  const handleDeleteClient = useCallback(async (client: Client) => {
     if (isSeller) return;
     const ok = await confirm({
       title: 'Excluir cliente',
@@ -117,19 +177,11 @@ export const Clients: React.FC = () => {
       showError('Erro ao excluir cliente', 'Tente novamente.');
       console.error('Erro ao excluir cliente:', err);
     }
-  };
+  }, [isSeller, confirm, loadClients, success, showError]);
 
   const handleSaveClient = (client: Client) => {
     loadClients();
     setShowModal(false);
-  };
-
-  const formatCNPJ = (cnpj: string) => {
-    return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  };
-
-  const formatPhone = (phone: string) => {
-    return phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   };
 
   if (error) {
@@ -229,56 +281,13 @@ export const Clients: React.FC = () => {
             </TableHeader>
             <TableBody>
               {clients.map((client) => (
-                <TableRow key={client._id}>
-                  <TableCell>
-                    <div>
-                      <strong>{client.razaoSocial}</strong>
-                      {client.nomeFantasia && (
-                        <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                          {client.nomeFantasia}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{formatCNPJ(client.cnpj)}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div>{client.contato.nome}</div>
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                        {client.contato.email}
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                        {formatPhone(client.contato.telefone)}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{client.endereco.uf}</TableCell>
-                  <TableCell>{client.classificacao}</TableCell>
-                  {!isSeller && (
-                    <TableCell>
-                      {client.assignedTo && typeof client.assignedTo === 'object' && 'name' in client.assignedTo
-                        ? client.assignedTo.name
-                        : client.assignedTo
-                          ? String(client.assignedTo)
-                          : '—'}
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    <StatusBadge $isActive={client.isActive}>
-                      {client.isActive ? 'Ativo' : 'Inativo'}
-                    </StatusBadge>
-                  </TableCell>
-                  {!isSeller && (
-                    <TableCell>
-                      <ActionButton onClick={() => handleEditClient(client)}>
-                        <Edit size={16} />
-                      </ActionButton>
-                      <ActionButton onClick={() => handleDeleteClient(client)}>
-                        <Trash2 size={16} />
-                      </ActionButton>
-                    </TableCell>
-                  )}
-                </TableRow>
+                <ClientRow
+                  key={client._id}
+                  client={client}
+                  isSeller={!!isSeller}
+                  onEdit={handleEditClient}
+                  onDelete={handleDeleteClient}
+                />
               ))}
             </TableBody>
           </Table>

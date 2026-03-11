@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2, ChevronDown, FileSpreadsheet, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
@@ -58,7 +58,7 @@ import {
   TotalValue,
 } from './styles';
 
-// Funções de status
+// Funções de status e formatação (nível módulo para uso em linha memoizada)
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'negociacao': return '#f59e0b';
@@ -68,6 +68,128 @@ const getStatusColor = (status: string) => {
     default: return '#6b7280';
   }
 };
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('pt-BR');
+
+const getCreatedAtLabel = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMins < 1) return 'Criada agora';
+  if (diffMins < 60) return `Criada há ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+  if (diffHours < 24) return `Criada há ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+  if (diffDays < 7) return `Criada há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+  if (diffWeeks < 4) return `Criada há ${diffWeeks} ${diffWeeks === 1 ? 'semana' : 'semanas'}`;
+  if (diffMonths < 12) return `Criada há ${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'}`;
+  const diffYears = Math.floor(diffDays / 365);
+  return `Criada há ${diffYears} ${diffYears === 1 ? 'ano' : 'anos'}`;
+};
+
+const getStatusIcon = (status: Proposal['status']) => {
+  switch (status) {
+    case 'negociacao': return <AlertCircle size={16} />;
+    case 'aguardando_pagamento': return <AlertCircle size={16} />;
+    case 'venda_fechada': return <CheckCircle size={16} />;
+    case 'venda_perdida': return <XCircle size={16} />;
+    case 'expirada': return <Clock size={16} />;
+    default: return <AlertCircle size={16} />;
+  }
+};
+
+const getStatusLabel = (status: Proposal['status']) => {
+  switch (status) {
+    case 'negociacao': return 'Em Negociação';
+    case 'aguardando_pagamento': return 'Em Negociação';
+    case 'venda_fechada': return 'Venda Fechada';
+    case 'venda_perdida': return 'Venda Perdida';
+    case 'expirada': return 'Expirada';
+    default: return status;
+  }
+};
+
+type ProposalRowProps = {
+  proposal: Proposal;
+  isDeleting: boolean;
+  isAdmin: boolean;
+  onEdit: (p: Proposal) => void;
+  onDelete: (p: Proposal) => void;
+  onPdf: (p: Proposal) => void;
+  onStatus: (p: Proposal, s: Proposal['status']) => void;
+  onChat: (p: Proposal) => void;
+};
+
+const ProposalRow = memo(function ProposalRow({
+  proposal,
+  isDeleting,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onPdf,
+  onStatus,
+  onChat,
+}: ProposalRowProps) {
+  return (
+    <TableRow style={{ opacity: isDeleting ? 0.5 : 1 }}>
+      <TableCell><div style={{ fontWeight: 'bold' }}>{proposal.proposalNumber}</div></TableCell>
+      <TableCell>
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{proposal.client.name}</div>
+          <div style={{ fontSize: '0.875rem', color: '#666' }}>{proposal.client.company || proposal.client.email}</div>
+        </div>
+      </TableCell>
+      <TableCell><div style={{ fontSize: '0.875rem' }}>{proposal.seller.name}</div></TableCell>
+      <TableCell>
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{proposal.distributor?.apelido || proposal.distributor?.razaoSocial || 'N/A'}</div>
+          <div style={{ fontSize: '0.875rem', color: '#666' }}>{proposal.distributor?.razaoSocial || proposal.distributor?.apelido || ''}</div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div>
+          {proposal.items.map((item, index) => (
+            <div key={item.product?._id ?? index} style={{ marginBottom: '0.25rem', fontSize: '0.875rem' }}>
+              {item.product?.name ?? '—'} x{item.quantity}
+            </div>
+          ))}
+        </div>
+      </TableCell>
+      <TableCell><div style={{ fontWeight: 'bold', color: '#10b981' }}>{formatCurrency(proposal.total)}</div></TableCell>
+      <TableCell>
+        <StatusBadge $isActive={proposal.status === 'venda_fechada'} style={{ backgroundColor: getStatusColor(proposal.status), color: 'white', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          {getStatusIcon(proposal.status)}
+          {getStatusLabel(proposal.status)}
+        </StatusBadge>
+      </TableCell>
+      <TableCell>
+        <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>
+        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>{getCreatedAtLabel(proposal.createdAt)}</div>
+      </TableCell>
+      <TableCell>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.25rem', minWidth: '140px' }}>
+          <ActionButton onClick={() => onEdit(proposal)} disabled={isDeleting} title="Editar"><Edit size={14} /></ActionButton>
+          <ActionButton onClick={() => onChat(proposal)} disabled={isDeleting} title="Chat" style={{ backgroundColor: '#6366f1' }}><MessageCircle size={14} /></ActionButton>
+          <ActionButton onClick={() => onPdf(proposal)} disabled={isDeleting} title="Gerar PDF" style={{ backgroundColor: '#059669' }}><Download size={14} /></ActionButton>
+          {isAdmin && <ActionButton onClick={() => onDelete(proposal)} disabled={isDeleting} title="Excluir"><Trash2 size={14} /></ActionButton>}
+          {(proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento') && (
+            <>
+              <ActionButton onClick={() => onStatus(proposal, 'venda_fechada')} disabled={isDeleting} title="Venda Fechada" style={{ backgroundColor: '#059669' }}><CheckCircle size={14} /></ActionButton>
+              <ActionButton onClick={() => onStatus(proposal, 'venda_perdida')} disabled={isDeleting} title="Venda Perdida" style={{ backgroundColor: '#dc2626' }}><XCircle size={14} /></ActionButton>
+              <ActionButton onClick={() => onStatus(proposal, 'expirada')} disabled={isDeleting} title="Expirada" style={{ backgroundColor: '#6b7280' }}><Clock size={16} /></ActionButton>
+            </>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 export const Proposals: React.FC = () => {
   const navigate = useNavigate();
@@ -202,9 +324,9 @@ export const Proposals: React.FC = () => {
       // Removido cálculo de Score IA na listagem para otimização
       
       const [productsRes, distributorsRes, sellersRes] = await Promise.all([
-        apiService.getProducts(1, 1000),
-        apiService.getDistributors(1, 1000), // Aumentado para garantir que todos apareçam
-        apiService.getUsers(1, 1000)
+        apiService.getProducts(1, 200),
+        apiService.getDistributors(1, 200),
+        apiService.getUsers(1, 200)
       ]);
 
       setProposals(proposalsRes.data || []);
@@ -504,11 +626,11 @@ export const Proposals: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleEditProposal = (proposal: Proposal) => {
+  const handleEditProposal = useCallback((proposal: Proposal) => {
     navigate(`/proposals/edit/${proposal._id}`);
-  };
+  }, [navigate]);
 
-  const handleDeleteProposal = async (proposal: Proposal) => {
+  const handleDeleteProposal = useCallback(async (proposal: Proposal) => {
     const ok = await confirm({
       title: 'Excluir proposta',
       message: `Tem certeza que deseja excluir a proposta ${proposal.proposalNumber}?`,
@@ -526,9 +648,9 @@ export const Proposals: React.FC = () => {
       console.error('Erro ao deletar proposta:', err);
       showError('Erro ao excluir', err instanceof Error ? err.message : 'Não foi possível excluir a proposta.');
     }
-  };
+  }, [confirm, loadData, currentPage, success, showError]);
 
-  const handleGeneratePdf = (proposal: Proposal) => {
+  const handleGeneratePdf = useCallback((proposal: Proposal) => {
     try {
       const pdfData: ProposalPdfData = {
         proposalNumber: proposal.proposalNumber,
@@ -563,9 +685,9 @@ export const Proposals: React.FC = () => {
       console.error('Erro ao gerar PDF:', error);
       showError('Erro!', 'Erro ao gerar PDF da proposta');
     }
-  };
+  }, [success, showError]);
 
-  const handleUpdateStatus = async (proposal: Proposal, newStatus: Proposal['status']) => {
+  const handleUpdateStatus = useCallback(async (proposal: Proposal, newStatus: Proposal['status']) => {
     // Se for venda perdida, mostrar modal para capturar motivo
     if (newStatus === 'venda_perdida') {
       setProposalToLose(proposal);
@@ -602,7 +724,7 @@ export const Proposals: React.FC = () => {
       console.error('Erro ao atualizar status:', err);
       showError('Erro!', `Erro ao atualizar status: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     }
-  };
+  }, [loadData, currentPage, success, showError]);
 
   const handleConfirmLoss = async () => {
     if (!proposalToLose || !lossReason) {
@@ -760,69 +882,6 @@ export const Proposals: React.FC = () => {
     } catch (err) {
       console.error('Erro ao salvar proposta:', err);
       showError('Erro!', `Erro ao salvar proposta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const getCreatedAtLabel = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-    if (diffMins < 1) return 'Criada agora';
-    if (diffMins < 60) return `Criada há ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
-    if (diffHours < 24) return `Criada há ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
-    if (diffDays < 7) return `Criada há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
-    if (diffWeeks < 4) return `Criada há ${diffWeeks} ${diffWeeks === 1 ? 'semana' : 'semanas'}`;
-    if (diffMonths < 12) return `Criada há ${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'}`;
-    const diffYears = Math.floor(diffDays / 365);
-    return `Criada há ${diffYears} ${diffYears === 1 ? 'ano' : 'anos'}`;
-  };
-
-  const getStatusIcon = (status: Proposal['status']) => {
-    switch (status) {
-      case 'negociacao': return <AlertCircle size={16} />;
-      case 'aguardando_pagamento': return <AlertCircle size={16} />;
-      case 'venda_fechada': return <CheckCircle size={16} />;
-      case 'venda_perdida': return <XCircle size={16} />;
-      case 'expirada': return <Clock size={16} />;
-      default: return <AlertCircle size={16} />;
-    }
-  };
-
-  const getStatusColor = (status: Proposal['status']) => {
-    switch (status) {
-      case 'negociacao': return '#f59e0b';
-      case 'aguardando_pagamento': return '#f59e0b';
-      case 'venda_fechada': return '#059669';
-      case 'venda_perdida': return '#dc2626';
-      case 'expirada': return '#6b7280';
-      default: return '#6b7280';
-    }
-  };
-
-  const getStatusLabel = (status: Proposal['status']) => {
-    switch (status) {
-      case 'negociacao': return 'Em Negociação';
-      case 'aguardando_pagamento': return 'Em Negociação';
-      case 'venda_fechada': return 'Venda Fechada';
-      case 'venda_perdida': return 'Venda Perdida';
-      case 'expirada': return 'Expirada';
-      default: return status;
     }
   };
 
@@ -1018,142 +1077,19 @@ export const Proposals: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProposals.map((proposal) => {
-                  const isDeleting = deletingItems.includes(proposal._id);
-                  return (
-                    <TableRow key={proposal._id} style={{ opacity: isDeleting ? 0.5 : 1 }}>
-                      <TableCell>
-                        <div style={{ fontWeight: 'bold' }}>{proposal.proposalNumber}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div style={{ fontWeight: 'bold' }}>{proposal.client.name}</div>
-                          <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                            {proposal.client.company || proposal.client.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div style={{ fontSize: '0.875rem' }}>{proposal.seller.name}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div style={{ fontWeight: 'bold' }}>
-                            {proposal.distributor?.apelido || proposal.distributor?.razaoSocial || 'N/A'}
-                          </div>
-                          <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                            {proposal.distributor?.razaoSocial || proposal.distributor?.apelido || ''}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          {proposal.items.map((item, index) => (
-                            <div key={index} style={{ marginBottom: '0.25rem', fontSize: '0.875rem' }}>
-                              {item.product.name} x{item.quantity}
-                            </div>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div style={{ fontWeight: 'bold', color: '#10b981' }}>
-                          {formatCurrency(proposal.total)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge 
-                          $isActive={proposal.status === 'venda_fechada'} 
-                          style={{ 
-                            backgroundColor: getStatusColor(proposal.status),
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem'
-                          }}
-                        >
-                          {getStatusIcon(proposal.status)}
-                          {getStatusLabel(proposal.status)}
-                        </StatusBadge>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div style={{ fontSize: '0.875rem' }}>{formatDate(proposal.createdAt)}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>
-                          {getCreatedAtLabel(proposal.createdAt)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(4, 1fr)', 
-                          gap: '0.25rem',
-                          minWidth: '140px'
-                        }}>
-                          <ActionButton 
-                            onClick={() => handleEditProposal(proposal)}
-                            disabled={isDeleting}
-                            title="Editar"
-                          >
-                            <Edit size={14} />
-                          </ActionButton>
-                          <ActionButton 
-                            onClick={() => setProposalForChat(proposal)}
-                            disabled={isDeleting}
-                            title={user?.role === 'vendedor' ? 'Chat com Admin' : 'Chat com Vendedor'}
-                            style={{ backgroundColor: '#6366f1' }}
-                          >
-                            <MessageCircle size={14} />
-                          </ActionButton>
-                          <ActionButton 
-                            onClick={() => handleGeneratePdf(proposal)}
-                            disabled={isDeleting}
-                            title="Gerar PDF"
-                            style={{ backgroundColor: '#059669' }}
-                          >
-                            <Download size={14} />
-                          </ActionButton>
-                          {user?.role === 'admin' && (
-                            <ActionButton 
-                              onClick={() => handleDeleteProposal(proposal)}
-                              disabled={isDeleting}
-                              title="Excluir"
-                            >
-                              <Trash2 size={14} />
-                            </ActionButton>
-                          )}
-                          {(proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento') && (
-                            <>
-                              <ActionButton 
-                                onClick={() => handleUpdateStatus(proposal, 'venda_fechada')}
-                                disabled={isDeleting}
-                                title="Venda Fechada"
-                                style={{ backgroundColor: '#059669' }}
-                              >
-                                <CheckCircle size={14} />
-                              </ActionButton>
-                              <ActionButton 
-                                onClick={() => handleUpdateStatus(proposal, 'venda_perdida')}
-                                disabled={isDeleting}
-                                title="Venda Perdida"
-                                style={{ backgroundColor: '#dc2626' }}
-                              >
-                                <XCircle size={14} />
-                              </ActionButton>
-                              <ActionButton 
-                                onClick={() => handleUpdateStatus(proposal, 'expirada')}
-                                disabled={isDeleting}
-                                title="Marcar como Expirada"
-                                style={{ backgroundColor: '#6b7280' }}
-                              >
-                                <Clock size={14} />
-                              </ActionButton>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {filteredProposals.map((proposal) => (
+                  <ProposalRow
+                    key={proposal._id}
+                    proposal={proposal}
+                    isDeleting={deletingItems.includes(proposal._id)}
+                    isAdmin={user?.role === 'admin'}
+                    onEdit={handleEditProposal}
+                    onDelete={handleDeleteProposal}
+                    onPdf={handleGeneratePdf}
+                    onStatus={handleUpdateStatus}
+                    onChat={setProposalForChat}
+                  />
+                ))}
               </TableBody>
             </Table>
           </TableWrapper>
@@ -1346,7 +1282,7 @@ export const Proposals: React.FC = () => {
               <FormGroup>
                 <Label>Produtos *</Label>
                 {selectedProducts.map((product, index) => (
-                  <ProductItem key={index}>
+                  <ProductItem key={product.productId ?? `sel-${index}`}>
                     <ProductHeader>
                       <ProductName>
                         <Select

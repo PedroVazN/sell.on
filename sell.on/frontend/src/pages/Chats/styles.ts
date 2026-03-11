@@ -1,8 +1,9 @@
 import styled from 'styled-components';
+import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
-  padding: ${({ theme }) => (theme as { spacing?: { xl?: string } })?.spacing?.xl ?? '1.5rem'};
-  background: ${({ theme }) => (theme as { colors?: { background?: { primary?: string } } })?.colors?.background?.primary ?? '#0a0a0f'};
+  padding: ${theme.spacing.xl};
+  background: ${theme.colors.background.main};
   min-height: 100vh;
 `;
 
@@ -16,20 +17,20 @@ export const Header = styled.div`
 export const Title = styled.h1`
   font-size: 2rem;
   font-weight: 700;
-  color: ${({ theme }) => (theme as { colors?: { text?: { primary?: string } } })?.colors?.text?.primary ?? '#fff'};
+  color: ${theme.colors.text.primary};
   margin: 0;
 `;
 
 export const Hint = styled.p`
   margin: 0.5rem 0 0 0;
   font-size: 0.875rem;
-  color: ${({ theme }) => (theme as { colors?: { text?: { muted?: string } } })?.colors?.text?.muted ?? 'rgba(255,255,255,0.6)'};
+  color: ${theme.colors.text.muted};
 `;
 
 export const Content = styled.div`
-  background: ${({ theme }) => (theme as { colors?: { background?: { card?: string } } })?.colors?.background?.card ?? 'rgba(255,255,255,0.03)'};
-  border: 1px solid ${({ theme }) => (theme as { colors?: { border?: { primary?: string } } })?.colors?.border?.primary ?? 'rgba(255,255,255,0.08)'};
-  border-radius: 12px;
+  background: ${theme.colors.background.card};
+  border: 1px solid ${theme.colors.border.primary};
+  border-radius: ${theme.borderRadius.md};
   overflow: hidden;
 `;
 
@@ -39,7 +40,7 @@ export const Table = styled.table`
 `;
 
 export const TableHeader = styled.thead`
-  background: ${({ theme }) => (theme as { colors?: { background?: { secondary?: string } } })?.colors?.background?.secondary ?? '#111827'};
+  background: ${theme.colors.background.secondary};
 `;
 
 export const Th = styled.th`
@@ -49,21 +50,21 @@ export const Th = styled.th`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: ${({ theme }) => (theme as { colors?: { text?: { muted?: string } } })?.colors?.text?.muted ?? 'rgba(255,255,255,0.65)'};
+  color: ${theme.colors.text.muted};
 `;
 
 export const TableBody = styled.tbody``;
 
 export const TableRow = styled.tr`
-  border-bottom: 1px solid ${({ theme }) => (theme as { colors?: { border?: { primary?: string } } })?.colors?.border?.primary ?? 'rgba(255,255,255,0.08)'};
+  border-bottom: 1px solid ${theme.colors.border.primary};
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(255,255,255,0.03); }
+  &:hover { background: ${theme.colors.background.card}; }
 `;
 
 export const Td = styled.td`
   padding: 0.875rem 1rem;
   font-size: 0.875rem;
-  color: ${({ theme }) => (theme as { colors?: { text?: { primary?: string } } })?.colors?.text?.primary ?? '#fff'};
+  color: ${theme.colors.text.primary};
 `;
 
 export const ActionButton = styled.button`

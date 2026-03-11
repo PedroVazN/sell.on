@@ -589,13 +589,41 @@ export interface ApiResponse<T> {
   };
 }
 
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos
+
+interface CacheEntry<T> {
+  data: ApiResponse<T>;
+  at: number;
+}
+
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
+  private cache = new Map<string, CacheEntry<unknown>>();
 
   constructor() {
     this.baseURL = API_BASE_URL;
     this.token = localStorage.getItem('authToken') || localStorage.getItem('token');
+  }
+
+  private cacheGet<T>(key: string): ApiResponse<T> | null {
+    const entry = this.cache.get(key) as CacheEntry<T> | undefined;
+    if (!entry || Date.now() - entry.at > CACHE_TTL_MS) {
+      if (entry) this.cache.delete(key);
+      return null;
+    }
+    return { ...entry.data, cached: true, cacheAge: Date.now() - entry.at };
+  }
+
+  private cacheSet<T>(key: string, data: ApiResponse<T>): void {
+    this.cache.set(key, { data: { ...data }, at: Date.now() });
+  }
+
+  private cacheInvalidate(prefix: string): void {
+    const keys = Array.from(this.cache.keys());
+    keys.forEach(key => {
+      if (key.startsWith(prefix)) this.cache.delete(key);
+    });
   }
 
   private async request<T>(
@@ -679,13 +707,19 @@ class ApiService {
   }
 
 
-  // Produtos
+  // Produtos (com cache 2 min para listagens)
   async getProducts(page = 1, limit = 10, search?: string, category?: string): Promise<ApiResponse<Product[]>> {
+    const cacheKey = `products:${page}:${limit}:${search ?? ''}:${category ?? ''}`;
+    const cached = this.cacheGet<Product[]>(cacheKey);
+    if (cached) return cached;
+
     let url = `/products?page=${page}&limit=${limit}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
-    
-    return this.request<Product[]>(url);
+
+    const res = await this.request<Product[]>(url);
+    this.cacheSet(cacheKey, res);
+    return res;
   }
 
   async getProduct(id: string): Promise<ApiResponse<Product>> {
@@ -693,23 +727,29 @@ class ApiService {
   }
 
   async createProduct(productData: Omit<Product, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Product>> {
-    return this.request<Product>('/products', {
+    const res = await this.request<Product>('/products', {
       method: 'POST',
       body: JSON.stringify(productData),
     });
+    this.cacheInvalidate('products:');
+    return res;
   }
 
   async updateProduct(id: string, productData: Partial<Product>): Promise<ApiResponse<Product>> {
-    return this.request<Product>(`/products/${id}`, {
+    const res = await this.request<Product>(`/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(productData),
     });
+    this.cacheInvalidate('products:');
+    return res;
   }
 
   async deleteProduct(id: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/products/${id}`, {
+    const res = await this.request<void>(`/products/${id}`, {
       method: 'DELETE',
     });
+    this.cacheInvalidate('products:');
+    return res;
   }
 
   async updateProductStock(id: string, stock: { current: number; min?: number; max?: number }): Promise<ApiResponse<Product>> {
@@ -940,14 +980,20 @@ class ApiService {
     return this.request<{ _id: string; name: string; email: string; totalClients: number }[]>('/clients/carteiras/summary');
   }
 
-  // Distribuidores
+  // Distribuidores (com cache 2 min)
   async getDistributors(page = 1, limit = 10, search?: string, origem?: string, isActive?: boolean): Promise<ApiResponse<Distributor[]>> {
+    const cacheKey = `distributors:${page}:${limit}:${search ?? ''}:${origem ?? ''}:${isActive ?? ''}`;
+    const cached = this.cacheGet<Distributor[]>(cacheKey);
+    if (cached) return cached;
+
     let url = `/distributors?page=${page}&limit=${limit}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (origem) url += `&origem=${origem}`;
     if (isActive !== undefined) url += `&isActive=${isActive}`;
-    
-    return this.request<Distributor[]>(url);
+
+    const res = await this.request<Distributor[]>(url);
+    this.cacheSet(cacheKey, res);
+    return res;
   }
 
   async getDistributor(id: string): Promise<ApiResponse<Distributor>> {
@@ -955,23 +1001,29 @@ class ApiService {
   }
 
   async createDistributor(distributorData: Omit<Distributor, '_id' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Distributor>> {
-    return this.request<Distributor>('/distributors', {
+    const res = await this.request<Distributor>('/distributors', {
       method: 'POST',
       body: JSON.stringify(distributorData),
     });
+    this.cacheInvalidate('distributors:');
+    return res;
   }
 
   async updateDistributor(id: string, distributorData: Partial<Distributor>): Promise<ApiResponse<Distributor>> {
-    return this.request<Distributor>(`/distributors/${id}`, {
+    const res = await this.request<Distributor>(`/distributors/${id}`, {
       method: 'PUT',
       body: JSON.stringify(distributorData),
     });
+    this.cacheInvalidate('distributors:');
+    return res;
   }
 
   async deleteDistributor(id: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/distributors/${id}`, {
+    const res = await this.request<void>(`/distributors/${id}`, {
       method: 'DELETE',
     });
+    this.cacheInvalidate('distributors:');
+    return res;
   }
 
   // Lista de Preços
@@ -1430,15 +1482,21 @@ class ApiService {
     });
   }
 
-  // ===== USUÁRIOS =====
+  // ===== USUÁRIOS (com cache 2 min) =====
   async getUsers(page = 1, limit = 20, search = '', role = ''): Promise<ApiResponse<User[]>> {
+    const cacheKey = `users:${page}:${limit}:${search}:${role}`;
+    const cached = this.cacheGet<User[]>(cacheKey);
+    if (cached) return cached;
+
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
       ...(search && { search }),
       ...(role && { role })
     });
-    return this.request<User[]>(`/users?${params}`);
+    const res = await this.request<User[]>(`/users?${params}`);
+    this.cacheSet(cacheKey, res);
+    return res;
   }
 
   async getUser(id: string): Promise<ApiResponse<User>> {
@@ -1459,10 +1517,12 @@ class ApiService {
       country?: string;
     };
   }): Promise<ApiResponse<User>> {
-    return this.request<User>('/users', {
+    const res = await this.request<User>('/users', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
+    this.cacheInvalidate('users:');
+    return res;
   }
 
   async updateUser(id: string, userData: {
@@ -1478,10 +1538,12 @@ class ApiService {
     };
     isActive?: boolean;
   }): Promise<ApiResponse<User>> {
-    return this.request<User>(`/users/${id}`, {
+    const res = await this.request<User>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
+    this.cacheInvalidate('users:');
+    return res;
   }
 
   async updateUserPassword(id: string, currentPassword: string, newPassword: string): Promise<ApiResponse<void>> {
@@ -1492,9 +1554,11 @@ class ApiService {
   }
 
   async deleteUser(id: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/users/${id}`, {
+    const res = await this.request<void>(`/users/${id}`, {
       method: 'DELETE',
     });
+    this.cacheInvalidate('users:');
+    return res;
   }
 
   async getUserStats(): Promise<ApiResponse<{

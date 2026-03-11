@@ -159,7 +159,7 @@ export const CreatePriceList: React.FC = () => {
       
       const [distributorsResponse, productsResponse] = await Promise.all([
         apiService.getDistributors(1, 100),
-        apiService.getProducts(1, 1000)
+        apiService.getProducts(1, 200)
       ]);
       
       setDistributors(distributorsResponse.data || []);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 // App principal do sistema
 import { AuthProvider } from './contexts/AuthContext';
@@ -8,43 +8,52 @@ import { ToastContainer } from './components/ToastContainer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
-import { Leads } from './pages/Leads';
-import { Sales } from './pages/Sales';
-import { Reports } from './pages/Reports';
-import { Goals } from './pages/Goals';
-import { VendedorDashboard } from './pages/VendedorDashboard';
-import { Users } from './pages/Users';
-import { Profile } from './pages/Profile';
-import { Performance } from './pages/Performance';
-import { Analysis } from './pages/Analysis';
-import { AIDashboard } from './pages/AIDashboard';
-import { Calendar } from './pages/Calendar';
-import { Configurations } from './pages/Configurations';
-import { Products } from './pages/Products';
-import { Clients } from './pages/Clients';
-import { Carteira } from './pages/Carteira';
-import { GestaoCarteiras } from './pages/GestaoCarteiras';
-import { Distributors } from './pages/Distributors';
-import { PriceList } from './pages/PriceList';
-import { Proposals } from './pages/Proposals';
-import { CreateProposal } from './pages/CreateProposal';
-import { EditProposal } from './pages/EditProposal';
-import { CreateProduct } from './pages/CreateProduct';
-import { CreatePriceList } from './pages/CreatePriceList';
-import { ClientRegistration } from './pages/ClientRegistration';
-import { DistributorRegistration } from './pages/DistributorRegistration';
-import { UserRegistration } from './pages/UserRegistration';
-import NoticesAdmin from './pages/NoticesAdmin';
-import NoticesViewer from './pages/NoticesViewer';
-import FunnelPage from './pages/Funnel';
-import { Chats } from './pages/Chats';
+
+// Lazy loading das páginas – reduz bundle inicial e acelera first load
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const Leads = lazy(() => import('./pages/Leads').then(m => ({ default: m.Leads })));
+const Sales = lazy(() => import('./pages/Sales').then(m => ({ default: m.Sales })));
+const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
+const Goals = lazy(() => import('./pages/Goals').then(m => ({ default: m.Goals })));
+const VendedorDashboard = lazy(() => import('./pages/VendedorDashboard').then(m => ({ default: m.VendedorDashboard })));
+const Users = lazy(() => import('./pages/Users').then(m => ({ default: m.Users })));
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const Performance = lazy(() => import('./pages/Performance').then(m => ({ default: m.Performance })));
+const Analysis = lazy(() => import('./pages/Analysis').then(m => ({ default: m.Analysis })));
+const AIDashboard = lazy(() => import('./pages/AIDashboard').then(m => ({ default: m.AIDashboard })));
+const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
+const Configurations = lazy(() => import('./pages/Configurations').then(m => ({ default: m.Configurations })));
+const Products = lazy(() => import('./pages/Products').then(m => ({ default: m.Products })));
+const Clients = lazy(() => import('./pages/Clients').then(m => ({ default: m.Clients })));
+const Carteira = lazy(() => import('./pages/Carteira').then(m => ({ default: m.Carteira })));
+const GestaoCarteiras = lazy(() => import('./pages/GestaoCarteiras').then(m => ({ default: m.GestaoCarteiras })));
+const Distributors = lazy(() => import('./pages/Distributors').then(m => ({ default: m.Distributors })));
+const PriceList = lazy(() => import('./pages/PriceList').then(m => ({ default: m.PriceList })));
+const Proposals = lazy(() => import('./pages/Proposals').then(m => ({ default: m.Proposals })));
+const CreateProposal = lazy(() => import('./pages/CreateProposal').then(m => ({ default: m.CreateProposal })));
+const EditProposal = lazy(() => import('./pages/EditProposal').then(m => ({ default: m.EditProposal })));
+const CreateProduct = lazy(() => import('./pages/CreateProduct').then(m => ({ default: m.CreateProduct })));
+const CreatePriceList = lazy(() => import('./pages/CreatePriceList').then(m => ({ default: m.CreatePriceList })));
+const ClientRegistration = lazy(() => import('./pages/ClientRegistration').then(m => ({ default: m.ClientRegistration })));
+const DistributorRegistration = lazy(() => import('./pages/DistributorRegistration').then(m => ({ default: m.DistributorRegistration })));
+const UserRegistration = lazy(() => import('./pages/UserRegistration').then(m => ({ default: m.UserRegistration })));
+const NoticesAdmin = lazy(() => import('./pages/NoticesAdmin'));
+const NoticesViewer = lazy(() => import('./pages/NoticesViewer'));
+const FunnelPage = lazy(() => import('./pages/Funnel'));
+const Chats = lazy(() => import('./pages/Chats').then(m => ({ default: m.Chats })));
+
+const PageFallback = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>
+    Carregando…
+  </div>
+);
 
 function App() {
   return (
     <AuthProvider>
       <ToastProvider>
         <ConfirmProvider>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
         <Route 
           path="/login" 
@@ -92,6 +101,7 @@ function App() {
           <Route path="chats" element={<ProtectedRoute permission="admin"><Chats /></ProtectedRoute>} />
         </Route>
         </Routes>
+        </Suspense>
         <ToastContainer />
         </ConfirmProvider>
       </ToastProvider>
