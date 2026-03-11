@@ -118,7 +118,7 @@ export const Ranking: React.FC = () => {
         seller?: { name?: string };
       };
       const payload = (res && typeof res === 'object' && 'monthly' in res) ? res : res?.data;
-      const monthly = (payload.monthly ?? []).map((m: MonthlyItem) => ({
+      const monthly = (payload?.monthly ?? []).map((m: MonthlyItem) => ({
         label: m.label,
         totalPropostas: m.totalPropostas,
         vendasFechadas: m.vendasFechadas,
@@ -126,8 +126,8 @@ export const Ranking: React.FC = () => {
         valorFechado: m.valorFechado,
       }));
       setDetailMonthly(monthly);
-      setDetailSummary(payload.summary ?? null);
-      setDetailSellerName(payload.seller?.name ?? '');
+      setDetailSummary(payload?.summary ?? null);
+      setDetailSellerName(payload?.seller?.name ?? '');
     } catch (err) {
       console.error(err);
       setDetailMonthly([]);
