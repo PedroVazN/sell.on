@@ -161,6 +161,11 @@ export const Content = styled.div`
   border-radius: 12px;
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   overflow: hidden;
+  box-shadow: ${({ theme }) => theme.shadows.small};
+  transition: box-shadow 0.2s ease;
+  &:hover {
+    box-shadow: ${({ theme }) => theme.shadows.medium};
+  }
 `;
 
 export const TableWrapper = styled.div`
@@ -200,38 +205,39 @@ export const Table = styled.table`
 `;
 
 export const TableHeader = styled.thead`
-  background: ${({ theme }) => theme.colors.background};
+  background: ${({ theme }) => theme.colors.background.secondary};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
+  td {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
 `;
 
 export const TableRow = styled.tr`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.secondary};
-  
+  transition: background 0.2s ease;
   &:hover {
-    background: ${({ theme }) => theme.colors.background};
+    background: ${({ theme }) => theme.colors.background.card};
   }
 `;
 
 export const TableCell = styled.td`
-  padding: 0.75rem;
+  padding: ${({ theme }) => theme.spacing.md};
   text-align: left;
   vertical-align: middle;
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.875rem;
   white-space: nowrap;
-  
-  /* Coluna de ações permite quebra */
   &:last-child {
     white-space: normal;
     min-width: 140px;
   }
-  
-  /* Coluna de produtos centralizada */
   &:nth-child(5) {
     text-align: center;
   }
-  
-  /* Coluna de total em negrito */
   &:nth-child(6) {
     font-weight: 600;
   }
@@ -246,17 +252,16 @@ export const ActionButton = styled.button`
   width: 32px;
   height: 32px;
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: 6px;
-  background: ${({ theme }) => theme.colors.background.card};
-  color: ${({ theme }) => theme.colors.text.secondary};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.tertiary};
   cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.background};
-    color: ${({ theme }) => theme.colors.text.primary};
+  transition: all 0.2s ease;
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.hover?.primary ?? 'rgba(59, 130, 246, 0.1)'};
+    color: ${({ theme }) => theme.colors.primary};
   }
-
+  &:active:not(:disabled) { transform: scale(0.97); }
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -267,14 +272,15 @@ export const StatusBadge = styled.span<{ $isActive?: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
+  padding: 5px 12px;
+  border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: ${({ $isActive }) => $isActive ? '#10b981' : '#6b7280'};
-  color: white;
+  background: ${({ $isActive }) => $isActive ? 'rgba(16, 185, 129, 0.22)' : 'rgba(107, 114, 128, 0.3)'};
+  color: ${({ $isActive }) => $isActive ? '#10b981' : '#9ca3af'};
+  border: 1px solid ${({ $isActive }) => $isActive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(107, 114, 128, 0.4)'};
 `;
 
 export const EmptyState = styled.div`
@@ -285,19 +291,22 @@ export const EmptyState = styled.div`
   padding: 4rem 2rem;
   text-align: center;
   color: ${({ theme }) => theme.colors.text.secondary};
-
   svg {
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    margin-bottom: 1.25rem;
+    opacity: 0.6;
+    width: 56px;
+    height: 56px;
   }
-
   h3 {
     margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
     color: ${({ theme }) => theme.colors.text.primary};
   }
-
   p {
     margin: 0 0 2rem 0;
+    line-height: 1.5;
+    max-width: 360px;
   }
 `;
 
@@ -325,11 +334,10 @@ export const ErrorState = styled.div`
 
 export const Modal = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,6 +354,7 @@ export const ModalContent = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 `;
 
 export const ModalHeader = styled.div`

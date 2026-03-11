@@ -135,6 +135,11 @@ export const Content = styled.div`
   padding: 24px;
   position: relative;
   z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s ease;
+  &:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+  }
 `;
 
 export const Table = styled.table`
@@ -144,29 +149,33 @@ export const Table = styled.table`
 `;
 
 export const TableHeader = styled.thead`
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
+  td {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.65);
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
 `;
 
 export const TableRow = styled.tr`
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.15s ease;
-  
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.2s ease;
   &:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.05);
   }
-  
   &:last-child {
     border-bottom: none;
   }
 `;
 
 export const TableCell = styled.td`
-  padding: 16px 12px;
+  padding: 1rem;
   text-align: left;
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 400;
-  
   strong {
     font-weight: 600;
     color: #ffffff;
@@ -176,40 +185,40 @@ export const TableCell = styled.td`
 export const TableBody = styled.tbody``;
 
 export const ActionButton = styled.button`
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.65);
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
-  transition: all 0.15s ease;
-  margin-right: 8px;
-  
+  transition: all 0.2s ease;
+  margin-right: 6px;
   &:hover {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.15);
     color: #3b82f6;
   }
-  
   &:last-child:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
   }
+  &:active { transform: scale(0.97); }
 `;
 
 export const StatusBadge = styled.span<{ $isActive: boolean }>`
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 5px 12px;
+  border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  
   ${({ $isActive }) => $isActive ? `
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(16, 185, 129, 0.22);
     color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.4);
   ` : `
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.22);
     color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
   `}
 `;
 
@@ -218,23 +227,26 @@ export const EmptyState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  padding: 56px 24px;
   text-align: center;
-  
   svg {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.55);
     margin-bottom: 24px;
+    width: 56px;
+    height: 56px;
+    opacity: 0.8;
   }
-  
   h3 {
     color: #ffffff;
     margin: 0 0 12px 0;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
   }
-  
   p {
     color: rgba(255, 255, 255, 0.7);
     margin: 0 0 24px 0;
+    line-height: 1.5;
+    max-width: 360px;
     font-size: 1rem;
   }
 `;

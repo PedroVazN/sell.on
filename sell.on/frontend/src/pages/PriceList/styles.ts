@@ -88,6 +88,11 @@ export const Content = styled.div`
   border-radius: 12px;
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   overflow: hidden;
+  box-shadow: ${({ theme }) => theme.shadows.small};
+  transition: box-shadow 0.2s ease;
+  &:hover {
+    box-shadow: ${({ theme }) => theme.shadows.medium};
+  }
 `;
 
 export const TableWrapper = styled.div`
@@ -107,27 +112,33 @@ export const Table = styled.table`
 `;
 
 export const TableHeader = styled.thead`
-  background: ${({ theme }) => theme.colors.background};
+  background: ${({ theme }) => theme.colors.background.secondary};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
+  td {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
 `;
 
 export const TableRow = styled.tr`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.secondary};
-  
+  transition: background 0.2s ease;
   &:hover {
-    background: ${({ theme }) => theme.colors.background};
+    background: ${({ theme }) => theme.colors.background.card};
   }
 `;
 
 export const TableCell = styled.td`
-  padding: 0.75rem;
+  padding: ${({ theme }) => theme.spacing.md};
   text-align: left;
   vertical-align: middle;
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.875rem;
   white-space: nowrap;
   border-right: 1px solid ${({ theme }) => theme.colors.border.secondary};
-  
   &:last-child {
     border-right: none;
   }
@@ -142,17 +153,16 @@ export const ActionButton = styled.button`
   width: 32px;
   height: 32px;
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
-  border-radius: 6px;
-  background: ${({ theme }) => theme.colors.background.card};
-  color: ${({ theme }) => theme.colors.text.secondary};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.tertiary};
   cursor: pointer;
   transition: all 0.2s ease;
-
   &:hover:not(:disabled) {
-    background: ${({ theme }) => theme.colors.background};
-    color: ${({ theme }) => theme.colors.text.primary};
+    background: ${({ theme }) => theme.colors.hover?.primary ?? 'rgba(59, 130, 246, 0.1)'};
+    color: ${({ theme }) => theme.colors.primary};
   }
-
+  &:active:not(:disabled) { transform: scale(0.97); }
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -180,12 +190,13 @@ export const EmptyState = styled.div`
   justify-content: center;
   padding: 4rem 2rem;
   text-align: center;
-
   svg {
     color: ${({ theme }) => theme.colors.text.secondary};
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    width: 56px;
+    height: 56px;
+    opacity: 0.7;
   }
-
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
@@ -196,6 +207,8 @@ export const EmptyState = styled.div`
   p {
     color: ${({ theme }) => theme.colors.text.secondary};
     margin: 0 0 2rem 0;
+    line-height: 1.5;
+    max-width: 360px;
   }
 `;
 

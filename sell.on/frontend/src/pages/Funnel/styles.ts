@@ -283,7 +283,9 @@ export const BtnSecondary = styled.button`
 export const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -306,6 +308,7 @@ export const ModalBox = styled.div<{ $wide?: boolean }>`
   overflow-y: auto;
   padding: 20px;
   margin: auto;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   @media (min-width: 480px) {
     padding: 28px;
   }

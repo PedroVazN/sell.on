@@ -76,6 +76,11 @@ export const StatsCard = styled.div`
   margin-bottom: 24px;
   position: relative;
   z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s ease;
+  &:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
   p { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; }
   strong { font-size: 1.5rem; color: #fff; }
 `;
@@ -83,6 +88,11 @@ export const StatsCard = styled.div`
 export const Content = styled.div`
   position: relative;
   z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s ease;
+  &:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
 `;
 
 export const Table = styled.table`
@@ -92,6 +102,7 @@ export const Table = styled.table`
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 `;
 
 export const TableHeader = styled.thead`
@@ -100,12 +111,13 @@ export const TableHeader = styled.thead`
 
 export const TableRow = styled.tr`
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.2s ease;
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(255, 255, 255, 0.04); }
+  &:hover { background: rgba(255, 255, 255, 0.06); }
 `;
 
 export const TableCell = styled.td`
-  padding: 14px 16px;
+  padding: 1rem 1rem;
   color: #ffffff;
   font-size: 0.9rem;
   &:first-child { padding-left: 20px; }
@@ -113,13 +125,13 @@ export const TableCell = styled.td`
 `;
 
 export const TableHeadCell = styled.th`
-  padding: 14px 16px;
+  padding: 1rem 1rem;
   text-align: left;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
   &:first-child { padding-left: 20px; }
   &:last-child { padding-right: 20px; }
 `;
@@ -131,32 +143,37 @@ export const ActionButton = styled.button`
   border: none;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  &:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.15); }
+  transition: all 0.2s ease;
+  &:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+  }
+  &:active { transform: scale(0.97); }
 `;
 
 export const StatusBadge = styled.span<{ $isActive: boolean }>`
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: ${p => p.$isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'};
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: ${p => p.$isActive ? 'rgba(34, 197, 94, 0.22)' : 'rgba(239, 68, 68, 0.22)'};
   color: ${p => p.$isActive ? '#22c55e' : '#ef4444'};
+  border: 1px solid ${p => p.$isActive ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'};
 `;
 
 export const EmptyState = styled.div`
   text-align: center;
   padding: 64px 24px;
   color: rgba(255, 255, 255, 0.6);
-  svg { margin-bottom: 16px; opacity: 0.5; }
-  h3 { color: #fff; margin: 0 0 8px; font-size: 1.25rem; }
-  p { margin: 0; font-size: 0.95rem; }
+  svg { margin-bottom: 20px; opacity: 0.6; width: 56px; height: 56px; }
+  h3 { color: #fff; margin: 0 0 10px; font-size: 1.25rem; font-weight: 600; }
+  p { margin: 0; font-size: 0.95rem; line-height: 1.5; max-width: 360px; margin-left: auto; margin-right: auto; }
 `;
 
 export const LoadingState = styled.div`
@@ -244,7 +261,9 @@ export const TransferButton = styled.button`
 export const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -262,6 +281,8 @@ export const ModalBox = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 `;
 
 export const ModalHeader = styled.div`
@@ -314,6 +335,9 @@ export const TransferList = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 `;
 
 export const TransferListItem = styled.label`
@@ -325,8 +349,9 @@ export const TransferListItem = styled.label`
   cursor: pointer;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
+  transition: background 0.2s ease;
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(255, 255, 255, 0.04); }
+  &:hover { background: rgba(255, 255, 255, 0.06); }
   input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
 `;
 
@@ -352,13 +377,15 @@ export const ModalFooter = styled.div`
 
 export const ModalCancel = styled.button`
   padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
   cursor: pointer;
   font-size: 0.9rem;
-  &:hover { background: rgba(255, 255, 255, 0.1); }
+  font-weight: 500;
+  transition: all 0.2s ease;
+  &:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.35); }
 `;
 
 export const ModalConfirm = styled.button`
@@ -370,6 +397,7 @@ export const ModalConfirm = styled.button`
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
   &:hover:not(:disabled) { background: #7c3aed; }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 `;
