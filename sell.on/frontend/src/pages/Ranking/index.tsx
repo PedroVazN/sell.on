@@ -84,10 +84,11 @@ export const Ranking: React.FC = () => {
     setLoading(true);
     try {
       const res = await apiService.getProposalsRanking(dateFrom, dateTo);
-      setRanking(res.data?.data ?? []);
-      const list = res.data?.data ?? [];
+      const raw = res as { data?: RankingItem[] | { data?: RankingItem[] } };
+      const list: RankingItem[] = Array.isArray(raw.data) ? raw.data : (raw.data && typeof raw.data === 'object' && Array.isArray((raw.data as { data?: RankingItem[] }).data)) ? (raw.data as { data: RankingItem[] }).data : [];
+      setRanking(list);
       setSellers(list.map((r: RankingItem) => ({ _id: r._id, name: r.name, email: r.email })));
-      if (list.length && !detailSellerId) setDetailSellerId(list[0]._id);
+      if (list.length) setDetailSellerId((prev) => prev || list[0]._id);
     } catch (err) {
       console.error(err);
       setRanking([]);
@@ -110,8 +111,14 @@ export const Ranking: React.FC = () => {
     }
     setDetailLoading(true);
     try {
-      const res = await apiService.getProposalsRankingDetail(detailSellerId, dateFrom, dateTo);
-      const monthly = (res.data?.monthly ?? []).map((m: { label: string; totalPropostas: number; vendasFechadas: number; vendasPerdidas: number; valorFechado: number }) => ({
+      const res = await apiService.getProposalsRankingDetail(detailSellerId, dateFrom, dateTo) as {
+        data?: { monthly?: MonthlyItem[]; summary?: { totalPropostas: number; vendasFechadas: number; vendasPerdidas: number; valorFechado: number } | null; seller?: { name?: string } };
+        monthly?: MonthlyItem[];
+        summary?: { totalPropostas: number; vendasFechadas: number; vendasPerdidas: number; valorFechado: number } | null;
+        seller?: { name?: string };
+      };
+      const payload = (res && typeof res === 'object' && 'monthly' in res) ? res : res?.data;
+      const monthly = (payload.monthly ?? []).map((m: MonthlyItem) => ({
         label: m.label,
         totalPropostas: m.totalPropostas,
         vendasFechadas: m.vendasFechadas,
@@ -119,8 +126,8 @@ export const Ranking: React.FC = () => {
         valorFechado: m.valorFechado,
       }));
       setDetailMonthly(monthly);
-      setDetailSummary(res.data?.summary ?? null);
-      setDetailSellerName(res.data?.seller?.name ?? '');
+      setDetailSummary(payload.summary ?? null);
+      setDetailSellerName(payload.seller?.name ?? '');
     } catch (err) {
       console.error(err);
       setDetailMonthly([]);
