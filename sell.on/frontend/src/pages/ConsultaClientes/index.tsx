@@ -54,6 +54,8 @@ export default function ConsultaClientes() {
   const [search, setSearch] = useState('');
   const [uf, setUf] = useState('');
   const [classificacao, setClassificacao] = useState('');
+  const [orderBy, setOrderBy] = useState('valorTotalFechado');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [searchInput, setSearchInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ConsultaClienteItem[]>([]);
@@ -65,7 +67,7 @@ export default function ConsultaClientes() {
   const loadList = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiService.getClientesConsulta(page, 20, search || undefined, uf || undefined, classificacao || undefined);
+      const res = await apiService.getClientesConsulta(page, 20, search || undefined, uf || undefined, classificacao || undefined, orderBy, order);
       if (res.success && Array.isArray(res.data)) {
         setData(res.data);
       } else {
@@ -84,7 +86,7 @@ export default function ConsultaClientes() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, uf, classificacao]);
+  }, [page, search, uf, classificacao, orderBy, order]);
 
   useEffect(() => {
     loadList();
@@ -153,6 +155,29 @@ export default function ConsultaClientes() {
           {CLASSIFICACAO.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
+        </select>
+        <label htmlFor="consulta-order">Ordenar por</label>
+        <select
+          id="consulta-order"
+          value={`${orderBy}_${order}`}
+          onChange={(e) => {
+            const v = e.target.value;
+            const [f, d] = v.split('_');
+            setOrderBy(f);
+            setOrder((d as 'asc' | 'desc') || 'desc');
+            setPage(1);
+          }}
+        >
+          <option value="valorTotalFechado_desc">Maior valor fechado</option>
+          <option value="valorTotalFechado_asc">Menor valor fechado</option>
+          <option value="vendasFechadas_desc">Mais vendas ganhas</option>
+          <option value="vendasFechadas_asc">Menos vendas ganhas</option>
+          <option value="totalPropostas_desc">Mais propostas</option>
+          <option value="totalPropostas_asc">Menos propostas</option>
+          <option value="vendasPerdidas_desc">Mais vendas perdidas</option>
+          <option value="vendasPerdidas_asc">Menos vendas perdidas</option>
+          <option value="nome_asc">Nome (A–Z)</option>
+          <option value="nome_desc">Nome (Z–A)</option>
         </select>
         <button type="button" onClick={handleSearch}>
           <Search size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />

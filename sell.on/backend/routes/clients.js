@@ -326,8 +326,10 @@ router.get('/consulta', auth, async (req, res) => {
         message: 'MongoDB não conectado.'
       });
     }
-    const { page = 1, limit = 20, search, uf, classificacao } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { page = 1, limit = 20, search, uf, classificacao, orderBy = 'valorTotalFechado', order = 'desc' } = req.query;
+    const limitNum = Math.min(Math.max(parseInt(limit) || 20, 1), 100);
+    const pageNum = Math.max(parseInt(page) || 1, 1);
+    const skip = (pageNum - 1) * limitNum;
     let query = { isActive: true };
     if (search) {
       query.$or = [
@@ -353,14 +355,13 @@ router.get('/consulta', auth, async (req, res) => {
       .select('client status total items proposalNumber closedAt')
       .lean();
     const { byCnpj, byEmail } = buildProposalStatsMap(proposals);
-    const clients = await Client.find(query)
+    const maxClients = 5000;
+    const allClients = await Client.find(query)
       .populate('assignedTo', 'name email')
       .sort({ razaoSocial: 1 })
-      .skip(skip)
-      .limit(parseInt(limit))
+      .limit(maxClients)
       .lean();
-    const total = await Client.countDocuments(query);
-    const data = clients.map((c) => {
+    let data = allClients.map((c) => {
       const cnpjNorm = normalizeCnpj(c.cnpj);
       const email = (c.contato?.email || '').toLowerCase().trim();
       const stats = byCnpj.get(cnpjNorm) || byEmail.get(email) || null;
@@ -379,14 +380,33 @@ router.get('/consulta', auth, async (req, res) => {
         topProdutos
       };
     });
+    const sortField = String(orderBy || 'valorTotalFechado');
+    const isAsc = String(order || 'desc').toLowerCase() === 'asc';
+    const sortDir = isAsc ? -1 : 1;
+    const nomeA = (c) => (c.client?.razaoSocial || c.client?.nomeFantasia || '').toLowerCase();
+    if (sortField === 'totalPropostas') {
+      data.sort((a, b) => (b.totalPropostas - a.totalPropostas) * sortDir || nomeA(a).localeCompare(nomeA(b)));
+    } else if (sortField === 'vendasFechadas') {
+      data.sort((a, b) => (b.vendasFechadas - a.vendasFechadas) * sortDir || nomeA(a).localeCompare(nomeA(b)));
+    } else if (sortField === 'vendasPerdidas') {
+      data.sort((a, b) => (b.vendasPerdidas - a.vendasPerdidas) * sortDir || nomeA(a).localeCompare(nomeA(b)));
+    } else if (sortField === 'valorTotalFechado') {
+      data.sort((a, b) => (b.valorTotalFechado - a.valorTotalFechado) * sortDir || nomeA(a).localeCompare(nomeA(b)));
+    } else if (sortField === 'nome') {
+      data.sort((a, b) => nomeA(a).localeCompare(nomeA(b)) * (isAsc ? 1 : -1));
+    } else {
+      data.sort((a, b) => (b.valorTotalFechado - a.valorTotalFechado) * sortDir || nomeA(a).localeCompare(nomeA(b)));
+    }
+    const total = data.length;
+    data = data.slice(skip, skip + limitNum);
     res.json({
       success: true,
       data,
       pagination: {
-        current: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
+        current: pageNum,
+        pages: Math.ceil(total / limitNum),
         total,
-        limit: parseInt(limit)
+        limit: limitNum
       }
     });
   } catch (err) {

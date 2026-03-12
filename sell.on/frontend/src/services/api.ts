@@ -1007,7 +1007,9 @@ class ApiService {
     limit = 20,
     search?: string,
     uf?: string,
-    classificacao?: string
+    classificacao?: string,
+    orderBy?: string,
+    order?: 'asc' | 'desc'
   ): Promise<ApiResponse<ConsultaClienteItem[]>> {
     const params = new URLSearchParams();
     params.set('page', String(page));
@@ -1015,6 +1017,8 @@ class ApiService {
     if (search) params.set('search', search);
     if (uf) params.set('uf', uf);
     if (classificacao) params.set('classificacao', classificacao);
+    if (orderBy) params.set('orderBy', orderBy);
+    if (order) params.set('order', order);
     return this.request<ConsultaClienteItem[]>(`/clients/consulta?${params.toString()}`);
   }
 
