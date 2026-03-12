@@ -290,6 +290,55 @@ router.put('/:id', async (req, res) => {
     console.log('Loss Reason:', proposal.lossReason);
     console.log('Loss Description:', proposal.lossDescription);
 
+    // Notificações para administradores: proposta ganha / perdida
+    try {
+      if (status === 'venda_fechada' || status === 'venda_perdida') {
+        const admins = await User.find({ role: 'admin', isActive: true }).select('_id name email').lean();
+        if (admins && admins.length) {
+          const senderId = (proposal.createdBy && proposal.createdBy._id ? proposal.createdBy._id : proposal.createdBy)?.toString() || 'system';
+          const clientName =
+            (proposal.client && (proposal.client.razaoSocial || proposal.client.company || proposal.client.name)) || 'cliente';
+          const sellerName =
+            (proposal.seller && proposal.seller.name) || 'Vendedor';
+          const isWon = status === 'venda_fechada';
+
+          const title = isWon ? 'Proposta ganha' : 'Proposta perdida';
+          const baseMsg = isWon
+            ? `Proposta ${proposal.proposalNumber || ''} foi FECHADA por ${sellerName} para ${clientName}.`
+            : `Proposta ${proposal.proposalNumber || ''} foi PERDIDA por ${sellerName} para ${clientName}.`;
+
+          const extra =
+            !isWon && proposal.lossReason
+              ? ` Motivo: ${proposal.lossReason}${proposal.lossDescription ? ` - ${proposal.lossDescription}` : ''}.`
+              : '';
+
+          const notifications = admins.map((admin) => ({
+            title,
+            message: baseMsg + extra,
+            type: 'info',
+            priority: isWon ? 'high' : 'medium',
+            recipient: admin._id.toString(),
+            sender: senderId,
+            relatedEntity: proposal._id.toString(),
+            relatedEntityType: 'proposal',
+            data: {
+              proposalId: proposal._id.toString(),
+              status: proposal.status,
+              total: proposal.total,
+              clientName,
+              sellerName,
+              lossReason: proposal.lossReason || null,
+              lossDescription: proposal.lossDescription || null,
+            }
+          }));
+
+          await Notification.insertMany(notifications);
+        }
+      }
+    } catch (notifyErr) {
+      console.error('Erro ao criar notificação de status de proposta para admins (não bloqueia):', notifyErr.message);
+    }
+
     // Integração Funil: atualizar oportunidade vinculada quando proposta ganha ou perde
     if ((status === 'venda_fechada' || status === 'venda_perdida') && proposal.opportunity) {
       try {
@@ -616,6 +665,40 @@ router.post('/', auth, proposalLimiter, (req, res, next) => {
 
     await proposal.populate('createdBy', 'name email');
     console.log('Proposta populada:', proposal);
+
+    // Notificações para administradores: nova proposta criada
+    try {
+      const admins = await User.find({ role: 'admin', isActive: true }).select('_id name email').lean();
+      if (admins && admins.length) {
+        const senderId = (proposal.createdBy && proposal.createdBy._id ? proposal.createdBy._id : proposal.createdBy)?.toString() || 'system';
+        const clientName =
+          (proposal.client && (proposal.client.razaoSocial || proposal.client.company || proposal.client.name)) || 'cliente';
+        const sellerName =
+          (proposal.seller && proposal.seller.name) || (req.user && req.user.name) || 'Vendedor';
+
+        const notifications = admins.map((admin) => ({
+          title: 'Nova proposta criada',
+          message: `Proposta ${proposal.proposalNumber || ''} criada por ${sellerName} para ${clientName}.`,
+          type: 'info',
+          priority: 'medium',
+          recipient: admin._id.toString(),
+          sender: senderId,
+          relatedEntity: proposal._id.toString(),
+          relatedEntityType: 'proposal',
+          data: {
+            proposalId: proposal._id.toString(),
+            status: proposal.status,
+            total: proposal.total,
+            clientName,
+            sellerName,
+          }
+        }));
+
+        await Notification.insertMany(notifications);
+      }
+    } catch (notifyErr) {
+      console.error('Erro ao criar notificação de nova proposta para admins (não bloqueia):', notifyErr.message);
+    }
 
     // Enviar notificação WhatsApp para o vendedor e admin (em background, não bloquear resposta)
     try {

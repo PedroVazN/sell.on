@@ -5,6 +5,7 @@ export const HeaderRow = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 export const VerseBar = styled.div`

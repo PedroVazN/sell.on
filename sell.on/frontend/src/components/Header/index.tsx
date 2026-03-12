@@ -10,6 +10,8 @@ import {
   VerseBar,
   ActionsContainer, 
   UserButton,
+  UserMenu,
+  UserMenuItem,
 } from './styles';
 
 // Fallback quando a API do versículo falhar (ex.: Vercel/ABíbliaDigital)
@@ -78,66 +80,43 @@ export const Header: React.FC = () => {
     <Container>
       <HeaderRow>
         <VerseBar title={verse.reference}>
-          <strong>"{verse.text}"</strong>
-          <span> â€” {verse.reference}</span>
+          <strong>{verse.text}</strong>
+          <span> - {verse.reference}</span>
         </VerseBar>
         <ActionsContainer>
-        <NotificationBell />
+          <NotificationBell />
         
-        <div style={{ position: 'relative' }}>
-          <UserButton onClick={handleUserClick} $isOpen={showUserMenu}>
-            <User size={20} />
-            <span>{user?.name || 'Usuário'}</span>
-            <span style={{ fontSize: '12px', opacity: 0.7 }}>
-              ({user?.role === 'admin' ? 'Administrador' : 'Vendedor'})
-            </span>
-            <span style={{ 
-              transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease'
-            }}>
-              ▼
-            </span>
-          </UserButton>
-          
-          {showUserMenu && (() => {
-            console.log('RENDERIZANDO MENU - showUserMenu:', showUserMenu);
-            return (
-              <div 
-                onClick={handleMenuClick} 
-                style={{ 
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  background: 'red',
-                  zIndex: 9999,
-                  padding: '10px',
-                  border: '2px solid yellow',
-                  minWidth: '150px',
-                  borderRadius: '8px'
-                }}
-              >
-                <button 
-                  onClick={handleLogout}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    width: '100%',
-                    background: 'none',
-                    border: 'none',
-                    color: 'white',
-                    padding: '8px',
-                    cursor: 'pointer'
-                  }}
-                >
+          <div style={{ position: 'relative' }}>
+            <UserButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUserClick();
+              }}
+              $isOpen={showUserMenu}
+            >
+              <User size={20} />
+              <span>{user?.name || 'Usuário'}</span>
+              <span style={{ fontSize: '12px', opacity: 0.7 }}>
+                ({user?.role === 'admin' ? 'Administrador' : 'Vendedor'})
+              </span>
+              <span style={{ 
+                transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease'
+              }}>
+                ▼
+              </span>
+            </UserButton>
+            
+            {showUserMenu && (
+              <UserMenu onClick={handleMenuClick}>
+                <UserMenuItem type="button" onClick={handleLogout}>
                   <LogOut size={16} />
-                  Sair
-                </button>
-              </div>
-            );
-          })()}
-        </div>
-      </ActionsContainer>
+                  <span>Sair</span>
+                </UserMenuItem>
+              </UserMenu>
+            )}
+          </div>
+        </ActionsContainer>
       </HeaderRow>
     </Container>
   );
