@@ -187,7 +187,7 @@ export default function ConsultaClientes() {
 
       <Content>
         {loading ? (
-          <TableSkeleton rows={10} cols={7} />
+          <TableSkeleton rows={10} cols={8} />
         ) : data.length === 0 ? (
           <EmptyState>Nenhum cliente encontrado com os filtros informados.</EmptyState>
         ) : (
@@ -201,6 +201,7 @@ export default function ConsultaClientes() {
                   <th>Vendas perdidas</th>
                   <th>Valor fechado</th>
                   <th>Produtos mais comprados</th>
+                  <th>Distribuidor(es)</th>
                   <th></th>
                 </tr>
               </TableHeader>
@@ -246,6 +247,18 @@ export default function ConsultaClientes() {
                           <ProductBadge key={p.name}>
                             {p.name} ({p.quantity})
                           </ProductBadge>
+                        ))
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {!(item.distribuidores && item.distribuidores.length) ? (
+                        '—'
+                      ) : (
+                        item.distribuidores.slice(0, 2).map((d, i) => (
+                          <span key={d._id || i} style={{ display: 'block', fontSize: '0.85rem', marginBottom: 2 }}>
+                            {d.apelido || d.razaoSocial || 'Distribuidor'}
+                            {d.propostas > 1 && <span style={{ opacity: 0.8 }}> ({d.propostas})</span>}
+                          </span>
                         ))
                       )}
                     </TableCell>
@@ -336,6 +349,28 @@ export default function ConsultaClientes() {
                               <td>{p.name}</td>
                               <td>{p.quantity}</td>
                               <td>{formatCurrency(p.total)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </DetailTable>
+                    </>
+                  )}
+
+                  {detail.distribuidores && detail.distribuidores.length > 0 && (
+                    <>
+                      <SectionTitle>Distribuidores das propostas</SectionTitle>
+                      <DetailTable>
+                        <thead>
+                          <tr>
+                            <th>Distribuidor</th>
+                            <th>Propostas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail.distribuidores.map((d, i) => (
+                            <tr key={d._id || i}>
+                              <td>{d.apelido || d.razaoSocial || '—'}</td>
+                              <td>{d.propostas}</td>
                             </tr>
                           ))}
                         </tbody>

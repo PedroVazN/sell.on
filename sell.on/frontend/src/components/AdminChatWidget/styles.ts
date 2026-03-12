@@ -2,9 +2,9 @@ import styled from 'styled-components';
 
 export const WidgetWrap = styled.div`
   position: fixed;
-  bottom: 1.5rem;
+  bottom: 10rem;
   right: 1.5rem;
-  z-index: 1000;
+  z-index: 1001;
   font-family: inherit;
 `;
 

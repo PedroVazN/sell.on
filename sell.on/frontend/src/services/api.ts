@@ -189,6 +189,13 @@ export interface ClientAccessRequest {
   updatedAt: string;
 }
 
+export interface ConsultaClienteDistribuidor {
+  _id?: string;
+  apelido?: string;
+  razaoSocial?: string;
+  propostas: number;
+}
+
 export interface ConsultaClienteItem {
   client: Client;
   totalPropostas: number;
@@ -196,6 +203,7 @@ export interface ConsultaClienteItem {
   vendasPerdidas: number;
   valorTotalFechado: number;
   topProdutos: Array<{ name: string; quantity: number; total: number }>;
+  distribuidores?: ConsultaClienteDistribuidor[];
 }
 
 export interface ConsultaClienteDetail extends ConsultaClienteItem {

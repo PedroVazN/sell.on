@@ -24,6 +24,7 @@ function buildProposalStatsMap(proposals) {
         vendasPerdidas: 0,
         valorTotalFechado: 0,
         produtos: new Map(),
+        distribuidores: new Map(),
         propostas: []
       });
     }
@@ -36,6 +37,16 @@ function buildProposalStatsMap(proposals) {
     const isCnpjKey = !!cnpjNorm;
     const entry = getOrCreate(key, isCnpjKey);
     if (cnpjNorm && email && !byEmail.has(email)) byEmail.set(email, entry);
+    const dist = p.distributor;
+    if (dist && (dist._id || dist.apelido || dist.razaoSocial)) {
+      const distId = dist._id || (dist.apelido || dist.razaoSocial || '');
+      const name = dist.apelido || dist.razaoSocial || 'Distribuidor';
+      if (!entry.distribuidores.has(distId)) {
+        entry.distribuidores.set(distId, { _id: dist._id, apelido: dist.apelido, razaoSocial: dist.razaoSocial, count: 0 });
+      }
+      const d = entry.distribuidores.get(distId);
+      d.count += 1;
+    }
     const isWon = p.status === 'venda_fechada';
     const isLost = p.status === 'venda_perdida';
     const valor = isWon ? (p.total || 0) : 0;
@@ -352,7 +363,7 @@ router.get('/consulta', auth, async (req, res) => {
       query = { $and: [sellerFilter, query] };
     }
     const proposals = await Proposal.find({})
-      .select('client status total items proposalNumber closedAt')
+      .select('client status total items proposalNumber closedAt distributor')
       .lean();
     const { byCnpj, byEmail } = buildProposalStatsMap(proposals);
     const maxClients = 5000;
@@ -371,13 +382,20 @@ router.get('/consulta', auth, async (req, res) => {
             .slice(0, 5)
             .map((p) => ({ name: p.name, quantity: p.quantity, total: p.total }))
         : [];
+      const distribuidores = stats && stats.distribuidores && stats.distribuidores.size
+        ? Array.from(stats.distribuidores.values())
+            .sort((a, b) => (b.count || 0) - (a.count || 0))
+            .slice(0, 5)
+            .map((d) => ({ _id: d._id, apelido: d.apelido, razaoSocial: d.razaoSocial, propostas: d.count }))
+        : [];
       return {
         client: c,
         totalPropostas: stats ? stats.totalPropostas : 0,
         vendasFechadas: stats ? stats.vendasFechadas : 0,
         vendasPerdidas: stats ? stats.vendasPerdidas : 0,
         valorTotalFechado: stats ? stats.valorTotalFechado : 0,
-        topProdutos
+        topProdutos,
+        distribuidores
       };
     });
     const sortField = String(orderBy || 'valorTotalFechado');
@@ -431,7 +449,7 @@ router.get('/consulta/:id', auth, async (req, res) => {
       if (ownerId !== req.user.id) return res.status(403).json({ success: false, message: 'Acesso negado.' });
     }
     const proposals = await Proposal.find({})
-      .select('client status total items proposalNumber closedAt createdAt seller')
+      .select('client status total items proposalNumber closedAt createdAt seller distributor')
       .lean();
     const { byCnpj, byEmail } = buildProposalStatsMap(proposals);
     const cnpjNorm = normalizeCnpj(client.cnpj);
@@ -439,6 +457,9 @@ router.get('/consulta/:id', auth, async (req, res) => {
     const stats = byCnpj.get(cnpjNorm) || byEmail.get(email) || null;
     const topProdutos = stats && stats.produtos.size
       ? Array.from(stats.produtos.values()).sort((a, b) => (b.quantity || 0) - (a.quantity || 0)).map((p) => ({ name: p.name, quantity: p.quantity, total: p.total }))
+      : [];
+    const distribuidores = stats && stats.distribuidores && stats.distribuidores.size
+      ? Array.from(stats.distribuidores.values()).sort((a, b) => (b.count || 0) - (a.count || 0)).map((d) => ({ _id: d._id, apelido: d.apelido, razaoSocial: d.razaoSocial, propostas: d.count }))
       : [];
     const ultimasPropostas = (stats && stats.propostas.length)
       ? stats.propostas.sort((a, b) => new Date(b.closedAt || 0) - new Date(a.closedAt || 0)).slice(0, 15)
@@ -452,6 +473,7 @@ router.get('/consulta/:id', auth, async (req, res) => {
         vendasPerdidas: stats ? stats.vendasPerdidas : 0,
         valorTotalFechado: stats ? stats.valorTotalFechado : 0,
         topProdutos,
+        distribuidores,
         ultimasPropostas
       }
     });

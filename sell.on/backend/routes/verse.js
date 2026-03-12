@@ -41,10 +41,12 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function sendFallback(res) {
+function sendFallback(res, reason) {
+  if (reason) console.warn('[verse] Fallback usado:', reason);
   const v = pickRandom(FALLBACK_VERSES);
   return res.json({
     success: true,
+    source: 'fallback',
     data: { book: '', chapter: 0, number: '', text: v.text, reference: v.reference },
   });
 }
@@ -59,23 +61,28 @@ router.get('/random', async (req, res) => {
     const chapter = 1 + Math.floor(Math.random() * Math.min(book.chapters, 50));
     const url = `${API_BASE}/verses/${VERSION}/${book.abbrev}/${chapter}`;
 
-    const response = await fetch(url).catch(() => null);
+    const response = await fetch(url).catch((err) => {
+      console.warn('[verse] Erro ao chamar ABíbliaDigital:', err.message);
+      return null;
+    });
     if (!response || !response.ok) {
-      return sendFallback(res);
+      return sendFallback(res, response ? `HTTP ${response.status}` : 'fetch falhou');
     }
 
     const data = await response.json().catch(() => ({}));
     const verses = data.verses || data.chapter?.verses || [];
     if (verses.length === 0) {
-      return sendFallback(res);
+      return sendFallback(res, 'resposta sem versículos (estrutura?: ' + Object.keys(data).join(',') + ')');
     }
 
     const verse = pickRandom(verses);
-    const verseNumber = verse.number || verse.verse || '';
-    const text = verse.text || '';
+    const verseNumber = verse.number ?? verse.verse ?? '';
+    const text = (verse.text || '').trim();
+    if (!text) return sendFallback(res, 'versículo sem texto');
 
     return res.json({
       success: true,
+      source: 'api',
       data: {
         book: data.book?.name || book.name,
         chapter: data.chapter?.number ?? chapter,
@@ -85,8 +92,8 @@ router.get('/random', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Erro ao buscar versículo:', err);
-    return sendFallback(res);
+    console.error('[verse] Erro ao buscar versículo:', err);
+    return sendFallback(res, err.message);
   }
 });
 
