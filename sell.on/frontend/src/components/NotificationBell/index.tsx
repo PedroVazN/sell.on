@@ -260,14 +260,14 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   };
 
   return (
-    <S.Container className={className}>
+    <S.Container className={className} ref={dropdownRef}>
       <S.BellButton onClick={handleToggle} $hasUnread={unreadCount > 0}>
         <Bell size={20} />
         {unreadCount > 0 && <S.Badge>{unreadCount}</S.Badge>}
       </S.BellButton>
 
       {isOpen && (
-        <S.Dropdown ref={dropdownRef}>
+        <S.Dropdown>
           <S.DropdownHeader>
             <S.Title>
               <Bell size={20} style={{ marginRight: '8px' }} />
