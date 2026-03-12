@@ -2,9 +2,61 @@ const express = require('express');
 const router = express.Router();
 const Client = require('../models/Client');
 const User = require('../models/User');
+const Proposal = require('../models/Proposal');
 const ClientAccessRequest = require('../models/ClientAccessRequest');
 const Notification = require('../models/Notification');
 const { auth, authorize } = require('../middleware/auth');
+
+function normalizeCnpj(cnpj) {
+  if (!cnpj) return '';
+  return String(cnpj).replace(/\D/g, '');
+}
+
+function buildProposalStatsMap(proposals) {
+  const byCnpj = new Map();
+  const byEmail = new Map();
+  function getOrCreate(key, isCnpj) {
+    const map = isCnpj ? byCnpj : byEmail;
+    if (!map.has(key)) {
+      map.set(key, {
+        totalPropostas: 0,
+        vendasFechadas: 0,
+        vendasPerdidas: 0,
+        valorTotalFechado: 0,
+        produtos: new Map(),
+        propostas: []
+      });
+    }
+    return map.get(key);
+  }
+  for (const p of proposals) {
+    const cnpjNorm = normalizeCnpj(p.client?.cnpj);
+    const email = (p.client?.email || '').toLowerCase().trim();
+    const key = cnpjNorm || email || '__empty__';
+    const isCnpjKey = !!cnpjNorm;
+    const entry = getOrCreate(key, isCnpjKey);
+    if (cnpjNorm && email && !byEmail.has(email)) byEmail.set(email, entry);
+    const isWon = p.status === 'venda_fechada';
+    const isLost = p.status === 'venda_perdida';
+    const valor = isWon ? (p.total || 0) : 0;
+    const items = isWon && Array.isArray(p.items) ? p.items : [];
+    entry.totalPropostas += 1;
+    if (isWon) {
+      entry.vendasFechadas += 1;
+      entry.valorTotalFechado += valor;
+      entry.propostas.push({ _id: p._id, proposalNumber: p.proposalNumber, total: p.total, closedAt: p.closedAt });
+      for (const it of items) {
+        const name = it.product?.name || 'Produto';
+        const prev = entry.produtos.get(name);
+        const qty = (it.quantity || 0) + (prev ? prev.quantity : 0);
+        const tot = (it.total || 0) + (prev ? prev.total : 0);
+        entry.produtos.set(name, { name, quantity: qty, total: tot });
+      }
+    }
+    if (isLost) entry.vendasPerdidas += 1;
+  }
+  return { byCnpj, byEmail };
+}
 
 // Dono do cliente: assignedTo ou createdBy
 function getClientOwner(client) {
@@ -259,6 +311,133 @@ router.get('/carteiras/summary', auth, authorize('admin'), async (req, res) => {
   } catch (err) {
     console.error('Erro ao listar carteiras:', err);
     res.status(500).json({ success: false, message: 'Erro ao listar carteiras.' });
+  }
+});
+
+// GET /api/clients/consulta - Lista clientes com estatísticas (propostas, vendas, produtos mais comprados)
+router.get('/consulta', auth, async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { current: 1, pages: 0, total: 0, limit: 20 },
+        message: 'MongoDB não conectado.'
+      });
+    }
+    const { page = 1, limit = 20, search, uf, classificacao } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    let query = { isActive: true };
+    if (search) {
+      query.$or = [
+        { razaoSocial: { $regex: search, $options: 'i' } },
+        { nomeFantasia: { $regex: search, $options: 'i' } },
+        { cnpj: { $regex: search, $options: 'i' } },
+        { 'contato.nome': { $regex: search, $options: 'i' } },
+        { 'contato.email': { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (uf) query['endereco.uf'] = uf;
+    if (classificacao) query.classificacao = classificacao;
+    if (req.user.role === 'vendedor') {
+      const sellerFilter = {
+        $or: [
+          { assignedTo: req.user.id },
+          { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
+        ]
+      };
+      query = { $and: [sellerFilter, query] };
+    }
+    const proposals = await Proposal.find({})
+      .select('client status total items proposalNumber closedAt')
+      .lean();
+    const { byCnpj, byEmail } = buildProposalStatsMap(proposals);
+    const clients = await Client.find(query)
+      .populate('assignedTo', 'name email')
+      .sort({ razaoSocial: 1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    const total = await Client.countDocuments(query);
+    const data = clients.map((c) => {
+      const cnpjNorm = normalizeCnpj(c.cnpj);
+      const email = (c.contato?.email || '').toLowerCase().trim();
+      const stats = byCnpj.get(cnpjNorm) || byEmail.get(email) || null;
+      const topProdutos = stats && stats.produtos.size
+        ? Array.from(stats.produtos.values())
+            .sort((a, b) => (b.quantity || 0) - (a.quantity || 0))
+            .slice(0, 5)
+            .map((p) => ({ name: p.name, quantity: p.quantity, total: p.total }))
+        : [];
+      return {
+        client: c,
+        totalPropostas: stats ? stats.totalPropostas : 0,
+        vendasFechadas: stats ? stats.vendasFechadas : 0,
+        vendasPerdidas: stats ? stats.vendasPerdidas : 0,
+        valorTotalFechado: stats ? stats.valorTotalFechado : 0,
+        topProdutos
+      };
+    });
+    res.json({
+      success: true,
+      data,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (err) {
+    console.error('Erro na consulta de clientes:', err);
+    res.status(500).json({ success: false, message: 'Erro ao carregar consulta de clientes.' });
+  }
+});
+
+// GET /api/clients/consulta/:id - Detalhe de um cliente na consulta (estatísticas + últimas propostas + produtos)
+router.get('/consulta/:id', auth, async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, message: 'MongoDB não conectado.' });
+    }
+    const client = await Client.findById(req.params.id)
+      .populate('assignedTo', 'name email')
+      .lean();
+    if (!client) return res.status(404).json({ success: false, message: 'Cliente não encontrado.' });
+    if (req.user.role === 'vendedor') {
+      const ownerId = (client.assignedTo && (client.assignedTo._id || client.assignedTo))?.toString() || client.createdBy?.toString();
+      if (ownerId !== req.user.id) return res.status(403).json({ success: false, message: 'Acesso negado.' });
+    }
+    const proposals = await Proposal.find({})
+      .select('client status total items proposalNumber closedAt createdAt seller')
+      .lean();
+    const { byCnpj, byEmail } = buildProposalStatsMap(proposals);
+    const cnpjNorm = normalizeCnpj(client.cnpj);
+    const email = (client.contato?.email || '').toLowerCase().trim();
+    const stats = byCnpj.get(cnpjNorm) || byEmail.get(email) || null;
+    const topProdutos = stats && stats.produtos.size
+      ? Array.from(stats.produtos.values()).sort((a, b) => (b.quantity || 0) - (a.quantity || 0)).map((p) => ({ name: p.name, quantity: p.quantity, total: p.total }))
+      : [];
+    const ultimasPropostas = (stats && stats.propostas.length)
+      ? stats.propostas.sort((a, b) => new Date(b.closedAt || 0) - new Date(a.closedAt || 0)).slice(0, 15)
+      : [];
+    res.json({
+      success: true,
+      data: {
+        client,
+        totalPropostas: stats ? stats.totalPropostas : 0,
+        vendasFechadas: stats ? stats.vendasFechadas : 0,
+        vendasPerdidas: stats ? stats.vendasPerdidas : 0,
+        valorTotalFechado: stats ? stats.valorTotalFechado : 0,
+        topProdutos,
+        ultimasPropostas
+      }
+    });
+  } catch (err) {
+    console.error('Erro no detalhe da consulta:', err);
+    res.status(500).json({ success: false, message: 'Erro ao carregar detalhe.' });
   }
 });
 

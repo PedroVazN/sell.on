@@ -112,12 +112,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         ...(hasPermission('admin') ? [
           { icon: <Package size={20} />, label: 'Produtos', path: '/products', permission: 'admin' },
           { icon: <UserCheck size={20} />, label: 'Clientes', path: '/clients', permission: 'admin' },
+          { icon: <FileBarChart size={20} />, label: 'Consulta de Clientes', path: '/consulta-clientes' },
           { icon: <Briefcase size={20} />, label: 'Gestão de Carteiras', path: '/gestao-carteiras', permission: 'admin' },
           { icon: <Truck size={20} />, label: 'Distribuidores', path: '/distributors', permission: 'admin' },
           { icon: <DollarSign size={20} />, label: 'Lista de Preços', path: '/price-list', permission: 'admin' },
         ] : []),
         ...(user?.role === 'vendedor' ? [
           { icon: <Briefcase size={20} />, label: 'Minha Carteira', path: '/carteira', permission: 'proposals' },
+          { icon: <FileBarChart size={20} />, label: 'Consulta de Clientes', path: '/consulta-clientes' },
         ] : []),
         { icon: <Filter size={20} />, label: 'Funil de Vendas', path: '/funnel', permission: 'funnel' },
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },

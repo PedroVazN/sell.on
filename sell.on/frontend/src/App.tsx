@@ -26,6 +26,7 @@ const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.C
 const Configurations = lazy(() => import('./pages/Configurations').then(m => ({ default: m.Configurations })));
 const Products = lazy(() => import('./pages/Products').then(m => ({ default: m.Products })));
 const Clients = lazy(() => import('./pages/Clients').then(m => ({ default: m.Clients })));
+const ConsultaClientes = lazy(() => import('./pages/ConsultaClientes').then(m => ({ default: m.default })));
 const Carteira = lazy(() => import('./pages/Carteira').then(m => ({ default: m.Carteira })));
 const GestaoCarteiras = lazy(() => import('./pages/GestaoCarteiras').then(m => ({ default: m.GestaoCarteiras })));
 const Distributors = lazy(() => import('./pages/Distributors').then(m => ({ default: m.Distributors })));
@@ -87,6 +88,7 @@ function App() {
           <Route path="products" element={<ProtectedRoute permission="admin"><Products /></ProtectedRoute>} />
           <Route path="products/create" element={<ProtectedRoute permission="admin"><CreateProduct /></ProtectedRoute>} />
           <Route path="clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+          <Route path="consulta-clientes" element={<ProtectedRoute><ConsultaClientes /></ProtectedRoute>} />
           <Route path="carteira" element={<ProtectedRoute><Carteira /></ProtectedRoute>} />
           <Route path="gestao-carteiras" element={<ProtectedRoute permission="admin"><GestaoCarteiras /></ProtectedRoute>} />
           <Route path="clients/register" element={<ProtectedRoute permission="admin"><ClientRegistration /></ProtectedRoute>} />

@@ -9,6 +9,7 @@ export interface User {
   phone?: string;
   address?: {
     street?: string;  
+    
     city?: string;
     state?: string;
     zipCode?: string;
@@ -186,6 +187,19 @@ export interface ClientAccessRequest {
   respondedBy?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConsultaClienteItem {
+  client: Client;
+  totalPropostas: number;
+  vendasFechadas: number;
+  vendasPerdidas: number;
+  valorTotalFechado: number;
+  topProdutos: Array<{ name: string; quantity: number; total: number }>;
+}
+
+export interface ConsultaClienteDetail extends ConsultaClienteItem {
+  ultimasPropostas: Array<{ _id: string; proposalNumber?: string; total?: number; closedAt?: string }>;
 }
 
 export interface Distributor {
@@ -985,6 +999,28 @@ class ApiService {
 
   async getClient(id: string): Promise<ApiResponse<Client>> {
     return this.request<Client>(`/clients/${id}`);
+  }
+
+  /** Consulta de clientes: lista com estatísticas (propostas, vendas, top produtos) */
+  async getClientesConsulta(
+    page = 1,
+    limit = 20,
+    search?: string,
+    uf?: string,
+    classificacao?: string
+  ): Promise<ApiResponse<ConsultaClienteItem[]>> {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    if (search) params.set('search', search);
+    if (uf) params.set('uf', uf);
+    if (classificacao) params.set('classificacao', classificacao);
+    return this.request<ConsultaClienteItem[]>(`/clients/consulta?${params.toString()}`);
+  }
+
+  /** Detalhe da consulta de um cliente (estatísticas + top produtos + últimas propostas) */
+  async getClienteConsultaDetail(clientId: string): Promise<ApiResponse<ConsultaClienteDetail>> {
+    return this.request<ConsultaClienteDetail>(`/clients/consulta/${clientId}`);
   }
 
   async createClient(clientData: Omit<Client, '_id' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Client>> {
