@@ -465,7 +465,7 @@ router.post('/', async (req, res) => {
 // PUT /api/users/:id - Atualizar usuário
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone, address, isActive } = req.body;
+    const { name, email, phone, address, isActive, role } = req.body;
 
     // Verificar se é o próprio usuário ou admin
     if (req.user && req.user._id !== req.params.id && req.user.role !== 'admin') {
@@ -494,12 +494,17 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // Atualizar dados
+    // Atualizar dados básicos
     if (name) user.name = name;
     if (email) user.email = email;
     if (phone !== undefined) user.phone = phone;
     if (address) user.address = address;
     if (isActive !== undefined && req.user && req.user.role === 'admin') user.isActive = isActive;
+
+    // Permitir alterar o cargo apenas para administradores
+    if (role && req.user && req.user.role === 'admin') {
+      user.role = role;
+    }
 
     await user.save();
 
@@ -596,7 +601,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     // Não permitir deletar a si mesmo
-    if (req.user._id === req.params.id) {
+    if (req.user && req.user._id && req.user._id.toString() === req.params.id) {
       return res.status(400).json({
         success: false,
         message: 'Você não pode deletar sua própria conta'

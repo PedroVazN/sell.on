@@ -1646,6 +1646,7 @@ class ApiService {
       country?: string;
     };
     isActive?: boolean;
+    role?: 'admin' | 'vendedor' | 'cliente';
   }): Promise<ApiResponse<User>> {
     const res = await this.request<User>(`/users/${id}`, {
       method: 'PUT',
