@@ -57,6 +57,95 @@ function buildRiskAnalysis(payload) {
   };
 }
 
+function defaultHeaders() {
+  return {
+    Accept: 'application/json',
+    'User-Agent': 'SellOnCRM/1.0 (+https://sellon.vercel.app)',
+  };
+}
+
+async function fetchBrasilApi(cnpj) {
+  const url = `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`;
+  const response = await fetch(url, { headers: defaultHeaders() });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data?.message || `BrasilAPI HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  return {
+    cnpj: data.cnpj || cnpj,
+    razao_social: data.razao_social || '',
+    nome_fantasia: data.nome_fantasia || '',
+    descricao_situacao_cadastral: data.descricao_situacao_cadastral || '',
+    data_situacao_cadastral: data.data_situacao_cadastral || '',
+    cnae_fiscal_descricao: data.cnae_fiscal_descricao || '',
+    ddd_telefone_1: data.ddd_telefone_1 || '',
+    email: data.email || '',
+    logradouro: data.logradouro || '',
+    numero: data.numero || '',
+    bairro: data.bairro || '',
+    municipio: data.municipio || '',
+    uf: data.uf || '',
+    cep: data.cep || '',
+    __source: 'brasilapi',
+  };
+}
+
+async function fetchPublicaCnpjWs(cnpj) {
+  const url = `https://publica.cnpj.ws/cnpj/${cnpj}`;
+  const response = await fetch(url, { headers: defaultHeaders() });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data?.message || `publica.cnpj.ws HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  const est = data?.estabelecimento || {};
+  const cidade = est?.cidade?.nome || '';
+  const estado = est?.estado?.sigla || '';
+  const tipoLogradouro = est?.tipo_logradouro || '';
+  const logradouroBase = est?.logradouro || '';
+
+  return {
+    cnpj: data?.cnpj || cnpj,
+    razao_social: data?.razao_social || '',
+    nome_fantasia: est?.nome_fantasia || '',
+    descricao_situacao_cadastral: est?.situacao_cadastral || '',
+    data_situacao_cadastral: est?.data_situacao_cadastral || '',
+    cnae_fiscal_descricao: est?.atividade_principal?.descricao || '',
+    ddd_telefone_1: est?.telefone1 || est?.telefone2 || '',
+    email: est?.email || '',
+    logradouro: `${tipoLogradouro} ${logradouroBase}`.trim(),
+    numero: est?.numero || '',
+    bairro: est?.bairro || '',
+    municipio: cidade,
+    uf: estado,
+    cep: est?.cep || '',
+    __source: 'publica.cnpj.ws',
+  };
+}
+
+async function fetchCnpjWithFallback(cnpj) {
+  const errors = [];
+  const providers = [fetchBrasilApi, fetchPublicaCnpjWs];
+
+  for (const provider of providers) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      return await provider(cnpj);
+    } catch (error) {
+      errors.push(error?.message || 'erro desconhecido');
+    }
+  }
+
+  const err = new Error(`Falha em todos os provedores de CNPJ: ${errors.join(' | ')}`);
+  err.status = 502;
+  throw err;
+}
+
 // GET /api/cnpj/:cnpj - Consulta CNPJ e valida risco
 router.get('/:cnpj', auth, async (req, res) => {
   try {
@@ -68,21 +157,13 @@ router.get('/:cnpj', auth, async (req, res) => {
       });
     }
 
-    const externalUrl = `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`;
-    const response = await fetch(externalUrl);
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        success: false,
-        message: data?.message || 'Não foi possível consultar o CNPJ no momento.',
-      });
-    }
+    const data = await fetchCnpjWithFallback(cnpj);
 
     const risk = buildRiskAnalysis(data);
 
     return res.json({
       success: true,
+      source: data.__source || 'unknown',
       data: {
         cnpj: formatCnpj(data.cnpj || cnpj),
         razaoSocial: data.razao_social || '',
@@ -105,9 +186,9 @@ router.get('/:cnpj', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro na consulta de CNPJ:', error);
-    return res.status(500).json({
+    return res.status(error?.status || 500).json({
       success: false,
-      message: 'Erro ao consultar CNPJ',
+      message: 'Não foi possível consultar o CNPJ no momento.',
     });
   }
 });
