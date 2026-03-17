@@ -176,7 +176,7 @@ const ProposalRow = memo(function ProposalRow({
         <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>{getCreatedAtLabel(proposal.createdAt)}</div>
       </TableCell>
       <TableCell>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.25rem', minWidth: '170px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.25rem', minWidth: '140px', maxWidth: '150px' }}>
           <ActionButton onClick={() => onEdit(proposal)} disabled={isDeleting} title="Editar"><Edit size={14} /></ActionButton>
           <ActionButton onClick={() => onChat(proposal)} disabled={isDeleting} title="Chat" style={{ backgroundColor: '#6366f1' }}><MessageCircle size={14} /></ActionButton>
           <ActionButton onClick={() => onVideoCall(proposal)} disabled={isDeleting} title="Videochamada" style={{ backgroundColor: '#0ea5e9' }}><Video size={14} /></ActionButton>

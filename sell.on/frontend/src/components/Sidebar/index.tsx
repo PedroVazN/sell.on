@@ -166,7 +166,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         </CloseButton>
 
         {onToggleCollapse && (
-          <CollapseToggle onClick={onToggleCollapse} type="button" title={collapsed ? 'Expandir menu' : 'Recolher menu'}>
+          <CollapseToggle
+            onClick={onToggleCollapse}
+            type="button"
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+          >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </CollapseToggle>
         )}

@@ -282,24 +282,28 @@ export const CollapseToggle = styled.button`
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: -12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
+    right: 10px;
+    top: 12px;
+    transform: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     border: 1px solid rgba(71, 85, 105, 0.5);
     background: rgba(15, 23, 42, 0.98);
     color: rgba(226, 232, 240, 0.9);
     cursor: pointer;
-    z-index: 1001;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1102;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     &:hover {
       background: rgba(59, 130, 246, 0.2);
       border-color: rgba(59, 130, 246, 0.5);
       color: #60a5fa;
-      transform: translateY(-50%) scale(1.1);
+      transform: scale(1.06);
+    }
+    &:active {
+      transform: scale(0.96);
     }
   }
 `;
