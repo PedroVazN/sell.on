@@ -210,6 +210,32 @@ export interface ConsultaClienteDetail extends ConsultaClienteItem {
   ultimasPropostas: Array<{ _id: string; proposalNumber?: string; total?: number; closedAt?: string }>;
 }
 
+export interface CnpjLookupResult {
+  cnpj: string;
+  razaoSocial: string;
+  nomeFantasia: string;
+  situacaoCadastral: string;
+  dataSituacaoCadastral: string;
+  cnaePrincipal: string;
+  telefone: string;
+  email: string;
+  endereco: {
+    logradouro: string;
+    numero: string;
+    bairro: string;
+    municipio: string;
+    uf: string;
+    cep: string;
+  };
+  risk: {
+    level: 'baixo' | 'medio' | 'alto';
+    blocked: boolean;
+    status: 'ok' | 'alerta' | 'bloqueado';
+    reason: string;
+    inconsistencies: string[];
+  };
+}
+
 export interface Distributor {
   _id: string;
   apelido?: string;
@@ -1045,6 +1071,11 @@ class ApiService {
   /** Detalhe da consulta de um cliente (estatísticas + top produtos + últimas propostas) */
   async getClienteConsultaDetail(clientId: string): Promise<ApiResponse<ConsultaClienteDetail>> {
     return this.request<ConsultaClienteDetail>(`/clients/consulta/${clientId}`);
+  }
+
+  async lookupCnpj(cnpj: string): Promise<ApiResponse<CnpjLookupResult>> {
+    const clean = cnpj.replace(/\D/g, '');
+    return this.request<CnpjLookupResult>(`/cnpj/${clean}`);
   }
 
   async createClient(clientData: Omit<Client, '_id' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Client>> {

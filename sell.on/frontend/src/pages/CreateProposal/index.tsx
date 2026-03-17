@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Sparkles, X, Search, ShieldCheck, ShieldAlert, AlertTriangle, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import { apiService, Product, Distributor, User as UserType, PriceOption } from '../../services/api';
+import { apiService, Product, Distributor, User as UserType, PriceOption, CnpjLookupResult } from '../../services/api';
 import { generateProposalPdf, ProposalPdfData } from '../../utils/pdfGenerator';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
@@ -42,7 +42,16 @@ import {
   TotalValue,
   ActionButtons,
   SaveButton,
-  GeneratePdfButton
+  GeneratePdfButton,
+  CnpjRiskCard,
+  CnpjSearchRow,
+  CnpjHint,
+  RiskBadge,
+  CnpjDataGrid,
+  CnpjDataItem,
+  CnpjDataLabel,
+  CnpjDataValue,
+  RiskList
 } from './styles';
 
 interface ProposalItem {
@@ -91,6 +100,9 @@ export const CreateProposal: React.FC = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [distributorPriceList, setDistributorPriceList] = useState<any[]>([]);
+  const [cnpjLookupInput, setCnpjLookupInput] = useState('');
+  const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
+  const [cnpjLookupResult, setCnpjLookupResult] = useState<CnpjLookupResult | null>(null);
   
   // Recomendações de IA
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -284,6 +296,92 @@ export const CreateProposal: React.FC = () => {
       formatted = formatted.replace(/(\d{4})(\d)/, '$1-$2');
     }
     handleClientChange('cnpj', formatted);
+  };
+
+  const formatCnpjValue = (value: string) => {
+    let formatted = value.replace(/\D/g, '');
+    if (formatted.length <= 14) {
+      formatted = formatted.replace(/^(\d{2})(\d)/, '$1.$2');
+      formatted = formatted.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      formatted = formatted.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      formatted = formatted.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    return formatted;
+  };
+
+  const handleLookupInputChange = (value: string) => {
+    setCnpjLookupInput(formatCnpjValue(value));
+  };
+
+  const copyLookupData = async () => {
+    if (!cnpjLookupResult) return;
+
+    const address = cnpjLookupResult.endereco;
+    const text = [
+      `CNPJ: ${cnpjLookupResult.cnpj}`,
+      `Razão social: ${cnpjLookupResult.razaoSocial || '-'}`,
+      `Nome fantasia: ${cnpjLookupResult.nomeFantasia || '-'}`,
+      `Situação cadastral: ${cnpjLookupResult.situacaoCadastral || '-'}`,
+      `Risco: ${cnpjLookupResult.risk.status.toUpperCase()} - ${cnpjLookupResult.risk.reason}`,
+      `Telefone: ${cnpjLookupResult.telefone || '-'}`,
+      `Email: ${cnpjLookupResult.email || '-'}`,
+      `Endereço: ${address.logradouro || ''}, ${address.numero || ''} - ${address.bairro || ''}, ${address.municipio || ''}/${address.uf || ''} CEP ${address.cep || ''}`,
+      cnpjLookupResult.risk.inconsistencies.length > 0
+        ? `Inconsistências: ${cnpjLookupResult.risk.inconsistencies.join('; ')}`
+        : 'Inconsistências: nenhuma',
+    ].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+      success('CNPJ', 'Dados copiados para a área de transferência.');
+    } catch (error) {
+      warning('CNPJ', 'Não foi possível copiar os dados.');
+    }
+  };
+
+  const applyLookupToClient = () => {
+    if (!cnpjLookupResult) return;
+
+    setFormData(prev => ({
+      ...prev,
+      client: {
+        ...prev.client,
+        cnpj: cnpjLookupResult.cnpj || prev.client.cnpj,
+        razaoSocial: cnpjLookupResult.razaoSocial || prev.client.razaoSocial,
+        company: cnpjLookupResult.nomeFantasia || prev.client.company,
+        phone: cnpjLookupResult.telefone || prev.client.phone,
+        email: cnpjLookupResult.email || prev.client.email,
+      },
+    }));
+    info('CNPJ', 'Dados da consulta aplicados nos campos do cliente.');
+  };
+
+  const handleLookupCnpj = async () => {
+    const clean = cnpjLookupInput.replace(/\D/g, '');
+    if (clean.length !== 14) {
+      warning('CNPJ', 'Informe um CNPJ válido com 14 dígitos.');
+      return;
+    }
+
+    try {
+      setCnpjLookupLoading(true);
+      const response = await apiService.lookupCnpj(clean);
+      if (response.success && response.data) {
+        setCnpjLookupResult(response.data);
+        if (response.data.risk.blocked) {
+          showError('Risco alto', response.data.risk.reason);
+        } else if (response.data.risk.status === 'alerta') {
+          warning('Atenção', response.data.risk.reason);
+        } else {
+          success('CNPJ', 'Consulta realizada com sucesso.');
+        }
+      }
+    } catch (error: any) {
+      showError('Consulta CNPJ', error?.message || 'Não foi possível consultar o CNPJ.');
+      setCnpjLookupResult(null);
+    } finally {
+      setCnpjLookupLoading(false);
+    }
   };
 
   const searchClientByCnpj = async (cnpj: string) => {
@@ -569,6 +667,24 @@ export const CreateProposal: React.FC = () => {
       if (!emailRegex.test(formData.client.email)) {
         warning('Email inválido', 'Informe um email válido para o cliente.');
         return;
+      }
+
+      // Validação de risco de CNPJ via API
+      try {
+        const cnpjToCheck = formData.client.cnpj.replace(/\D/g, '');
+        if (cnpjToCheck.length === 14) {
+          const cnpjCheck = await apiService.lookupCnpj(cnpjToCheck);
+          const risk = cnpjCheck.data?.risk;
+          if (risk?.blocked) {
+            showError('Proposta bloqueada', `CNPJ em risco alto: ${risk.reason}`);
+            return;
+          }
+          if (risk?.status === 'alerta') {
+            warning('Atenção no CNPJ', `${risk.reason}. Revise antes de avançar.`);
+          }
+        }
+      } catch {
+        warning('CNPJ', 'Não foi possível validar risco agora. Verifique o CNPJ no card de consulta.');
       }
       
       if (!formData.distributor._id) {
@@ -927,6 +1043,90 @@ export const CreateProposal: React.FC = () => {
       <FormContainer>
         <TwoColumnLayout>
           <LeftColumn>
+        <CnpjRiskCard>
+          <SectionTitle style={{ marginBottom: '0.9rem' }}>Consulta de CNPJ e Validação de Risco</SectionTitle>
+          <CnpjSearchRow>
+            <Input
+              type="text"
+              value={cnpjLookupInput}
+              onChange={(e) => handleLookupInputChange(e.target.value)}
+              placeholder="Digite o CNPJ para consultar"
+            />
+            <Button
+              type="button"
+              onClick={handleLookupCnpj}
+              disabled={cnpjLookupLoading}
+            >
+              <Search size={16} />
+              {cnpjLookupLoading ? 'Consultando...' : 'Buscar CNPJ'}
+            </Button>
+          </CnpjSearchRow>
+          <CnpjHint>
+            Verifica situação cadastral e risco. CNPJ inapto, baixado, suspenso ou nulo será bloqueado na criação da proposta.
+          </CnpjHint>
+
+          {cnpjLookupResult && (
+            <>
+              <RiskBadge $status={cnpjLookupResult.risk.status}>
+                {cnpjLookupResult.risk.status === 'ok' ? (
+                  <ShieldCheck size={14} />
+                ) : cnpjLookupResult.risk.status === 'alerta' ? (
+                  <AlertTriangle size={14} />
+                ) : (
+                  <ShieldAlert size={14} />
+                )}
+                {cnpjLookupResult.risk.status.toUpperCase()} - {cnpjLookupResult.risk.reason}
+              </RiskBadge>
+
+              <CnpjDataGrid>
+                <CnpjDataItem>
+                  <CnpjDataLabel>CNPJ</CnpjDataLabel>
+                  <CnpjDataValue>{cnpjLookupResult.cnpj || '-'}</CnpjDataValue>
+                </CnpjDataItem>
+                <CnpjDataItem>
+                  <CnpjDataLabel>Razão social</CnpjDataLabel>
+                  <CnpjDataValue>{cnpjLookupResult.razaoSocial || '-'}</CnpjDataValue>
+                </CnpjDataItem>
+                <CnpjDataItem>
+                  <CnpjDataLabel>Nome fantasia</CnpjDataLabel>
+                  <CnpjDataValue>{cnpjLookupResult.nomeFantasia || '-'}</CnpjDataValue>
+                </CnpjDataItem>
+                <CnpjDataItem>
+                  <CnpjDataLabel>Situação cadastral</CnpjDataLabel>
+                  <CnpjDataValue>{cnpjLookupResult.situacaoCadastral || '-'}</CnpjDataValue>
+                </CnpjDataItem>
+                <CnpjDataItem>
+                  <CnpjDataLabel>Telefone</CnpjDataLabel>
+                  <CnpjDataValue>{cnpjLookupResult.telefone || '-'}</CnpjDataValue>
+                </CnpjDataItem>
+                <CnpjDataItem>
+                  <CnpjDataLabel>Email</CnpjDataLabel>
+                  <CnpjDataValue>{cnpjLookupResult.email || '-'}</CnpjDataValue>
+                </CnpjDataItem>
+              </CnpjDataGrid>
+
+              {cnpjLookupResult.risk.inconsistencies.length > 0 && (
+                <RiskList>
+                  {cnpjLookupResult.risk.inconsistencies.map((item, idx) => (
+                    <li key={`${item}-${idx}`}>{item}</li>
+                  ))}
+                </RiskList>
+              )}
+
+              <ActionButtons style={{ justifyContent: 'flex-start', padding: '0.9rem 0 0' }}>
+                <Button type="button" variant="secondary" onClick={applyLookupToClient}>
+                  <FileText size={16} />
+                  Usar dados no cliente
+                </Button>
+                <Button type="button" variant="secondary" onClick={copyLookupData}>
+                  <Copy size={16} />
+                  Copiar dados
+                </Button>
+              </ActionButtons>
+            </>
+          )}
+        </CnpjRiskCard>
+
         {/* Dados do Cliente */}
         <FormSection>
           <SectionTitle>Dados do Cliente</SectionTitle>

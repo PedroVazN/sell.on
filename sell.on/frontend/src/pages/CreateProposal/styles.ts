@@ -427,3 +427,100 @@ export const NoPricesMessage = styled.div`
   font-style: italic;
   padding: 2rem;
 `;
+
+export const CnpjRiskCard = styled.div`
+  background: ${({ theme }) => theme.colors.background.card};
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+export const CnpjSearchRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const CnpjHint = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 0.8rem;
+`;
+
+export const RiskBadge = styled.span<{ $status: 'ok' | 'alerta' | 'bloqueado' }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+
+  ${({ $status }) => {
+    if ($status === 'bloqueado') {
+      return `
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.35);
+      `;
+    }
+    if ($status === 'alerta') {
+      return `
+        background: rgba(245, 158, 11, 0.15);
+        color: #fcd34d;
+        border-color: rgba(245, 158, 11, 0.35);
+      `;
+    }
+    return `
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.35);
+    `;
+  }}
+`;
+
+export const CnpjDataGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const CnpjDataItem = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+`;
+
+export const CnpjDataLabel = styled.div`
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+`;
+
+export const CnpjDataValue = styled.div`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.875rem;
+  word-break: break-word;
+`;
+
+export const RiskList = styled.ul`
+  margin: 0.65rem 0 0;
+  padding-left: 1rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 0.8rem;
+`;

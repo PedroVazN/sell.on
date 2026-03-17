@@ -343,6 +343,9 @@ app.use('/api/verse', verseRouter);
 const checklistRouter = require('../routes/checklist');
 app.use('/api/checklist', checklistRouter);
 
+const cnpjRouter = require('../routes/cnpj');
+app.use('/api/cnpj', cnpjRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });
