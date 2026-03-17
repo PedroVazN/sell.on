@@ -588,25 +588,25 @@ export const VendedorDashboard: React.FC = () => {
           <MetricsGrid>
             {/* Valores */}
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.vendaFechadaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.vendaFechadaValue || 0)}</MetricValue>
               <MetricLabel>Valor Ganho</MetricLabel>
               <MetricChange>Propostas fechadas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.vendaPerdidaValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.vendaPerdidaValue || 0)}</MetricValue>
               <MetricLabel>Valor Perdido</MetricLabel>
               <MetricChange>Propostas perdidas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.totalValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.totalValue || 0)}</MetricValue>
               <MetricLabel>Valor Propostas Geradas</MetricLabel>
               <MetricChange>Todas as propostas</MetricChange>
             </MetricCard>
 
             <MetricCard>
-              <MetricValue>R$ {data?.proposalStats?.negociacaoValue?.toFixed(2) || '0,00'}</MetricValue>
+              <MetricValue>{formatCurrency(data?.proposalStats?.negociacaoValue || 0)}</MetricValue>
               <MetricLabel>Valor Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
             </MetricCard>
@@ -703,7 +703,9 @@ export const VendedorDashboard: React.FC = () => {
                         color: '#9CA3AF'
                       }}>
                         <span>
-                          {goal.currentValue} / {goal.targetValue} {goal.unit === 'currency' ? 'R$' : goal.unit}
+                          {goal.unit === 'currency'
+                            ? `${formatCurrency(goal.currentValue)} / ${formatCurrency(goal.targetValue)}`
+                            : `${goal.currentValue} / ${goal.targetValue} ${goal.unit}`}
                         </span>
                         <span style={{ 
                           color: goal.status === 'completed' ? '#10B981' : 
@@ -893,7 +895,7 @@ export const VendedorDashboard: React.FC = () => {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ color: '#ef4444', fontWeight: '600', fontSize: '0.875rem' }}>
-                          R$ {(reason.totalValue || 0).toLocaleString('pt-BR')}
+                          {formatCurrency(reason.totalValue || 0)}
                         </div>
                         <div style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
                           Valor perdido
