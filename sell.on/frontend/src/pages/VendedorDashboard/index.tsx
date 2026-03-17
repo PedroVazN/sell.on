@@ -175,7 +175,7 @@ export const VendedorDashboard: React.FC = () => {
       const [vendedorProposalsResponse, lossReasonsResponse, goalsResponse] = await Promise.allSettled([
         apiService.getVendedorProposals(vendedorId, 1, 100),
         apiService.getLossReasonsStats(),
-        apiService.getGoals(1, 50, { assignedTo: vendedorId, status: 'active' })
+        apiService.getGoals(1, 200, { assignedTo: vendedorId })
       ]);
 
       // Processar resultados do Promise.allSettled
@@ -668,57 +668,117 @@ export const VendedorDashboard: React.FC = () => {
                 <ChartTitle>Metas Ativas - {selectedVendedor.name}</ChartTitle>
                 <ChartSubtitle>Acompanhe o progresso das metas do vendedor</ChartSubtitle>
                 <GoalsList>
-                  {goals.slice(0, 3).map((goal) => (
-                    <GoalItem key={goal._id}>
-                      <GoalName>{goal.title}</GoalName>
-                      <GoalProgress>
-                        <GoalBar 
-                          $color={goal.progress.percentage >= 100 ? '#10B981' : 
-                                 goal.progress.percentage >= 80 ? '#3B82F6' : 
-                                 goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444'}
-                          $width={Math.min(100, goal.progress.percentage)}
-                        >
-                          <div 
-                            style={{
-                              width: `${Math.min(100, goal.progress.percentage)}%`,
-                              height: '100%',
-                              backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
-                                             goal.progress.percentage >= 80 ? '#3B82F6' : 
-                                             goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
-                              borderRadius: '4px',
-                              transition: 'width 0.3s ease'
-                            }}
-                          />
-                        </GoalBar>
-                        <GoalPercentage>
-                          {goal.progress.percentage}%
-                        </GoalPercentage>
-                      </GoalProgress>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        marginTop: '0.5rem',
-                        fontSize: '0.875rem',
-                        color: '#9CA3AF'
-                      }}>
-                        <span>
-                          {goal.unit === 'currency'
-                            ? `${formatCurrency(goal.currentValue)} / ${formatCurrency(goal.targetValue)}`
-                            : `${goal.currentValue} / ${goal.targetValue} ${goal.unit}`}
-                        </span>
-                        <span style={{ 
-                          color: goal.status === 'completed' ? '#10B981' : 
-                                 goal.status === 'active' ? '#3B82F6' : '#6B7280',
-                          fontWeight: '600'
-                        }}>
-                          {goal.status === 'completed' ? 'Concluída' : 
-                           goal.status === 'active' ? 'Ativa' : 
-                           goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
-                        </span>
-                      </div>
-                    </GoalItem>
-                  ))}
+                  {(() => {
+                    const relevant = goals.filter(g => g.status === 'active' || g.status === 'completed');
+                    const achieved = relevant.filter(g => g.status === 'completed' || (g.progress?.percentage ?? 0) >= 100);
+                    const ongoing = relevant.filter(g => !achieved.includes(g));
+
+                    const showOngoing = ongoing.slice(0, 3);
+                    const showAchieved = achieved.slice(0, 3);
+
+                    return (
+                      <>
+                        {showOngoing.length > 0 ? (
+                          showOngoing.map((goal) => (
+                            <GoalItem key={goal._id}>
+                              <GoalName>{goal.title}</GoalName>
+                              <GoalProgress>
+                                <GoalBar 
+                                  $color={goal.progress.percentage >= 100 ? '#10B981' : 
+                                         goal.progress.percentage >= 80 ? '#3B82F6' : 
+                                         goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444'}
+                                  $width={Math.min(100, goal.progress.percentage)}
+                                >
+                                  <div 
+                                    style={{
+                                      width: `${Math.min(100, goal.progress.percentage)}%`,
+                                      height: '100%',
+                                      backgroundColor: goal.progress.percentage >= 100 ? '#10B981' : 
+                                                     goal.progress.percentage >= 80 ? '#3B82F6' : 
+                                                     goal.progress.percentage >= 50 ? '#F59E0B' : '#EF4444',
+                                      borderRadius: '4px',
+                                      transition: 'width 0.3s ease'
+                                    }}
+                                  />
+                                </GoalBar>
+                                <GoalPercentage>
+                                  {goal.progress.percentage}%
+                                </GoalPercentage>
+                              </GoalProgress>
+                              <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                marginTop: '0.5rem',
+                                fontSize: '0.875rem',
+                                color: '#9CA3AF'
+                              }}>
+                                <span>
+                                  {goal.unit === 'currency'
+                                    ? `${formatCurrency(goal.currentValue)} / ${formatCurrency(goal.targetValue)}`
+                                    : `${goal.currentValue} / ${goal.targetValue} ${goal.unit}`}
+                                </span>
+                                <span style={{ 
+                                  color: goal.status === 'completed' ? '#10B981' : 
+                                         goal.status === 'active' ? '#3B82F6' : '#6B7280',
+                                  fontWeight: '600'
+                                }}>
+                                  {goal.status === 'completed' ? 'Concluída' : 
+                                   goal.status === 'active' ? 'Ativa' : 
+                                   goal.status === 'paused' ? 'Pausada' : 'Cancelada'}
+                                </span>
+                              </div>
+                            </GoalItem>
+                          ))
+                        ) : (
+                          <div style={{ color: '#9CA3AF', fontSize: '0.875rem' }}>
+                            Nenhuma meta em andamento.
+                          </div>
+                        )}
+
+                        {showAchieved.length > 0 && (
+                          <>
+                            <div style={{ 
+                              margin: '0.75rem 0 0.25rem', 
+                              paddingTop: '0.75rem',
+                              borderTop: '1px solid rgba(148, 163, 184, 0.2)',
+                              color: '#10B981',
+                              fontWeight: 700,
+                              fontSize: '0.8rem'
+                            }}>
+                              Metas atingidas
+                            </div>
+                            {showAchieved.map((goal) => (
+                              <GoalItem key={goal._id}>
+                                <GoalName>{goal.title}</GoalName>
+                                <GoalProgress>
+                                  <GoalBar $color="#10B981" $width={100}>
+                                    <div style={{ width: '100%', height: '100%', backgroundColor: '#10B981', borderRadius: '4px' }} />
+                                  </GoalBar>
+                                  <GoalPercentage>100%</GoalPercentage>
+                                </GoalProgress>
+                                <div style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center',
+                                  marginTop: '0.5rem',
+                                  fontSize: '0.875rem',
+                                  color: '#9CA3AF'
+                                }}>
+                                  <span>
+                                    {goal.unit === 'currency'
+                                      ? `${formatCurrency(goal.currentValue)} / ${formatCurrency(goal.targetValue)}`
+                                      : `${goal.currentValue} / ${goal.targetValue} ${goal.unit}`}
+                                  </span>
+                                  <span style={{ color: '#10B981', fontWeight: 700 }}>Concluída</span>
+                                </div>
+                              </GoalItem>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
                 </GoalsList>
               </ChartCard>
             </ChartsGrid>
