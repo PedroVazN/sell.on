@@ -36,7 +36,7 @@ import {
   SelectorContainer
 } from './styles';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Loader2, TrendingDown, TrendingUp, DollarSign, AlertTriangle, Target, BarChart3, Users } from 'lucide-react';
+import { Loader2, TrendingUp, DollarSign, AlertTriangle, Target, Users, Clock3, Percent, Briefcase, Activity } from 'lucide-react';
 
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -93,6 +93,19 @@ interface DashboardData {
   monthlyData: Array<{month: number; year: number; totalProposals: number; approvedProposals: number; revenue: number}>;
 }
 
+interface SellerAnalysis {
+  conversionRate: number;
+  lossRate: number;
+  avgWonTicket: number;
+  avgProposalValue: number;
+  pipelineValue: number;
+  staleProposals: number;
+  noResponseProposals: number;
+  avgCloseDays: number;
+  distributorStats: Array<{ name: string; proposals: number; won: number; value: number }>;
+  statusBreakdown: Array<{ label: string; value: number }>;
+}
+
 const LoadingSkeleton = () => (
   <Container>
     <Header>
@@ -121,6 +134,7 @@ export const VendedorDashboard: React.FC = () => {
     count: number;
     totalValue: number;
   }[]>([]);
+  const [analysis, setAnalysis] = useState<SellerAnalysis | null>(null);
   // Filtros de mês e ano
   const [dashboardMonth, setDashboardMonth] = useState<number | 0>(new Date().getMonth() + 1);
   const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear());
@@ -232,6 +246,71 @@ export const VendedorDashboard: React.FC = () => {
         expiradaValue: 0
       });
 
+      const now = new Date();
+      const staleThreshold = 15;
+      const noResponseThreshold = 7;
+      const staleProposals = filteredProposals.filter((p: any) => {
+        if (p.status !== 'negociacao') return false;
+        const updated = new Date(p.updatedAt || p.createdAt);
+        const diffDays = Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= staleThreshold;
+      }).length;
+      const noResponseProposals = filteredProposals.filter((p: any) => {
+        if (p.status !== 'negociacao') return false;
+        const created = new Date(p.createdAt);
+        const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= noResponseThreshold;
+      }).length;
+
+      const wonProposals = filteredProposals.filter((p: any) => p.status === 'venda_fechada');
+      const closedProposals = filteredProposals.filter((p: any) => p.status === 'venda_fechada' || p.status === 'venda_perdida');
+      const avgCloseDays = closedProposals.length > 0
+        ? closedProposals.reduce((sum: number, p: any) => {
+            const start = new Date(p.createdAt);
+            const end = new Date(p.closedAt || p.updatedAt || p.createdAt);
+            const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+            return sum + days;
+          }, 0) / closedProposals.length
+        : 0;
+
+      const byDistributorMap: Record<string, { name: string; proposals: number; won: number; value: number }> = {};
+      filteredProposals.forEach((p: any) => {
+        const key = p.distributor?._id || p.distributor?.razaoSocial || p.distributor?.apelido || 'sem-distribuidor';
+        if (!byDistributorMap[key]) {
+          byDistributorMap[key] = {
+            name: p.distributor?.apelido || p.distributor?.razaoSocial || 'Não informado',
+            proposals: 0,
+            won: 0,
+            value: 0,
+          };
+        }
+        byDistributorMap[key].proposals += 1;
+        if (p.status === 'venda_fechada') byDistributorMap[key].won += 1;
+        byDistributorMap[key].value += p.total || 0;
+      });
+
+      const statusBreakdown = [
+        { label: 'Negociação', value: proposalStats.negociacaoProposals },
+        { label: 'Ganhas', value: proposalStats.vendaFechadaProposals },
+        { label: 'Perdidas', value: proposalStats.vendaPerdidaProposals },
+        { label: 'Expiradas', value: proposalStats.expiradaProposals }
+      ];
+
+      const sellerAnalysis: SellerAnalysis = {
+        conversionRate: proposalStats.totalProposals > 0 ? (proposalStats.vendaFechadaProposals / proposalStats.totalProposals) * 100 : 0,
+        lossRate: proposalStats.totalProposals > 0 ? (proposalStats.vendaPerdidaProposals / proposalStats.totalProposals) * 100 : 0,
+        avgWonTicket: wonProposals.length > 0 ? proposalStats.vendaFechadaValue / wonProposals.length : 0,
+        avgProposalValue: proposalStats.totalProposals > 0 ? proposalStats.totalValue / proposalStats.totalProposals : 0,
+        pipelineValue: proposalStats.negociacaoValue,
+        staleProposals,
+        noResponseProposals,
+        avgCloseDays,
+        distributorStats: Object.values(byDistributorMap)
+          .sort((a, b) => b.proposals - a.proposals)
+          .slice(0, 6),
+        statusBreakdown
+      };
+
       // Agrupar propostas FILTRADAS por mês
       const monthlyProposals = filteredProposals.reduce((acc: any, proposal: any) => {
         const date = new Date(proposal.createdAt);
@@ -298,6 +377,7 @@ export const VendedorDashboard: React.FC = () => {
       setData(dashboardData);
       setLossReasons(lossReasonsData.data || []);
       setGoals(goalsData.data || []);
+      setAnalysis(sellerAnalysis);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
       setError('Erro ao carregar dados do dashboard');
@@ -377,6 +457,8 @@ export const VendedorDashboard: React.FC = () => {
       return { month, receita: 0 };
     });
   })() : [];
+
+  const statusData = analysis?.statusBreakdown || [];
 
   if (isLoading && !data) {
     return <LoadingSkeleton />;
@@ -553,6 +635,30 @@ export const VendedorDashboard: React.FC = () => {
               <MetricLabel>Quantidade Propostas em Negociação</MetricLabel>
               <MetricChange>Em andamento</MetricChange>
             </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{analysis ? `${analysis.conversionRate.toFixed(1)}%` : '0%'}</MetricValue>
+              <MetricLabel>Taxa de Conversão</MetricLabel>
+              <MetricChange>Ganhas sobre total de propostas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{analysis ? `${analysis.lossRate.toFixed(1)}%` : '0%'}</MetricValue>
+              <MetricLabel>Taxa de Perda</MetricLabel>
+              <MetricChange>Perdidas sobre total de propostas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{formatCurrency(analysis?.avgWonTicket || 0)}</MetricValue>
+              <MetricLabel>Ticket Médio Ganho</MetricLabel>
+              <MetricChange>Valor médio das vendas fechadas</MetricChange>
+            </MetricCard>
+
+            <MetricCard>
+              <MetricValue>{analysis ? `${analysis.avgCloseDays.toFixed(1)}d` : '0d'}</MetricValue>
+              <MetricLabel>Tempo Médio de Fechamento</MetricLabel>
+              <MetricChange>Dias entre criação e fechamento</MetricChange>
+            </MetricCard>
           </MetricsGrid>
 
           {/* Seção de Metas */}
@@ -690,6 +796,58 @@ export const VendedorDashboard: React.FC = () => {
             </ChartCard>
           </ChartsGrid>
 
+          <ChartsGrid>
+            <ChartCard>
+              <ChartTitle>Status das Propostas</ChartTitle>
+              <ChartSubtitle>Distribuição por estágio no período selecionado</ChartSubtitle>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={statusData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                  <XAxis dataKey="label" stroke="#A3A3A3" />
+                  <YAxis stroke="#A3A3A3" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1A1A1A',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      color: '#FFFFFF'
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Ranking de Distribuidores</ChartTitle>
+              <ChartSubtitle>Quem mais converte com este vendedor</ChartSubtitle>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {(analysis?.distributorStats || []).map((dist, idx) => (
+                  <div
+                    key={`${dist.name}-${idx}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto auto',
+                      gap: '0.75rem',
+                      alignItems: 'center',
+                      padding: '0.75rem',
+                      backgroundColor: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: 8
+                    }}
+                  >
+                    <div style={{ color: '#fff', fontWeight: 600 }}>{dist.name}</div>
+                    <div style={{ color: '#93c5fd', fontSize: '0.85rem' }}>{dist.won}/{dist.proposals} ganhas</div>
+                    <div style={{ color: '#34d399', fontSize: '0.85rem' }}>{formatCurrency(dist.value)}</div>
+                  </div>
+                ))}
+                {(!analysis || analysis.distributorStats.length === 0) && (
+                  <div style={{ color: '#9ca3af' }}>Sem dados de distribuidores no período.</div>
+                )}
+              </div>
+            </ChartCard>
+          </ChartsGrid>
+
           {/* Seção de Motivos de Perda */}
           {lossReasons.length > 0 && (
             <ChartsGrid>
@@ -747,6 +905,55 @@ export const VendedorDashboard: React.FC = () => {
               </ChartCard>
             </ChartsGrid>
           )}
+
+          <ChartsGrid>
+            <ChartCard>
+              <ChartTitle>Análise Total do Vendedor</ChartTitle>
+              <ChartSubtitle>Pontos críticos e oportunidades de melhoria</ChartSubtitle>
+              <PerformanceMetrics style={{ marginTop: 0 }}>
+                <MetricItem>
+                  <MetricItemIcon $color="#f59e0b">
+                    <Briefcase size={20} color="#f59e0b" />
+                  </MetricItemIcon>
+                  <MetricItemLabel>Pipeline Atual</MetricItemLabel>
+                  <MetricItemValue>{formatCurrency(analysis?.pipelineValue || 0)}</MetricItemValue>
+                  <MetricItemDescription>Valor em propostas de negociação</MetricItemDescription>
+                </MetricItem>
+                <MetricItem>
+                  <MetricItemIcon $color="#ef4444">
+                    <Clock3 size={20} color="#ef4444" />
+                  </MetricItemIcon>
+                  <MetricItemLabel>Sem Retorno (7+ dias)</MetricItemLabel>
+                  <MetricItemValue>{analysis?.noResponseProposals || 0}</MetricItemValue>
+                  <MetricItemDescription>Propostas sem avanço recente</MetricItemDescription>
+                </MetricItem>
+                <MetricItem>
+                  <MetricItemIcon $color="#fb7185">
+                    <AlertTriangle size={20} color="#fb7185" />
+                  </MetricItemIcon>
+                  <MetricItemLabel>Negociações Estagnadas (15+ dias)</MetricItemLabel>
+                  <MetricItemValue>{analysis?.staleProposals || 0}</MetricItemValue>
+                  <MetricItemDescription>Necessita follow-up imediato</MetricItemDescription>
+                </MetricItem>
+                <MetricItem>
+                  <MetricItemIcon $color="#22c55e">
+                    <Percent size={20} color="#22c55e" />
+                  </MetricItemIcon>
+                  <MetricItemLabel>Valor Médio por Proposta</MetricItemLabel>
+                  <MetricItemValue>{formatCurrency(analysis?.avgProposalValue || 0)}</MetricItemValue>
+                  <MetricItemDescription>Inclui propostas ganhas, perdidas e em aberto</MetricItemDescription>
+                </MetricItem>
+                <MetricItem>
+                  <MetricItemIcon $color="#60a5fa">
+                    <Activity size={20} color="#60a5fa" />
+                  </MetricItemIcon>
+                  <MetricItemLabel>Produtividade do Período</MetricItemLabel>
+                  <MetricItemValue>{data?.proposalStats?.totalProposals || 0}</MetricItemValue>
+                  <MetricItemDescription>Total de propostas geradas no filtro atual</MetricItemDescription>
+                </MetricItem>
+              </PerformanceMetrics>
+            </ChartCard>
+          </ChartsGrid>
         </>
       )}
 

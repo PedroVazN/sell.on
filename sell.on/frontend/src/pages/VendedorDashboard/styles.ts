@@ -1,32 +1,29 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-  padding: 2rem;
+  padding: ${({ theme }) => theme.spacing.xxl};
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
-  color: #ffffff;
+  background: #0a0a0f;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin-left: 0;
   margin-right: 0;
 `;
 
 export const Header = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const Title = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 3rem;
+  font-weight: 800;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
 `;
 
 export const Subtitle = styled.p`
-  font-size: 1.125rem;
-  color: #a3a3a3;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
   font-weight: 400;
 `;
@@ -95,11 +92,11 @@ export const MetricsGrid = styled.div`
 `;
 
 export const MetricCard = styled.div`
-  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-  border: 1px solid #4b5563;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
   padding: 1.5rem;
-  text-align: center;
+  text-align: left;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -121,14 +118,10 @@ export const MetricCard = styled.div`
 `;
 
 export const MetricValue = styled.div`
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.25rem;
+  font-weight: 800;
   color: #ffffff;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 `;
 
 export const MetricLabel = styled.div`
@@ -161,14 +154,14 @@ export const ChartsGrid = styled.div`
 `;
 
 export const ChartCard = styled.div`
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
   padding: 1.5rem;
   transition: all 0.3s ease;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   }
 `;
 
