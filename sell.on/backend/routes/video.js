@@ -4,77 +4,19 @@ const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
 const { auth } = require('../middleware/auth');
 
-const DAILY_API_URL = 'https://api.daily.co/v1';
-
-function requireEnv(name) {
-  const v = process.env[name];
-  if (!v) {
-    const err = new Error(`Variável de ambiente ${name} não configurada`);
-    err.status = 500;
-    throw err;
-  }
-  return v;
-}
-
 function safeRoomName(proposalId) {
   const raw = String(proposalId || '').trim();
   const cleaned = raw.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 64);
   return `proposal-${cleaned}`;
 }
 
-async function dailyRequest(path, options = {}) {
-  const apiKey = requireEnv('DAILY_API_KEY');
-  const res = await fetch(`${DAILY_API_URL}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  });
-
-  const text = await res.text();
-  let json = null;
-  try {
-    json = text ? JSON.parse(text) : null;
-  } catch {
-    json = null;
-  }
-
-  if (!res.ok) {
-    const err = new Error(json?.info || json?.error || 'Erro ao chamar Daily.co');
-    err.status = res.status;
-    err.details = json;
-    throw err;
-  }
-  return json;
-}
-
-async function getOrCreateRoom(roomName) {
-  // Tenta criar; se já existir (409), busca.
-  const privacy = process.env.DAILY_ROOM_PRIVACY || 'private';
-  try {
-    return await dailyRequest('/rooms', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: roomName,
-        privacy,
-        properties: {
-          // Garante que o embed fique mais seguro e consistente
-          enable_chat: false,
-          enable_screenshare: true,
-          enable_knocking: false,
-          start_video_off: false,
-          start_audio_off: false,
-        },
-      }),
-    });
-  } catch (err) {
-    if (err && err.status === 409) {
-      return await dailyRequest(`/rooms/${encodeURIComponent(roomName)}`, { method: 'GET' });
-    }
-    throw err;
-  }
+function buildJitsiRoomUrl(roomName) {
+  const domain = (process.env.JITSI_DOMAIN || 'meet.jit.si').trim();
+  const roomPath = encodeURIComponent(`sellon-${roomName}`);
+  const base = `https://${domain}/${roomPath}`;
+  const options =
+    '#config.prejoinPageEnabled=false&config.disableDeepLinking=true&interfaceConfig.DISABLE_JOIN_LEAVE_NOTIFICATIONS=true';
+  return `${base}${options}`;
 }
 
 function canAccessProposalRoom(user, proposal) {
@@ -117,24 +59,23 @@ router.get('/rooms/proposal/:proposalId', auth, async (req, res) => {
     }
 
     const roomName = safeRoomName(proposalId);
-    const room = await getOrCreateRoom(roomName);
+    const roomUrl = buildJitsiRoomUrl(roomName);
 
     return res.json({
       success: true,
       data: {
         proposalId: proposal._id.toString(),
         proposalNumber: proposal.proposalNumber,
-        roomName: room.name || roomName,
-        roomUrl: room.url,
+        roomName,
+        roomUrl,
+        provider: 'jitsi',
       },
     });
   } catch (error) {
-    console.error('Erro ao criar/obter sala Daily:', error?.message || error);
+    console.error('Erro ao gerar sala de videochamada:', error?.message || error);
     return res.status(error?.status || 500).json({
       success: false,
-      message:
-        error?.message ||
-        'Não foi possível criar a sala de videochamada no momento. Verifique a configuração do Daily.co.',
+      message: error?.message || 'Não foi possível criar a sala de videochamada no momento.',
     });
   }
 });
