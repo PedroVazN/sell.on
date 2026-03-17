@@ -340,6 +340,9 @@ app.use('/api/notices', noticesRouter);
 const verseRouter = require('../routes/verse');
 app.use('/api/verse', verseRouter);
 
+const checklistRouter = require('../routes/checklist');
+app.use('/api/checklist', checklistRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });
