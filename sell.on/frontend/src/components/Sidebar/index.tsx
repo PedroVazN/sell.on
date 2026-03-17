@@ -28,7 +28,8 @@ import {
   ChevronRight,
   Briefcase,
   MessageCircle,
-  Trophy
+  Trophy,
+  ListTodo
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -134,6 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
       items: [
         { icon: <MessageCircle size={20} />, label: 'Mensagens', path: '/chats', permission: 'admin' },
         { icon: <UsersIcon size={20} />, label: 'Usuários', path: '/users', permission: 'admin' },
+        { icon: <ListTodo size={20} />, label: 'Checklist', path: '/checklist', permission: 'admin' },
         { icon: <UserPlus size={20} />, label: 'Cadastrar Usuário', path: '/users/register', permission: 'admin' },
         { icon: <Target size={20} />, label: 'Metas', path: '/goals', permission: 'admin' },
         { icon: <BarChart3 size={20} />, label: 'Dashboard Vendedores', path: '/vendedor-dashboard', permission: 'admin' },

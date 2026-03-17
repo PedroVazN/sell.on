@@ -537,6 +537,18 @@ export interface Notification {
   updatedAt: string;
 }
 
+export interface ChecklistItem {
+  _id: string;
+  title: string;
+  description?: string;
+  isCompleted: boolean;
+  createdBy?: Pick<User, '_id' | 'name' | 'email'>;
+  completedBy?: Pick<User, '_id' | 'name' | 'email'> | null;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Interfaces para operações de API que usam IDs em vez de objetos completos
 export interface CreateGoalData {
   title: string;
@@ -1682,6 +1694,30 @@ class ApiService {
     };
   }>> {
     return this.request('/users/stats/overview');
+  }
+
+  // ===== CHECKLIST DE IMPLEMENTOS =====
+  async getChecklistItems(): Promise<ApiResponse<ChecklistItem[]>> {
+    return this.request<ChecklistItem[]>('/checklist');
+  }
+
+  async createChecklistItem(data: { title: string; description?: string }): Promise<ApiResponse<ChecklistItem>> {
+    return this.request<ChecklistItem>('/checklist', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async toggleChecklistItem(id: string): Promise<ApiResponse<ChecklistItem>> {
+    return this.request<ChecklistItem>(`/checklist/${id}/toggle`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteChecklistItem(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/checklist/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   // Método público para requisições customizadas

@@ -18,6 +18,7 @@ const Ranking = lazy(() => import('./pages/Ranking').then(m => ({ default: m.Ran
 const Goals = lazy(() => import('./pages/Goals').then(m => ({ default: m.Goals })));
 const VendedorDashboard = lazy(() => import('./pages/VendedorDashboard').then(m => ({ default: m.VendedorDashboard })));
 const Users = lazy(() => import('./pages/Users').then(m => ({ default: m.Users })));
+const Checklist = lazy(() => import('./pages/Checklist').then(m => ({ default: m.Checklist })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
 const Performance = lazy(() => import('./pages/Performance').then(m => ({ default: m.Performance })));
 const Analysis = lazy(() => import('./pages/Analysis').then(m => ({ default: m.Analysis })));
@@ -77,6 +78,7 @@ function App() {
             <Route path="goals" element={<ProtectedRoute permission="admin"><Goals /></ProtectedRoute>} />
             <Route path="vendedor-dashboard" element={<ProtectedRoute permission="admin"><VendedorDashboard /></ProtectedRoute>} />
             <Route path="users" element={<ProtectedRoute permission="admin"><Users /></ProtectedRoute>} />
+            <Route path="checklist" element={<ProtectedRoute permission="admin"><Checklist /></ProtectedRoute>} />
             <Route path="users/register" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="users/create-seller" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
