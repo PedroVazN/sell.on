@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2, ChevronDown, FileSpreadsheet, MessageCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2, ChevronDown, FileSpreadsheet, MessageCircle, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
 import { generateProposalPdf, generateProposalsListPdf, ProposalPdfData } from '../../utils/pdfGenerator';
@@ -8,6 +8,7 @@ import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { ProposalSuccessModal } from '../../components/ProposalSuccessModal';
 import { ProposalChatModal } from '../../components/ProposalChatModal';
+import { ProposalVideoCallModal } from '../../components/ProposalVideoCallModal';
 import { TableSkeleton } from '../../components/TableSkeleton';
 import { 
   Container, 
@@ -124,6 +125,7 @@ type ProposalRowProps = {
   onPdf: (p: Proposal) => void;
   onStatus: (p: Proposal, s: Proposal['status']) => void;
   onChat: (p: Proposal) => void;
+  onVideoCall: (p: Proposal) => void;
 };
 
 const ProposalRow = memo(function ProposalRow({
@@ -135,6 +137,7 @@ const ProposalRow = memo(function ProposalRow({
   onPdf,
   onStatus,
   onChat,
+  onVideoCall,
 }: ProposalRowProps) {
   return (
     <TableRow style={{ opacity: isDeleting ? 0.5 : 1 }}>
@@ -173,9 +176,10 @@ const ProposalRow = memo(function ProposalRow({
         <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>{getCreatedAtLabel(proposal.createdAt)}</div>
       </TableCell>
       <TableCell>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.25rem', minWidth: '140px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.25rem', minWidth: '170px' }}>
           <ActionButton onClick={() => onEdit(proposal)} disabled={isDeleting} title="Editar"><Edit size={14} /></ActionButton>
           <ActionButton onClick={() => onChat(proposal)} disabled={isDeleting} title="Chat" style={{ backgroundColor: '#6366f1' }}><MessageCircle size={14} /></ActionButton>
+          <ActionButton onClick={() => onVideoCall(proposal)} disabled={isDeleting} title="Videochamada" style={{ backgroundColor: '#0ea5e9' }}><Video size={14} /></ActionButton>
           <ActionButton onClick={() => onPdf(proposal)} disabled={isDeleting} title="Gerar PDF" style={{ backgroundColor: '#059669' }}><Download size={14} /></ActionButton>
           {isAdmin && <ActionButton onClick={() => onDelete(proposal)} disabled={isDeleting} title="Excluir"><Trash2 size={14} /></ActionButton>}
           {(proposal.status === 'negociacao' || proposal.status === 'aguardando_pagamento') && (
@@ -224,6 +228,7 @@ export const Proposals: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [proposalForChat, setProposalForChat] = useState<Proposal | null>(null);
+  const [proposalForVideoCall, setProposalForVideoCall] = useState<Proposal | null>(null);
 
   // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -1088,6 +1093,7 @@ export const Proposals: React.FC = () => {
                     onPdf={handleGeneratePdf}
                     onStatus={handleUpdateStatus}
                     onChat={setProposalForChat}
+                    onVideoCall={setProposalForVideoCall}
                   />
                 ))}
               </TableBody>
@@ -1530,6 +1536,14 @@ export const Proposals: React.FC = () => {
           isOpen={!!proposalForChat}
           onClose={() => setProposalForChat(null)}
           proposal={proposalForChat}
+        />
+      )}
+
+      {proposalForVideoCall && (
+        <ProposalVideoCallModal
+          isOpen={!!proposalForVideoCall}
+          onClose={() => setProposalForVideoCall(null)}
+          proposal={proposalForVideoCall}
         />
       )}
     </Container>

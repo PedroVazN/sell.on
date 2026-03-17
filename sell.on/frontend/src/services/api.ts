@@ -464,6 +464,13 @@ export interface ProposalChat {
   updatedAt?: string;
 }
 
+export interface ProposalVideoRoom {
+  proposalId: string;
+  proposalNumber?: string;
+  roomName: string;
+  roomUrl: string;
+}
+
 export interface Event {
   _id: string;
   title: string;
@@ -1543,6 +1550,11 @@ class ApiService {
   /** Excluir chat da proposta (admin: qualquer; vendedor: apenas o próprio) */
   async deleteProposalChat(chatId: string): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(`/proposal-chats/${chatId}`, { method: 'DELETE' });
+  }
+
+  /** Obter (ou criar) sala de videochamada da proposta no Daily.co */
+  async getProposalVideoRoom(proposalId: string): Promise<ApiResponse<ProposalVideoRoom>> {
+    return this.request<ProposalVideoRoom>(`/video/rooms/proposal/${proposalId}`);
   }
 
   // Eventos do Calendário
