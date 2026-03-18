@@ -428,6 +428,102 @@ export const NoPricesMessage = styled.div`
   padding: 2rem;
 `;
 
+export const DistributorSummaryCard = styled.div`
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.background.secondary};
+`;
+
+export const DistributorSummaryTitle = styled.h4`
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text.primary};
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+export const DistributorSummaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+`;
+
+export const DistributorSummaryStat = styled.div`
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.background.card};
+  min-width: 0;
+`;
+
+export const DistributorSummaryLabel = styled.div`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-bottom: 0.25rem;
+`;
+
+export const DistributorSummaryValue = styled.div`
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.text.primary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const DistributorSummaryDivider = styled.div`
+  margin: 0.85rem 0 0.6rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+`;
+
+export const DistributorTopProducts = styled.div`
+  display: grid;
+  gap: 0.5rem;
+`;
+
+export const DistributorTopProductRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.background.card};
+`;
+
+export const DistributorTopProductName = styled.div`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: 700;
+  font-size: 0.85rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+`;
+
+export const DistributorTopProductMeta = styled.div`
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-weight: 700;
+  font-size: 0.8rem;
+  white-space: nowrap;
+`;
+
+export const DistributorSummaryHint = styled.div`
+  margin-top: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 0.75rem;
+`;
+
 export const CnpjRiskCard = styled.div`
   background: ${({ theme }) => theme.colors.background.card};
   border-radius: 12px;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Sparkles, X, Search, ShieldCheck, ShieldAlert, AlertTriangle, Copy } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Sparkles, X, Search, ShieldCheck, ShieldAlert, AlertTriangle, Copy, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
@@ -51,7 +51,19 @@ import {
   CnpjDataItem,
   CnpjDataLabel,
   CnpjDataValue,
-  RiskList
+  RiskList,
+  DistributorSummaryCard,
+  DistributorSummaryTitle,
+  DistributorSummaryGrid,
+  DistributorSummaryStat,
+  DistributorSummaryLabel,
+  DistributorSummaryValue,
+  DistributorSummaryDivider,
+  DistributorTopProducts,
+  DistributorTopProductRow,
+  DistributorTopProductName,
+  DistributorTopProductMeta,
+  DistributorSummaryHint
 } from './styles';
 
 interface ProposalItem {
@@ -88,6 +100,15 @@ interface ProposalFormData {
   observations: string;
 }
 
+type DistributorSummary = {
+  proposalsTotal: number;
+  proposalsWon: number;
+  proposalsLost: number;
+  revenueWon: number;
+  itemsSold: number;
+  topProducts: Array<{ name: string; qty: number }>;
+};
+
 export const CreateProposal: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -100,6 +121,8 @@ export const CreateProposal: React.FC = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [distributorPriceList, setDistributorPriceList] = useState<any[]>([]);
+  const [distributorSummaryLoading, setDistributorSummaryLoading] = useState(false);
+  const [distributorSummary, setDistributorSummary] = useState<DistributorSummary | null>(null);
   const [cnpjLookupInput, setCnpjLookupInput] = useState('');
   const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
   const [cnpjLookupResult, setCnpjLookupResult] = useState<CnpjLookupResult | null>(null);
@@ -469,6 +492,83 @@ export const CreateProposal: React.FC = () => {
       }
     }
   };
+
+  const loadDistributorSummary = useCallback(async () => {
+    const distributorId = formData.distributor._id;
+    if (!distributorId) {
+      setDistributorSummary(null);
+      return;
+    }
+
+    try {
+      setDistributorSummaryLoading(true);
+
+      // Pega propostas e agrega no frontend (rápido e sem precisar de rota nova)
+      const res = await apiService.getProposals(1, 2000);
+      const all = res.data || [];
+
+      // Se admin escolheu vendedor, filtra por ele. Se vendedor logado, filtra por ele.
+      const sellerIdToFilter =
+        user?.role === 'admin'
+          ? (formData.seller?._id || '')
+          : (user?._id || '');
+
+      const filtered = all.filter((p: any) => {
+        const distId = p?.distributor?._id || p?.distributor;
+        if (distId?.toString() !== distributorId.toString()) return false;
+
+        if (sellerIdToFilter) {
+          const createdById = (p.createdBy?._id || p.createdBy || '').toString();
+          const sellerId = (p.seller?._id || p.seller || '').toString();
+          return createdById === sellerIdToFilter.toString() || sellerId === sellerIdToFilter.toString();
+        }
+        return true;
+      });
+
+      const proposalsTotal = filtered.length;
+      const won = filtered.filter((p: any) => p.status === 'venda_fechada');
+      const lost = filtered.filter((p: any) => p.status === 'venda_perdida');
+
+      const revenueWon = won.reduce((sum: number, p: any) => sum + (p.total || 0), 0);
+      const itemsSold = won.reduce((sum: number, p: any) => {
+        const items = Array.isArray(p.items) ? p.items : [];
+        return sum + items.reduce((s: number, it: any) => s + (it.quantity || 0), 0);
+      }, 0);
+
+      const productsMap: Record<string, number> = {};
+      won.forEach((p: any) => {
+        const items = Array.isArray(p.items) ? p.items : [];
+        items.forEach((it: any) => {
+          const name = it?.product?.name || it?.product?.productName || it?.product?.description || 'Produto';
+          productsMap[name] = (productsMap[name] || 0) + (it.quantity || 0);
+        });
+      });
+
+      const topProducts = Object.entries(productsMap)
+        .map(([name, qty]) => ({ name, qty }))
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 5);
+
+      setDistributorSummary({
+        proposalsTotal,
+        proposalsWon: won.length,
+        proposalsLost: lost.length,
+        revenueWon,
+        itemsSold,
+        topProducts,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar resumo do distribuidor:', error);
+      setDistributorSummary(null);
+    } finally {
+      setDistributorSummaryLoading(false);
+    }
+  }, [formData.distributor._id, formData.seller?._id, user?._id, user?.role]);
+
+  useEffect(() => {
+    // Atualiza quando trocar distribuidor ou vendedor (admin)
+    loadDistributorSummary();
+  }, [loadDistributorSummary]);
 
   // Carregar recomendações de produtos baseado nos produtos selecionados
   const loadRecommendations = async () => {
@@ -1602,6 +1702,77 @@ export const CreateProposal: React.FC = () => {
             <TotalValue>{formatCurrency(total)}</TotalValue>
           </TotalRow>
         </TotalSection>
+
+        {/* Resumo do Distribuidor */}
+        <FormSection>
+          <SectionTitle>Resumo do Distribuidor</SectionTitle>
+          <DistributorSummaryCard style={{ marginTop: 0 }}>
+            <DistributorSummaryTitle>
+              <BarChart3 size={18} />
+              {formData.distributor.apelido || formData.distributor.razaoSocial || 'Distribuidor'}
+            </DistributorSummaryTitle>
+
+            {!formData.distributor._id ? (
+              <DistributorSummaryHint>Selecione um distribuidor para ver o resumo.</DistributorSummaryHint>
+            ) : distributorSummaryLoading ? (
+              <DistributorSummaryHint>Carregando resumo do distribuidor...</DistributorSummaryHint>
+            ) : distributorSummary ? (
+              <>
+                <DistributorSummaryGrid>
+                  <DistributorSummaryStat>
+                    <DistributorSummaryLabel>Propostas</DistributorSummaryLabel>
+                    <DistributorSummaryValue>{distributorSummary.proposalsTotal}</DistributorSummaryValue>
+                  </DistributorSummaryStat>
+                  <DistributorSummaryStat>
+                    <DistributorSummaryLabel>Fechadas</DistributorSummaryLabel>
+                    <DistributorSummaryValue>{distributorSummary.proposalsWon}</DistributorSummaryValue>
+                  </DistributorSummaryStat>
+                  <DistributorSummaryStat>
+                    <DistributorSummaryLabel>Perdidas</DistributorSummaryLabel>
+                    <DistributorSummaryValue>{distributorSummary.proposalsLost}</DistributorSummaryValue>
+                  </DistributorSummaryStat>
+                  <DistributorSummaryStat>
+                    <DistributorSummaryLabel>Valor fechado</DistributorSummaryLabel>
+                    <DistributorSummaryValue>{formatCurrency(distributorSummary.revenueWon)}</DistributorSummaryValue>
+                  </DistributorSummaryStat>
+                  <DistributorSummaryStat>
+                    <DistributorSummaryLabel>Itens vendidos</DistributorSummaryLabel>
+                    <DistributorSummaryValue>{distributorSummary.itemsSold}</DistributorSummaryValue>
+                  </DistributorSummaryStat>
+                  <DistributorSummaryStat>
+                    <DistributorSummaryLabel>Conversão</DistributorSummaryLabel>
+                    <DistributorSummaryValue>
+                      {distributorSummary.proposalsTotal > 0
+                        ? `${Math.round((distributorSummary.proposalsWon / distributorSummary.proposalsTotal) * 100)}%`
+                        : '0%'}
+                    </DistributorSummaryValue>
+                  </DistributorSummaryStat>
+                </DistributorSummaryGrid>
+
+                <DistributorSummaryDivider>Top produtos (vendas fechadas)</DistributorSummaryDivider>
+                <DistributorTopProducts>
+                  {distributorSummary.topProducts.length > 0 ? (
+                    distributorSummary.topProducts.map((p) => (
+                      <DistributorTopProductRow key={p.name}>
+                        <DistributorTopProductName title={p.name}>{p.name}</DistributorTopProductName>
+                        <DistributorTopProductMeta>{p.qty} un.</DistributorTopProductMeta>
+                      </DistributorTopProductRow>
+                    ))
+                  ) : (
+                    <DistributorSummaryHint>Nenhuma venda fechada encontrada para este distribuidor.</DistributorSummaryHint>
+                  )}
+                </DistributorTopProducts>
+
+                <DistributorSummaryHint>
+                  Baseado nas propostas já registradas no sistema
+                  {user?.role === 'admin' && formData.seller?._id ? ' (filtrado pelo vendedor selecionado)' : ''}.
+                </DistributorSummaryHint>
+              </>
+            ) : (
+              <DistributorSummaryHint>Não foi possível carregar o resumo agora.</DistributorSummaryHint>
+            )}
+          </DistributorSummaryCard>
+        </FormSection>
 
         {/* Botões de Ação */}
         <ActionButtons>
