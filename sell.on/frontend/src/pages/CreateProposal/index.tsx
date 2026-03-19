@@ -52,6 +52,10 @@ import {
   CnpjDataLabel,
   CnpjDataValue,
   RiskList,
+  PropostaGifOverlay,
+  PropostaGifCard,
+  PropostaGifMessage,
+  PropostaGifImage,
   DistributorSummaryCard,
   DistributorSummaryTitle,
   DistributorSummaryGrid,
@@ -126,6 +130,9 @@ export const CreateProposal: React.FC = () => {
   const [cnpjLookupInput, setCnpjLookupInput] = useState('');
   const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
   const [cnpjLookupResult, setCnpjLookupResult] = useState<CnpjLookupResult | null>(null);
+
+  const [showPropostaGif, setShowPropostaGif] = useState(false);
+  const [propostaGifNonce, setPropostaGifNonce] = useState(0);
   
   // Recomendações de IA
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -943,12 +950,16 @@ export const CreateProposal: React.FC = () => {
         const propNumber = response.data?.proposalNumber || 'N/A';
         setProposalNumber(propNumber);
         setSuccessModalType('created'); // Tipo 'created' para proposta criada
-        setShowSuccessModal(true);
-        
-        // Aguardar um pouco e navegar
+        setShowSuccessModal(false);
+
+        // Mostra o GIF na tela por 5s e fecha automaticamente
+        setPropostaGifNonce((n) => n + 1);
+        setShowPropostaGif(true);
+
         setTimeout(() => {
+          setShowPropostaGif(false);
           navigate('/proposals');
-        }, 3000);
+        }, 5000);
       } else if (response.needsApproval) {
         info(
           'Solicitação enviada',
@@ -2031,6 +2042,20 @@ export const CreateProposal: React.FC = () => {
         type={successModalType}
         proposalNumber={proposalNumber}
       />
+
+      {showPropostaGif && (
+        <PropostaGifOverlay role="status" aria-live="polite">
+          <PropostaGifCard onClick={(e) => e.stopPropagation()}>
+            <PropostaGifMessage>voce consegue</PropostaGifMessage>
+            {/* nonce forca reload do gif sempre que criar uma nova proposta */}
+            <PropostaGifImage
+              key={propostaGifNonce}
+              src="/proposta.gif"
+              alt="Proposta criada com sucesso"
+            />
+          </PropostaGifCard>
+        </PropostaGifOverlay>
+      )}
 
     </Container>
   );
