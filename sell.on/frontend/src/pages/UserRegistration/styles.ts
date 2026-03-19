@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
   min-height: 100vh;
-  background: #0f172a;
+  background: ${({ theme }) => theme.colors.background.page};
   padding: 24px;
   position: relative;
   overflow-x: hidden;
@@ -55,7 +55,7 @@ export const Content = styled.div`
 `;
 
 export const Form = styled.form`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 16px;
   padding: 32px;
@@ -95,7 +95,7 @@ export const SectionTitle = styled.h3`
   margin: 0 0 24px 0;
   font-size: 18px;
   font-weight: 700;
-  color: #f8fafc;
+  color: ${({ theme }) => theme.colors.text.primary};
   padding-bottom: 12px;
   border-bottom: 2px solid rgba(71, 85, 105, 0.3);
 `;
@@ -138,7 +138,7 @@ export const Input = styled.input`
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(15, 23, 42, 0.6);
+  background: ${({ theme }) => theme.colors.background.card};
   backdrop-filter: blur(10px);
   color: #f8fafc;
   position: relative;
@@ -150,7 +150,7 @@ export const Input = styled.input`
     box-shadow: 
       0 0 0 3px rgba(59, 130, 246, 0.1),
       0 4px 12px rgba(59, 130, 246, 0.15);
-    background: rgba(15, 23, 42, 0.8);
+    background: ${({ theme }) => theme.colors.background.glassHover};
   }
 
   &::placeholder {
@@ -165,7 +165,7 @@ export const Select = styled.select`
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(15, 23, 42, 0.6);
+  background: ${({ theme }) => theme.colors.background.card};
   backdrop-filter: blur(10px);
   cursor: pointer;
   color: #f8fafc;
@@ -178,12 +178,12 @@ export const Select = styled.select`
     box-shadow: 
       0 0 0 3px rgba(59, 130, 246, 0.1),
       0 4px 12px rgba(59, 130, 246, 0.15);
-    background: rgba(15, 23, 42, 0.8);
+    background: ${({ theme }) => theme.colors.background.glassHover};
   }
 
   option {
-    background: #0f172a;
-    color: #f8fafc;
+    background: ${({ theme }) => theme.colors.background.primary};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 
@@ -243,7 +243,7 @@ export const CancelButton = styled.button`
   padding: 12px 24px;
   border: 2px solid rgba(71, 85, 105, 0.3);
   border-radius: 8px;
-  background: rgba(15, 23, 42, 0.6);
+  background: ${({ theme }) => theme.colors.background.card};
   color: #94a3b8;
   font-size: 14px;
   font-weight: 600;
@@ -254,7 +254,7 @@ export const CancelButton = styled.button`
   &:hover {
     border-color: rgba(71, 85, 105, 0.5);
     color: #e2e8f0;
-    background: rgba(15, 23, 42, 0.8);
+    background: ${({ theme }) => theme.colors.background.glassHover};
     transform: translateY(-1px);
   }
 

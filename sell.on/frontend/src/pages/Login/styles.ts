@@ -138,7 +138,7 @@ export const Container = styled.div`
   width: 100%;
   position: relative;
   overflow: hidden;
-  background: #0a0a0f;
+  background: ${({ theme }) => theme.colors.background.main};
   
   @media (max-width: 1024px) {
     flex-direction: column;
@@ -257,7 +257,7 @@ export const BrandLogo = styled.div`
 export const BrandTitle = styled.h1`
   font-size: 84px;
   font-weight: 800;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0 0 20px 0;
   letter-spacing: -4px;
   line-height: 1;
@@ -280,7 +280,7 @@ export const BrandTitle = styled.h1`
 export const BrandSubtitle = styled.h2`
   font-size: 24px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: ${({ theme }) => theme.colors.text.secondary};
   margin: 0 0 20px 0;
   letter-spacing: 0.5px;
   
@@ -296,7 +296,7 @@ export const BrandSubtitle = styled.h2`
 export const BrandDescription = styled.p`
   font-size: 17px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.6);
+  color: ${({ theme }) => theme.colors.text.muted};
   line-height: 1.7;
   margin: 0;
   

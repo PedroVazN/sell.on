@@ -5,7 +5,7 @@ export const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   min-height: 100vh;
-  background: #0a0a0f;
+  background: ${({ theme }) => theme.colors.background.main};
   position: relative;
   
   &::before {
@@ -37,7 +37,7 @@ export const Header = styled.div`
 export const Title = styled.h1`
   font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0 0 8px 0;
   letter-spacing: -0.5px;
   display: flex;
@@ -47,7 +47,7 @@ export const Title = styled.h1`
 
 export const Subtitle = styled.p`
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: ${({ theme }) => theme.colors.text.muted};
   margin: 0;
   font-weight: 400;
 `;
@@ -67,7 +67,7 @@ export const FormSection = styled.div`
 export const SectionTitle = styled.h3`
   font-size: 1.125rem;
   font-weight: 600;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0 0 16px 0;
 `;
 

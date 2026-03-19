@@ -65,7 +65,7 @@ const shimmer = `
 
 export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xxl};
-  background: #0a0a0f;
+  background: ${({ theme }) => theme.colors.background.main};
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
@@ -108,7 +108,7 @@ export const Header = styled.div`
 export const Title = styled.h1`
   font-size: 3rem;
   font-weight: 800;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
   letter-spacing: -2px;
   position: relative;

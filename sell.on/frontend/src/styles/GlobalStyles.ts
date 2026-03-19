@@ -1,5 +1,4 @@
 import { createGlobalStyle } from 'styled-components';
-import { theme } from './theme';
 
 export const GlobalStyles = createGlobalStyle`
   * {
@@ -18,8 +17,8 @@ export const GlobalStyles = createGlobalStyle`
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: ${theme.colors.gradients.background};
-    color: ${theme.colors.text.primary};
+    background: ${({ theme }) => theme.colors.gradients.background};
+    color: ${({ theme }) => theme.colors.text.primary};
     line-height: 1.6;
     overflow-x: hidden;
     position: relative;
@@ -89,15 +88,15 @@ export const GlobalStyles = createGlobalStyle`
   }
   *:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
-    border-radius: ${theme.borderRadius.sm};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
   }
   button:focus-visible,
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,
   [tabindex="0"]:focus-visible {
-    box-shadow: 0 0 0 3px ${theme.colors.border.focus};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus};
   }
   input, select, textarea {
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
@@ -105,19 +104,19 @@ export const GlobalStyles = createGlobalStyle`
 
   /* Formulários - Item 6: labels sempre visíveis */
   form label, label.form-label {
-    color: ${theme.colors.text.secondary};
+    color: ${({ theme }) => theme.colors.text.secondary};
   }
   form label:not([class]) {
-    color: ${theme.colors.text.secondary};
+    color: ${({ theme }) => theme.colors.text.secondary};
   }
 
   /* Erro em campos: borda suave + mensagem com theme.colors.error */
   input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
-    border-color: ${theme.colors.error} !important;
-    box-shadow: 0 0 0 1px ${theme.colors.error};
+    border-color: ${({ theme }) => theme.colors.error} !important;
+    box-shadow: 0 0 0 1px ${({ theme }) => theme.colors.error};
   }
   .form-error-message {
-    color: ${theme.colors.error};
+    color: ${({ theme }) => theme.colors.error};
     font-size: 0.75rem;
     margin-top: 0.25rem;
     line-height: 1.3;
@@ -334,7 +333,7 @@ export const GlobalStyles = createGlobalStyle`
 
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: ${theme.shadows.large};
+    box-shadow: ${({ theme }) => theme.shadows.large};
   }
 
   .hover-glow {
@@ -342,7 +341,7 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   .hover-glow:hover {
-    box-shadow: ${theme.shadows.glow};
+    box-shadow: ${({ theme }) => theme.shadows.glow};
   }
 
   .hover-scale {
@@ -355,9 +354,9 @@ export const GlobalStyles = createGlobalStyle`
 
   /* Glassmorphism */
   .glass {
-    background: ${theme.colors.background.glass};
+    background: ${({ theme }) => theme.colors.background.glass};
     backdrop-filter: blur(20px);
-    border: 1px solid ${theme.colors.border.primary};
+    border: 1px solid ${({ theme }) => theme.colors.border.primary};
   }
 
   .glass-hover {
@@ -365,12 +364,12 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   .glass-hover:hover {
-    background: ${theme.colors.background.glassHover};
-    border-color: ${theme.colors.border.secondary};
+    background: ${({ theme }) => theme.colors.background.glassHover};
+    border-color: ${({ theme }) => theme.colors.border.secondary};
   }
 
   /* Responsividade */
-  @media (max-width: ${theme.breakpoints.mobile}) {
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     html {
       font-size: 14px;
     }
@@ -403,11 +402,11 @@ export const GlobalStyles = createGlobalStyle`
     position: absolute;
     top: -40px;
     left: 0;
-    background: ${theme.colors.primary};
+    background: ${({ theme }) => theme.colors.primary};
     color: white;
     padding: 0.5rem 1rem;
     z-index: 100;
-    border-radius: ${theme.borderRadius.sm};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
     transition: top 0.2s;
   }
   .skip-link:focus {
@@ -416,19 +415,19 @@ export const GlobalStyles = createGlobalStyle`
 
   /* Estilos globais para selects - Forçar tema escuro */
   select {
-    background: #1f2937 !important;
-    background-color: #1f2937 !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: ${({ theme }) => theme.colors.background.secondary} !important;
+    background-color: ${({ theme }) => theme.colors.background.secondary} !important;
+    color: ${({ theme }) => theme.colors.text.primary} !important;
+    border: 1px solid ${({ theme }) => theme.colors.border.primary} !important;
     appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
   }
 
   select option {
-    background: #1f2937 !important;
-    background-color: #1f2937 !important;
-    color: #ffffff !important;
+    background: ${({ theme }) => theme.colors.background.secondary} !important;
+    background-color: ${({ theme }) => theme.colors.background.secondary} !important;
+    color: ${({ theme }) => theme.colors.text.primary} !important;
     padding: 0.5rem !important;
     font-size: 0.875rem !important;
   }
@@ -441,8 +440,8 @@ export const GlobalStyles = createGlobalStyle`
   /* Estilo específico para Firefox */
   @-moz-document url-prefix() {
     select option {
-      background: ${theme.colors.background.card} !important;
-      color: ${theme.colors.text.primary} !important;
+      background: ${({ theme }) => theme.colors.background.card} !important;
+      color: ${({ theme }) => theme.colors.text.primary} !important;
     }
   }
 
@@ -452,11 +451,11 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   select::-webkit-scrollbar-track {
-    background: ${theme.colors.background.card};
+    background: ${({ theme }) => theme.colors.background.card};
   }
 
   select::-webkit-scrollbar-thumb {
-    background: ${theme.colors.border.primary};
+    background: ${({ theme }) => theme.colors.border.primary};
     border-radius: 4px;
   }
 

@@ -19,7 +19,7 @@ const spin = keyframes`
 
 export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xxl};
-  background: #0f172a;
+  background: ${({ theme }) => theme.colors.background.page};
   min-height: 100vh;
   animation: ${fadeIn} 0.6s ease;
 
@@ -52,7 +52,7 @@ export const TitleSection = styled.div`
 export const Title = styled.h1`
   font-size: 2.5rem;
   font-weight: 800;
-  color: #f8fafc;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0 0 ${({ theme }) => theme.spacing.sm} 0;
   display: flex;
   align-items: center;
@@ -179,7 +179,7 @@ export const StatIcon = styled.div`
   align-items: center;
   justify-content: center;
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  background: rgba(15, 23, 42, 0.5);
+  background: ${({ theme }) => theme.colors.background.glass};
 `;
 
 export const StatContent = styled.div`
@@ -205,7 +205,7 @@ export const StatSubtext = styled.div`
 `;
 
 export const FiltersSection = styled.div`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: ${({ theme }) => theme.spacing.lg};
@@ -255,7 +255,7 @@ export const FilterLabel = styled.label`
 
 export const FilterInput = styled.input`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: ${({ theme }) => theme.borderRadius.md};
   color: #f8fafc;
@@ -271,7 +271,7 @@ export const FilterInput = styled.input`
 
 export const FilterSelect = styled.select`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: ${({ theme }) => theme.borderRadius.md};
   color: #f8fafc;
@@ -321,7 +321,7 @@ export const ChartsGrid = styled.div`
 `;
 
 export const ChartCard = styled.div`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: ${({ theme }) => theme.spacing.lg};
@@ -353,7 +353,7 @@ export const ReasonsList = styled.div`
 `;
 
 export const ReasonItem = styled.div`
-  background: rgba(15, 23, 42, 0.5);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.2);
   border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing.md};
@@ -461,7 +461,7 @@ export const TrendItem = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: ${({ theme }) => theme.spacing.sm};
-  background: rgba(15, 23, 42, 0.5);
+  background: ${({ theme }) => theme.colors.background.card};
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   border-left: 3px solid #3b82f6;
 `;
@@ -491,7 +491,7 @@ export const TrendValue = styled.div`
 `;
 
 export const TableSection = styled.div`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: ${({ theme }) => theme.spacing.lg};
@@ -542,7 +542,7 @@ export const Table = styled.table`
 `;
 
 export const TableHead = styled.thead`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
 `;
 
 export const TableRow = styled.tr`
@@ -673,7 +673,7 @@ export const LoadingSpinner = styled.div`
 export const EditSelect = styled.select`
   width: 100%;
   padding: 0.5rem;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(59, 130, 246, 0.5);
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   color: #f8fafc;
@@ -696,7 +696,7 @@ export const EditSelect = styled.select`
 export const EditInput = styled.input`
   width: 100%;
   padding: 0.5rem;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(59, 130, 246, 0.5);
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   color: #f8fafc;
@@ -713,7 +713,7 @@ export const EditInput = styled.input`
 export const EditTextarea = styled.textarea`
   width: 100%;
   padding: 0.5rem;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(59, 130, 246, 0.5);
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   color: #f8fafc;

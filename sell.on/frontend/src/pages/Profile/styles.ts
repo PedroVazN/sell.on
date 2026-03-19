@@ -1,9 +1,8 @@
 import styled from 'styled-components';
-import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
   min-height: 100vh;
-  background: #0f172a;
+  background: ${({ theme }) => theme.colors.background.secondary};
   padding: 24px;
   position: relative;
   overflow-x: hidden;
@@ -46,7 +45,7 @@ export const Title = styled.h1`
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  color: white;
+  color: ${({ theme }) => theme.colors.text.primary};
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
@@ -71,7 +70,7 @@ export const UserName = styled.h2`
 
 export const UserRole = styled.span`
   font-size: 14px;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-weight: 500;
 `;
 
@@ -88,8 +87,8 @@ export const Content = styled.div`
 `;
 
 export const ProfileSection = styled.div`
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  background: ${({ theme }) => theme.colors.background.glass};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 16px;
   padding: 32px;
   backdrop-filter: blur(10px);
@@ -112,8 +111,8 @@ export const ProfileSection = styled.div`
 `;
 
 export const PasswordSection = styled.div`
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  background: ${({ theme }) => theme.colors.background.glass};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 16px;
   padding: 32px;
   backdrop-filter: blur(10px);
@@ -140,9 +139,9 @@ export const SectionTitle = styled.h3`
   margin: 0 0 24px 0;
   font-size: 20px;
   font-weight: 700;
-  color: #f8fafc;
+  color: ${({ theme }) => theme.colors.text.primary};
   padding-bottom: 12px;
-  border-bottom: 3px solid rgba(71, 85, 105, 0.3);
+  border-bottom: 3px solid ${({ theme }) => theme.colors.border.secondary};
   position: relative;
   z-index: 1;
 `;
@@ -151,7 +150,7 @@ export const SectionSubtitle = styled.h4`
   margin: 0 0 16px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: ${({ theme }) => theme.colors.text.secondary};
   position: relative;
   z-index: 1;
 `;
@@ -197,7 +196,7 @@ export const Label = styled.label`
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: ${({ theme }) => theme.colors.text.secondary};
   margin-bottom: 8px;
   position: relative;
   z-index: 1;
@@ -206,27 +205,27 @@ export const Label = styled.label`
 export const Input = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid rgba(71, 85, 105, 0.3);
+  border: 2px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(15, 23, 42, 0.6);
+  background: ${({ theme }) => theme.colors.background.card};
   backdrop-filter: blur(10px);
   position: relative;
   z-index: 1;
-  color: #f8fafc;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: ${({ theme }) => theme.colors.border.focus};
     box-shadow: 
-      0 0 0 3px rgba(59, 130, 246, 0.1),
-      0 4px 12px rgba(59, 130, 246, 0.15);
-    background: rgba(15, 23, 42, 0.8);
+      0 0 0 3px ${({ theme }) => theme.colors.hover.primary},
+      0 4px 12px ${({ theme }) => theme.colors.hover.primary};
+    background: ${({ theme }) => theme.colors.background.glassHover};
   }
 
   &::placeholder {
-    color: #94a3b8;
+    color: ${({ theme }) => theme.colors.text.disabled};
   }
 `;
 
@@ -280,8 +279,8 @@ export const SaveButton = styled.button`
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
+  background: ${({ theme }) => theme.colors.gradients.button};
+  color: #ffffff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -293,9 +292,9 @@ export const SaveButton = styled.button`
   z-index: 1;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2563eb, #1e40af);
+    background: ${({ theme }) => theme.colors.gradients.buttonSecondary};
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    box-shadow: ${({ theme }) => theme.shadows.glow};
   }
 
   &:active:not(:disabled) {
@@ -316,7 +315,7 @@ export const LoadingContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 16px;
   backdrop-filter: blur(10px);
@@ -344,4 +343,73 @@ export const LoadingText = styled.p`
   font-weight: 500;
   position: relative;
   z-index: 1;
+`;
+
+export const ThemeSection = styled.div`
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  position: relative;
+  z-index: 1;
+`;
+
+export const ThemeSubtitle = styled.h4`
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+export const ThemeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ThemeOption = styled.button<{ $selected: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px 14px;
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  background: ${({ theme }) => theme.colors.background.card};
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: ${({ theme, $selected }) =>
+    $selected ? `0 0 0 3px ${theme.colors.border.focus}` : 'none'};
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.border.secondary};
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+`;
+
+export const ThemePreview = styled.div`
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
+`;
+
+export const ThemeOptionLabel = styled.span`
+  font-size: 14px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export const ThemeHint = styled.p`
+  margin: 16px 0 0 0;
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;

@@ -14,8 +14,8 @@ export const Container = styled.aside<ContainerProps>`
   top: 0;
   width: ${({ $collapsed }) => ($collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED)}px;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.95);
-  border-right: 1px solid rgba(71, 85, 105, 0.3);
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-right: 1px solid ${({ theme }) => theme.colors.border.primary};
   backdrop-filter: blur(20px);
   z-index: 1000;
   overflow-y: auto;
@@ -45,13 +45,13 @@ export const Container = styled.aside<ContainerProps>`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%);
+    background: ${({ theme }) => theme.colors.gradients.glass};
     pointer-events: none;
     transition: none;
   }
   
   &:hover {
-    border-right-color: rgba(71, 85, 105, 0.5);
+    border-right-color: ${({ theme }) => theme.colors.border.secondary};
   }
   
   &::-webkit-scrollbar {
@@ -63,13 +63,13 @@ export const Container = styled.aside<ContainerProps>`
   }
   
   &::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.3);
+    background: ${({ theme }) => theme.colors.border.focus};
     border-radius: 2px;
     transition: none;
   }
   
   &::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.5);
+    background: ${({ theme }) => theme.colors.border.focus};
   }
 `;
 
@@ -105,7 +105,7 @@ export const Logo = styled.div<{ $collapsed?: boolean }>`
   h1 {
     font-size: ${({ $collapsed }) => ($collapsed ? '1.25rem' : '2.2rem')};
     font-weight: 800;
-    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #10b981 100%);
+    background: ${({ theme }) => theme.colors.gradients.primary};
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -117,7 +117,7 @@ export const Logo = styled.div<{ $collapsed?: boolean }>`
   
   span {
     font-size: ${({ $collapsed }) => ($collapsed ? '0.6rem' : '0.9rem')};
-    color: rgba(148, 163, 184, 0.8);
+    color: ${({ theme }) => theme.colors.text.secondary};
     font-weight: 600;
     letter-spacing: ${({ $collapsed }) => ($collapsed ? '1px' : '3px')};
     text-transform: uppercase;
@@ -145,7 +145,7 @@ export const MenuSection = styled.div<{ $collapsed?: boolean }>`
 export const MenuTitle = styled.h3<{ $collapsed?: boolean }>`
   font-size: 0.7rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  color: ${({ theme }) => theme.colors.text.secondary};
   text-transform: uppercase;
   letter-spacing: 2px;
   margin: 0 0 16px 24px;
@@ -165,7 +165,7 @@ export const MenuTitle = styled.h3<{ $collapsed?: boolean }>`
     transform: translateY(-50%);
     width: 4px;
     height: 4px;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    background: ${({ theme }) => theme.colors.gradients.primary};
     border-radius: 50%;
   }
 `;
@@ -182,11 +182,11 @@ export const MenuItem = styled.div<{ $isActive?: boolean; $collapsed?: boolean }
   border-radius: 12px;
   overflow: hidden;
   
-  background: ${({ $isActive }) => 
-    $isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent'};
+  background: ${({ $isActive, theme }) =>
+    $isActive ? theme.colors.hover.primary : 'transparent'};
   
-  color: ${({ $isActive }) => 
-    $isActive ? '#60a5fa' : 'rgba(226, 232, 240, 0.8)'};
+  color: ${({ $isActive, theme }) =>
+    $isActive ? theme.colors.text.accent : theme.colors.text.secondary};
   
   &::before {
     content: '';
@@ -195,7 +195,7 @@ export const MenuItem = styled.div<{ $isActive?: boolean; $collapsed?: boolean }
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(135deg, #3b82f6, #10b981);
+    background: ${({ theme }) => theme.colors.gradients.glow};
     border-radius: 0 2px 2px 0;
     transform: scaleY(0);
     transform-origin: center;
@@ -215,8 +215,8 @@ export const MenuItem = styled.div<{ $isActive?: boolean; $collapsed?: boolean }
   }
   
   &:hover {
-    background: rgba(59, 130, 246, 0.08);
-    color: #60a5fa;
+    background: ${({ theme }) => theme.colors.hover.primary};
+    color: ${({ theme }) => theme.colors.text.accent};
     transform: translateX(6px) scale(1.02);
     box-shadow: 
       0 4px 12px rgba(59, 130, 246, 0.15),
@@ -288,18 +288,18 @@ export const CollapseToggle = styled.button`
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    border: 1px solid rgba(71, 85, 105, 0.5);
-    background: rgba(15, 23, 42, 0.98);
-    color: rgba(226, 232, 240, 0.9);
+    border: 1px solid ${({ theme }) => theme.colors.border.secondary};
+    background: ${({ theme }) => theme.colors.background.secondary};
+    color: ${({ theme }) => theme.colors.text.primary};
     cursor: pointer;
     z-index: 1102;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     pointer-events: auto;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     &:hover {
-      background: rgba(59, 130, 246, 0.2);
-      border-color: rgba(59, 130, 246, 0.5);
-      color: #60a5fa;
+      background: ${({ theme }) => theme.colors.hover.primary};
+      border-color: ${({ theme }) => theme.colors.border.focus};
+      color: ${({ theme }) => theme.colors.text.accent};
       transform: scale(1.06);
     }
     &:active {
@@ -348,7 +348,7 @@ export const MenuToggle = styled.button`
     left: 20px;
     width: 48px;
     height: 48px;
-    background: rgba(59, 130, 246, 0.9);
+    background: ${({ theme }) => theme.colors.primary};
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -357,7 +357,7 @@ export const MenuToggle = styled.button`
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
     &:hover {
-      background: rgba(59, 130, 246, 1);
+      background: ${({ theme }) => theme.colors.primary};
       transform: scale(1.05);
       box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
     }

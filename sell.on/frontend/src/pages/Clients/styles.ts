@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
   padding: 1rem 1.25rem;
-  background: #0a0a0f;
+  background: ${({ theme }) => theme.colors.background.main};
   min-height: 100vh;
   position: relative;
   
@@ -30,7 +30,7 @@ export const Header = styled.div`
 export const Title = styled.h1`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
   letter-spacing: -0.5px;
 `;

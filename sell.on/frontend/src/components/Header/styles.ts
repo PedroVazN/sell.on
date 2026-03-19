@@ -14,16 +14,16 @@ export const VerseBar = styled.div`
   flex: 1;
   min-width: 0;
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background: rgba(59, 130, 246, 0.08);
+  background: ${({ theme }) => theme.colors.hover.primary};
   border-radius: 12px;
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: ${({ theme }) => theme.colors.text.secondary};
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  & strong { color: rgba(255, 255, 255, 0.95); font-weight: 600; }
+  & strong { color: ${({ theme }) => theme.colors.text.primary}; font-weight: 600; }
   @media (max-width: 768px) {
     font-size: 0.75rem;
     padding: 8px 12px;
@@ -36,8 +36,8 @@ export const Container = styled.header`
   flex-direction: column;
   align-items: stretch;
   padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.xl};
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
   backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
@@ -67,7 +67,7 @@ export const Container = styled.header`
   }
   
   &:hover {
-    border-bottom-color: rgba(71, 85, 105, 0.5);
+    border-bottom-color: ${({ theme }) => theme.colors.border.secondary};
     box-shadow: 
       0 8px 30px rgba(0, 0, 0, 0.2),
       0 0 0 1px rgba(255, 255, 255, 0.1),
@@ -89,11 +89,11 @@ export const ActionsContainer = styled.div`
 
 export const NotificationButton = styled.button`
   position: relative;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 12px;
   padding: 12px;
-  color: rgba(148, 163, 184, 0.8);
+  color: ${({ theme }) => theme.colors.text.secondary};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
@@ -118,9 +118,9 @@ export const NotificationButton = styled.button`
   }
   
   &:hover {
-    color: #60a5fa;
-    border-color: rgba(59, 130, 246, 0.5);
-    background: rgba(15, 23, 42, 0.9);
+    color: ${({ theme }) => theme.colors.text.accent};
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    background: ${({ theme }) => theme.colors.background.secondary};
     transform: translateY(-2px) scale(1.05);
     box-shadow: 
       0 8px 25px rgba(59, 130, 246, 0.2),
@@ -155,11 +155,11 @@ export const UserButton = styled.button<{ $isOpen?: boolean }>`
   display: flex;
   align-items: center;
   gap: 12px;
-  background: ${props => props.$isOpen ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.8)'};
-  border: 1px solid ${props => props.$isOpen ? 'rgba(59, 130, 246, 0.5)' : 'rgba(71, 85, 105, 0.3)'};
+  background: ${({ theme, $isOpen }) => ($isOpen ? theme.colors.background.glass : theme.colors.background.card)};
+  border: 1px solid ${({ theme, $isOpen }) => ($isOpen ? theme.colors.border.focus : theme.colors.border.primary)};
   border-radius: 12px;
   padding: 12px 20px;
-  color: rgba(226, 232, 240, 0.8);
+  color: ${({ theme }) => theme.colors.text.secondary};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
@@ -194,9 +194,9 @@ export const UserButton = styled.button<{ $isOpen?: boolean }>`
   }
   
   &:hover {
-    color: #60a5fa;
-    border-color: rgba(59, 130, 246, 0.5);
-    background: rgba(15, 23, 42, 0.9);
+    color: ${({ theme }) => theme.colors.text.accent};
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    background: ${({ theme }) => theme.colors.background.glass};
     transform: translateY(-2px) scale(1.02);
     box-shadow: 
       0 8px 25px rgba(59, 130, 246, 0.2),
@@ -224,8 +224,8 @@ export const UserMenu = styled.div`
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: ${({ theme }) => theme.colors.background.tertiary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   border-radius: 12px;
   box-shadow: 
     0 10px 25px rgba(0, 0, 0, 0.5),
@@ -255,7 +255,7 @@ export const UserMenuItem = styled.button`
   width: 100%;
   background: none;
   border: none;
-  color: #e2e8f0;
+  color: ${({ theme }) => theme.colors.text.primary};
   padding: 12px 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -265,7 +265,7 @@ export const UserMenuItem = styled.button`
   text-align: left;
   
   &:hover {
-    background: #ef4444;
+    background: ${({ theme }) => theme.colors.status.error};
     color: white;
     transform: translateX(2px);
   }

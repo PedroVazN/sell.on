@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
   min-height: 100vh;
-  background: #0f172a;
+  background: ${({ theme }) => theme.colors.background.page};
   padding: 24px;
   position: relative;
   overflow-x: hidden;
@@ -46,7 +46,7 @@ export const Title = styled.h1`
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  color: white;
+  color: ${({ theme }) => theme.colors.text.primary};
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
@@ -66,7 +66,7 @@ export const SearchContainer = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 12px;
   padding: 12px 16px;
@@ -78,7 +78,7 @@ export const SearchContainer = styled.div`
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    background: rgba(15, 23, 42, 0.9);
+    background: ${({ theme }) => theme.colors.background.cardHover};
     border-color: rgba(71, 85, 105, 0.5);
     transform: translateY(-1px);
     box-shadow: 
@@ -87,7 +87,7 @@ export const SearchContainer = styled.div`
   }
 
   &:focus-within {
-    background: rgba(15, 23, 42, 0.95);
+    background: ${({ theme }) => theme.colors.background.glassHover};
     border-color: #3b82f6;
     box-shadow: 
       0 0 0 3px rgba(59, 130, 246, 0.1),
@@ -119,7 +119,7 @@ export const FilterButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 12px;
   color: #e2e8f0;
@@ -132,7 +132,7 @@ export const FilterButton = styled.button`
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
   &:hover {
-    background: rgba(15, 23, 42, 0.9);
+    background: ${({ theme }) => theme.colors.background.cardHover};
     border-color: rgba(71, 85, 105, 0.5);
     transform: translateY(-1px);
     box-shadow: 
@@ -149,7 +149,7 @@ export const FilterDropdown = styled.div`
   position: absolute;
   top: 100%;
   right: 0;
-  background: rgba(15, 23, 42, 0.95);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
@@ -216,7 +216,7 @@ export const StatsGrid = styled.div`
 `;
 
 export const StatCard = styled.div`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 16px;
   padding: 24px;
@@ -279,7 +279,7 @@ export const UsersGrid = styled.div`
 `;
 
 export const UserCard = styled.div`
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.card};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 16px;
   padding: 24px;
@@ -400,7 +400,7 @@ export const ActionButton = styled.button<{ $variant: 'primary' | 'secondary' | 
   height: ${({ $variant }) => $variant === 'primary' ? 'auto' : '36px'};
   backdrop-filter: blur(10px);
 
-  ${({ $variant }) => {
+  ${({ $variant, theme }) => {
     switch ($variant) {
       case 'primary':
         return `
@@ -416,14 +416,14 @@ export const ActionButton = styled.button<{ $variant: 'primary' | 'secondary' | 
         `;
       case 'secondary':
         return `
-          background: rgba(15, 23, 42, 0.8);
-          color: #e2e8f0;
-          border: 1px solid rgba(71, 85, 105, 0.3);
+          background: ${theme.colors.background.card};
+          color: ${theme.colors.text.secondary};
+          border: 1px solid ${theme.colors.border.primary};
 
           &:hover {
-            background: rgba(15, 23, 42, 0.9);
+            background: ${theme.colors.background.cardHover};
             transform: scale(1.05);
-            border-color: rgba(71, 85, 105, 0.5);
+            border-color: ${theme.colors.border.secondary};
           }
         `;
       case 'danger':
@@ -452,7 +452,7 @@ export const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 16px;
   backdrop-filter: blur(10px);
@@ -497,7 +497,7 @@ export const LoadingContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
-  background: rgba(15, 23, 42, 0.8);
+  background: ${({ theme }) => theme.colors.background.glass};
   border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 16px;
   backdrop-filter: blur(10px);

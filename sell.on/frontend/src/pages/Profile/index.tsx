@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Lock, Save, Loader2, Check } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Lock, Save, Loader2, Check, Palette } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { useThemeMode } from '../../contexts/ThemeModeContext';
 import * as S from './styles';
 
 export const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
+  const { themeName, setThemeName } = useThemeMode();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -350,6 +352,42 @@ export const Profile: React.FC = () => {
               )}
             </S.SaveButton>
           </form>
+
+          <S.ThemeSection>
+            <S.SectionTitle style={{ marginBottom: 12, fontSize: 20, paddingBottom: 12 }}>
+              <Palette size={20} />
+              Tema
+            </S.SectionTitle>
+
+            <S.ThemeSubtitle>Escolha sua aparência preferida</S.ThemeSubtitle>
+
+            <S.ThemeGrid role="radiogroup" aria-label="Seleção de tema">
+              {(
+                [
+                  { id: 'dark', label: 'Tema padrão (dark)', preview: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #f59e0b 100%)' },
+                  { id: 'pink', label: 'Tema rosa', preview: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #f472b6 100%)' },
+                  { id: 'modern', label: 'Tema moderno', preview: 'linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #60a5fa 100%)' },
+                  { id: 'ocean', label: 'Tema oceano', preview: 'linear-gradient(135deg, #2dd4bf 0%, #34d399 40%, #60a5fa 100%)' },
+                ] as const
+              ).map((t) => (
+                <S.ThemeOption
+                  key={t.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={themeName === t.id}
+                  $selected={themeName === t.id}
+                  onClick={() => setThemeName(t.id)}
+                >
+                  <S.ThemePreview style={{ background: t.preview }} aria-hidden="true" />
+                  <S.ThemeOptionLabel>{t.label}</S.ThemeOptionLabel>
+                </S.ThemeOption>
+              ))}
+            </S.ThemeGrid>
+
+            <S.ThemeHint>
+              A escolha fica salva no seu navegador. Você pode trocar quando quiser.
+            </S.ThemeHint>
+          </S.ThemeSection>
         </S.ProfileSection>
 
         <S.PasswordSection>

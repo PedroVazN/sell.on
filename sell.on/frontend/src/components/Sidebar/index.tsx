@@ -144,6 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
     {
       title: 'PERFIL',
       items: [
+        { icon: <Settings size={20} />, label: 'Perfil e Temas', path: '/profile' },
         { icon: <LogOut size={20} />, label: 'Sair', path: '', onClick: logout },
       ]
     }

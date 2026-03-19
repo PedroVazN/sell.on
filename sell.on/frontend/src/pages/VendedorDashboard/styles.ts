@@ -4,7 +4,7 @@ export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xxl};
   width: 100%;
   min-height: 100vh;
-  background: #0a0a0f;
+  background: ${({ theme }) => theme.colors.background.main};
   color: ${({ theme }) => theme.colors.text.primary};
   margin-left: 0;
   margin-right: 0;
@@ -18,19 +18,19 @@ export const Title = styled.h1`
   font-size: 3rem;
   font-weight: 800;
   margin: 0 0 0.5rem 0;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const Subtitle = styled.p`
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: ${({ theme }) => theme.colors.text.muted};
   margin: 0;
   font-weight: 400;
 `;
 
 export const VendedorSelector = styled.div`
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: ${({ theme }) => theme.colors.background.tertiary};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -56,16 +56,16 @@ export const SelectorContainer = styled.div`
 export const SelectorLabel = styled.label`
   font-size: 1rem;
   font-weight: 600;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   white-space: nowrap;
 `;
 
 export const SelectorSelect = styled.select`
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  color: #ffffff;
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 1rem;
   min-width: 300px;
   cursor: pointer;

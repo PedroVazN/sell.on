@@ -16,6 +16,7 @@ declare module 'styled-components' {
         primary: string;
         secondary: string;
         tertiary: string;
+        page: string;
         card: string;
         cardHover: string;
         modal: string;
