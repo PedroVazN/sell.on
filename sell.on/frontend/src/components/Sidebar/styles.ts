@@ -21,10 +21,8 @@ export const Container = styled.aside<ContainerProps>`
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    4px 0 20px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  /* Uma única sombra para evitar “sombra pegando metade” */
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Responsivo para mobile */
@@ -38,17 +36,7 @@ export const Container = styled.aside<ContainerProps>`
     };
   }
   
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${({ theme }) => theme.colors.gradients.glass};
-    pointer-events: none;
-    transition: none;
-  }
+  /* Removido o ::before (gradiente) para evitar efeito de “sombra na metade” */
   
   &:hover {
     border-right-color: ${({ theme }) => theme.colors.border.secondary};
