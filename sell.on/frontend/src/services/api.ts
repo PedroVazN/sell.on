@@ -1015,7 +1015,7 @@ class ApiService {
     return this.request(`/proposals/ranking/${sellerId}/detail${q}`);
   }
 
-  /** Versículo aleatório (ABíbliaDigital via backend) */
+  /** Versículo aleatório (backend; sem dependência de API externa) */
   async getRandomVerse(): Promise<ApiResponse<{
     book: string;
     chapter: number;

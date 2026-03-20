@@ -1,53 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationBell } from '../NotificationBell';
-import { apiService } from '../../services/api';
 import { 
   Container, 
   HeaderRow,
-  VerseBar,
   ActionsContainer, 
   UserButton,
   UserMenu,
   UserMenuItem,
 } from './styles';
 
-// Fallback quando a API do versículo falhar (ex.: Vercel/ABíbliaDigital)
-const FALLBACK_VERSES: { text: string; reference: string }[] = [
-  { text: 'O Senhor é meu pastor; nada me faltará.', reference: 'Salmos 23:1' },
-  { text: 'Tudo posso naquele que me fortalece.', reference: 'Filipenses 4:13' },
-  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.', reference: 'Salmos 37:5' },
-  { text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.', reference: 'João 3:16' },
-  { text: 'O que for feito com as mãos prosperará.', reference: 'Provérbios 31:31' },
-];
-
-function pickRandomVerse() {
-  return FALLBACK_VERSES[Math.floor(Math.random() * FALLBACK_VERSES.length)];
-}
-
 export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [verse, setVerse] = useState<{ text: string; reference: string }>(() => pickRandomVerse());
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-
-  useEffect(() => {
-    let cancelled = false;
-    apiService.getRandomVerse()
-      .then((res) => {
-        if (cancelled) return;
-        const d = (res && (res as { data?: { text?: string; reference?: string } }).data) || null;
-        if (d?.text && d?.reference) {
-          setVerse({ text: d.text, reference: d.reference });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setVerse(pickRandomVerse());
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   const handleLogout = () => {
     logout();
@@ -79,10 +47,6 @@ export const Header: React.FC = () => {
   return (
     <Container>
       <HeaderRow>
-        <VerseBar title={verse.reference}>
-          <strong>{verse.text}</strong>
-          <span> - {verse.reference}</span>
-        </VerseBar>
         <ActionsContainer>
           <NotificationBell />
         

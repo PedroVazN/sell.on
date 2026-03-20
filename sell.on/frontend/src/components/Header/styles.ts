@@ -3,7 +3,7 @@ import styled from 'styled-components';
 export const HeaderRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 100%;
   gap: ${({ theme }) => theme.spacing.md};
 `;
