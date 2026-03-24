@@ -754,9 +754,9 @@ class ApiService {
       ...options,
     };
 
-    console.log('Fazendo requisição para:', url);
-    console.log('Headers:', config.headers);
-    console.log('Token:', currentToken);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Fazendo requisição para:', url);
+    }
 
     try {
       const response = await fetch(url, config);
@@ -769,7 +769,9 @@ class ApiService {
 
       const data = await response.json();
 
-      console.log('Resposta da API:', response.status, data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Resposta da API:', response.status, data);
+      }
 
       if (!response.ok) {
         // Se houver erros de validação, incluir detalhes
@@ -1438,12 +1440,23 @@ class ApiService {
 
   // Data Science Dashboard (Python + pandas)
   async getDataScienceAnalysis(recalculate = false): Promise<ApiResponse<DataScienceAnalysis>> {
-    return this.request<DataScienceAnalysis>(`/analysis/dashboard?recalculate=${recalculate ? 'true' : 'false'}`);
+    const signal =
+      typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout === 'function'
+        ? (AbortSignal as any).timeout(120000)
+        : undefined;
+    return this.request<DataScienceAnalysis>(`/analysis/dashboard?recalculate=${recalculate ? 'true' : 'false'}`, {
+      ...(signal ? { signal } : {}),
+    });
   }
 
   async recalculateDataScienceAnalysis(): Promise<ApiResponse<DataScienceAnalysis>> {
+    const signal =
+      typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout === 'function'
+        ? (AbortSignal as any).timeout(120000)
+        : undefined;
     return this.request<DataScienceAnalysis>('/analysis/recalculate', {
       method: 'POST',
+      ...(signal ? { signal } : {}),
     });
   }
 

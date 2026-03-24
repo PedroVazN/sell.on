@@ -138,6 +138,126 @@ export const LoadingText = styled.p`
   font-size: 1rem;
 `;
 
+export const LoaderPanel = styled.div`
+  max-width: 440px;
+  margin: 10vh auto 0;
+  padding: ${({ theme }) => theme.spacing.xl};
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  text-align: center;
+`;
+
+export const LoaderTitle = styled.h2`
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 1.25rem;
+`;
+
+export const LoaderSub = styled.p`
+  margin: 0 0 ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 0.9rem;
+  line-height: 1.45;
+`;
+
+export const LoaderElapsed = styled.p`
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
+  font-variant-numeric: tabular-nums;
+  color: ${({ theme }) => theme.colors.text.tertiary};
+  font-size: 0.85rem;
+`;
+
+export const LoaderProgressTrack = styled.div`
+  height: 8px;
+  border-radius: 999px;
+  background: ${({ theme }) => theme.colors.background.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  overflow: hidden;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+export const LoaderProgressFill = styled.div<{ $pct: number }>`
+  height: 100%;
+  width: ${({ $pct }) => `${$pct}%`};
+  border-radius: 999px;
+  background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, #6366f1);
+  transition: width 0.35s ease-out;
+`;
+
+export const LoaderShimmer = styled.div`
+  margin-top: ${({ theme }) => theme.spacing.md};
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 102, 241, 0.35),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: analysis-shimmer 1.2s ease-in-out infinite;
+
+  @keyframes analysis-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+`;
+
+export const ChartsBlockingOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+`;
+
+export const ChartSkeletonCard = styled.div`
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  padding: ${({ theme }) => theme.spacing.md};
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.md};
+`;
+
+export const ChartSkeletonBar = styled.div<{ $w?: string }>`
+  height: 12px;
+  border-radius: 6px;
+  width: ${({ $w }) => $w || '100%'};
+  background: ${({ theme }) => theme.colors.border.primary};
+  opacity: 0.5;
+  animation: analysis-pulse 1.1s ease-in-out infinite;
+
+  @keyframes analysis-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 0.65;
+    }
+  }
+`;
+
+export const ChartSkeletonBlock = styled.div`
+  flex: 1;
+  min-height: 220px;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  background: ${({ theme }) => theme.colors.background.primary};
+  border: 1px dashed ${({ theme }) => theme.colors.border.primary};
+  opacity: 0.7;
+`;
+
 export const ErrorText = styled.p`
   color: ${({ theme }) => theme.colors.error};
   font-size: 1rem;

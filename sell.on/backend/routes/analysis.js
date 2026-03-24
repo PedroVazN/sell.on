@@ -232,26 +232,44 @@ async function runRemotePythonAnalysis(payload) {
     throw new Error('PYTHON_ANALYSIS_URL não configurada');
   }
 
-  const response = await fetch(serviceUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timeoutMs = Math.min(Number(process.env.PYTHON_ANALYSIS_TIMEOUT_MS) || 120000, 300000);
+  const t = setTimeout(() => controller.abort(), timeoutMs);
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data?.message || data?.error || `Falha no microserviço Python (HTTP ${response.status})`);
+  try {
+    const response = await fetch(serviceUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `Falha no microserviço Python (HTTP ${response.status})`);
+    }
+    return data;
+  } catch (err) {
+    clearTimeout(t);
+    if (err && (err.name === 'AbortError' || err.code === 'ABORT_ERR')) {
+      throw new Error(
+        `Tempo esgotado ao contactar o motor Python (${Math.round(timeoutMs / 1000)}s). Cold start no Render pode levar ~1 min — tente de novo em instantes.`
+      );
+    }
+    throw err;
   }
-
-  return data;
 }
 
 async function collectRawData() {
   const [proposals, clientsCount, distributorsCount, sellersCount] = await Promise.all([
+    // Não incluir `items` (linhas com produtos completos) — explode o payload e atrasa Vercel → Python.
     Proposal.find({})
-      .select('status total createdAt seller distributor')
+      .select(
+        'status total createdAt updatedAt closedAt validUntil seller distributor client proposalNumber lossReason'
+      )
       .lean(),
     Client.countDocuments({ isActive: true }),
     Distributor.countDocuments({ isActive: true }),

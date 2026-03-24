@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BarChart3, RefreshCcw } from 'lucide-react';
+import { BarChart3, Loader2, RefreshCcw } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -28,9 +28,19 @@ import {
   Header,
   InsightsCard,
   InsightText,
-  LoadingText,
+  LoaderElapsed,
+  LoaderPanel,
+  LoaderProgressFill,
+  LoaderProgressTrack,
+  LoaderShimmer,
+  LoaderSub,
+  LoaderTitle,
   Meta,
   SectionGrid,
+  ChartsBlockingOverlay,
+  ChartSkeletonCard,
+  ChartSkeletonBar,
+  ChartSkeletonBlock,
   Subtitle,
   Title,
 } from './styles';
@@ -42,12 +52,40 @@ const formatPercent = (value: number) => `${(value || 0).toFixed(1)}%`;
 const formatCompactCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { notation: 'compact', compactDisplay: 'short' }).format(value || 0);
 
+function loadPhaseMessage(elapsedSec: number): string {
+  if (elapsedSec < 3) return 'Conectando ao servidor...';
+  if (elapsedSec < 10) return 'Buscando propostas e totais da base...';
+  if (elapsedSec < 25) return 'Enviando dados para o motor de análise...';
+  return 'Calculando métricas e agregações (cold start do Python no Render pode levar até ~1 min).';
+}
+
+/** Barra de progresso suave até ~92% — o restante só ao receber a resposta. */
+function loadProgressPercent(elapsedSec: number): number {
+  return Math.min(92, 6 + (1 - Math.exp(-elapsedSec / 18)) * 78);
+}
+
+function estimateRemainingLabel(elapsedSec: number): string | null {
+  if (elapsedSec < 2) return 'Estimativa: ~15–60 s (primeira vez costuma ser mais lento).';
+  if (elapsedSec < 20) {
+    const r = Math.max(8, 48 - elapsedSec);
+    return `Faltam cerca de ${r} s (estimativa; depende do servidor).`;
+  }
+  if (elapsedSec < 55) {
+    const r = Math.max(5, 72 - elapsedSec);
+    return `Faltam cerca de ${r} s se o serviço Python estiver em cold start.`;
+  }
+  if (elapsedSec < 120) return 'Ainda dentro do tempo esperado para análise pesada. Quase lá.';
+  return null;
+}
+
 export const Analysis: React.FC = () => {
   const [data, setData] = useState<DataScienceAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [chartsReady, setChartsReady] = useState(false);
 
   const loadDashboard = useCallback(async (force = false) => {
     try {
@@ -66,7 +104,8 @@ export const Analysis: React.FC = () => {
         setError('Não foi possível carregar a análise.');
       }
     } catch (err: any) {
-      setError(err?.message || 'Erro ao carregar análise.');
+      const msg = err?.name === 'AbortError' ? 'Tempo limite da análise (120s). Tente novamente.' : err?.message;
+      setError(msg || 'Erro ao carregar análise.');
     } finally {
       setLoading(false);
       setRecalculating(false);
@@ -76,6 +115,27 @@ export const Analysis: React.FC = () => {
   useEffect(() => {
     loadDashboard(false);
   }, [loadDashboard]);
+
+  useEffect(() => {
+    const busy = loading || recalculating;
+    if (!busy) {
+      setElapsedMs(0);
+      return;
+    }
+    const t0 = performance.now();
+    const id = window.setInterval(() => setElapsedMs(performance.now() - t0), 250);
+    return () => clearInterval(id);
+  }, [loading, recalculating]);
+
+  useEffect(() => {
+    if (!data) {
+      setChartsReady(false);
+      return;
+    }
+    setChartsReady(false);
+    const id = window.setTimeout(() => setChartsReady(true), 48);
+    return () => clearTimeout(id);
+  }, [data]);
 
   const statusChartData = useMemo(
     () =>
@@ -150,10 +210,41 @@ export const Analysis: React.FC = () => {
     itemStyle: { color: '#cbd5e1' },
   };
 
+  const elapsedSec = elapsedMs / 1000;
+  const loadHint = loadPhaseMessage(elapsedSec);
+  const loadPct = loadProgressPercent(elapsedSec);
+  const etaText = estimateRemainingLabel(elapsedSec);
+
   if (loading) {
     return (
       <Container>
-        <LoadingText>Carregando análise de dados...</LoadingText>
+        <LoaderPanel>
+          <LoaderTitle>
+            <Loader2
+              size={22}
+              style={{
+                display: 'inline-block',
+                verticalAlign: 'middle',
+                marginRight: 8,
+                animation: 'analysis-spin 0.9s linear infinite',
+              }}
+            />
+            Carregando análise Data Science
+          </LoaderTitle>
+          <LoaderSub>{loadHint}</LoaderSub>
+          <LoaderElapsed>
+            Tempo decorrido: {elapsedSec.toFixed(1)} s
+            {etaText ? ` · ${etaText}` : ''}
+          </LoaderElapsed>
+          <LoaderProgressTrack>
+            <LoaderProgressFill $pct={loadPct} />
+          </LoaderProgressTrack>
+          <LoaderShimmer />
+          <LoaderSub style={{ marginTop: 16, marginBottom: 0, fontSize: '0.8rem' }}>
+            Dica: após o primeiro carregamento, o cache do servidor (5 min) deixa a próxima visita bem mais rápida.
+          </LoaderSub>
+        </LoaderPanel>
+        <style>{`@keyframes analysis-spin { to { transform: rotate(360deg); } }`}</style>
       </Container>
     );
   }
@@ -174,6 +265,19 @@ export const Analysis: React.FC = () => {
 
   return (
     <Container>
+      {recalculating && (
+        <ChartsBlockingOverlay>
+          <LoaderPanel style={{ margin: 0 }}>
+            <LoaderTitle>Recalculando análise</LoaderTitle>
+            <LoaderSub>{loadPhaseMessage(elapsedSec)}</LoaderSub>
+            <LoaderElapsed>Decorrido: {elapsedSec.toFixed(1)} s</LoaderElapsed>
+            <LoaderProgressTrack>
+              <LoaderProgressFill $pct={loadPct} />
+            </LoaderProgressTrack>
+            <LoaderShimmer />
+          </LoaderPanel>
+        </ChartsBlockingOverlay>
+      )}
       <Header>
         <div>
           <Title>Análise Data Science</Title>
@@ -240,89 +344,102 @@ export const Analysis: React.FC = () => {
       </CardGrid>
 
       <SectionGrid>
-        <ChartCard>
-          <ChartTitle>
-            <BarChart3 size={18} />
-            Status das Propostas
-          </ChartTitle>
-          <ResponsiveContainer width="100%" height={290}>
-            <BarChart data={statusChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="status" />
-              <YAxis />
-              <Tooltip
-                {...tooltipStyle}
-                formatter={(value: number, name: string) =>
-                  name === 'valor' ? [formatCurrency(Number(value)), 'Valor'] : [value, 'Propostas']
-                }
-              />
-              <Legend />
-              <Bar dataKey="propostas" fill={data.palette?.[0] || '#3b82f6'} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        {!chartsReady ? (
+          <>
+            {[0, 1, 2, 3, 4].map((k) => (
+              <ChartSkeletonCard key={k}>
+                <ChartSkeletonBar $w="55%" />
+                <ChartSkeletonBlock />
+              </ChartSkeletonCard>
+            ))}
+          </>
+        ) : (
+          <>
+            <ChartCard>
+              <ChartTitle>
+                <BarChart3 size={18} />
+                Status das Propostas
+              </ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={statusChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="status" />
+                  <YAxis />
+                  <Tooltip
+                    {...tooltipStyle}
+                    formatter={(value: number, name: string) =>
+                      name === 'valor' ? [formatCurrency(Number(value)), 'Valor'] : [value, 'Propostas']
+                    }
+                  />
+                  <Legend />
+                  <Bar dataKey="propostas" fill={data.palette?.[0] || '#3b82f6'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-        <ChartCard>
-          <ChartTitle>Tendência Mensal (12 meses)</ChartTitle>
-          <ResponsiveContainer width="100%" height={290}>
-            <LineChart data={data.monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip {...tooltipStyle} />
-              <Legend />
-              <Line type="monotone" dataKey="proposals" stroke={data.palette?.[1] || '#10b981'} strokeWidth={2} />
-              <Line type="monotone" dataKey="won" stroke={data.palette?.[2] || '#f59e0b'} strokeWidth={2} />
-              <Line type="monotone" dataKey="lost" stroke={data.palette?.[3] || '#ef4444'} strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
+            <ChartCard>
+              <ChartTitle>Tendência Mensal (12 meses)</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <LineChart data={data.monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip {...tooltipStyle} />
+                  <Legend />
+                  <Line type="monotone" dataKey="proposals" stroke={data.palette?.[1] || '#10b981'} strokeWidth={2} />
+                  <Line type="monotone" dataKey="won" stroke={data.palette?.[2] || '#f59e0b'} strokeWidth={2} />
+                  <Line type="monotone" dataKey="lost" stroke={data.palette?.[3] || '#ef4444'} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-        <ChartCard>
-          <ChartTitle>Top Vendedores (conversão)</ChartTitle>
-          <ResponsiveContainer width="100%" height={290}>
-            <BarChart data={data.topSellers}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="seller" />
-              <YAxis />
-              <Tooltip {...tooltipStyle} formatter={(value: number) => [`${Number(value).toFixed(1)}%`, 'Conversão']} />
-              <Legend />
-              <Bar dataKey="conversionRate" fill={data.palette?.[4] || '#8b5cf6'} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+            <ChartCard>
+              <ChartTitle>Top Vendedores (conversão)</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={data.topSellers}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="seller" />
+                  <YAxis />
+                  <Tooltip {...tooltipStyle} formatter={(value: number) => [`${Number(value).toFixed(1)}%`, 'Conversão']} />
+                  <Legend />
+                  <Bar dataKey="conversionRate" fill={data.palette?.[4] || '#8b5cf6'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-        <ChartCard>
-          <ChartTitle>Top Distribuidores (receita)</ChartTitle>
-          <ResponsiveContainer width="100%" height={290}>
-            <BarChart data={data.topDistributors}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="distributor" />
-              <YAxis />
-              <Tooltip {...tooltipStyle} formatter={(value: number) => [formatCurrency(Number(value)), 'Receita']} />
-              <Legend />
-              <Bar dataKey="revenue" fill={data.palette?.[0] || '#3b82f6'} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+            <ChartCard>
+              <ChartTitle>Top Distribuidores (receita)</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={data.topDistributors}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="distributor" />
+                  <YAxis />
+                  <Tooltip {...tooltipStyle} formatter={(value: number) => [formatCurrency(Number(value)), 'Receita']} />
+                  <Legend />
+                  <Bar dataKey="revenue" fill={data.palette?.[0] || '#3b82f6'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-        <ChartCard>
-          <ChartTitle>Receita Mensal</ChartTitle>
-          <ResponsiveContainer width="100%" height={290}>
-            <BarChart data={data.monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip
-                {...tooltipStyle}
-                formatter={(value: number) => [formatCurrency(Number(value)), 'Receita']}
-                labelFormatter={(label) => `Mês: ${label}`}
-              />
-              <Legend />
-              <Bar dataKey="revenue" fill={data.palette?.[2] || '#f59e0b'} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+            <ChartCard>
+              <ChartTitle>Receita Mensal</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={data.monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip
+                    {...tooltipStyle}
+                    formatter={(value: number) => [formatCurrency(Number(value)), 'Receita']}
+                    labelFormatter={(label) => `Mês: ${label}`}
+                  />
+                  <Legend />
+                  <Bar dataKey="revenue" fill={data.palette?.[2] || '#f59e0b'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </>
+        )}
       </SectionGrid>
 
       <InsightsCard>
