@@ -656,6 +656,49 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface DataScienceAnalysis {
+  generatedAt: string;
+  engine?: 'python' | 'node-fallback' | string;
+  summary: {
+    totalProposals: number;
+    totalRevenueClosed: number;
+    winRate: number;
+    lossRate: number;
+    avgTicket: number;
+    clientesAtivos: number;
+    distribuidoresAtivos: number;
+    vendedoresAtivos: number;
+  };
+  statusBreakdown: Array<{
+    status: string;
+    count: number;
+    total: number;
+  }>;
+  monthlyTrend: Array<{
+    month: string;
+    proposals: number;
+    won: number;
+    lost: number;
+    revenue: number;
+  }>;
+  topSellers: Array<{
+    seller: string;
+    proposals: number;
+    won: number;
+    lost: number;
+    revenue: number;
+    conversionRate: number;
+  }>;
+  topDistributors: Array<{
+    distributor: string;
+    proposals: number;
+    won: number;
+    revenue: number;
+  }>;
+  insights: string[];
+  palette: string[];
+}
+
 const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos
 
 interface CacheEntry<T> {
@@ -1391,6 +1434,17 @@ class ApiService {
 
   async getAIAnomalies(): Promise<ApiResponse<any>> {
     return this.request('/ai/anomalies');
+  }
+
+  // Data Science Dashboard (Python + pandas)
+  async getDataScienceAnalysis(recalculate = false): Promise<ApiResponse<DataScienceAnalysis>> {
+    return this.request<DataScienceAnalysis>(`/analysis/dashboard?recalculate=${recalculate ? 'true' : 'false'}`);
+  }
+
+  async recalculateDataScienceAnalysis(): Promise<ApiResponse<DataScienceAnalysis>> {
+    return this.request<DataScienceAnalysis>('/analysis/recalculate', {
+      method: 'POST',
+    });
   }
 
   async getProductRecommendations(proposal?: any, selectedProducts?: any[], limit?: number): Promise<ApiResponse<any>> {
