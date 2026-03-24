@@ -349,6 +349,9 @@ app.use('/api/cnpj', cnpjRouter);
 const videoRouter = require('../routes/video');
 app.use('/api/video', videoRouter);
 
+const analysisRouter = require('../routes/analysis');
+app.use('/api/analysis', analysisRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });

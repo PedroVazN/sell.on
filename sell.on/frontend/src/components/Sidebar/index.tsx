@@ -98,6 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         { icon: <BarChart3 size={20} />, label: 'Dashboard', path: '/', permission: 'dashboard' },
         ...(hasPermission('admin') ? [
           { icon: <Brain size={20} />, label: 'Dashboard IA', path: '/ai-dashboard', permission: 'admin' },
+          { icon: <Activity size={20} />, label: 'Análise Data Science', path: '/analysis', permission: 'admin' },
         ] : []),
         { 
           icon: <Megaphone size={20} />, 
