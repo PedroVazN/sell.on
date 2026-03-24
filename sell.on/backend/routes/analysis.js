@@ -205,6 +205,28 @@ function runPythonAnalysis(payload) {
   });
 }
 
+async function runRemotePythonAnalysis(payload) {
+  const serviceUrl = process.env.PYTHON_ANALYSIS_URL;
+  if (!serviceUrl) {
+    throw new Error('PYTHON_ANALYSIS_URL não configurada');
+  }
+
+  const response = await fetch(serviceUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || data?.error || `Falha no microserviço Python (HTTP ${response.status})`);
+  }
+
+  return data;
+}
+
 async function collectRawData() {
   const [proposals, clientsCount, distributorsCount, sellersCount] = await Promise.all([
     Proposal.find({})
@@ -241,13 +263,30 @@ async function buildAnalysis(forceRecalculate = false) {
 
   const raw = await collectRawData();
   let analysisResult;
+
   try {
-    analysisResult = await runPythonAnalysis(raw);
-    analysisResult.engine = 'python';
-  } catch (pythonError) {
-    console.warn('Falha no motor Python, usando fallback Node.js:', pythonError.message);
-    analysisResult = computeNodeAnalysis(raw);
+    if (process.env.PYTHON_ANALYSIS_URL) {
+      analysisResult = await runRemotePythonAnalysis(raw);
+      analysisResult.engine = 'python';
+    } else {
+      analysisResult = await runPythonAnalysis(raw);
+      analysisResult.engine = 'python';
+    }
+  } catch (remotePythonError) {
+    console.warn('Falha no Python remoto/local, tentando Python local:', remotePythonError.message);
+    try {
+      analysisResult = await runPythonAnalysis(raw);
+      analysisResult.engine = 'python';
+    } catch (pythonError) {
+      console.warn('Falha no motor Python, usando fallback Node.js:', pythonError.message);
+      analysisResult = computeNodeAnalysis(raw);
+    }
   }
+
+  if (!analysisResult?.engine) {
+    analysisResult.engine = 'python';
+  }
+
   const responseData = {
     ...analysisResult,
     generatedAt: new Date().toISOString(),
