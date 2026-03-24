@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pandas as pd
 
 
@@ -37,6 +39,8 @@ def compute_overview(df: pd.DataFrame, counters: dict | None = None) -> dict:
 
     dtc = won["days_to_close"].dropna()
     tempo_medio = float(dtc.mean()) if len(dtc) else None
+    if tempo_medio is not None and (math.isnan(tempo_medio) or math.isinf(tempo_medio)):
+        tempo_medio = None
 
     base = (
         df.dropna(subset=["month"])

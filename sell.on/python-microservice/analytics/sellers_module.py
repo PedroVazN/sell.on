@@ -29,6 +29,7 @@ def seller_performance(df: pd.DataFrame) -> pd.DataFrame:
     g["ticket_medio"] = 0.0
     mask = g["ganhas"] > 0
     g.loc[mask, "ticket_medio"] = (g.loc[mask, "receita"] / g.loc[mask, "ganhas"]).round(2)
+    g["ticket_medio"] = g["ticket_medio"].fillna(0).replace([float("inf"), float("-inf")], 0)
 
     dtc = won.groupby("seller", as_index=False).agg(tempo_medio_fechamento_dias=("days_to_close", "mean"))
     g = g.merge(dtc, on="seller", how="left")

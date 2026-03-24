@@ -2,12 +2,25 @@
 
 from __future__ import annotations
 
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
+
+
+def _safe_train_test_split(X, y, test_size=0.25, random_state=42):
+    """Evita falha de stratify com classes muito desbalanceadas."""
+    cnt = Counter(y)
+    if len(cnt) < 2 or min(cnt.values()) < 2:
+        return train_test_split(X, y, test_size=test_size, random_state=random_state)
+    try:
+        return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    except ValueError:
+        return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
 
 def train_win_models(df: pd.DataFrame) -> dict:
@@ -19,51 +32,57 @@ def train_win_models(df: pd.DataFrame) -> dict:
         "roc_auc_rf": None,
         "importances": None,
     }
-    closed = df[df["status"].isin(["venda_fechada", "venda_perdida"])].copy()
-    if len(closed) < 15:
-        out["message"] = "Mínimo ~15 propostas fechadas (ganha/perdida) para treinar modelos."
-        return out
-
-    closed["y"] = (closed["status"] == "venda_fechada").astype(int)
-    if closed["y"].nunique() < 2:
-        out["message"] = "Só há uma classe (só ganhos ou só perdas); não é possível treinar classificador."
-        return out
-
-    X = np.column_stack(
-        [
-            np.log1p(closed["total"].clip(lower=0).values),
-            closed["items_count"].fillna(0).values,
-        ]
-    )
-    y = closed["y"].values
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, random_state=42, stratify=y
-    )
-
-    lr = LogisticRegression(max_iter=200, random_state=42)
-    lr.fit(X_train, y_train)
-    rf = RandomForestClassifier(n_estimators=80, max_depth=6, random_state=42)
-    rf.fit(X_train, y_train)
-
     try:
-        out["roc_auc_lr"] = round(float(roc_auc_score(y_test, lr.predict_proba(X_test)[:, 1])), 3)
-    except Exception:
-        out["roc_auc_lr"] = None
-    try:
-        out["roc_auc_rf"] = round(float(roc_auc_score(y_test, rf.predict_proba(X_test)[:, 1])), 3)
-    except Exception:
-        out["roc_auc_rf"] = None
+        closed = df[df["status"].isin(["venda_fechada", "venda_perdida"])].copy()
+        if len(closed) < 15:
+            out["message"] = "Mínimo ~15 propostas fechadas (ganha/perdida) para treinar modelos."
+            return out
 
-    out["importances"] = {
-        "log_valor_proposta": float(rf.feature_importances_[0]),
-        "qtd_itens": float(rf.feature_importances_[1]),
-    }
-    out["model_lr"] = lr
-    out["model_rf"] = rf
-    out["ok"] = True
-    out["message"] = "Modelos treinados."
-    return out
+        closed["y"] = (closed["status"] == "venda_fechada").astype(int)
+        if closed["y"].nunique() < 2:
+            out["message"] = "Só há uma classe (só ganhos ou só perdas); não é possível treinar classificador."
+            return out
+
+        X = np.column_stack(
+            [
+                np.log1p(np.nan_to_num(closed["total"].clip(lower=0).values, nan=0.0)),
+                np.nan_to_num(closed["items_count"].fillna(0).values, nan=0.0),
+            ]
+        )
+        y = closed["y"].values.astype(int)
+
+        if not np.isfinite(X).all():
+            out["message"] = "Features inválidas (NaN/Inf) nas propostas fechadas."
+            return out
+
+        X_train, X_test, y_train, y_test = _safe_train_test_split(X, y)
+
+        lr = LogisticRegression(max_iter=500, random_state=42, solver="lbfgs")
+        lr.fit(X_train, y_train)
+        rf = RandomForestClassifier(n_estimators=80, max_depth=6, random_state=42)
+        rf.fit(X_train, y_train)
+
+        try:
+            out["roc_auc_lr"] = round(float(roc_auc_score(y_test, lr.predict_proba(X_test)[:, 1])), 3)
+        except Exception:
+            out["roc_auc_lr"] = None
+        try:
+            out["roc_auc_rf"] = round(float(roc_auc_score(y_test, rf.predict_proba(X_test)[:, 1])), 3)
+        except Exception:
+            out["roc_auc_rf"] = None
+
+        out["importances"] = {
+            "log_valor_proposta": float(rf.feature_importances_[0]),
+            "qtd_itens": float(rf.feature_importances_[1]),
+        }
+        out["model_lr"] = lr
+        out["model_rf"] = rf
+        out["ok"] = True
+        out["message"] = "Modelos treinados."
+        return out
+    except Exception as exc:
+        out["message"] = f"Falha no treino: {exc!s}"[:220]
+        return out
 
 
 def score_open_proposals(df: pd.DataFrame, models: dict) -> pd.DataFrame:
@@ -74,8 +93,8 @@ def score_open_proposals(df: pd.DataFrame, models: dict) -> pd.DataFrame:
 
     X = np.column_stack(
         [
-            np.log1p(open_df["total"].clip(lower=0).values),
-            open_df["items_count"].fillna(0).values,
+            np.log1p(np.nan_to_num(open_df["total"].clip(lower=0).values, nan=0.0)),
+            np.nan_to_num(open_df["items_count"].fillna(0).values, nan=0.0),
         ]
     )
     lr = models["model_lr"]

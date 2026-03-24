@@ -24,6 +24,26 @@ FUNNEL_ORDER = [
 ]
 
 
+def normalize_status(raw) -> str:
+    """Normaliza status vindos do Mongo/API (variantes, espaços, legados)."""
+    if raw is None:
+        return "negociacao"
+    s = str(raw).strip().lower().replace(" ", "_").replace("-", "_")
+    if s in FUNNEL_ORDER:
+        return s
+    if "fechada" in s or s in ("ganha", "ganhas", "won", "fechado"):
+        return "venda_fechada"
+    if "perdida" in s or s in ("perdidas", "lost"):
+        return "venda_perdida"
+    if "aguardando" in s:
+        return "aguardando_pagamento"
+    if "expirada" in s:
+        return "expirada"
+    if "negoci" in s or s in ("aberta", "open", "draft"):
+        return "negociacao"
+    return "negociacao"
+
+
 def _to_float(x) -> float:
     try:
         return float(x or 0)
@@ -46,14 +66,13 @@ def proposals_to_dataframe(proposals: list) -> pd.DataFrame:
         client_key = email or cnpj or razao or "Cliente não identificado"
         client_display = razao or client.get("name") or client_key
 
+        st_norm = normalize_status(p.get("status"))
         rows.append(
             {
                 "proposal_id": str(p.get("_id", "")),
                 "proposalNumber": p.get("proposalNumber"),
-                "status": p.get("status") or "negociacao",
-                "status_label": STATUS_LABELS_PT.get(
-                    p.get("status") or "negociacao", p.get("status") or "negociacao"
-                ),
+                "status": st_norm,
+                "status_label": STATUS_LABELS_PT.get(st_norm, st_norm),
                 "total": _to_float(p.get("total")),
                 "subtotal": _to_float(p.get("subtotal")),
                 "discount": _to_float(p.get("discount")),

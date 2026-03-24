@@ -1,3 +1,8 @@
+"""
+Legado: script stdin/stdout usado antes do microserviço Flask (python-microservice).
+O backend em produção não chama mais este arquivo — use POST no serviço Render + PYTHON_ANALYSIS_URL.
+Mantido apenas para referência ou execução manual local.
+"""
 import json
 import sys
 from datetime import datetime

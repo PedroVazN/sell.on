@@ -334,7 +334,10 @@ export const Analysis: React.FC = () => {
             {cached ? ' (cache)' : ''}
           </Meta>
           <EngineBadge $python={data.engine === 'python'}>
-            Motor: {data.engine === 'python' ? 'Python' : 'Node (fallback)'}
+            Motor:{' '}
+            {data.engine === 'python'
+              ? 'Python no Render (ML + funil completo)'
+              : 'Node — agregação v2 (sem treino RF/LR; configure PYTHON_ANALYSIS_URL para IA)'}
           </EngineBadge>
         </div>
         <Actions>

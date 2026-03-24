@@ -1,6 +1,4 @@
 const express = require('express');
-const path = require('path');
-const { spawn } = require('child_process');
 const Proposal = require('../models/Proposal');
 const Client = require('../models/Client');
 const Distributor = require('../models/Distributor');
@@ -9,6 +7,9 @@ const User = require('../models/User');
 const router = express.Router();
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
+/** Respostas antigas (ex.: analysis_engine.py) não têm estes campos — não usar cache. */
+const ANALYSIS_SCHEMA_VERSION = 2;
+
 let analysisCache = {
   generatedAt: 0,
   data: null,
@@ -23,6 +24,28 @@ const STATUS_LABELS = {
 };
 
 const FUNNEL_ORDER = ['negociacao', 'aguardando_pagamento', 'venda_fechada', 'venda_perdida', 'expirada'];
+
+function analysisPayloadIsComplete(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  if (payload.analysisVersion !== ANALYSIS_SCHEMA_VERSION) return false;
+  const s = payload.summary;
+  if (!s || typeof s.pipelineOpenCount !== 'number') return false;
+  return Array.isArray(payload.funnelStages);
+}
+
+function normalizeProposalStatusRaw(raw) {
+  const s = String(raw ?? 'negociacao')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+  if (FUNNEL_ORDER.includes(s)) return s;
+  if (s.includes('fechada') || s === 'ganha' || s === 'ganhas' || s === 'won') return 'venda_fechada';
+  if (s.includes('perdida') || s === 'perdidas' || s === 'lost') return 'venda_perdida';
+  if (s.includes('aguardando')) return 'aguardando_pagamento';
+  if (s.includes('expirada')) return 'expirada';
+  if (s.includes('negoci') || s === 'aberta' || s === 'open') return 'negociacao';
+  return 'negociacao';
+}
 
 function forecastRevenueLinear(monthlyTrend) {
   const y = (monthlyTrend || []).map((m) => toNumber(m.revenue));
@@ -67,7 +90,7 @@ function computeNodeAnalysis(payload) {
   const counters = payload?.counters || {};
 
   const mapped = proposals.map((p) => {
-    const statusRaw = p?.status || 'negociacao';
+    const statusRaw = normalizeProposalStatusRaw(p?.status);
     const seller = p?.seller?.name || 'Sem vendedor';
     const distributor = p?.distributor?.apelido || p?.distributor?.razaoSocial || 'Sem distribuidor';
     const total = toNumber(p?.total);
@@ -316,61 +339,6 @@ function computeNodeAnalysis(payload) {
   };
 }
 
-function runPythonAnalysis(payload) {
-  return new Promise((resolve, reject) => {
-    const scriptPath = path.join(__dirname, '..', 'python', 'analysis_engine.py');
-    const pythonCommands = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
-
-    const tryCommand = (index) => {
-      if (index >= pythonCommands.length) {
-        reject(new Error('Python não encontrado. Instale Python 3 e dependências pandas/seaborn/matplotlib.'));
-        return;
-      }
-
-      const py = spawn(pythonCommands[index], [scriptPath], {
-        cwd: path.join(__dirname, '..'),
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      py.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      py.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      py.on('error', () => {
-        tryCommand(index + 1);
-      });
-
-      py.on('close', (code) => {
-        if (code !== 0) {
-          reject(new Error(stderr || stdout || 'Falha ao executar análise Python'));
-          return;
-        }
-        try {
-          const parsed = JSON.parse(stdout || '{}');
-          if (parsed && parsed.error) {
-            reject(new Error(parsed.details || parsed.error));
-            return;
-          }
-          resolve(parsed);
-        } catch (err) {
-          reject(new Error(`Resposta inválida da análise Python: ${err.message}`));
-        }
-      });
-
-      py.stdin.write(JSON.stringify(payload));
-      py.stdin.end();
-    };
-
-    tryCommand(0);
-  });
-}
-
 /**
  * Aceita na Vercel tanto a URL base (https://xxx.onrender.com) quanto a completa (.../analyze).
  */
@@ -456,6 +424,7 @@ async function buildAnalysis(forceRecalculate = false) {
   const cacheIsValid =
     !forceRecalculate &&
     analysisCache.data &&
+    analysisPayloadIsComplete(analysisCache.data) &&
     Date.now() - analysisCache.generatedAt < CACHE_TTL_MS;
 
   if (cacheIsValid) {
@@ -474,23 +443,28 @@ async function buildAnalysis(forceRecalculate = false) {
     if (remotePythonUrl) {
       analysisResult = await runRemotePythonAnalysis(raw);
       analysisResult.engine = 'python';
+      if (!analysisPayloadIsComplete(analysisResult)) {
+        console.warn(
+          '[analysis] Resposta do microserviço sem schema v2 (deploy antigo ou erro parcial). Usando agregação Node.'
+        );
+        analysisResult = computeNodeAnalysis(raw);
+        analysisResult.engine = 'node-fallback';
+      }
     } else {
-      analysisResult = await runPythonAnalysis(raw);
-      analysisResult.engine = 'python';
+      analysisResult = computeNodeAnalysis(raw);
+      analysisResult.engine = 'node-fallback';
     }
   } catch (remotePythonError) {
-    console.warn('Falha no Python remoto/local, tentando Python local:', remotePythonError.message);
-    try {
-      analysisResult = await runPythonAnalysis(raw);
-      analysisResult.engine = 'python';
-    } catch (pythonError) {
-      console.warn('Falha no motor Python, usando fallback Node.js:', pythonError.message);
-      analysisResult = computeNodeAnalysis(raw);
-    }
+    console.warn(
+      '[analysis] Python remoto indisponível (timeout/cold start). Usando Node v2 — sem treino ML:',
+      remotePythonError.message
+    );
+    analysisResult = computeNodeAnalysis(raw);
+    analysisResult.engine = 'node-fallback';
   }
 
   if (!analysisResult?.engine) {
-    analysisResult.engine = 'python';
+    analysisResult.engine = 'node-fallback';
   }
 
   const responseData = {
