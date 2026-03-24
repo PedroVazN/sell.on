@@ -42,11 +42,15 @@ Teste: `https://SEU-SERVICO.onrender.com/health` deve retornar JSON com `"ok": t
 - **Root Directory** (no painel do serviço): `sell.on/python-microservice`
 - Build Command: `pip install -r requirements.txt`
 
+### Blueprint (`render.yaml`)
+
+Na **raiz do repositório** existe `render.yaml` com `rootDir: sell.on/python-microservice`, `startCommand` com `--bind 0.0.0.0:$PORT` e `healthCheckPath: /health`. Ao criar o serviço por **Blueprint**, o comando certo deixa de depender só do que está escrito no painel.
+
 ### Start Command e porta (evita “Port scan timeout”)
 
 O Render só considera o serviço **saudável** se algo escutar em **`0.0.0.0:$PORT`** (`$PORT` é variável injetada pelo Render).
 
-**Opção A — recomendada:** deixe o campo **Start Command vazio** no painel e use o **`Procfile`** desta pasta (`web: gunicorn ... --bind 0.0.0.0:$PORT ...`). Se você digitou manualmente só `gunicorn app:app`, isso **substitui** o Procfile e pode falhar no health check de porta.
+**Opção A — recomendada:** deixe o campo **Start Command vazio** no painel e use o **`Procfile`** desta pasta (`web: gunicorn ... --bind 0.0.0.0:$PORT ...`). Se você digitou manualmente só `gunicorn app:app`, isso **substitui** o Procfile — os logs mostram exatamente isso e o health check pode falhar.
 
 **Opção B:** no painel, Start Command **exatamente** (uma linha):
 
@@ -56,7 +60,11 @@ gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 120 --ac
 
 Não use apenas `gunicorn app:app` sem `--bind 0.0.0.0:$PORT`.
 
-- **Health Check Path** (opcional): `/health`
+### Cold start e health check
+
+O `POST /analyze` carrega pandas/sklearn só **no primeiro pedido** a essa rota, para `/` e `/health` ficarem leves e o worker passar no health check logo após o deploy.
+
+- **Health Check Path** (recomendado): `/health`
 
 ## Exemplo de payload para `/analyze`
 

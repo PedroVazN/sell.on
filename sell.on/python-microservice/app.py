@@ -3,9 +3,6 @@ import traceback
 
 from flask import Flask, jsonify, request
 
-from analytics.api_payload import build_analysis_payload
-from analytics.json_utils import sanitize_for_json
-
 app = Flask(__name__)
 
 
@@ -32,6 +29,11 @@ def health():
 
 @app.post("/analyze")
 def analyze():
+    # Imports pesados só aqui (pandas/sklearn/numpy): no topo, o worker demorava demais a ficar
+    # pronto e o health check do Render terminava o processo.
+    from analytics.api_payload import build_analysis_payload
+    from analytics.json_utils import sanitize_for_json
+
     try:
         payload = request.get_json(silent=True) or {}
         proposals = payload.get("proposals", [])

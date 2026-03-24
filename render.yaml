@@ -1,0 +1,10 @@
+# Blueprint Render: https://render.com/docs/blueprint-spec
+# Cria ou alinha o Web Service com bind correto em $PORT (evita só "gunicorn app:app" no painel).
+services:
+  - type: web
+    name: sellon-python-analysis
+    runtime: python
+    rootDir: sell.on/python-microservice
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 120 --access-logfile - --error-logfile -
+    healthCheckPath: /health
