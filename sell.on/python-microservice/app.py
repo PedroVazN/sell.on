@@ -1,5 +1,9 @@
 from flask import Flask, jsonify, request
-import pandas as pd
+
+from analytics.overview import compute_overview
+from analytics.preprocessing import proposals_to_dataframe
+from analytics.proposals_funnel import funnel_counts
+from analytics.sellers_module import seller_performance
 
 app = Flask(__name__)
 
@@ -15,15 +19,9 @@ def root():
                 "GET /health": "checagem rápida",
                 "POST /analyze": "corpo JSON com proposals + counters (igual ao backend SellOn)",
             },
+            "dashboard": "Opcional: rode Streamlit localmente com streamlit run streamlit_app.py",
         }
     )
-
-
-def to_number(value):
-    try:
-        return float(value or 0)
-    except (TypeError, ValueError):
-        return 0.0
 
 
 @app.get("/health")
@@ -37,24 +35,7 @@ def analyze():
     proposals = payload.get("proposals", [])
     counters = payload.get("counters", {})
 
-    rows = []
-    for p in proposals:
-        status = p.get("status") or "negociacao"
-        total = to_number(p.get("total"))
-        seller = (p.get("seller") or {}).get("name") or "Sem vendedor"
-        distributor_obj = p.get("distributor") or {}
-        distributor = distributor_obj.get("apelido") or distributor_obj.get("razaoSocial") or "Sem distribuidor"
-        rows.append(
-            {
-                "status": status,
-                "total": total,
-                "seller": seller,
-                "distributor": distributor,
-                "createdAt": p.get("createdAt"),
-            }
-        )
-
-    df = pd.DataFrame(rows)
+    df = proposals_to_dataframe(proposals)
     if df.empty:
         return jsonify(
             {
@@ -78,93 +59,92 @@ def analyze():
             }
         )
 
-    total_proposals = int(len(df))
-    won_df = df[df["status"] == "venda_fechada"]
-    lost_df = df[df["status"] == "venda_perdida"]
+    ov = compute_overview(df, counters)
+    n = ov["n_propostas"]
+    g, p = ov["ganhas"], ov["perdidas"]
 
-    total_revenue_closed = float(won_df["total"].sum())
-    avg_ticket = float(won_df["total"].mean()) if len(won_df) > 0 else 0.0
-    win_rate = (len(won_df) / total_proposals) * 100 if total_proposals else 0
-    loss_rate = (len(lost_df) / total_proposals) * 100 if total_proposals else 0
+    fb = funnel_counts(df)
+    status_breakdown = [
+        {
+            "status": row["status_label"],
+            "count": int(row["count"]),
+            "total": round(float(row["valor_total"]), 2),
+        }
+        for _, row in fb.iterrows()
+    ]
 
-    status_breakdown = (
-        df.groupby("status", as_index=False)
-        .agg(count=("status", "size"), total=("total", "sum"))
-        .sort_values("count", ascending=False)
-        .to_dict(orient="records")
-    )
+    monthly = ov["receita_por_mes"].tail(12)
+    monthly_trend = [
+        {
+            "month": row["month"],
+            "proposals": int(row["propostas"]),
+            "won": int(row["ganhas"]),
+            "lost": int(row["perdidas"]),
+            "revenue": round(float(row["receita"]), 2),
+        }
+        for _, row in monthly.iterrows()
+    ]
 
-    df["createdAt"] = pd.to_datetime(df["createdAt"], errors="coerce")
-    df["month"] = df["createdAt"].dt.to_period("M").astype(str)
-    monthly_trend = (
-        df.dropna(subset=["month"])
-        .groupby("month", as_index=False)
-        .agg(
-            proposals=("status", "size"),
-            won=("status", lambda s: int((s == "venda_fechada").sum())),
-            lost=("status", lambda s: int((s == "venda_perdida").sum())),
-            revenue=("total", "sum"),
-        )
-        .sort_values("month")
-        .tail(12)
-        .to_dict(orient="records")
-    )
+    ts = seller_performance(df).head(8)
+    top_sellers = [
+        {
+            "seller": row["seller"],
+            "proposals": int(row["propostas"]),
+            "won": int(row["ganhas"]),
+            "lost": int(row["perdidas"]),
+            "revenue": round(float(row["receita"]), 2),
+            "conversionRate": float(row["taxa_conversao"]),
+        }
+        for _, row in ts.iterrows()
+    ]
 
-    top_sellers = (
-        df.groupby("seller", as_index=False)
-        .agg(
-            proposals=("status", "size"),
-            won=("status", lambda s: int((s == "venda_fechada").sum())),
-            lost=("status", lambda s: int((s == "venda_perdida").sum())),
-            revenue=("total", "sum"),
-        )
-        .sort_values(["revenue", "won"], ascending=False)
-        .head(8)
-    )
-    top_sellers["conversionRate"] = (
-        (top_sellers["won"] / top_sellers["proposals"]) * 100
-    ).fillna(0).round(2)
-
-    top_distributors = (
-        df.groupby("distributor", as_index=False)
-        .agg(
-            proposals=("status", "size"),
-            won=("status", lambda s: int((s == "venda_fechada").sum())),
-            revenue=("total", "sum"),
-        )
-        .sort_values(["revenue", "won"], ascending=False)
-        .head(8)
-        .to_dict(orient="records")
-    )
+    won_d = df[df["status"] == "venda_fechada"]
+    cnt = df.groupby("distributor", as_index=False).agg(proposals=("status", "size"))
+    rev_d = won_d.groupby("distributor", as_index=False).agg(revenue=("total", "sum"))
+    wn = won_d.groupby("distributor", as_index=False).agg(won=("status", "size"))
+    top_distributors = cnt.merge(rev_d, on="distributor", how="left").merge(wn, on="distributor", how="left").fillna(0)
+    top_distributors["revenue"] = top_distributors["revenue"].astype(float)
+    top_distributors["won"] = top_distributors["won"].astype(int)
+    top_distributors["proposals"] = top_distributors["proposals"].astype(int)
+    top_distributors = top_distributors.sort_values(["revenue", "won"], ascending=False).head(8)
+    top_distributors_list = [
+        {
+            "distributor": row["distributor"],
+            "proposals": int(row["proposals"]),
+            "won": int(row["won"]),
+            "revenue": round(float(row["revenue"]), 2),
+        }
+        for _, row in top_distributors.iterrows()
+    ]
 
     insights = []
-    if win_rate >= 35:
-        insights.append(f"Taxa de ganho em bom nível ({win_rate:.1f}%).")
+    if ov["taxa_conversao"] >= 35:
+        insights.append(f"Taxa de ganho em bom nível ({ov['taxa_conversao']:.1f}%).")
     else:
-        insights.append(f"Taxa de ganho em alerta ({win_rate:.1f}%).")
-    insights.append(f"Ticket médio de vendas fechadas: R$ {avg_ticket:,.2f}.")
-    if len(top_sellers) > 0:
-        leader = top_sellers.iloc[0]
+        insights.append(f"Taxa de ganho em alerta ({ov['taxa_conversao']:.1f}%).")
+    insights.append(f"Ticket médio de vendas fechadas: R$ {ov['ticket_medio']:,.2f}.")
+    if not ts.empty:
+        leader = ts.iloc[0]
         insights.append(
-            f"Líder atual: {leader['seller']} com {int(leader['won'])} vendas e R$ {leader['revenue']:,.2f}."
+            f"Líder atual: {leader['seller']} com {int(leader['ganhas'])} vendas e R$ {leader['receita']:,.2f}."
         )
 
     return jsonify(
         {
             "summary": {
-                "totalProposals": total_proposals,
-                "totalRevenueClosed": round(total_revenue_closed, 2),
-                "winRate": round(win_rate, 2),
-                "lossRate": round(loss_rate, 2),
-                "avgTicket": round(avg_ticket, 2),
-                "clientesAtivos": int(counters.get("clients", 0)),
-                "distribuidoresAtivos": int(counters.get("distributors", 0)),
-                "vendedoresAtivos": int(counters.get("sellers", 0)),
+                "totalProposals": n,
+                "totalRevenueClosed": round(ov["receita_total"], 2),
+                "winRate": ov["taxa_conversao"],
+                "lossRate": round((p / n * 100) if n else 0, 2),
+                "avgTicket": ov["ticket_medio"],
+                "clientesAtivos": ov["clientes_ativos_sistema"],
+                "distribuidoresAtivos": ov["distribuidores_ativos"],
+                "vendedoresAtivos": ov["vendedores_ativos"],
             },
             "statusBreakdown": status_breakdown,
             "monthlyTrend": monthly_trend,
-            "topSellers": top_sellers.to_dict(orient="records"),
-            "topDistributors": top_distributors,
+            "topSellers": top_sellers,
+            "topDistributors": top_distributors_list,
             "insights": insights,
             "palette": ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
             "engine": "python",
