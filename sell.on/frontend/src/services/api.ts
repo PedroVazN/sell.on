@@ -658,7 +658,9 @@ export interface ApiResponse<T> {
 
 export interface DataScienceAnalysis {
   generatedAt: string;
-  engine?: 'python' | 'node-fallback' | string;
+  engine?: 'python' | 'python-render' | 'python-remote' | 'python-local' | 'node-fallback' | string;
+  /** Quando o motor é Node: por que não usou o Flask no Render. */
+  motorNote?: string;
   analysisVersion?: number;
   summary: {
     totalProposals: number;

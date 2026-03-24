@@ -499,37 +499,53 @@ async function buildAnalysis(forceRecalculate = false) {
 
   const raw = await collectRawData();
   let analysisResult = null;
-  const remotePythonUrl = resolvePythonAnalysisUrl(process.env.PYTHON_ANALYSIS_URL);
+  let motorNote = null;
+  /** URL do Flask no Render (variável PYTHON_ANALYSIS_URL na Vercel). */
+  const renderPythonUrl = resolvePythonAnalysisUrl(process.env.PYTHON_ANALYSIS_URL);
+  const allowLocalPython =
+    String(process.env.PYTHON_ANALYSIS_LOCAL_FALLBACK || '').toLowerCase() === 'true' ||
+    String(process.env.PYTHON_ANALYSIS_LOCAL_FALLBACK || '') === '1';
 
-  if (remotePythonUrl) {
+  if (renderPythonUrl) {
     try {
-      const remote = await runRemotePythonAnalysis(raw);
-      if (analysisPayloadIsComplete(remote)) {
-        analysisResult = { ...remote, engine: 'python-remote' };
+      const fromRender = await runRemotePythonAnalysis(raw);
+      if (analysisPayloadIsComplete(fromRender)) {
+        analysisResult = { ...fromRender, engine: 'python-render' };
       } else {
-        console.warn('[analysis] Resposta do Render incompleta (schema v2). Tentando Python local…');
+        console.warn('[analysis] Render: resposta incompleta (schema v2).');
+        motorNote =
+          'O serviço no Render respondeu, mas o JSON não está no formato v2 (redeploy do python-microservice).';
       }
     } catch (err) {
-      console.warn('[analysis] Python remoto (Render):', err.message);
+      console.warn('[analysis] Render (PYTHON_ANALYSIS_URL):', err.message);
+      motorNote = `Render indisponível ou timeout: ${err.message}`;
     }
+  } else {
+    motorNote =
+      'PYTHON_ANALYSIS_URL não está definida na Vercel. Configure com a URL base do Flask no Render (ex.: https://seu-app.onrender.com).';
   }
 
-  if (!analysisResult) {
+  if (!analysisResult && allowLocalPython) {
     try {
       const local = await runPythonAnalysis(raw);
       if (analysisPayloadIsComplete(local)) {
         analysisResult = { ...local, engine: 'python-local' };
+        motorNote = null;
       } else {
-        console.warn('[analysis] Python local retornou payload incompleto. Usando Node…');
+        console.warn('[analysis] Python local (spawn): payload incompleto.');
       }
     } catch (err) {
-      console.warn('[analysis] Python local (stdin):', err.message);
+      console.warn('[analysis] Python local (spawn):', err.message);
     }
   }
 
   if (!analysisResult) {
     analysisResult = computeNodeAnalysis(raw);
     analysisResult.engine = 'node-fallback';
+    if (!motorNote) {
+      motorNote =
+        'Análise via Node (sem ML). Produção deve usar o Flask no Render e PYTHON_ANALYSIS_URL na Vercel.';
+    }
   }
 
   if (!analysisResult?.engine) {
@@ -539,6 +555,7 @@ async function buildAnalysis(forceRecalculate = false) {
   const responseData = {
     ...analysisResult,
     generatedAt: new Date().toISOString(),
+    ...(motorNote && analysisResult.engine === 'node-fallback' ? { motorNote } : {}),
   };
 
   analysisCache = {

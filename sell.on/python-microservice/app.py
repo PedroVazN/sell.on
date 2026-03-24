@@ -33,7 +33,7 @@ def analyze():
     counters = payload.get("counters", {})
 
     body = build_analysis_payload(proposals, counters)
-    body["engine"] = "python"
+    body["engine"] = "python-render"
     return jsonify(body)
 
 

@@ -14,14 +14,22 @@ No Render, use **Root Directory:** `sell.on/python-microservice`.
 - `GET /health`
 - `POST /analyze`
 
-## Variável na Vercel (backend)
+## Variável na Vercel (backend) — obrigatória para usar o Python do Render
 
-`PYTHON_ANALYSIS_URL` pode ser:
+O motor de análise em **produção** é o Flask **hospedado no Render**. Na Vercel, no projeto do **backend**, defina:
 
-- `https://SEU-SERVICO.onrender.com` (o backend acrescenta `/analyze` sozinho), ou
-- `https://SEU-SERVICO.onrender.com/analyze` (explícito)
+`PYTHON_ANALYSIS_URL` = URL base do serviço no Render, por exemplo:
 
-Teste no navegador: `https://SEU-SERVICO.onrender.com/health` deve retornar JSON com `"engine": "python"`.
+- `https://SEU-SERVICO.onrender.com` — o Node acrescenta `/analyze` automaticamente, ou
+- `https://SEU-SERVICO.onrender.com/analyze` — URL completa
+
+Sem essa variável, o dashboard usa só **Node** (sem treino ML).
+
+Opcional: `PYTHON_ANALYSIS_TIMEOUT_MS` (padrão 120000) para cold start do Render.
+
+Opcional (desenvolvimento / VPS com repo completo): `PYTHON_ANALYSIS_LOCAL_FALLBACK=true` tenta `spawn` em `backend/python/analysis_engine.py` se o Render falhar.
+
+Teste: `https://SEU-SERVICO.onrender.com/health` deve retornar JSON com `"ok": true`.
 
 ## Deploy no Render (grátis)
 

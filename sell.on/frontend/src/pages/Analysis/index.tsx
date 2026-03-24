@@ -94,7 +94,12 @@ function shortStage(key: string) {
 }
 
 function isPythonEngine(engine?: string) {
-  return engine === 'python' || engine === 'python-remote' || engine === 'python-local';
+  return (
+    engine === 'python' ||
+    engine === 'python-render' ||
+    engine === 'python-remote' ||
+    engine === 'python-local'
+  );
 }
 
 export const Analysis: React.FC = () => {
@@ -339,14 +344,17 @@ export const Analysis: React.FC = () => {
           </Meta>
           <EngineBadge $python={isPythonEngine(data.engine)}>
             Motor:{' '}
-            {data.engine === 'python-remote'
-              ? 'Python no Render (HTTP + ML)'
+            {data.engine === 'python-render' || data.engine === 'python-remote'
+              ? 'Python no Render (Flask + ML)'
               : data.engine === 'python-local'
-                ? 'Python no servidor (spawn local + ML)'
+                ? 'Python local (spawn — só com PYTHON_ANALYSIS_LOCAL_FALLBACK=1)'
                 : isPythonEngine(data.engine)
                   ? 'Python'
-                  : 'Node — fallback (sem ML treinado; Render ou Python+python-microservice no servidor)'}
+                  : 'Node (fallback — configure PYTHON_ANALYSIS_URL = URL do Render na Vercel)'}
           </EngineBadge>
+          {data.motorNote && (
+            <Meta style={{ color: '#f59e0b', marginTop: 8 }}>{data.motorNote}</Meta>
+          )}
         </div>
         <Actions>
           <ActionButton onClick={() => loadDashboard(true)} disabled={recalculating}>
