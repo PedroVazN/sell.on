@@ -205,8 +205,29 @@ function runPythonAnalysis(payload) {
   });
 }
 
+/**
+ * Aceita na Vercel tanto a URL base (https://xxx.onrender.com) quanto a completa (.../analyze).
+ */
+function resolvePythonAnalysisUrl(raw) {
+  const trimmed = (raw || '').trim().replace(/\/+$/, '');
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    const p = url.pathname.replace(/\/$/, '') || '';
+    if (!p || p === '/') {
+      url.pathname = '/analyze';
+    }
+    return url.href.replace(/\/$/, '');
+  } catch {
+    if (!/\/analyze$/i.test(trimmed)) {
+      return `${trimmed}/analyze`;
+    }
+    return trimmed;
+  }
+}
+
 async function runRemotePythonAnalysis(payload) {
-  const serviceUrl = process.env.PYTHON_ANALYSIS_URL;
+  const serviceUrl = resolvePythonAnalysisUrl(process.env.PYTHON_ANALYSIS_URL);
   if (!serviceUrl) {
     throw new Error('PYTHON_ANALYSIS_URL não configurada');
   }
@@ -263,9 +284,10 @@ async function buildAnalysis(forceRecalculate = false) {
 
   const raw = await collectRawData();
   let analysisResult;
+  const remotePythonUrl = resolvePythonAnalysisUrl(process.env.PYTHON_ANALYSIS_URL);
 
   try {
-    if (process.env.PYTHON_ANALYSIS_URL) {
+    if (remotePythonUrl) {
       analysisResult = await runRemotePythonAnalysis(raw);
       analysisResult.engine = 'python';
     } else {

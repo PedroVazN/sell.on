@@ -4,6 +4,21 @@ import pandas as pd
 app = Flask(__name__)
 
 
+@app.get("/")
+def root():
+    """Evita 404 ao abrir a URL do Render no navegador."""
+    return jsonify(
+        {
+            "service": "sellon-python-analysis",
+            "engine": "python",
+            "endpoints": {
+                "GET /health": "checagem rápida",
+                "POST /analyze": "corpo JSON com proposals + counters (igual ao backend SellOn)",
+            },
+        }
+    )
+
+
 def to_number(value):
     try:
         return float(value or 0)
