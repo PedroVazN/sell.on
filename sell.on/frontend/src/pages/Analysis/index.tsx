@@ -4,9 +4,12 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -76,6 +79,18 @@ function estimateRemainingLabel(elapsedSec: number): string | null {
   }
   if (elapsedSec < 120) return 'Ainda dentro do tempo esperado para análise pesada. Quase lá.';
   return null;
+}
+
+const STAGE_SHORT: Record<string, string> = {
+  negociacao: 'Negociação',
+  aguardando_pagamento: 'Aguard. pag.',
+  venda_fechada: 'Ganha',
+  venda_perdida: 'Perdida',
+  expirada: 'Expirada',
+};
+
+function shortStage(key: string) {
+  return STAGE_SHORT[key] || key;
 }
 
 export const Analysis: React.FC = () => {
@@ -199,6 +214,35 @@ export const Analysis: React.FC = () => {
     return insights;
   }, [monthlySmart, pipelineSmart, concentrationSmart]);
 
+  const transitionChart = useMemo(
+    () =>
+      (data?.funnelTransitions || []).map((t) => ({
+        name: `${shortStage(t.fromStage)} → ${shortStage(t.toStage)}`,
+        rate: t.transitionRate,
+      })),
+    [data]
+  );
+
+  const segmentPie = useMemo(
+    () =>
+      (data?.clientSegments || []).map((s) => ({
+        name: `Cluster ${s.segment}`,
+        value: Math.max(0, s.totalRevenue),
+        clients: s.clients,
+      })),
+    [data]
+  );
+
+  const topClientsChart = useMemo(
+    () =>
+      (data?.topClients || []).map((c) => ({
+        name: c.clientName.length > 22 ? `${c.clientName.slice(0, 20)}…` : c.clientName,
+        receita: c.revenue,
+        propostas: c.proposals,
+      })),
+    [data]
+  );
+
   const tooltipStyle = {
     contentStyle: {
       backgroundColor: '#0f172a',
@@ -281,7 +325,10 @@ export const Analysis: React.FC = () => {
       <Header>
         <div>
           <Title>Análise Data Science</Title>
-          <Subtitle>Painel analítico com processamento Python</Subtitle>
+          <Subtitle>
+            Visão expandida: funil por estágio, transições, top clientes, clusters (K-Means no Python), previsão de receita e
+            probabilidade de ganho no pipeline aberto. Com motor Node alguns blocos são resumidos.
+          </Subtitle>
           <Meta>
             Atualizado em {new Date(data.generatedAt).toLocaleString('pt-BR')}
             {cached ? ' (cache)' : ''}
@@ -341,12 +388,46 @@ export const Analysis: React.FC = () => {
           <CardLabel>Concentração Top Vendedor</CardLabel>
           <CardValue>{formatPercent(concentrationSmart.sellerShare)}</CardValue>
         </Card>
+        <Card>
+          <CardLabel>Propostas no pipeline</CardLabel>
+          <CardValue>{data.summary.pipelineOpenCount ?? '—'}</CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Valor no pipeline</CardLabel>
+          <CardValue>
+            {data.summary.pipelineOpenValue != null ? formatCurrency(data.summary.pipelineOpenValue) : '—'}
+          </CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Tempo médio até fechar</CardLabel>
+          <CardValue>
+            {data.summary.avgDaysToClose != null && data.summary.avgDaysToClose !== undefined
+              ? `${Number(data.summary.avgDaysToClose).toFixed(1)} dias`
+              : '—'}
+          </CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Previsão receita (próx. mês)</CardLabel>
+          <CardValue>
+            {data.predictive?.forecast?.ok && data.predictive.forecast.nextMonthRevenue != null
+              ? formatCurrency(data.predictive.forecast.nextMonthRevenue)
+              : '—'}
+          </CardValue>
+        </Card>
+        {data.engine === 'python' && (
+          <Card>
+            <CardLabel>Modelos (AUC teste)</CardLabel>
+            <CardValue style={{ fontSize: '1.05rem' }}>
+              LR {data.predictive?.winModel?.rocAucLr ?? '—'} · RF {data.predictive?.winModel?.rocAucRf ?? '—'}
+            </CardValue>
+          </Card>
+        )}
       </CardGrid>
 
       <SectionGrid>
         {!chartsReady ? (
           <>
-            {[0, 1, 2, 3, 4].map((k) => (
+            {Array.from({ length: 11 }, (_, k) => k).map((k) => (
               <ChartSkeletonCard key={k}>
                 <ChartSkeletonBar $w="55%" />
                 <ChartSkeletonBlock />
@@ -378,6 +459,34 @@ export const Analysis: React.FC = () => {
             </ChartCard>
 
             <ChartCard>
+              <ChartTitle>Funil por estágio (volume)</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={data.funnelStages || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" interval={0} angle={-20} textAnchor="end" height={70} />
+                  <YAxis />
+                  <Tooltip {...tooltipStyle} />
+                  <Legend />
+                  <Bar dataKey="count" name="Propostas" fill={data.palette?.[1] || '#10b981'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Transição entre estágios (heurística %)</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={transitionChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" interval={0} angle={-22} textAnchor="end" height={72} tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip {...tooltipStyle} formatter={(value: number) => [`${Number(value).toFixed(1)}%`, 'Taxa']} />
+                  <Legend />
+                  <Bar dataKey="rate" name="Taxa" fill={data.palette?.[3] || '#ef4444'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard>
               <ChartTitle>Tendência Mensal (12 meses)</ChartTitle>
               <ResponsiveContainer width="100%" height={290}>
                 <LineChart data={data.monthlyTrend}>
@@ -394,11 +503,65 @@ export const Analysis: React.FC = () => {
             </ChartCard>
 
             <ChartCard>
-              <ChartTitle>Top Vendedores (conversão)</ChartTitle>
+              <ChartTitle>Top clientes (receita fechada)</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={topClientsChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" interval={0} angle={-28} textAnchor="end" height={78} tick={{ fontSize: 10 }} />
+                  <YAxis />
+                  <Tooltip
+                    {...tooltipStyle}
+                    formatter={(value: number, name: string) =>
+                      name === 'receita' ? [formatCurrency(Number(value)), 'Receita'] : [value, 'Propostas']
+                    }
+                  />
+                  <Legend />
+                  <Bar dataKey="receita" name="receita" fill={data.palette?.[2] || '#f59e0b'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Segmentação de clientes (K-Means — receita)</ChartTitle>
+              {segmentPie.length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>
+                  Clusters aparecem com o motor Python e volume suficiente de clientes distintos nas propostas.
+                </InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <PieChart>
+                    <Pie
+                      data={segmentPie}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ name, clients }) => `${name} (${clients})`}
+                    >
+                      {segmentPie.map((_, i) => (
+                        <Cell key={`seg-${i}`} fill={data.palette?.[i % (data.palette?.length || 1)] || '#6366f1'} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, _n: string, item: { payload?: { clients?: number } }) => [
+                        `${formatCurrency(Number(value))} · ${item?.payload?.clients ?? 0} clientes`,
+                        'Receita no cluster',
+                      ]}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Top vendedores — conversão %</ChartTitle>
               <ResponsiveContainer width="100%" height={290}>
                 <BarChart data={data.topSellers}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="seller" />
+                  <XAxis dataKey="seller" interval={0} angle={-22} textAnchor="end" height={70} tick={{ fontSize: 10 }} />
                   <YAxis />
                   <Tooltip {...tooltipStyle} formatter={(value: number) => [`${Number(value).toFixed(1)}%`, 'Conversão']} />
                   <Legend />
@@ -408,7 +571,28 @@ export const Analysis: React.FC = () => {
             </ChartCard>
 
             <ChartCard>
-              <ChartTitle>Top Distribuidores (receita)</ChartTitle>
+              <ChartTitle>Top vendedores — receita + score eficiência</ChartTitle>
+              <ResponsiveContainer width="100%" height={290}>
+                <BarChart data={data.topSellers}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="seller" interval={0} angle={-22} textAnchor="end" height={70} tick={{ fontSize: 10 }} />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip
+                    {...tooltipStyle}
+                    formatter={(value: number, name: string) =>
+                      name === 'revenue' ? [formatCurrency(Number(value)), 'Receita'] : [`${Number(value).toFixed(1)}`, 'Eficiência']
+                    }
+                  />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="revenue" name="revenue" fill={data.palette?.[0] || '#3b82f6'} />
+                  <Bar yAxisId="right" dataKey="efficiencyScore" name="efficiencyScore" fill={data.palette?.[1] || '#10b981'} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Top distribuidores (receita)</ChartTitle>
               <ResponsiveContainer width="100%" height={290}>
                 <BarChart data={data.topDistributors}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -422,7 +606,7 @@ export const Analysis: React.FC = () => {
             </ChartCard>
 
             <ChartCard>
-              <ChartTitle>Receita Mensal</ChartTitle>
+              <ChartTitle>Receita mensal (barras)</ChartTitle>
               <ResponsiveContainer width="100%" height={290}>
                 <BarChart data={data.monthlyTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -437,6 +621,36 @@ export const Analysis: React.FC = () => {
                   <Bar dataKey="revenue" fill={data.palette?.[2] || '#f59e0b'} />
                 </BarChart>
               </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Pipeline aberto — probabilidade estimada de ganho (Python)</ChartTitle>
+              {(data.predictive?.pipelineScores || []).length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>
+                  {data.engine === 'python'
+                    ? data.predictive?.winModel?.message ||
+                      'Poucas propostas fechadas para treinar o modelo, ou nenhuma proposta aberta no pipeline.'
+                    : 'Probabilidade por proposta requer o motor Python (RandomForest + regressão logística).'}
+                </InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart data={data.predictive?.pipelineScores || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="label" interval={0} angle={-30} textAnchor="end" height={88} tick={{ fontSize: 9 }} />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string, props: { payload?: { value?: number } }) =>
+                        name === 'probPct'
+                          ? [`${Number(value).toFixed(1)}%`, 'Prob. ganho']
+                          : [formatCurrency(Number(props?.payload?.value)), 'Valor']
+                      }
+                    />
+                    <Legend />
+                    <Bar dataKey="probPct" name="probPct" fill="#a855f7" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </ChartCard>
           </>
         )}

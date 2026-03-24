@@ -22,6 +22,37 @@ const STATUS_LABELS = {
   expirada: 'Expiradas',
 };
 
+const FUNNEL_ORDER = ['negociacao', 'aguardando_pagamento', 'venda_fechada', 'venda_perdida', 'expirada'];
+
+function forecastRevenueLinear(monthlyTrend) {
+  const y = (monthlyTrend || []).map((m) => toNumber(m.revenue));
+  if (y.length < 3) {
+    return { ok: false, message: 'Mínimo 3 meses para previsão.', nextMonthRevenue: null, method: null, slope: null };
+  }
+  const n = y.length;
+  let sx = 0;
+  let sy = 0;
+  let sxy = 0;
+  let sxx = 0;
+  for (let i = 0; i < n; i += 1) {
+    sx += i;
+    sy += y[i];
+    sxy += i * y[i];
+    sxx += i * i;
+  }
+  const denom = n * sxx - sx * sx;
+  const a = denom !== 0 ? (n * sxy - sx * sy) / denom : 0;
+  const b = (sy - a * sx) / n;
+  const next = Math.max(0, a * n + b);
+  return {
+    ok: true,
+    message: '',
+    nextMonthRevenue: round2(next),
+    method: 'tendência linear (baseline)',
+    slope: round2(a),
+  };
+}
+
 function toNumber(value) {
   const n = Number(value || 0);
   return Number.isFinite(n) ? n : 0;
@@ -41,23 +72,41 @@ function computeNodeAnalysis(payload) {
     const distributor = p?.distributor?.apelido || p?.distributor?.razaoSocial || 'Sem distribuidor';
     const total = toNumber(p?.total);
     const createdAt = p?.createdAt ? new Date(p.createdAt) : null;
+    const createdOk = createdAt && !Number.isNaN(createdAt.getTime());
+    const closedAt = p?.closedAt ? new Date(p.closedAt) : null;
+    const closedOk = closedAt && !Number.isNaN(closedAt.getTime());
+    const c = p?.client || {};
+    const clientKey = String(c.email || c.cnpj || c.razaoSocial || c.company || c.name || 'cliente').toLowerCase().trim();
+    const clientDisplay = String(c.razaoSocial || c.company || c.name || c.email || 'Cliente').slice(0, 80);
+    let daysToClose = null;
+    if (statusRaw === 'venda_fechada' && createdOk && closedOk) {
+      daysToClose = Math.round((closedAt.getTime() - createdAt.getTime()) / 86400000);
+    }
     return {
       statusRaw,
       status: STATUS_LABELS[statusRaw] || statusRaw,
       seller,
       distributor,
       total,
-      createdAt: createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : null,
+      createdAt: createdOk ? createdAt : null,
+      clientKey,
+      clientDisplay,
+      daysToClose,
     };
   });
 
   const totalProposals = mapped.length;
   const wins = mapped.filter((p) => p.statusRaw === 'venda_fechada');
   const losses = mapped.filter((p) => p.statusRaw === 'venda_perdida');
+  const openPipe = mapped.filter((p) => p.statusRaw === 'negociacao' || p.statusRaw === 'aguardando_pagamento');
   const totalRevenueClosed = wins.reduce((sum, p) => sum + p.total, 0);
   const avgTicket = wins.length ? totalRevenueClosed / wins.length : 0;
   const winRate = totalProposals ? (wins.length / totalProposals) * 100 : 0;
   const lossRate = totalProposals ? (losses.length / totalProposals) * 100 : 0;
+  const pipelineOpenCount = openPipe.length;
+  const pipelineOpenValue = openPipe.reduce((s, p) => s + p.total, 0);
+  const closeDays = wins.map((p) => p.daysToClose).filter((d) => d != null && !Number.isNaN(d));
+  const avgDaysToClose = closeDays.length ? round2(closeDays.reduce((a, b) => a + b, 0) / closeDays.length) : null;
 
   const statusMap = new Map();
   mapped.forEach((p) => {
@@ -70,6 +119,46 @@ function computeNodeAnalysis(payload) {
     ...item,
     total: round2(item.total),
   }));
+
+  const rawAgg = new Map();
+  mapped.forEach((p) => {
+    const cur = rawAgg.get(p.statusRaw) || { count: 0, sum: 0 };
+    cur.count += 1;
+    cur.sum += p.total;
+    rawAgg.set(p.statusRaw, cur);
+  });
+  const funnelStages = [];
+  FUNNEL_ORDER.forEach((key) => {
+    if (!rawAgg.has(key)) return;
+    const r = rawAgg.get(key);
+    funnelStages.push({
+      stage: key,
+      label: STATUS_LABELS[key] || key,
+      count: r.count,
+      avgValue: r.count ? round2(r.sum / r.count) : 0,
+    });
+  });
+
+  const counts = {};
+  FUNNEL_ORDER.forEach((k) => {
+    counts[k] = 0;
+  });
+  mapped.forEach((p) => {
+    counts[p.statusRaw] = (counts[p.statusRaw] || 0) + 1;
+  });
+  const funnelTransitions = [];
+  for (let i = 0; i < FUNNEL_ORDER.length - 1; i += 1) {
+    const st = FUNNEL_ORDER[i];
+    const next = FUNNEL_ORDER[i + 1];
+    const nHere = counts[st] || 0;
+    const nNext = counts[next] || 0;
+    const denom = nHere + nNext || 1;
+    funnelTransitions.push({
+      fromStage: st,
+      toStage: next,
+      transitionRate: round2((nNext / denom) * 100),
+    });
+  }
 
   const monthlyMap = new Map();
   mapped.forEach((p) => {
@@ -96,12 +185,21 @@ function computeNodeAnalysis(payload) {
     current.revenue += p.total;
     sellersMap.set(p.seller, current);
   });
-  const topSellers = Array.from(sellersMap.values())
-    .map((item) => ({
-      ...item,
-      revenue: round2(item.revenue),
-      conversionRate: round2(item.proposals ? (item.won / item.proposals) * 100 : 0),
-    }))
+  const sellerList = Array.from(sellersMap.values());
+  const maxSellerRev = sellerList.reduce((m, s) => Math.max(m, s.revenue), 0) || 1;
+  const topSellers = sellerList
+    .map((item) => {
+      const conv = item.proposals ? (item.won / item.proposals) * 100 : 0;
+      const avgTk = item.won ? item.revenue / item.won : 0;
+      const eff = conv * 0.4 + (item.revenue / maxSellerRev) * 100 * 0.6;
+      return {
+        ...item,
+        revenue: round2(item.revenue),
+        conversionRate: round2(conv),
+        avgTicket: round2(avgTk),
+        efficiencyScore: round2(eff),
+      };
+    })
     .sort((a, b) => b.revenue - a.revenue || b.won - a.won)
     .slice(0, 8);
 
@@ -123,11 +221,60 @@ function computeNodeAnalysis(payload) {
     .sort((a, b) => b.revenue - a.revenue || b.won - a.won)
     .slice(0, 8);
 
+  const clientMap = new Map();
+  mapped.forEach((p) => {
+    const cur = clientMap.get(p.clientKey) || { clientName: p.clientDisplay, proposals: 0, won: 0, revenue: 0 };
+    cur.proposals += 1;
+    if (p.statusRaw === 'venda_fechada') {
+      cur.won += 1;
+      cur.revenue += p.total;
+    }
+    clientMap.set(p.clientKey, cur);
+  });
+  const topClients = Array.from(clientMap.values())
+    .map((c) => ({
+      ...c,
+      revenue: round2(c.revenue),
+      avgTicket: c.won ? round2(c.revenue / c.won) : 0,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
+  let bottleneckMsg = null;
+  if (funnelStages.length) {
+    const mx = funnelStages.reduce((best, s) => (s.count > best.count ? s : best), funnelStages[0]);
+    const pct = totalProposals ? round2((mx.count / totalProposals) * 100) : 0;
+    bottleneckMsg = `Maior volume no estágio '${mx.label}' (${mx.count} propostas, ~${pct}% do total).`;
+  }
+
   const insights = [];
   if (winRate >= 35) insights.push(`Taxa de ganho em bom nivel (${winRate.toFixed(1)}%).`);
   else insights.push(`Taxa de ganho em alerta (${winRate.toFixed(1)}%). Revisar follow-up e abordagem comercial.`);
+  if (avgDaysToClose != null) insights.push(`Tempo médio até fechamento (ganhas): ${avgDaysToClose} dias.`);
+  if (bottleneckMsg) insights.push(bottleneckMsg);
   if (avgTicket > 0) insights.push(`Ticket medio das vendas fechadas: R$ ${avgTicket.toLocaleString('pt-BR')}.`);
   if (topSellers[0]) insights.push(`Lider atual: ${topSellers[0].seller} com ${topSellers[0].won} vendas fechadas.`);
+
+  const revSeries = monthlyTrend.map((m) => m.revenue);
+  let trendMsg = 'Histórico insuficiente para tendência.';
+  if (revSeries.length >= 6) {
+    const recent = (revSeries[revSeries.length - 1] + revSeries[revSeries.length - 2] + revSeries[revSeries.length - 3]) / 3;
+    const prev = (revSeries[revSeries.length - 4] + revSeries[revSeries.length - 5] + revSeries[revSeries.length - 6]) / 3;
+    if (prev > 0) {
+      const delta = ((recent - prev) / prev) * 100;
+      if (delta > 5) trendMsg = `Tendência de crescimento na receita recente (~${delta.toFixed(1)}% vs trimestre anterior).`;
+      else if (delta < -5) trendMsg = `Tendência de queda na receita recente (~${delta.toFixed(1)}% vs trimestre anterior).`;
+      else trendMsg = `Receita estável no comparativo de trimestres (~${delta.toFixed(1)}%).`;
+    }
+  }
+  insights.push(trendMsg);
+
+  const forecast = forecastRevenueLinear(monthlyTrend);
+  if (forecast.ok) {
+    insights.push(
+      `Previsão baseline de receita no próximo mês: R$ ${forecast.nextMonthRevenue.toLocaleString('pt-BR')} (${forecast.method}).`
+    );
+  }
 
   return {
     summary: {
@@ -139,14 +286,33 @@ function computeNodeAnalysis(payload) {
       clientesAtivos: Number(counters.clients || 0),
       distribuidoresAtivos: Number(counters.distributors || 0),
       vendedoresAtivos: Number(counters.sellers || 0),
+      pipelineOpenCount,
+      pipelineOpenValue: round2(pipelineOpenValue),
+      avgDaysToClose,
     },
     statusBreakdown,
     monthlyTrend,
     topSellers,
     topDistributors,
+    funnelStages,
+    funnelTransitions,
+    topClients,
+    clientSegments: [],
+    predictive: {
+      winModel: {
+        ok: false,
+        message: 'Modelos RandomForest / regressão logística disponíveis no motor Python.',
+        rocAucLr: null,
+        rocAucRf: null,
+        importances: null,
+      },
+      forecast,
+      pipelineScores: [],
+    },
     insights,
     palette: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
     engine: 'node-fallback',
+    analysisVersion: 2,
   };
 }
 

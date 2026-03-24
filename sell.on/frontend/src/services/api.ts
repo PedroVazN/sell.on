@@ -659,6 +659,7 @@ export interface ApiResponse<T> {
 export interface DataScienceAnalysis {
   generatedAt: string;
   engine?: 'python' | 'node-fallback' | string;
+  analysisVersion?: number;
   summary: {
     totalProposals: number;
     totalRevenueClosed: number;
@@ -668,6 +669,9 @@ export interface DataScienceAnalysis {
     clientesAtivos: number;
     distribuidoresAtivos: number;
     vendedoresAtivos: number;
+    pipelineOpenCount?: number;
+    pipelineOpenValue?: number;
+    avgDaysToClose?: number | null;
   };
   statusBreakdown: Array<{
     status: string;
@@ -688,6 +692,8 @@ export interface DataScienceAnalysis {
     lost: number;
     revenue: number;
     conversionRate: number;
+    avgTicket?: number;
+    efficiencyScore?: number;
   }>;
   topDistributors: Array<{
     distributor: string;
@@ -695,6 +701,50 @@ export interface DataScienceAnalysis {
     won: number;
     revenue: number;
   }>;
+  funnelStages?: Array<{
+    stage: string;
+    label: string;
+    count: number;
+    avgValue: number;
+  }>;
+  funnelTransitions?: Array<{
+    fromStage: string;
+    toStage: string;
+    transitionRate: number;
+  }>;
+  topClients?: Array<{
+    clientName: string;
+    proposals: number;
+    won: number;
+    revenue: number;
+    avgTicket: number;
+  }>;
+  clientSegments?: Array<{
+    segment: string;
+    clients: number;
+    totalRevenue: number;
+  }>;
+  predictive?: {
+    winModel: {
+      ok: boolean;
+      message: string;
+      rocAucLr?: number | null;
+      rocAucRf?: number | null;
+      importances?: Record<string, number> | null;
+    };
+    forecast: {
+      ok: boolean;
+      message?: string;
+      nextMonthRevenue?: number | null;
+      method?: string | null;
+      slope?: number | null;
+    };
+    pipelineScores: Array<{
+      label: string;
+      value: number;
+      probPct: number;
+    }>;
+  };
   insights: string[];
   palette: string[];
 }
