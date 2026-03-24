@@ -45,6 +45,7 @@ def main() -> None:
 
     try:
         from analytics.api_payload import build_analysis_payload
+        from analytics.json_utils import sanitize_for_json
     except ImportError as exc:
         print(
             json.dumps(
@@ -62,7 +63,7 @@ def main() -> None:
     counters = payload.get("counters", {})
     result = build_analysis_payload(proposals, counters)
     result["engine"] = "python"
-    print(json.dumps(result, ensure_ascii=False))
+    print(json.dumps(sanitize_for_json(result), ensure_ascii=False))
 
 
 if __name__ == "__main__":

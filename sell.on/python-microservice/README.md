@@ -31,10 +31,17 @@ Opcional (desenvolvimento / VPS com repo completo): `PYTHON_ANALYSIS_LOCAL_FALLB
 
 Teste: `https://SEU-SERVICO.onrender.com/health` deve retornar JSON com `"ok": true`.
 
+### HTTP 500 em `POST /analyze`
+
+- Veja **Logs** do serviço no Render: o traceback completo vai para stderr.
+- Causas comuns: payload muito grande (muitas propostas), memória do plano free, ou dependência faltando após redeploy.
+- O corpo da resposta 500 inclui `message` com o erro resumido (o frontend da Vercel pode exibir isso).
+
 ## Deploy no Render (grátis)
 
 - Build Command: `pip install -r requirements.txt`
-- Start Command: `gunicorn app:app`
+- Start Command: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120`  
+  (`--workers 1` ajuda no plano free; `--timeout 120` evita cortar cold start + payload grande)
 
 ## Exemplo de payload para `/analyze`
 

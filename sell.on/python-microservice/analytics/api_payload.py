@@ -207,7 +207,10 @@ def build_analysis_payload(proposals: list, counters: dict | None = None) -> dic
         "proximo_mes_estimado": forecast.get("proximo_mes_estimado") or 0,
         "metodo": forecast.get("metodo") or "",
     }
-    insights = generate_insights(df, ov, sp, fb, clients_seg, trend_msg, fc_insight)
+    try:
+        insights = generate_insights(df, ov, sp, fb, clients_seg, trend_msg, fc_insight)
+    except Exception as exc:
+        insights = [f"Insights automáticos indisponíveis nesta execução: {exc!s}"[:240]]
 
     return {
         "summary": {

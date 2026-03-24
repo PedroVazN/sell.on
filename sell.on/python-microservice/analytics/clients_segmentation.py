@@ -37,13 +37,19 @@ def cluster_clients(client_df: pd.DataFrame, n_clusters: int = 4) -> tuple[pd.Da
     if client_df.empty or len(client_df) < max(2, min(n_clusters, 3)):
         return client_df.assign(segmento=pd.NA), "Dados insuficientes para clusterização (mínimo de clientes)."
 
-    work = client_df.copy()
-    today = pd.Timestamp.utcnow().tz_localize(None)
-    work["ultima_proposta"] = pd.to_datetime(work["ultima_proposta"])
-    work["recency_days"] = (today - work["ultima_proposta"]).dt.days.fillna(999)
-    feats = work[["receita", "n_propostas", "recency_days"]].values.astype(float)
-    feats = StandardScaler().fit_transform(feats)
-    k = min(max(2, n_clusters), len(work))
-    km = KMeans(n_clusters=k, random_state=42, n_init=10)
-    work["segmento"] = km.fit_predict(feats).astype(str)
-    return work, None
+    try:
+        work = client_df.copy()
+        ref = pd.Timestamp.now(tz="UTC")
+        u = pd.to_datetime(work["ultima_proposta"], errors="coerce", utc=True)
+        td = ref - u
+        work["recency_days"] = (td.dt.total_seconds() / 86400.0).fillna(999).clip(lower=0, upper=9999).astype(float)
+
+        feats = work[["receita", "n_propostas", "recency_days"]].astype(float)
+        feats = feats.replace([np.inf, -np.inf], np.nan).fillna(0.0)
+        feats_arr = StandardScaler().fit_transform(feats.values)
+        k = min(max(2, n_clusters), len(work))
+        km = KMeans(n_clusters=k, random_state=42, n_init=10)
+        work["segmento"] = km.fit_predict(feats_arr).astype(str)
+        return work, None
+    except Exception:
+        return client_df.assign(segmento=pd.NA), "Clusterização ignorada (dados de data/recência inconsistentes)."
