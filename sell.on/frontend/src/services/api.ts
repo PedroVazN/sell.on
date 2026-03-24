@@ -747,6 +747,48 @@ export interface DataScienceAnalysis {
       probPct: number;
     }>;
   };
+  /** Métricas extras (preenchidas pelo motor Python). No Node ficam vazias. */
+  extendedAnalysis?: {
+    lossReasons: Array<{ reason: string; count: number; value: number }>;
+    paymentMix: Array<{ condition: string; count: number; revenue: number }>;
+    weekdayCreated: Array<{ weekday: number; label: string; count: number; revenue: number }>;
+    weeklyTrend: Array<{ week: string; proposals: number; won: number; lost: number; revenue: number }>;
+    ticketBuckets: Array<{ bucket: string; count: number; value: number }>;
+    openAging: {
+      buckets: Array<{ label: string; count: number; value: number }>;
+      avgAgeDays: number | null;
+      staleOver90Count: number;
+      staleOver90Value: number;
+    };
+    distributorStats: Array<{
+      distributor: string;
+      proposals: number;
+      won: number;
+      lost: number;
+      revenue: number;
+      conversionRate: number;
+      avgTicket: number;
+    }>;
+    repeatClients: {
+      clientsWithMultipleProposals: number;
+      clientsSingleProposal: number;
+      repeatRevenueSharePct: number;
+      avgProposalsPerClient: number;
+    };
+    itemsIntensity: {
+      avgItemsOpen: number;
+      avgItemsWon: number;
+      avgItemsLost: number;
+      maxItems: number;
+    };
+    discountProfile: {
+      avgDiscountWon: number;
+      avgDiscountOpen: number;
+      avgDiscountLost: number;
+      pctProposalsWithDiscount: number;
+    };
+    featureImportance: Array<{ feature: string; importance: number }>;
+  };
   insights: string[];
   palette: string[];
 }

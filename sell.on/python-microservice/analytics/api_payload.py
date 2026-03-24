@@ -3,6 +3,19 @@
 from __future__ import annotations
 
 from analytics.clients_segmentation import client_aggregates, cluster_clients
+from analytics.extended_metrics import (
+    discount_profile,
+    distributor_deep_stats,
+    items_intensity,
+    loss_reason_breakdown,
+    model_feature_importance_chart,
+    open_pipeline_aging,
+    payment_condition_mix,
+    repeat_client_summary,
+    ticket_size_buckets,
+    weekday_created_distribution,
+    weekly_trend,
+)
 from analytics.insights_engine import generate_insights
 from analytics.overview import compute_overview
 from analytics.predictive import forecast_revenue_naive, score_open_proposals, train_win_models
@@ -46,6 +59,39 @@ def empty_analysis_payload(counters: dict | None) -> dict:
         "insights": ["Sem dados suficientes para análise."],
         "palette": PALETTE,
         "analysisVersion": 2,
+        "extendedAnalysis": {
+            "lossReasons": [],
+            "paymentMix": [],
+            "weekdayCreated": [],
+            "weeklyTrend": [],
+            "ticketBuckets": [],
+            "openAging": {
+                "buckets": [],
+                "avgAgeDays": None,
+                "staleOver90Count": 0,
+                "staleOver90Value": 0.0,
+            },
+            "distributorStats": [],
+            "repeatClients": {
+                "clientsWithMultipleProposals": 0,
+                "clientsSingleProposal": 0,
+                "repeatRevenueSharePct": 0.0,
+                "avgProposalsPerClient": 0.0,
+            },
+            "itemsIntensity": {
+                "avgItemsOpen": 0.0,
+                "avgItemsWon": 0.0,
+                "avgItemsLost": 0.0,
+                "maxItems": 0,
+            },
+            "discountProfile": {
+                "avgDiscountWon": 0.0,
+                "avgDiscountOpen": 0.0,
+                "avgDiscountLost": 0.0,
+                "pctProposalsWithDiscount": 0.0,
+            },
+            "featureImportance": [],
+        },
     }
 
 
@@ -212,6 +258,42 @@ def build_analysis_payload(proposals: list, counters: dict | None = None) -> dic
     except Exception as exc:
         insights = [f"Insights automáticos indisponíveis nesta execução: {exc!s}"[:240]]
 
+    open_age = open_pipeline_aging(df)
+    feat_imp = model_feature_importance_chart(win_full.get("importances"), 12)
+
+    extended_analysis = {
+        "lossReasons": loss_reason_breakdown(df),
+        "paymentMix": payment_condition_mix(df),
+        "weekdayCreated": weekday_created_distribution(df),
+        "weeklyTrend": weekly_trend(df),
+        "ticketBuckets": ticket_size_buckets(df),
+        "openAging": open_age,
+        "distributorStats": distributor_deep_stats(df),
+        "repeatClients": repeat_client_summary(df),
+        "itemsIntensity": items_intensity(df),
+        "discountProfile": discount_profile(df),
+        "featureImportance": feat_imp,
+    }
+
+    extra_insights = []
+    if open_age.get("staleOver90Count", 0) > 0:
+        extra_insights.append(
+            f"Pipeline envelhecido: {open_age['staleOver90Count']} propostas abertas há mais de 90 dias "
+            f"(~R$ {open_age['staleOver90Value']:.0f} em valor de tabela)."
+        )
+    rc = extended_analysis["repeatClients"]
+    if rc["clientsWithMultipleProposals"] > 0 and rc["repeatRevenueSharePct"] >= 30:
+        extra_insights.append(
+            f"{rc['clientsWithMultipleProposals']} clientes com 2+ propostas; "
+            f"~{rc['repeatRevenueSharePct']:.0f}% da receita fechada concentra-se nesse grupo recorrente."
+        )
+    lr_list = extended_analysis["lossReasons"]
+    if lr_list and lr_list[0]["count"] >= 2:
+        r0 = str(lr_list[0]["reason"])[:70]
+        extra_insights.append(f"Motivo de perda mais frequente: «{r0}» ({lr_list[0]['count']} registros).")
+
+    insights_out = list(insights) + extra_insights
+
     return {
         "summary": {
             "totalProposals": n,
@@ -239,7 +321,8 @@ def build_analysis_payload(proposals: list, counters: dict | None = None) -> dic
             "forecast": forecast_out,
             "pipelineScores": pipeline_scores,
         },
-        "insights": insights,
+        "insights": insights_out,
         "palette": PALETTE,
         "analysisVersion": 2,
+        "extendedAnalysis": extended_analysis,
     }

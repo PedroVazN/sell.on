@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BarChart3, Loader2, RefreshCcw } from 'lucide-react';
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
   Line,
   LineChart,
@@ -47,6 +49,48 @@ import {
   Subtitle,
   Title,
 } from './styles';
+
+const EMPTY_EXTENDED = {
+  lossReasons: [] as { reason: string; count: number; value: number }[],
+  paymentMix: [] as { condition: string; count: number; revenue: number }[],
+  weekdayCreated: [] as { weekday: number; label: string; count: number; revenue: number }[],
+  weeklyTrend: [] as { week: string; proposals: number; won: number; lost: number; revenue: number }[],
+  ticketBuckets: [] as { bucket: string; count: number; value: number }[],
+  openAging: {
+    buckets: [] as { label: string; count: number; value: number }[],
+    avgAgeDays: null as number | null,
+    staleOver90Count: 0,
+    staleOver90Value: 0,
+  },
+  distributorStats: [] as {
+    distributor: string;
+    proposals: number;
+    won: number;
+    lost: number;
+    revenue: number;
+    conversionRate: number;
+    avgTicket: number;
+  }[],
+  repeatClients: {
+    clientsWithMultipleProposals: 0,
+    clientsSingleProposal: 0,
+    repeatRevenueSharePct: 0,
+    avgProposalsPerClient: 0,
+  },
+  itemsIntensity: {
+    avgItemsOpen: 0,
+    avgItemsWon: 0,
+    avgItemsLost: 0,
+    maxItems: 0,
+  },
+  discountProfile: {
+    avgDiscountWon: 0,
+    avgDiscountOpen: 0,
+    avgDiscountLost: 0,
+    pctProposalsWithDiscount: 0,
+  },
+  featureImportance: [] as { feature: string; importance: number }[],
+};
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
@@ -223,6 +267,50 @@ export const Analysis: React.FC = () => {
     return insights;
   }, [monthlySmart, pipelineSmart, concentrationSmart]);
 
+  const extended = useMemo(() => {
+    const e = data?.extendedAnalysis;
+    return {
+      ...EMPTY_EXTENDED,
+      ...(e || {}),
+      openAging: { ...EMPTY_EXTENDED.openAging, ...(e?.openAging || {}) },
+      repeatClients: { ...EMPTY_EXTENDED.repeatClients, ...(e?.repeatClients || {}) },
+      itemsIntensity: { ...EMPTY_EXTENDED.itemsIntensity, ...(e?.itemsIntensity || {}) },
+      discountProfile: { ...EMPTY_EXTENDED.discountProfile, ...(e?.discountProfile || {}) },
+    };
+  }, [data]);
+
+  const hasExtendedCharts = useMemo(
+    () =>
+      extended.lossReasons.length > 0 ||
+      extended.paymentMix.length > 0 ||
+      extended.weekdayCreated.some((d) => d.count > 0) ||
+      extended.weeklyTrend.length > 0 ||
+      extended.ticketBuckets.length > 0 ||
+      extended.openAging.buckets.some((b) => b.count > 0) ||
+      extended.distributorStats.length > 0 ||
+      extended.featureImportance.length > 0,
+    [extended],
+  );
+
+  const lossReasonChart = useMemo(
+    () =>
+      extended.lossReasons.map((r) => ({
+        name: r.reason.length > 34 ? `${r.reason.slice(0, 32)}…` : r.reason,
+        count: r.count,
+        valor: r.value,
+      })),
+    [extended.lossReasons],
+  );
+
+  const weeklyShort = useMemo(
+    () =>
+      extended.weeklyTrend.map((w, i) => ({
+        ...w,
+        weekShort: w.week.length > 13 ? `S${i + 1}` : w.week,
+      })),
+    [extended.weeklyTrend],
+  );
+
   const transitionChart = useMemo(
     () =>
       (data?.funnelTransitions || []).map((t) => ({
@@ -335,8 +423,9 @@ export const Analysis: React.FC = () => {
         <div>
           <Title>Análise Data Science</Title>
           <Subtitle>
-            Visão expandida: funil por estágio, transições, top clientes, clusters (K-Means no Python), previsão de receita e
-            probabilidade de ganho no pipeline aberto. Com motor Node alguns blocos são resumidos.
+            Funil, transições, clientes e clusters (K-Means), previsão e scoring de pipeline. Com Python no Render: também motivos
+            de perda, mix de pagamento, aging de abertas, ticket por faixa, tendência semanal, recorrência de clientes e importância
+            das variáveis no modelo de ganho. Motor Node preenche só o núcleo.
           </Subtitle>
           <Meta>
             Atualizado em {new Date(data.generatedAt).toLocaleString('pt-BR')}
@@ -441,12 +530,48 @@ export const Analysis: React.FC = () => {
             </CardValue>
           </Card>
         )}
+        <Card>
+          <CardLabel>Clientes com 2+ propostas</CardLabel>
+          <CardValue>{extended.repeatClients.clientsWithMultipleProposals}</CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Receita de clientes recorrentes</CardLabel>
+          <CardValue>{formatPercent(extended.repeatClients.repeatRevenueSharePct)} do total</CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Média de propostas / cliente</CardLabel>
+          <CardValue>{extended.repeatClients.avgProposalsPerClient.toFixed(2)}</CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Itens médios (ganha · aberta · perda)</CardLabel>
+          <CardValue style={{ fontSize: '1rem' }}>
+            {extended.itemsIntensity.avgItemsWon.toFixed(1)} · {extended.itemsIntensity.avgItemsOpen.toFixed(1)} ·{' '}
+            {extended.itemsIntensity.avgItemsLost.toFixed(1)}
+          </CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Propostas com desconto</CardLabel>
+          <CardValue>{formatPercent(extended.discountProfile.pctProposalsWithDiscount)}</CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Abertas há 90+ dias</CardLabel>
+          <CardValue>
+            {extended.openAging.staleOver90Count} ·{' '}
+            {formatCurrency(extended.openAging.staleOver90Value)}
+          </CardValue>
+        </Card>
+        <Card>
+          <CardLabel>Idade média (pipeline aberto)</CardLabel>
+          <CardValue>
+            {extended.openAging.avgAgeDays != null ? `${extended.openAging.avgAgeDays.toFixed(0)} dias` : '—'}
+          </CardValue>
+        </Card>
       </CardGrid>
 
       <SectionGrid>
         {!chartsReady ? (
           <>
-            {Array.from({ length: 11 }, (_, k) => k).map((k) => (
+            {Array.from({ length: 19 }, (_, k) => k).map((k) => (
               <ChartSkeletonCard key={k}>
                 <ChartSkeletonBar $w="55%" />
                 <ChartSkeletonBlock />
@@ -667,6 +792,221 @@ export const Analysis: React.FC = () => {
                     />
                     <Legend />
                     <Bar dataKey="probPct" name="probPct" fill="#a855f7" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard style={{ gridColumn: '1 / -1', minHeight: 'auto', padding: '14px 18px' }}>
+              <ChartTitle>Análise expandida (dados ricos do Python)</ChartTitle>
+              <InsightText style={{ margin: 0 }}>
+                {hasExtendedCharts
+                  ? 'Motivos de perda, pagamento, calendário comercial, aging, faixas de valor e sinais do modelo ML.'
+                  : isPythonEngine(data.engine)
+                    ? 'Ainda poucos dados para estes gráficos (ex.: sem perdas registradas ou sem variação de pagamento).'
+                    : 'Ligue PYTHON_ANALYSIS_URL ao Render para ver esta camada; no motor Node estes blocos ficam vazios.'}
+              </InsightText>
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Motivos declarados de perda</ChartTitle>
+              {lossReasonChart.length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>Sem propostas perdidas ou campo de motivo vazio.</InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart layout="vertical" data={lossReasonChart} margin={{ left: 8, right: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="name" width={118} tick={{ fontSize: 10 }} />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'valor' ? [formatCurrency(Number(value)), 'Valor'] : [value, 'Qtd']
+                      }
+                    />
+                    <Legend />
+                    <Bar dataKey="count" name="qtd" fill="#ef4444" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Condições de pagamento (volume)</ChartTitle>
+              {(extended.paymentMix || []).length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>Sem variação de condição de pagamento nas propostas.</InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart data={extended.paymentMix.map((p) => ({ ...p, name: p.condition.length > 28 ? `${p.condition.slice(0, 26)}…` : p.condition }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" interval={0} angle={-24} textAnchor="end" height={72} tick={{ fontSize: 9 }} />
+                    <YAxis />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'revenue' ? [formatCurrency(Number(value)), 'Soma valor'] : [value, 'Propostas']
+                      }
+                    />
+                    <Legend />
+                    <Bar dataKey="count" name="count" fill="#0ea5e9" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Dia da semana de criação</ChartTitle>
+              {!extended.weekdayCreated.some((d) => d.count > 0) ? (
+                <InsightText style={{ marginTop: 80 }}>Datas de criação ausentes ou inválidas.</InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart data={extended.weekdayCreated}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="label" />
+                    <YAxis />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'revenue' ? [formatCurrency(Number(value)), 'Receita'] : [value, 'Propostas']
+                      }
+                    />
+                    <Legend />
+                    <Bar dataKey="count" name="count" fill="#8b5cf6" />
+                    <Bar dataKey="revenue" name="revenue" fill="#22c55e" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Tendência semanal (propostas × receita)</ChartTitle>
+              {weeklyShort.length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>Histórico semanal insuficiente.</InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <ComposedChart data={weeklyShort}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="weekShort" tick={{ fontSize: 10 }} />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'revenue' ? [formatCurrency(Number(value)), 'Receita'] : [value, name]
+                      }
+                    />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="proposals" name="Propostas" fill="#6366f1" />
+                    <Area
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="revenue"
+                      name="Receita"
+                      fill="rgba(245, 158, 11, 0.35)"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Distribuição por faixa de valor</ChartTitle>
+              {(extended.ticketBuckets || []).length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>Sem dados de valor.</InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart data={extended.ticketBuckets}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="bucket" tick={{ fontSize: 10 }} />
+                    <YAxis />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'value' ? [formatCurrency(Number(value)), 'Valor'] : [value, 'Qtd']
+                      }
+                    />
+                    <Legend />
+                    <Bar dataKey="count" name="count" fill="#14b8a6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Pipeline aberto — idade desde a criação</ChartTitle>
+              {!extended.openAging.buckets.some((b) => b.count > 0) ? (
+                <InsightText style={{ marginTop: 80 }}>
+                  {isPythonEngine(data.engine)
+                    ? 'Nenhuma proposta em negociação ou aguardando pagamento.'
+                    : 'Aging do pipeline só é calculado com o motor Python (Render).'}
+                </InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart data={extended.openAging.buckets}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="label" />
+                    <YAxis />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'value' ? [formatCurrency(Number(value)), 'Valor'] : [value, 'Qtd']
+                      }
+                    />
+                    <Legend />
+                    <Bar dataKey="count" name="count" fill="#f97316" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Distribuidores — taxa de conversão</ChartTitle>
+              {(extended.distributorStats || []).length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>Sem distribuidores nas propostas.</InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart
+                    data={extended.distributorStats.map((d) => ({
+                      ...d,
+                      name: d.distributor.length > 22 ? `${d.distributor.slice(0, 20)}…` : d.distributor,
+                    }))}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" interval={0} angle={-22} textAnchor="end" height={70} tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip {...tooltipStyle} formatter={(value: number) => [`${Number(value).toFixed(1)}%`, 'Conversão']} />
+                    <Legend />
+                    <Bar dataKey="conversionRate" name="conversionRate" fill="#a855f7" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Variáveis mais usadas pelo modelo (Random Forest)</ChartTitle>
+              {!isPythonEngine(data.engine) || (extended.featureImportance || []).length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>
+                  {isPythonEngine(data.engine)
+                    ? 'Treine com volume suficiente de ganhos/perdas para ver importância das features.'
+                    : 'Disponível com motor Python.'}
+                </InsightText>
+              ) : (
+                <ResponsiveContainer width="100%" height={290}>
+                  <BarChart
+                    layout="vertical"
+                    data={[...(extended.featureImportance || [])].reverse().map((f) => ({
+                      ...f,
+                      name: f.feature,
+                    }))}
+                    margin={{ left: 8, right: 12 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 10 }} />
+                    <Tooltip {...tooltipStyle} />
+                    <Bar dataKey="importance" name="Importância" fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
               )}

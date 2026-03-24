@@ -301,6 +301,40 @@ function computeNodeAnalysis(payload) {
     );
   }
 
+  const extendedAnalysisEmpty = {
+    lossReasons: [],
+    paymentMix: [],
+    weekdayCreated: [],
+    weeklyTrend: [],
+    ticketBuckets: [],
+    openAging: {
+      buckets: [],
+      avgAgeDays: null,
+      staleOver90Count: 0,
+      staleOver90Value: 0,
+    },
+    distributorStats: [],
+    repeatClients: {
+      clientsWithMultipleProposals: 0,
+      clientsSingleProposal: 0,
+      repeatRevenueSharePct: 0,
+      avgProposalsPerClient: 0,
+    },
+    itemsIntensity: {
+      avgItemsOpen: 0,
+      avgItemsWon: 0,
+      avgItemsLost: 0,
+      maxItems: 0,
+    },
+    discountProfile: {
+      avgDiscountWon: 0,
+      avgDiscountOpen: 0,
+      avgDiscountLost: 0,
+      pctProposalsWithDiscount: 0,
+    },
+    featureImportance: [],
+  };
+
   return {
     summary: {
       totalProposals,
@@ -338,6 +372,7 @@ function computeNodeAnalysis(payload) {
     palette: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
     engine: 'node-fallback',
     analysisVersion: 2,
+    extendedAnalysis: extendedAnalysisEmpty,
   };
 }
 
