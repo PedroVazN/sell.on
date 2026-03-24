@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const { spawn } = require('child_process');
 const Proposal = require('../models/Proposal');
 const Client = require('../models/Client');
 const Distributor = require('../models/Distributor');
@@ -340,6 +342,66 @@ function computeNodeAnalysis(payload) {
 }
 
 /**
+ * Python local (spawn): usa backend/python/analysis_engine.py + pasta python-microservice.
+ * Ordem no buildAnalysis: Render → este script → Node.
+ */
+function runPythonAnalysis(payload) {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.join(__dirname, '..', 'python', 'analysis_engine.py');
+    const pythonCommands = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
+
+    const tryCommand = (index) => {
+      if (index >= pythonCommands.length) {
+        reject(new Error('Python 3 não encontrado no servidor (instale Python + pandas + scikit-learn).'));
+        return;
+      }
+
+      const py = spawn(pythonCommands[index], [scriptPath], {
+        cwd: path.join(__dirname, '..'),
+        env: { ...process.env },
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      py.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      py.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      py.on('error', () => {
+        tryCommand(index + 1);
+      });
+
+      py.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error(stderr || stdout || 'Falha ao executar analysis_engine.py'));
+          return;
+        }
+        try {
+          const parsed = JSON.parse(stdout || '{}');
+          if (parsed && parsed.error) {
+            reject(new Error(parsed.details || parsed.error));
+            return;
+          }
+          resolve(parsed);
+        } catch (err) {
+          reject(new Error(`Resposta inválida do Python local: ${err.message}`));
+        }
+      });
+
+      py.stdin.write(JSON.stringify(payload));
+      py.stdin.end();
+    };
+
+    tryCommand(0);
+  });
+}
+
+/**
  * Aceita na Vercel tanto a URL base (https://xxx.onrender.com) quanto a completa (.../analyze).
  */
 function resolvePythonAnalysisUrl(raw) {
@@ -436,29 +498,36 @@ async function buildAnalysis(forceRecalculate = false) {
   }
 
   const raw = await collectRawData();
-  let analysisResult;
+  let analysisResult = null;
   const remotePythonUrl = resolvePythonAnalysisUrl(process.env.PYTHON_ANALYSIS_URL);
 
-  try {
-    if (remotePythonUrl) {
-      analysisResult = await runRemotePythonAnalysis(raw);
-      analysisResult.engine = 'python';
-      if (!analysisPayloadIsComplete(analysisResult)) {
-        console.warn(
-          '[analysis] Resposta do microserviço sem schema v2 (deploy antigo ou erro parcial). Usando agregação Node.'
-        );
-        analysisResult = computeNodeAnalysis(raw);
-        analysisResult.engine = 'node-fallback';
+  if (remotePythonUrl) {
+    try {
+      const remote = await runRemotePythonAnalysis(raw);
+      if (analysisPayloadIsComplete(remote)) {
+        analysisResult = { ...remote, engine: 'python-remote' };
+      } else {
+        console.warn('[analysis] Resposta do Render incompleta (schema v2). Tentando Python local…');
       }
-    } else {
-      analysisResult = computeNodeAnalysis(raw);
-      analysisResult.engine = 'node-fallback';
+    } catch (err) {
+      console.warn('[analysis] Python remoto (Render):', err.message);
     }
-  } catch (remotePythonError) {
-    console.warn(
-      '[analysis] Python remoto indisponível (timeout/cold start). Usando Node v2 — sem treino ML:',
-      remotePythonError.message
-    );
+  }
+
+  if (!analysisResult) {
+    try {
+      const local = await runPythonAnalysis(raw);
+      if (analysisPayloadIsComplete(local)) {
+        analysisResult = { ...local, engine: 'python-local' };
+      } else {
+        console.warn('[analysis] Python local retornou payload incompleto. Usando Node…');
+      }
+    } catch (err) {
+      console.warn('[analysis] Python local (stdin):', err.message);
+    }
+  }
+
+  if (!analysisResult) {
     analysisResult = computeNodeAnalysis(raw);
     analysisResult.engine = 'node-fallback';
   }

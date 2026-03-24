@@ -93,6 +93,10 @@ function shortStage(key: string) {
   return STAGE_SHORT[key] || key;
 }
 
+function isPythonEngine(engine?: string) {
+  return engine === 'python' || engine === 'python-remote' || engine === 'python-local';
+}
+
 export const Analysis: React.FC = () => {
   const [data, setData] = useState<DataScienceAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -333,11 +337,15 @@ export const Analysis: React.FC = () => {
             Atualizado em {new Date(data.generatedAt).toLocaleString('pt-BR')}
             {cached ? ' (cache)' : ''}
           </Meta>
-          <EngineBadge $python={data.engine === 'python'}>
+          <EngineBadge $python={isPythonEngine(data.engine)}>
             Motor:{' '}
-            {data.engine === 'python'
-              ? 'Python no Render (ML + funil completo)'
-              : 'Node — agregação v2 (sem treino RF/LR; configure PYTHON_ANALYSIS_URL para IA)'}
+            {data.engine === 'python-remote'
+              ? 'Python no Render (HTTP + ML)'
+              : data.engine === 'python-local'
+                ? 'Python no servidor (spawn local + ML)'
+                : isPythonEngine(data.engine)
+                  ? 'Python'
+                  : 'Node — fallback (sem ML treinado; Render ou Python+python-microservice no servidor)'}
           </EngineBadge>
         </div>
         <Actions>
@@ -417,7 +425,7 @@ export const Analysis: React.FC = () => {
               : '—'}
           </CardValue>
         </Card>
-        {data.engine === 'python' && (
+        {isPythonEngine(data.engine) && (
           <Card>
             <CardLabel>Modelos (AUC teste)</CardLabel>
             <CardValue style={{ fontSize: '1.05rem' }}>
@@ -630,7 +638,7 @@ export const Analysis: React.FC = () => {
               <ChartTitle>Pipeline aberto — probabilidade estimada de ganho (Python)</ChartTitle>
               {(data.predictive?.pipelineScores || []).length === 0 ? (
                 <InsightText style={{ marginTop: 80 }}>
-                  {data.engine === 'python'
+                  {isPythonEngine(data.engine)
                     ? data.predictive?.winModel?.message ||
                       'Poucas propostas fechadas para treinar o modelo, ou nenhuma proposta aberta no pipeline.'
                     : 'Probabilidade por proposta requer o motor Python (RandomForest + regressão logística).'}
