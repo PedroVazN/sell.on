@@ -39,9 +39,24 @@ Teste: `https://SEU-SERVICO.onrender.com/health` deve retornar JSON com `"ok": t
 
 ## Deploy no Render (grátis)
 
+- **Root Directory** (no painel do serviço): `sell.on/python-microservice`
 - Build Command: `pip install -r requirements.txt`
-- Start Command: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120`  
-  (`--workers 1` ajuda no plano free; `--timeout 120` evita cortar cold start + payload grande)
+
+### Start Command e porta (evita “Port scan timeout”)
+
+O Render só considera o serviço **saudável** se algo escutar em **`0.0.0.0:$PORT`** (`$PORT` é variável injetada pelo Render).
+
+**Opção A — recomendada:** deixe o campo **Start Command vazio** no painel e use o **`Procfile`** desta pasta (`web: gunicorn ... --bind 0.0.0.0:$PORT ...`). Se você digitou manualmente só `gunicorn app:app`, isso **substitui** o Procfile e pode falhar no health check de porta.
+
+**Opção B:** no painel, Start Command **exatamente** (uma linha):
+
+```bash
+gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 120 --access-logfile - --error-logfile -
+```
+
+Não use apenas `gunicorn app:app` sem `--bind 0.0.0.0:$PORT`.
+
+- **Health Check Path** (opcional): `/health`
 
 ## Exemplo de payload para `/analyze`
 
