@@ -232,19 +232,20 @@ def build_pipeline_deep_scores(
     open_df["baseModelProbRf"] = np.nan
     if models.get("ok"):
         scored = score_open_proposals(df, models)
-        # Join por proposal_id (existe no output do preprocessing).
-        cols = [c for c in ["proposal_id", "prob_ganho", "prob_ganho_lr", "prob_ganho_rf"] if c in scored.columns]
-        if "proposal_id" in cols and "prob_ganho" in cols:
-            scored = scored[cols].copy()
-            open_df = open_df.merge(scored, on="proposal_id", how="left")
-            open_df.rename(
-                columns={
-                    "prob_ganho": "baseModelProb",
-                    "prob_ganho_lr": "baseModelProbLr",
-                    "prob_ganho_rf": "baseModelProbRf",
-                },
-                inplace=True,
-            )
+        # Evitar erro "cannot reindex on an axis with duplicate labels" quando há proposal_id duplicado.
+        # Em vez de merge, agregamos por proposal_id e fazemos map.
+        if "proposal_id" in scored.columns:
+            s = scored.copy()
+            s["proposal_id"] = s["proposal_id"].astype(str)
+            if "prob_ganho" in s.columns:
+                prob_map = s.groupby("proposal_id")["prob_ganho"].mean().to_dict()
+                open_df["baseModelProb"] = open_df["proposal_id"].astype(str).map(prob_map)
+            if "prob_ganho_lr" in s.columns:
+                prob_lr_map = s.groupby("proposal_id")["prob_ganho_lr"].mean().to_dict()
+                open_df["baseModelProbLr"] = open_df["proposal_id"].astype(str).map(prob_lr_map)
+            if "prob_ganho_rf" in s.columns:
+                prob_rf_map = s.groupby("proposal_id")["prob_ganho_rf"].mean().to_dict()
+                open_df["baseModelProbRf"] = open_df["proposal_id"].astype(str).map(prob_rf_map)
 
     # Maps de win-rate por categorias.
     client_win = _build_win_rate_map(closed_df, "client_key")
