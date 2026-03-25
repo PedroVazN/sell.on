@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useTheme } from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import { apiService, Goal } from '../../services/api';
@@ -183,6 +184,27 @@ const LoadingSkeleton: React.FC = () => (
 );
 
 export const Dashboard: React.FC = () => {
+  const theme = useTheme();
+  const rechartsTooltipStyle = useMemo(
+    () => ({
+      backgroundColor: theme.colors.background.surface,
+      border: `1px solid ${theme.colors.border.primary}`,
+      borderRadius: '8px',
+      color: theme.colors.text.primary,
+    }),
+    [theme],
+  );
+  const rechartsSelectStyle = useMemo(
+    () => ({
+      padding: '0.5rem',
+      borderRadius: '0.5rem',
+      border: `1px solid ${theme.colors.border.secondary}`,
+      background: theme.colors.background.surface,
+      color: theme.colors.text.secondary,
+      fontSize: '0.875rem',
+    }),
+    [theme],
+  );
   const { user } = useAuth();
   const { error: showError } = useToastContext();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -1305,12 +1327,7 @@ export const Dashboard: React.FC = () => {
               <XAxis dataKey="month" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1A1A1A', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '8px',
-                  color: '#FFFFFF'
-                }}
+                contentStyle={rechartsTooltipStyle}
                 formatter={(value: number, name: string) => [name === 'Receita' || name === 'Aprovadas' ? formatCurrency(value) : formatInteger(value), name]}
               />
               <Line 
@@ -1351,12 +1368,7 @@ export const Dashboard: React.FC = () => {
               <XAxis dataKey="month" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" tickFormatter={(v) => formatCurrency(v)} />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1A1A1A', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '8px',
-                  color: '#FFFFFF'
-                }}
+                contentStyle={rechartsTooltipStyle}
                 formatter={(value: number) => [formatCurrency(value), 'Receita']}
               />
               <Bar 
@@ -1610,14 +1622,7 @@ export const Dashboard: React.FC = () => {
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid #334155',
-                  background: '#1e293b',
-                  color: '#e2e8f0',
-                  fontSize: '0.875rem'
-                }}
+                style={rechartsSelectStyle}
               >
                 <option value={1}>Janeiro</option>
                 <option value={2}>Fevereiro</option>
@@ -1635,14 +1640,7 @@ export const Dashboard: React.FC = () => {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid #334155',
-                  background: '#1e293b',
-                  color: '#e2e8f0',
-                  fontSize: '0.875rem'
-                }}
+                style={rechartsSelectStyle}
               >
                 {[2023, 2024, 2025, 2026].map(year => (
                   <option key={year} value={year}>{year}</option>
@@ -1672,7 +1670,7 @@ export const Dashboard: React.FC = () => {
             position: 'relative', 
             width: '100%', 
             height: '340px',
-            background: '#0f172a',
+            background: theme.colors.background.surface,
             borderRadius: '0.5rem',
             padding: '1rem',
             display: 'flex',
@@ -1717,7 +1715,7 @@ export const Dashboard: React.FC = () => {
                     y1={i * 60}
                     x2="1000"
                     y2={i * 60}
-                    stroke="#1e293b"
+                    stroke={theme.colors.border.primary}
                     strokeWidth="1"
                   />
                 ))}
@@ -1765,7 +1763,7 @@ export const Dashboard: React.FC = () => {
                             cy={yGeradas}
                             r="6"
                             fill="#3b82f6"
-                            stroke="#0f172a"
+                            stroke={theme.colors.background.page}
                             strokeWidth="2"
                             style={{ cursor: 'pointer' }}
                             onClick={() => handleDayClick(d)}
@@ -1981,9 +1979,9 @@ export const Dashboard: React.FC = () => {
                   alignItems: 'center',
                   padding: '0.75rem',
                   marginBottom: '0.5rem',
-                  backgroundColor: '#1f2937',
+                  backgroundColor: theme.colors.background.surfaceAlt,
                   borderRadius: '8px',
-                  border: '1px solid #374151'
+                  border: `1px solid ${theme.colors.border.secondary}`
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div style={{
@@ -2040,7 +2038,7 @@ export const Dashboard: React.FC = () => {
           zIndex: 9999
         }} onClick={closeDayModal}>
           <div style={{
-            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            background: `linear-gradient(135deg, ${theme.colors.background.surface} 0%, ${theme.colors.background.page} 100%)`,
             borderRadius: '1rem',
             padding: '2rem',
             maxWidth: '600px',
@@ -2048,7 +2046,7 @@ export const Dashboard: React.FC = () => {
             maxHeight: '80vh',
             overflowY: 'auto',
             boxShadow: '0 10px 24px rgba(0, 0, 0, 0.35)',
-            border: '1px solid rgba(59, 130, 246, 0.3)'
+            border: `1px solid ${theme.colors.border.focus}`
           }} onClick={(e) => e.stopPropagation()}>
             {/* Header do Modal */}
             <div style={{

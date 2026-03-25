@@ -1,9 +1,8 @@
 import styled from 'styled-components';
-import { theme } from '../../styles/theme';
 
 export const Container = styled.div`
   min-height: 100vh;
-  background: ${theme.colors.gradients.background};
+  background: ${({ theme }) => theme.colors.gradients.background};
   padding: 2rem;
 `;
 
@@ -19,18 +18,18 @@ export const BackButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: ${theme.colors.background.card};
-  border: 1px solid ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.md};
-  color: ${theme.colors.text.primary};
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${theme.colors.background.cardHover};
-    border-color: ${theme.colors.border.secondary};
+    background: ${({ theme }) => theme.colors.background.cardHover};
+    border-color: ${({ theme }) => theme.colors.border.secondary};
     transform: translateY(-1px);
   }
 
@@ -42,7 +41,7 @@ export const BackButton = styled.button`
 export const Title = styled.h1`
   font-size: 2rem;
   font-weight: 700;
-  color: ${theme.colors.text.primary};
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
 `;
 
@@ -52,11 +51,11 @@ export const Content = styled.div`
 `;
 
 export const Form = styled.div`
-  background: ${theme.colors.background.card};
-  border: 1px solid ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.lg};
+  background: ${({ theme }) => theme.colors.background.card};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
   padding: 2rem;
-  box-shadow: ${theme.shadows.medium};
+  box-shadow: ${({ theme }) => theme.shadows.medium};
 `;
 
 export const FormGroup = styled.div`
@@ -67,17 +66,17 @@ export const Label = styled.label`
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: ${theme.colors.text.primary};
+  color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 0.5rem;
 `;
 
 export const Select = styled.select`
   width: 100%;
   padding: 0.75rem 1rem;
-  background: ${theme.colors.background.card} !important;
-  color: ${theme.colors.text.primary} !important;
-  border: 1px solid ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.md};
+  background: ${({ theme }) => theme.colors.background.card} !important;
+  color: ${({ theme }) => theme.colors.text.primary} !important;
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 0.875rem;
   appearance: none;
   -webkit-appearance: none;
@@ -91,44 +90,40 @@ export const Select = styled.select`
 
   &:focus {
     outline: none;
-    border-color: ${theme.colors.border.focus};
-    box-shadow: 0 0 0 3px ${theme.colors.border.focus}33;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus}33;
   }
 
-  /* Força cores das opções com máxima prioridade */
   option {
-    background: #1f2937 !important;
-    background-color: #1f2937 !important;
-    color: #ffffff !important;
+    background: ${({ theme }) => theme.colors.background.surfaceAlt} !important;
+    background-color: ${({ theme }) => theme.colors.background.surfaceAlt} !important;
+    color: ${({ theme }) => theme.colors.text.primary} !important;
     padding: 0.5rem !important;
     font-size: 0.875rem !important;
   }
 
-  /* Para todos os navegadores */
   &::-ms-expand {
     display: none !important;
   }
 
-  /* Firefox específico */
   @-moz-document url-prefix() {
     option {
-      background: #1f2937 !important;
-      background-color: #1f2937 !important;
-      color: #ffffff !important;
+      background: ${({ theme }) => theme.colors.background.surfaceAlt} !important;
+      background-color: ${({ theme }) => theme.colors.background.surfaceAlt} !important;
+      color: ${({ theme }) => theme.colors.text.primary} !important;
     }
   }
 
-  /* Webkit específico */
   &::-webkit-scrollbar {
     width: 8px;
   }
 
   &::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: ${({ theme }) => theme.colors.background.surfaceAlt};
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #374151;
+    background: ${({ theme }) => theme.colors.background.tertiary};
     border-radius: 4px;
   }
 `;
@@ -138,20 +133,22 @@ export const Button = styled.button<{ disabled?: boolean }>`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: ${props => props.disabled ? theme.colors.background.tertiary : theme.colors.primary};
-  color: ${props => props.disabled ? theme.colors.text.disabled : theme.colors.text.primary};
+  background: ${({ theme, disabled }) =>
+    disabled ? theme.colors.background.tertiary : theme.colors.primary};
+  color: ${({ theme, disabled }) =>
+    disabled ? theme.colors.text.disabled : theme.colors.text.primary};
   border: none;
-  border-radius: ${theme.borderRadius.md};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 0.875rem;
   font-weight: 600;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   transition: all 0.2s ease;
-  opacity: ${props => props.disabled ? 0.6 : 1};
+  opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
 
   &:hover:not(:disabled) {
-    background: ${theme.colors.hover.primary};
+    background: ${({ theme }) => theme.colors.hover.primary};
     transform: translateY(-1px);
-    box-shadow: ${theme.shadows.medium};
+    box-shadow: ${({ theme }) => theme.shadows.medium};
   }
 
   &:active:not(:disabled) {
@@ -160,16 +157,16 @@ export const Button = styled.button<{ disabled?: boolean }>`
 `;
 
 export const ProductItem = styled.div`
-  background: ${theme.colors.background.cardHover};
-  border: 1px solid ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.md};
+  background: ${({ theme }) => theme.colors.background.cardHover};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: 1.5rem;
   margin-bottom: 1rem;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: ${theme.colors.border.secondary};
-    box-shadow: ${theme.shadows.small};
+    border-color: ${({ theme }) => theme.colors.border.secondary};
+    box-shadow: ${({ theme }) => theme.shadows.small};
   }
 `;
 
@@ -206,7 +203,7 @@ export const PriceRow = styled.div`
 export const PriceLabelInput = styled.label`
   font-size: 0.875rem;
   font-weight: 500;
-  color: ${theme.colors.text.primary};
+  color: ${({ theme }) => theme.colors.text.primary};
   min-width: 120px;
 
   @media (max-width: 768px) {
@@ -217,21 +214,21 @@ export const PriceLabelInput = styled.label`
 export const PriceInput = styled.input`
   flex: 1;
   padding: 0.75rem 1rem;
-  background: ${theme.colors.background.card};
-  color: ${theme.colors.text.primary};
-  border: 1px solid ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.md};
+  background: ${({ theme }) => theme.colors.background.card};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 0.875rem;
   transition: all 0.2s ease;
 
   &:focus {
     outline: none;
-    border-color: ${theme.colors.border.focus};
-    box-shadow: 0 0 0 3px ${theme.colors.border.focus}33;
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.border.focus}33;
   }
 
   &::placeholder {
-    color: ${theme.colors.text.secondary};
+    color: ${({ theme }) => theme.colors.text.secondary};
   }
 `;
 
@@ -241,15 +238,15 @@ export const RemoveButton = styled.button`
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: ${theme.colors.error};
-  color: ${theme.colors.text.primary};
+  background: ${({ theme }) => theme.colors.error};
+  color: ${({ theme }) => theme.colors.text.primary};
   border: none;
-  border-radius: ${theme.borderRadius.md};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${theme.colors.hover.danger};
+    background: ${({ theme }) => theme.colors.hover.danger};
     transform: scale(1.05);
   }
 
@@ -263,18 +260,18 @@ export const AddProductButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: ${theme.colors.background.card};
-  color: ${theme.colors.text.primary};
-  border: 1px solid ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.md};
+  background: ${({ theme }) => theme.colors.background.card};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${theme.colors.background.cardHover};
-    border-color: ${theme.colors.border.secondary};
+    background: ${({ theme }) => theme.colors.background.cardHover};
+    border-color: ${({ theme }) => theme.colors.border.secondary};
     transform: translateY(-1px);
   }
 
@@ -298,10 +295,10 @@ export const ButtonGroup = styled.div`
 export const SectionTitle = styled.h3`
   font-size: 1.25rem;
   font-weight: 600;
-  color: ${theme.colors.text.primary};
+  color: ${({ theme }) => theme.colors.text.primary};
   margin: 2rem 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid ${theme.colors.border.primary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.primary};
 `;
 
 export const ProductList = styled.div`
@@ -311,10 +308,10 @@ export const ProductList = styled.div`
 export const EmptyState = styled.div`
   text-align: center;
   padding: 3rem 1rem;
-  background: ${theme.colors.background.cardHover};
-  border: 2px dashed ${theme.colors.border.primary};
-  border-radius: ${theme.borderRadius.md};
-  color: ${theme.colors.text.secondary};
+  background: ${({ theme }) => theme.colors.background.cardHover};
+  border: 2px dashed ${({ theme }) => theme.colors.border.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   p {
     margin-bottom: 1rem;

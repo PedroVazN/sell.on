@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService, Goal, User } from '../../services/api';
 import { formatCurrency, formatInteger } from '../../utils/formatters';
@@ -120,6 +121,16 @@ const LoadingSkeleton = () => (
 );
 
 export const VendedorDashboard: React.FC = () => {
+  const theme = useTheme();
+  const rechartsTooltipStyle = useMemo(
+    () => ({
+      backgroundColor: theme.colors.background.surface,
+      border: `1px solid ${theme.colors.border.primary}`,
+      borderRadius: '8px',
+      color: theme.colors.text.primary,
+    }),
+    [theme],
+  );
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -794,12 +805,7 @@ export const VendedorDashboard: React.FC = () => {
                   <XAxis dataKey="month" stroke="#A3A3A3" />
                   <YAxis stroke="#A3A3A3" />
                   <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1A1A1A', 
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      color: '#FFFFFF'
-                    }}
+                    contentStyle={rechartsTooltipStyle}
                     formatter={(value: number, name: string) => [formatInteger(value), name]}
                   />
                   <Line 
@@ -833,12 +839,7 @@ export const VendedorDashboard: React.FC = () => {
                   <XAxis dataKey="month" stroke="#A3A3A3" />
                   <YAxis stroke="#A3A3A3" tickFormatter={(v) => formatCurrency(v)} />
                   <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1A1A1A', 
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      color: '#FFFFFF'
-                    }}
+                    contentStyle={rechartsTooltipStyle}
                     formatter={(value: number) => [formatCurrency(value), 'Receita']}
                   />
                   <Bar 
@@ -868,12 +869,7 @@ export const VendedorDashboard: React.FC = () => {
                   <XAxis dataKey="label" stroke="#A3A3A3" />
                   <YAxis stroke="#A3A3A3" />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1A1A1A',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      color: '#FFFFFF'
-                    }}
+                    contentStyle={rechartsTooltipStyle}
                   />
                   <Bar dataKey="value" fill="#3B82F6" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -893,8 +889,8 @@ export const VendedorDashboard: React.FC = () => {
                       gap: '0.75rem',
                       alignItems: 'center',
                       padding: '0.75rem',
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
+                      backgroundColor: theme.colors.background.surfaceAlt,
+                      border: `1px solid ${theme.colors.border.secondary}`,
                       borderRadius: 8
                     }}
                   >
@@ -924,9 +920,9 @@ export const VendedorDashboard: React.FC = () => {
                       alignItems: 'center',
                       padding: '0.75rem',
                       marginBottom: '0.5rem',
-                      backgroundColor: '#1f2937',
+                      backgroundColor: theme.colors.background.surfaceAlt,
                       borderRadius: '8px',
-                      border: '1px solid #374151'
+                      border: `1px solid ${theme.colors.border.secondary}`
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{

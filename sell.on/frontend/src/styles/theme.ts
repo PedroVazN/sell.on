@@ -13,8 +13,11 @@ export const theme: DefaultTheme = {
       secondary: '#111827',
       tertiary: '#1f2937',
       primary: '#0a0a0f',
-      // Cor de fundo “geral da página” (pra telas que tinham #0f172a hardcoded).
-      page: '#0f172a',
+      // Fundo da área principal (Layout + páginas) — segue o tema.
+      page: '#0a0a0f',
+      // Painéis internos (gráficos, selects, tooltips) — substitui #1e293b / #1f2937 hardcoded.
+      surface: '#1e293b',
+      surfaceAlt: '#1f2937',
       card: 'rgba(255, 255, 255, 0.03)',
       cardHover: 'rgba(255, 255, 255, 0.06)',
       modal: 'rgba(0, 0, 0, 0.9)',

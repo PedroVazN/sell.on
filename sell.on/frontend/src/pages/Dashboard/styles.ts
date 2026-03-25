@@ -65,20 +65,20 @@ const shimmer = `
 
 export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xxl};
-  background: ${({ theme }) => theme.colors.background.main};
+  background: ${({ theme }) => theme.colors.background.page};
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
   
-  /* Fundo inspirado no login (sem animação para manter leve) */
+  /* Vignette suave seguindo o tema (cores do primary/secondary em baixa opacidade) */
   &::before {
     content: '';
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 20% 30%, rgba(59,130,246,0.12) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(139,92,246,0.12) 0%, transparent 50%),
-      radial-gradient(circle at 50% 50%, rgba(236,72,153,0.08) 0%, transparent 50%);
+      radial-gradient(circle at 20% 30%, ${({ theme }) => theme.colors.hover.primary} 0%, transparent 52%),
+      radial-gradient(circle at 80% 70%, ${({ theme }) => theme.colors.hover.secondary} 0%, transparent 52%),
+      radial-gradient(circle at 50% 50%, ${({ theme }) => theme.colors.hover.primary} 0%, transparent 58%);
     pointer-events: none;
     z-index: 0;
   }

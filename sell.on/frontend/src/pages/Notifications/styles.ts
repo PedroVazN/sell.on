@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xl};
-  background: ${({ theme }) => theme.colors.background.primary};
+  background: ${({ theme }) => theme.colors.background.page};
   min-height: 100vh;
 `;
 
@@ -220,16 +220,16 @@ export const ActionButton = styled.button`
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  background: ${({ theme }) => theme.colors.background.glass};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  color: #0f172a;
+  color: ${({ theme }) => theme.colors.text.primary};
   cursor: pointer;
   transition: all 0.2s ease;
   opacity: 1;
 
   svg {
-    color: #0f172a;
+    color: ${({ theme }) => theme.colors.text.primary};
     opacity: 1;
   }
 

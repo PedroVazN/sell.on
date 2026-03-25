@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Save, X } from 'lucide-react';
 import { apiService, Distributor, Product } from '../../services/api';
@@ -44,6 +45,7 @@ interface PriceListProduct {
 }
 
 export const CreatePriceList: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { success, error: showError, warning } = useToastContext();
   const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -55,103 +57,88 @@ export const CreatePriceList: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    
-    // Injeta CSS global para forçar cores das opções
+  }, []);
+
+  useEffect(() => {
+    const { surfaceAlt, tertiary } = theme.colors.background;
+    const primary = theme.colors.primary;
+    const textPrimary = theme.colors.text.primary;
+
     const style = document.createElement('style');
     style.textContent = `
-      /* Força cores em TODOS os selects e opções */
-      select[data-theme="dark"], 
+      select[data-theme="dark"],
       select[data-theme="dark"] *,
       select[data-theme="dark"] option {
-        background: #1f2937 !important;
-        background-color: #1f2937 !important;
-        color: #ffffff !important;
+        background: ${surfaceAlt} !important;
+        background-color: ${surfaceAlt} !important;
+        color: ${textPrimary} !important;
         padding: 8px !important;
         font-size: 14px !important;
         border: none !important;
       }
-      
       select[data-theme="dark"] option:hover {
-        background: #374151 !important;
-        background-color: #374151 !important;
-        color: #ffffff !important;
+        background: ${tertiary} !important;
+        background-color: ${tertiary} !important;
+        color: ${textPrimary} !important;
       }
-      
       select[data-theme="dark"] option:checked {
-        background: #3b82f6 !important;
-        background-color: #3b82f6 !important;
-        color: #ffffff !important;
+        background: ${primary} !important;
+        background-color: ${primary} !important;
+        color: ${textPrimary} !important;
       }
-      
       select[data-theme="dark"] option:focus {
-        background: #1f2937 !important;
-        background-color: #1f2937 !important;
-        color: #ffffff !important;
+        background: ${surfaceAlt} !important;
+        background-color: ${surfaceAlt} !important;
+        color: ${textPrimary} !important;
       }
-      
       select[data-theme="dark"] option:active {
-        background: #374151 !important;
-        background-color: #374151 !important;
-        color: #ffffff !important;
+        background: ${tertiary} !important;
+        background-color: ${tertiary} !important;
+        color: ${textPrimary} !important;
       }
-      
-      /* Fallback para todos os selects */
       select, select option {
-        background: #1f2937 !important;
-        background-color: #1f2937 !important;
-        color: #ffffff !important;
+        background: ${surfaceAlt} !important;
+        background-color: ${surfaceAlt} !important;
+        color: ${textPrimary} !important;
       }
-      
-      /* Força para Webkit */
       select::-webkit-list-button {
-        background: #1f2937 !important;
-        color: #ffffff !important;
+        background: ${surfaceAlt} !important;
+        color: ${textPrimary} !important;
       }
-      
-      /* Força para Firefox */
       select:-moz-focusring {
         color: transparent !important;
-        text-shadow: 0 0 0 #ffffff !important;
+        text-shadow: 0 0 0 ${textPrimary} !important;
       }
-      
-      /* Força para Edge */
       select::-ms-value {
-        background: #1f2937 !important;
-        color: #ffffff !important;
+        background: ${surfaceAlt} !important;
+        color: ${textPrimary} !important;
       }
-      
       select::-ms-expand {
-        background: #1f2937 !important;
-        color: #ffffff !important;
+        background: ${surfaceAlt} !important;
+        color: ${textPrimary} !important;
       }
     `;
     document.head.appendChild(style);
-    
-    // Força cores via JavaScript também
+
     const forceSelectColors = () => {
-      const selects = document.querySelectorAll('select');
-      selects.forEach(select => {
-        const options = select.querySelectorAll('option');
-        options.forEach(option => {
-          option.style.backgroundColor = '#1f2937';
-          option.style.color = '#ffffff';
+      document.querySelectorAll('select').forEach((select) => {
+        select.querySelectorAll('option').forEach((option) => {
+          option.style.backgroundColor = surfaceAlt;
+          option.style.color = textPrimary;
           option.style.padding = '8px';
         });
       });
     };
-    
-    // Aplica imediatamente
+
     forceSelectColors();
-    
-    // Aplica quando o DOM muda
     const observer = new MutationObserver(forceSelectColors);
     observer.observe(document.body, { childList: true, subtree: true });
-    
+
     return () => {
       document.head.removeChild(style);
       observer.disconnect();
     };
-  }, []);
+  }, [theme]);
 
   const loadData = async () => {
     try {
@@ -337,8 +324,8 @@ export const CreatePriceList: React.FC = () => {
               value={selectedDistributor}
               onChange={(e) => setSelectedDistributor(e.target.value)}
               style={{
-                backgroundColor: '#1f2937',
-                color: '#ffffff'
+                backgroundColor: theme.colors.background.surfaceAlt,
+                color: theme.colors.text.primary,
               }}
               data-theme="dark"
             >

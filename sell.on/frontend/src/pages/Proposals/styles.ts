@@ -347,8 +347,8 @@ export const Modal = styled.div`
 `;
 
 export const ModalContent = styled.div`
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: ${({ theme }) => theme.colors.background.surfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 12px;
   width: 100%;
   max-width: 800px;

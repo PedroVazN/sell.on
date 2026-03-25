@@ -261,7 +261,7 @@ export const NoticesList = styled.div`
 `;
 
 export const NoticeCard = styled.div<{ $priority: string }>`
-  background: #1e293b;
+  background: ${({ theme }) => theme.colors.background.surface};
   border-radius: 0.75rem;
   padding: 1.5rem;
   border-left: 4px solid ${({ $priority }) => {
@@ -273,11 +273,11 @@ export const NoticeCard = styled.div<{ $priority: string }>`
       default: return '#6b7280';
     }
   }};
-  border: 1px solid #334155;
+  border: 1px solid ${({ theme }) => theme.colors.border.primary};
   transition: all 0.2s;
 
   &:hover {
-    border-color: #475569;
+    border-color: ${({ theme }) => theme.colors.border.secondary};
     transform: translateY(-1px);
   }
 `;

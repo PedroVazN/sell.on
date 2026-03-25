@@ -20,6 +20,8 @@ export const neonBlueTheme: DefaultTheme = {
       tertiary: '#060a10',
       primary: '#000000',
       page: '#000000',
+      surface: '#051018',
+      surfaceAlt: '#081a24',
       card: 'rgba(0, 180, 255, 0.06)',
       cardHover: 'rgba(0, 180, 255, 0.11)',
       glass: 'rgba(0, 180, 255, 0.05)',

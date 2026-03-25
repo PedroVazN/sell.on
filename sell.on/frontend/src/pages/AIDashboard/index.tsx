@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from 'styled-components';
 import { Brain, TrendingUp, TrendingDown, AlertTriangle, Target, Sparkles, Zap, BarChart3, PieChart, LineChart as LineChartIcon, Activity, AlertCircle, CheckCircle, Clock, Calculator, X } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
@@ -356,6 +357,7 @@ const ChangeMetric: React.FC<{
 };
 
 export const AIDashboard: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [data, setData] = useState<AIDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -380,6 +382,16 @@ export const AIDashboard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [data, chartsLoaded]);
+
+  const chartTooltipContentStyle = useMemo(
+    () => ({
+      backgroundColor: theme.colors.background.surface,
+      border: `1px solid ${theme.colors.border.secondary}`,
+      borderRadius: '8px',
+      color: theme.colors.text.primary,
+    }),
+    [theme],
+  );
 
   const loadDashboardData = async () => {
     try {
@@ -659,14 +671,7 @@ export const AIDashboard: React.FC = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1A1A1A', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '8px',
-                  color: '#FFFFFF'
-                }} 
-              />
+              <Tooltip contentStyle={chartTooltipContentStyle} />
             </RechartsPieChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -685,13 +690,8 @@ export const AIDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
               <XAxis dataKey="level" stroke="#A3A3A3" />
               <YAxis stroke="#A3A3A3" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1A1A1A', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '8px',
-                  color: '#FFFFFF'
-                }}
+              <Tooltip
+                contentStyle={chartTooltipContentStyle}
                 formatter={(value: number) => `${value}%`}
               />
               <Bar 
@@ -1159,13 +1159,8 @@ export const AIDashboard: React.FC = () => {
                     tick={{ fill: '#A3A3A3' }}
                     tickFormatter={(value) => formatCurrency(value)}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1A1A1A', 
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      color: '#FFFFFF'
-                    }}
+                  <Tooltip
+                    contentStyle={chartTooltipContentStyle}
                     formatter={(value: number) => formatCurrency(value)}
                   />
                   <Bar 
@@ -1241,13 +1236,8 @@ export const AIDashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
                 <XAxis type="number" stroke="#A3A3A3" domain={[0, 100]} />
                 <YAxis dataKey="name" type="category" stroke="#A3A3A3" width={80} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1A1A1A', 
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    color: '#FFFFFF'
-                  }}
+                <Tooltip
+                  contentStyle={chartTooltipContentStyle}
                   formatter={(value: number, name: string, props: any) => {
                     if (name === 'score') {
                       return `${value}% (Score)`;

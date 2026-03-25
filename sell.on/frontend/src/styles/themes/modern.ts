@@ -21,6 +21,9 @@ export const modernTheme: DefaultTheme = {
       secondary: '#0b1220',
       tertiary: '#111b33',
       primary: '#070a12',
+      page: '#070a12',
+      surface: '#111b33',
+      surfaceAlt: '#162038',
     },
     text: {
       ...darkTheme.colors.text,

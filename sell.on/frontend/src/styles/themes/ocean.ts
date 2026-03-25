@@ -21,6 +21,9 @@ export const oceanTheme: DefaultTheme = {
       secondary: '#071a1f',
       tertiary: '#0b242a',
       primary: '#050f12',
+      page: '#050f12',
+      surface: '#0b242a',
+      surfaceAlt: '#0e3038',
     },
     text: {
       ...darkTheme.colors.text,

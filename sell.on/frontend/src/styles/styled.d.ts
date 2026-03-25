@@ -12,6 +12,8 @@ declare module 'styled-components' {
         tertiary: string;
         primary: string;
         page: string;
+        surface: string;
+        surfaceAlt: string;
         card: string;
         cardHover: string;
         modal: string;

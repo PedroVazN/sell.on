@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useTheme } from 'styled-components';
 import { Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2, ChevronDown, FileSpreadsheet, MessageCircle, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, Proposal, Product, Distributor, User as UserType } from '../../services/api';
@@ -196,6 +197,7 @@ const ProposalRow = memo(function ProposalRow({
 });
 
 export const Proposals: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { success, error: showError, warning } = useToastContext();
@@ -1108,7 +1110,7 @@ export const Proposals: React.FC = () => {
               alignItems: 'center',
               marginTop: '1.5rem',
               padding: '1rem',
-              backgroundColor: '#1f2937',
+              backgroundColor: theme.colors.background.surfaceAlt,
               borderRadius: '0.5rem',
               gap: '0.75rem'
             }}>
@@ -1461,8 +1463,8 @@ export const Proposals: React.FC = () => {
 
               {proposalToLose && (
                 <div style={{ 
-                  backgroundColor: '#1f2937', 
-                  border: '1px solid #374151',
+                  backgroundColor: theme.colors.background.surfaceAlt, 
+                  border: `1px solid ${theme.colors.border.secondary}`,
                   padding: '1rem', 
                   borderRadius: '0.5rem',
                   marginTop: '1rem'
@@ -1472,12 +1474,12 @@ export const Proposals: React.FC = () => {
                     alignItems: 'center', 
                     marginBottom: '0.5rem' 
                   }}>
-                    <FileText size={16} style={{ marginRight: '0.5rem', color: '#9ca3af' }} />
+                    <FileText size={16} style={{ marginRight: '0.5rem', color: theme.colors.text.tertiary }} />
                     <h4 style={{ 
                       margin: '0', 
                       fontSize: '0.875rem', 
                       fontWeight: '600',
-                      color: '#ffffff'
+                      color: theme.colors.text.primary
                     }}>
                       {proposalToLose.proposalNumber}
                     </h4>
@@ -1489,15 +1491,15 @@ export const Proposals: React.FC = () => {
                     fontSize: '0.875rem'
                   }}>
                     <div>
-                      <span style={{ color: '#9ca3af', fontWeight: '500' }}>Cliente:</span>
-                      <span style={{ color: '#ffffff', marginLeft: '0.25rem' }}>
+                      <span style={{ color: theme.colors.text.tertiary, fontWeight: '500' }}>Cliente:</span>
+                      <span style={{ color: theme.colors.text.primary, marginLeft: '0.25rem' }}>
                         {proposalToLose.client.name}
                       </span>
                     </div>
                     <div>
-                      <span style={{ color: '#9ca3af', fontWeight: '500' }}>Total:</span>
+                      <span style={{ color: theme.colors.text.tertiary, fontWeight: '500' }}>Total:</span>
                       <span style={{ 
-                        color: '#f87171', 
+                        color: theme.colors.status.error, 
                         fontWeight: '600', 
                         marginLeft: '0.25rem' 
                       }}>

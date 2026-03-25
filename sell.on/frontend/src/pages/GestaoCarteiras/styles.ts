@@ -271,7 +271,10 @@ export const TransferSelect = styled.select`
   color: #fff;
   font-size: 0.9rem;
   margin-bottom: 12px;
-  option { background: #1f2937; color: #fff; }
+  option {
+    background: ${({ theme }) => theme.colors.background.surfaceAlt};
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
 `;
 
 export const SelectAllRow = styled.div`

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from 'styled-components';
 import { Trophy, Loader2, User } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
@@ -64,6 +65,7 @@ interface MonthlyItem {
 const COLORS = { total: '#6366f1', ganhas: '#10b981', perdidas: '#ef4444' };
 
 export const Ranking: React.FC = () => {
+  const theme = useTheme();
   const [dateFrom, setDateFrom] = useState(DEFAULT_START);
   const [dateTo, setDateTo] = useState(getTodayISO());
   const [ranking, setRanking] = useState<RankingItem[]>([]);
@@ -79,6 +81,15 @@ export const Ranking: React.FC = () => {
   const [detailSellerName, setDetailSellerName] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
   const [sellers, setSellers] = useState<Array<{ _id: string; name: string; email: string }>>([]);
+
+  const barChartTooltipStyle = useMemo(
+    () => ({
+      background: theme.colors.background.surface,
+      border: `1px solid ${theme.colors.border.secondary}`,
+      borderRadius: '8px',
+    }),
+    [theme],
+  );
 
   const loadRanking = useCallback(async () => {
     setLoading(true);
@@ -299,12 +310,8 @@ export const Ranking: React.FC = () => {
                       tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                     />
                     <Tooltip
-                      contentStyle={{
-                        background: '#1f2937',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: '8px',
-                      }}
-                      labelStyle={{ color: 'rgba(255,255,255,0.9)' }}
+                      contentStyle={barChartTooltipStyle}
+                      labelStyle={{ color: theme.colors.text.secondary }}
                       formatter={(value: number, name: string) => {
                         if (name === 'valorFechado') return [formatCurrency(value), 'Valor fechado'];
                         return [value, name === 'vendasFechadas' ? 'Vendas ganhas' : name === 'vendasPerdidas' ? 'Vendas perdidas' : 'Propostas'];

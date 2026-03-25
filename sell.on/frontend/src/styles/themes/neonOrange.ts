@@ -21,6 +21,8 @@ export const neonOrangeTheme: DefaultTheme = {
       tertiary: '#0a0a0a',
       primary: '#000000',
       page: '#000000',
+      surface: '#140800',
+      surfaceAlt: '#1a0c02',
       card: 'rgba(255, 102, 0, 0.06)',
       cardHover: 'rgba(255, 102, 0, 0.1)',
       glass: 'rgba(255, 102, 0, 0.05)',

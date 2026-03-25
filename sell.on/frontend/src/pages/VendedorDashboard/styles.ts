@@ -4,7 +4,7 @@ export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xxl};
   width: 100%;
   min-height: 100vh;
-  background: ${({ theme }) => theme.colors.background.main};
+  background: ${({ theme }) => theme.colors.background.page};
   color: ${({ theme }) => theme.colors.text.primary};
   margin-left: 0;
   margin-right: 0;
@@ -213,7 +213,7 @@ export const GoalProgress = styled.div`
 export const GoalBar = styled.div<{ $color: string; $width: number }>`
   flex: 1;
   height: 8px;
-  background: #1f2937;
+  background: ${({ theme }) => theme.colors.background.surfaceAlt};
   border-radius: 4px;
   overflow: hidden;
   position: relative;
@@ -248,8 +248,8 @@ export const PerformanceMetrics = styled.div`
 `;
 
 export const MetricItem = styled.div`
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: ${({ theme }) => theme.colors.background.surfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 8px;
   padding: 1rem;
   display: flex;
@@ -258,7 +258,7 @@ export const MetricItem = styled.div`
   transition: all 0.2s ease;
 
   &:hover {
-    background: #374151;
+    background: ${({ theme }) => theme.colors.background.tertiary};
   }
 `;
 

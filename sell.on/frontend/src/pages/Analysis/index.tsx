@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTheme } from 'styled-components';
 import { BarChart3, Loader2, RefreshCcw } from 'lucide-react';
 import {
   Area,
@@ -147,6 +148,7 @@ function isPythonEngine(engine?: string) {
 }
 
 export const Analysis: React.FC = () => {
+  const theme = useTheme();
   const [data, setData] = useState<DataScienceAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
@@ -344,16 +346,19 @@ export const Analysis: React.FC = () => {
     [data]
   );
 
-  const tooltipStyle = {
-    contentStyle: {
-      backgroundColor: '#0f172a',
-      border: '1px solid #334155',
-      borderRadius: '10px',
-      color: '#e2e8f0',
-    },
-    labelStyle: { color: '#f8fafc', fontWeight: 700 },
-    itemStyle: { color: '#cbd5e1' },
-  };
+  const tooltipStyle = useMemo(
+    () => ({
+      contentStyle: {
+        backgroundColor: theme.colors.background.surface,
+        border: `1px solid ${theme.colors.border.secondary}`,
+        borderRadius: '10px',
+        color: theme.colors.text.secondary,
+      },
+      labelStyle: { color: theme.colors.text.primary, fontWeight: 700 as const },
+      itemStyle: { color: theme.colors.text.tertiary },
+    }),
+    [theme],
+  );
 
   const elapsedSec = elapsedMs / 1000;
   const loadHint = loadPhaseMessage(elapsedSec);

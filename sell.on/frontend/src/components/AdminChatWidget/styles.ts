@@ -56,8 +56,8 @@ export const Panel = styled.div`
   width: 380px;
   max-width: calc(100vw - 2rem);
   max-height: 520px;
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: ${({ theme }) => theme.colors.background.surfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
   display: flex;
@@ -90,8 +90,8 @@ export const PanelHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1rem;
-  border-bottom: 1px solid #374151;
-  background: #111827;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  background: ${({ theme }) => theme.colors.background.secondary};
   flex-shrink: 0;
 `;
 
@@ -99,7 +99,7 @@ export const PanelTitle = styled.h3`
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #f3f4f6;
+  color: ${({ theme }) => theme.colors.text.primary};
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -108,7 +108,7 @@ export const PanelTitle = styled.h3`
 export const HeaderButton = styled.button`
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: ${({ theme }) => theme.colors.text.tertiary};
   cursor: pointer;
   padding: 0.35rem;
   border-radius: 6px;
@@ -116,8 +116,8 @@ export const HeaderButton = styled.button`
   align-items: center;
   justify-content: center;
   &:hover {
-    color: #fff;
-    background: #374151;
+    color: ${({ theme }) => theme.colors.text.primary};
+    background: ${({ theme }) => theme.colors.background.tertiary};
   }
 `;
 
@@ -132,14 +132,14 @@ export const ChatCard = styled.button`
   padding: 0.875rem 1rem;
   text-align: left;
   border: none;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.secondary};
   background: transparent;
-  color: #e5e7eb;
+  color: ${({ theme }) => theme.colors.text.secondary};
   cursor: pointer;
   transition: background 0.15s;
 
   &:hover {
-    background: #374151;
+    background: ${({ theme }) => theme.colors.background.tertiary};
   }
 `;
 
@@ -196,8 +196,8 @@ export const ThreadHeader = styled.div`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #374151;
-  background: #111827;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.secondary};
+  background: ${({ theme }) => theme.colors.background.secondary};
   flex-shrink: 0;
 `;
 
@@ -217,8 +217,9 @@ export const MessageBubble = styled.div<{ $isMe?: boolean }>`
   max-width: 85%;
   padding: 0.5rem 0.75rem;
   border-radius: 10px;
-  background: ${({ $isMe }) => ($isMe ? '#3b82f6' : '#374151')};
-  color: #fff;
+  background: ${({ theme, $isMe }) =>
+    $isMe ? theme.colors.primary : theme.colors.background.tertiary};
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.85rem;
 `;
 
@@ -237,24 +238,24 @@ export const ThreadInputWrap = styled.div`
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem;
-  border-top: 1px solid #374151;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.secondary};
   flex-shrink: 0;
 `;
 
 export const ThreadInput = styled.input`
   flex: 1;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #4b5563;
+  border: 1px solid ${({ theme }) => theme.colors.border.secondary};
   border-radius: 8px;
-  background: #111827;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.9rem;
   outline: none;
   &::placeholder {
-    color: #6b7280;
+    color: ${({ theme }) => theme.colors.text.tertiary};
   }
   &:focus {
-    border-color: #3b82f6;
+    border-color: ${({ theme }) => theme.colors.primary};
   }
 `;
 

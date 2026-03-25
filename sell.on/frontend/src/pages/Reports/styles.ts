@@ -286,8 +286,8 @@ export const FilterSelect = styled.select`
   }
 
   option {
-    background: #1e293b;
-    color: #f8fafc;
+    background: ${({ theme }) => theme.colors.background.surface};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 
@@ -688,8 +688,8 @@ export const EditSelect = styled.select`
   }
 
   option {
-    background: #1e293b;
-    color: #f8fafc;
+    background: ${({ theme }) => theme.colors.background.surface};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 

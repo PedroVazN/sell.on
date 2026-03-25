@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
   padding: ${({ theme }) => theme.spacing.xl};
-  background: ${({ theme }) => theme.colors.background.primary};
+  background: ${({ theme }) => theme.colors.background.page};
   min-height: 100vh;
 `;
 
@@ -171,7 +171,7 @@ export const LoaderElapsed = styled.p`
 export const LoaderProgressTrack = styled.div`
   height: 8px;
   border-radius: 999px;
-  background: ${({ theme }) => theme.colors.background.primary};
+  background: ${({ theme }) => theme.colors.background.page};
   border: 1px solid ${({ theme }) => theme.colors.border.primary};
   overflow: hidden;
   margin-bottom: ${({ theme }) => theme.spacing.sm};
@@ -253,7 +253,7 @@ export const ChartSkeletonBlock = styled.div`
   flex: 1;
   min-height: 220px;
   border-radius: ${({ theme }) => theme.borderRadius.md};
-  background: ${({ theme }) => theme.colors.background.primary};
+  background: ${({ theme }) => theme.colors.background.page};
   border: 1px dashed ${({ theme }) => theme.colors.border.primary};
   opacity: 0.7;
 `;
