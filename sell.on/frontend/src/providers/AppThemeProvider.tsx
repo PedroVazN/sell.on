@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ThemeProvider } from 'styled-components';
-import { getTheme, ThemeName } from '../styles/themes';
+import { getTheme, ThemeName, themes } from '../styles/themes';
 import { ThemeModeProviderContext } from '../contexts/ThemeModeContext';
 
 const STORAGE_KEY = 'sellon_theme';
 
+const VALID_THEME_IDS = Object.keys(themes) as ThemeName[];
+
 function getInitialTheme(): ThemeName {
   const saved = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
-  if (saved === 'dark' || saved === 'pink' || saved === 'modern' || saved === 'ocean') {
-    return saved;
+  if (saved && VALID_THEME_IDS.includes(saved as ThemeName)) {
+    return saved as ThemeName;
   }
 
   // Preferência do sistema (fallback)

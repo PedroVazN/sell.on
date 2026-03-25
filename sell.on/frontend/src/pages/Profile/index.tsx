@@ -368,6 +368,16 @@ export const Profile: React.FC = () => {
                   { id: 'pink', label: 'Tema rosa', preview: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #f472b6 100%)' },
                   { id: 'modern', label: 'Tema moderno', preview: 'linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #60a5fa 100%)' },
                   { id: 'ocean', label: 'Tema oceano', preview: 'linear-gradient(135deg, #2dd4bf 0%, #34d399 40%, #60a5fa 100%)' },
+                  {
+                    id: 'neonOrange',
+                    label: 'Preto + laranja neon',
+                    preview: 'linear-gradient(135deg, #000000 0%, #1a0a00 35%, #ff6600 70%, #ff9500 100%)',
+                  },
+                  {
+                    id: 'neonBlue',
+                    label: 'Preto + azul neon',
+                    preview: 'linear-gradient(135deg, #000000 0%, #000814 35%, #0080ff 65%, #00d4ff 100%)',
+                  },
                 ] as const
               ).map((t) => (
                 <S.ThemeOption
