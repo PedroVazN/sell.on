@@ -746,6 +746,69 @@ export interface DataScienceAnalysis {
       value: number;
       probPct: number;
     }>;
+    pipelineDeepScoresTop20?: Array<{
+      proposalId: string;
+      proposalNumber?: string | number | null;
+      label: string;
+      clientDisplay: string;
+      seller: string;
+      distributor: string;
+      value: number;
+      chancePct: number;
+      riskPct: number;
+      baseModelProbPct?: number | null;
+      breakdown: {
+        negotiationDays: number | null;
+        negotiationScore: number;
+        clientWinRatePct: number;
+        sellerWinRatePct: number;
+        distributorWinRatePct: number;
+        clientWeightedScore: number;
+        paymentCondition: string;
+        paymentWinRatePct: number;
+        productsItemsCount: number;
+        productsWinRatePct: number;
+        discountPct: number;
+        discountWinRatePct: number;
+        engagementDaysAgo: number | null;
+        engagementScore: number;
+        seasonalityMonth: string;
+        seasonalityWinRatePct: number;
+        signals: string[];
+      };
+    }>;
+    pipelineDeepScoresBottom10?: Array<{
+      proposalId: string;
+      proposalNumber?: string | number | null;
+      label: string;
+      clientDisplay: string;
+      seller: string;
+      distributor: string;
+      value: number;
+      chancePct: number;
+      riskPct: number;
+      baseModelProbPct?: number | null;
+      breakdown: {
+        negotiationDays: number | null;
+        negotiationScore: number;
+        clientWinRatePct: number;
+        sellerWinRatePct: number;
+        distributorWinRatePct: number;
+        clientWeightedScore: number;
+        paymentCondition: string;
+        paymentWinRatePct: number;
+        productsItemsCount: number;
+        productsWinRatePct: number;
+        discountPct: number;
+        discountWinRatePct: number;
+        engagementDaysAgo: number | null;
+        engagementScore: number;
+        seasonalityMonth: string;
+        seasonalityWinRatePct: number;
+        signals: string[];
+      };
+    }>;
+    pipelineDeepTotalOpen?: number;
   };
   /** Métricas extras (preenchidas pelo motor Python). No Node ficam vazias. */
   extendedAnalysis?: {

@@ -154,6 +154,7 @@ export const Analysis: React.FC = () => {
   const [cached, setCached] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [chartsReady, setChartsReady] = useState(false);
+  const [selectedPipelineCalc, setSelectedPipelineCalc] = useState<any | null>(null);
 
   const loadDashboard = useCallback(async (force = false) => {
     try {
@@ -319,6 +320,9 @@ export const Analysis: React.FC = () => {
       })),
     [data]
   );
+
+  const pipelineTop20 = useMemo(() => data?.predictive?.pipelineDeepScoresTop20 || [], [data]);
+  const pipelineBottom10 = useMemo(() => data?.predictive?.pipelineDeepScoresBottom10 || [], [data]);
 
   const segmentPie = useMemo(
     () =>
@@ -796,6 +800,197 @@ export const Analysis: React.FC = () => {
                 </ResponsiveContainer>
               )}
             </ChartCard>
+
+            <ChartCard>
+              <ChartTitle>Chance de fechar por proposta (Top 20 / Bottom 10)</ChartTitle>
+              {!isPythonEngine(data.engine) ? (
+                <InsightText style={{ marginTop: 80 }}>
+                  Este cálculo completo (riscos + breakdown) só está disponível no motor Python (Render). No motor Node
+                  aparecem apenas os KPIs principais.
+                </InsightText>
+              ) : pipelineTop20.length === 0 && pipelineBottom10.length === 0 ? (
+                <InsightText style={{ marginTop: 80 }}>Sem propostas abertas suficientes para ranquear chances.</InsightText>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <InsightText style={{ marginTop: 0, fontWeight: 700, color: '#f8fafc' }}>Top 20 (mais chance)</InsightText>
+                    {(pipelineTop20 || []).map((it: any, idx: number) => (
+                      <div
+                        key={it.proposalId || `${it.label}-${idx}`}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '10px 0',
+                          borderBottom: '1px solid rgba(148, 163, 184, 0.25)',
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {it.label}
+                          </div>
+                          <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                            Chance: {formatPercent(it.chancePct)} · Risco: {formatPercent(it.riskPct)} · Valor: {formatCurrency(it.value)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPipelineCalc(it)}
+                          style={{
+                            background: '#1d4ed8',
+                            border: '1px solid rgba(59,130,246,0.55)',
+                            color: '#fff',
+                            padding: '8px 10px',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
+                        >
+                          Ver cálculo
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <InsightText style={{ marginTop: 0, fontWeight: 700, color: '#f8fafc' }}>Bottom 10 (menos chance)</InsightText>
+                    {(pipelineBottom10 || []).map((it: any, idx: number) => (
+                      <div
+                        key={it.proposalId || `${it.label}-${idx}`}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '10px 0',
+                          borderBottom: '1px solid rgba(148, 163, 184, 0.25)',
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {it.label}
+                          </div>
+                          <div style={{ color: '#cbd5e1', fontSize: 12 }}>
+                            Chance: {formatPercent(it.chancePct)} · Risco: {formatPercent(it.riskPct)} · Valor: {formatCurrency(it.value)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPipelineCalc(it)}
+                          style={{
+                            background: '#7c3aed',
+                            border: '1px solid rgba(124,58,237,0.55)',
+                            color: '#fff',
+                            padding: '8px 10px',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
+                        >
+                          Ver cálculo
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </ChartCard>
+
+            {selectedPipelineCalc && (
+              <ChartCard style={{ gridColumn: '1 / -1', minHeight: 'auto' }}>
+                <ChartTitle>Cálculo detalhado da proposta</ChartTitle>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <InsightText style={{ marginTop: 0, fontWeight: 700, color: '#f8fafc' }}>{selectedPipelineCalc.label}</InsightText>
+                    <div style={{ color: '#cbd5e1', fontSize: 13, marginTop: 10 }}>
+                      Valor da Proposta: {formatCurrency(selectedPipelineCalc.value)}
+                      <br />
+                      Chance de Fechamento: {formatPercent(selectedPipelineCalc.chancePct)}
+                      <br />
+                      Risco (1 - chance): {formatPercent(selectedPipelineCalc.riskPct)}
+                      <br />
+                      Tempo de Negociação:{" "}
+                      {selectedPipelineCalc.breakdown?.negotiationDays != null
+                        ? `${Number(selectedPipelineCalc.breakdown.negotiationDays).toFixed(1)} dias`
+                        : '—'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <InsightText style={{ marginTop: 0, fontWeight: 700, color: '#f8fafc' }}>Componentes do score</InsightText>
+                    <div style={{ color: '#cbd5e1', fontSize: 13, marginTop: 10, lineHeight: 1.65 }}>
+                      <div>Negociação: score {formatPercent((selectedPipelineCalc.breakdown?.negotiationScore ?? 0) * 100)}</div>
+                      <div>
+                        Taxa de Conversão (Cliente/Seller/Distribuidor):{" "}
+                        {formatPercent(selectedPipelineCalc.breakdown?.clientWinRatePct ?? 0)} / {formatPercent(selectedPipelineCalc.breakdown?.sellerWinRatePct ?? 0)} /{' '}
+                        {formatPercent(selectedPipelineCalc.breakdown?.distributorWinRatePct ?? 0)}
+                      </div>
+                      <div>
+                        Condição de Pagamento: {selectedPipelineCalc.breakdown?.paymentCondition || '—'} (
+                        {formatPercent(selectedPipelineCalc.breakdown?.paymentWinRatePct ?? 0)})
+                      </div>
+                      <div>
+                        Produtos/Itens: {selectedPipelineCalc.breakdown?.productsItemsCount ?? '—'} (
+                        {formatPercent(selectedPipelineCalc.breakdown?.productsWinRatePct ?? 0)})
+                      </div>
+                      <div>
+                        Desconto: {selectedPipelineCalc.breakdown?.discountPct ?? 0} (
+                        {formatPercent(selectedPipelineCalc.breakdown?.discountWinRatePct ?? 0)})
+                      </div>
+                      <div>
+                        Engajamento:{" "}
+                        {selectedPipelineCalc.breakdown?.engagementDaysAgo != null
+                          ? `${Number(selectedPipelineCalc.breakdown.engagementDaysAgo).toFixed(1)} dias`
+                          : '—'}{' '}
+                        (score {formatPercent((selectedPipelineCalc.breakdown?.engagementScore ?? 0) * 100)})
+                      </div>
+                      <div>
+                        Sazonalidade: {selectedPipelineCalc.breakdown?.seasonalityMonth || '—'} (
+                        {formatPercent(selectedPipelineCalc.breakdown?.seasonalityWinRatePct ?? 0)})
+                      </div>
+                      <div>
+                        Histórico do Cliente (ponderado): {formatPercent((selectedPipelineCalc.breakdown?.clientWeightedScore ?? 0) * 100)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedPipelineCalc.breakdown?.signals?.length ? (
+                  <div style={{ marginTop: 14 }}>
+                    <InsightText style={{ marginTop: 0, fontWeight: 700, color: '#f8fafc' }}>Riscos / Sinais</InsightText>
+                    {selectedPipelineCalc.breakdown.signals.map((s: string, i: number) => (
+                      <div key={`${s}-${i}`} style={{ color: '#f59e0b', fontSize: 13, marginTop: 6 }}>
+                        - {s}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <InsightText style={{ marginTop: 14 }}>Sem sinais de risco relevantes para esta proposta.</InsightText>
+                )}
+
+                <div style={{ marginTop: 16 }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPipelineCalc(null)}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid rgba(148,163,184,0.35)',
+                      color: '#e2e8f0',
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: 12,
+                    }}
+                  >
+                    Ocultar cálculo
+                  </button>
+                </div>
+              </ChartCard>
+            )}
 
             <ChartCard style={{ gridColumn: '1 / -1', minHeight: 'auto', padding: '14px 18px' }}>
               <ChartTitle>Análise expandida (dados ricos do Python)</ChartTitle>

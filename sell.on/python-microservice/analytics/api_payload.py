@@ -18,7 +18,12 @@ from analytics.extended_metrics import (
 )
 from analytics.insights_engine import generate_insights
 from analytics.overview import compute_overview
-from analytics.predictive import forecast_revenue_naive, score_open_proposals, train_win_models
+from analytics.predictive import (
+    build_pipeline_deep_scores,
+    forecast_revenue_naive,
+    score_open_proposals,
+    train_win_models,
+)
 from analytics.preprocessing import proposals_to_dataframe
 from analytics.proposals_funnel import funnel_conversion_rates, funnel_counts
 from analytics.sellers_module import seller_performance
@@ -55,6 +60,9 @@ def empty_analysis_payload(counters: dict | None) -> dict:
             "winModel": {"ok": False, "message": "Sem dados.", "rocAucLr": None, "rocAucRf": None, "importances": None},
             "forecast": {"ok": False, "message": "Sem dados."},
             "pipelineScores": [],
+            "pipelineDeepScoresTop20": [],
+            "pipelineDeepScoresBottom10": [],
+            "pipelineDeepTotalOpen": 0,
         },
         "insights": ["Sem dados suficientes para análise."],
         "palette": PALETTE,
@@ -240,6 +248,8 @@ def build_analysis_payload(proposals: list, counters: dict | None = None) -> dic
                     }
                 )
 
+    deep_scores = build_pipeline_deep_scores(df, win_full)
+
     forecast_out = {
         "ok": bool(forecast.get("ok")),
         "message": str(forecast.get("message") or ""),
@@ -320,6 +330,9 @@ def build_analysis_payload(proposals: list, counters: dict | None = None) -> dic
             "winModel": win_model,
             "forecast": forecast_out,
             "pipelineScores": pipeline_scores,
+            "pipelineDeepScoresTop20": deep_scores.get("top20", []),
+            "pipelineDeepScoresBottom10": deep_scores.get("bottom10", []),
+            "pipelineDeepTotalOpen": deep_scores.get("totalOpen", 0),
         },
         "insights": insights_out,
         "palette": PALETTE,

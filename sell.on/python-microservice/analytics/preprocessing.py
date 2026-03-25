@@ -97,6 +97,7 @@ def proposals_to_dataframe(proposals: list) -> pd.DataFrame:
 
     df["createdAt"] = pd.to_datetime(df["createdAt"], errors="coerce")
     df["closedAt"] = pd.to_datetime(df["closedAt"], errors="coerce")
+    df["updatedAt"] = pd.to_datetime(df["updatedAt"], errors="coerce")
     df["validUntil"] = pd.to_datetime(df["validUntil"], errors="coerce")
     df["month"] = df["createdAt"].dt.to_period("M").astype(str)
 
