@@ -95,10 +95,12 @@ def proposals_to_dataframe(proposals: list) -> pd.DataFrame:
     if df.empty:
         return df
 
-    df["createdAt"] = pd.to_datetime(df["createdAt"], errors="coerce")
-    df["closedAt"] = pd.to_datetime(df["closedAt"], errors="coerce")
-    df["updatedAt"] = pd.to_datetime(df["updatedAt"], errors="coerce")
-    df["validUntil"] = pd.to_datetime(df["validUntil"], errors="coerce")
+    # Importante: unificar timezone para evitar erro ao subtrair tz-naive vs tz-aware.
+    # Usamos `utc=True` (tz-aware) e depois removemos o tz mantendo coerência em UTC.
+    df["createdAt"] = pd.to_datetime(df["createdAt"], errors="coerce", utc=True).dt.tz_convert(None)
+    df["closedAt"] = pd.to_datetime(df["closedAt"], errors="coerce", utc=True).dt.tz_convert(None)
+    df["updatedAt"] = pd.to_datetime(df["updatedAt"], errors="coerce", utc=True).dt.tz_convert(None)
+    df["validUntil"] = pd.to_datetime(df["validUntil"], errors="coerce", utc=True).dt.tz_convert(None)
     df["month"] = df["createdAt"].dt.to_period("M").astype(str)
 
     # Tempo até fechamento (dias) — apenas ganhas com closedAt
