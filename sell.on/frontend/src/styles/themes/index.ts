@@ -5,8 +5,18 @@ import { modernTheme } from './modern';
 import { oceanTheme } from './ocean';
 import { neonOrangeTheme } from './neonOrange';
 import { neonBlueTheme } from './neonBlue';
+import { lightBlueTheme } from './lightBlue';
+import { cosplayVioletTheme } from './cosplayViolet';
 
-export type ThemeName = 'dark' | 'pink' | 'modern' | 'ocean' | 'neonOrange' | 'neonBlue';
+export type ThemeName =
+  | 'dark'
+  | 'pink'
+  | 'modern'
+  | 'ocean'
+  | 'neonOrange'
+  | 'neonBlue'
+  | 'lightBlue'
+  | 'cosplayViolet';
 
 export const themes: Record<ThemeName, DefaultTheme> = {
   dark: darkTheme,
@@ -15,6 +25,8 @@ export const themes: Record<ThemeName, DefaultTheme> = {
   ocean: oceanTheme,
   neonOrange: neonOrangeTheme,
   neonBlue: neonBlueTheme,
+  lightBlue: lightBlueTheme,
+  cosplayViolet: cosplayVioletTheme,
 };
 
 export const getTheme = (name: ThemeName): DefaultTheme => themes[name] || themes.dark;

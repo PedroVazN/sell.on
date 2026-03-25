@@ -33,9 +33,21 @@ export const GlobalStyles = createGlobalStyle`
     width: 100%;
     height: 100%;
     background: 
-      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+      radial-gradient(
+        circle at 20% 80%,
+        ${({ theme }) => theme.colors.primary}1a 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 20%,
+        ${({ theme }) => theme.colors.secondary}18 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 40% 40%,
+        ${({ theme }) => theme.colors.accent}0d 0%,
+        transparent 50%
+      );
     pointer-events: none;
     z-index: -1;
   }
@@ -54,12 +66,16 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.03);
+    background: ${({ theme }) => theme.colors.background.tertiary};
     border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+    background: linear-gradient(
+      135deg,
+      ${({ theme }) => theme.colors.primary}55,
+      ${({ theme }) => theme.colors.secondary}44
+    );
     border-radius: 10px;
     border: 2px solid transparent;
     background-clip: content-box;
@@ -67,7 +83,11 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(139, 92, 246, 0.5));
+    background: linear-gradient(
+      135deg,
+      ${({ theme }) => theme.colors.primary}77,
+      ${({ theme }) => theme.colors.secondary}66
+    );
     transform: scale(1.1);
   }
 
@@ -376,8 +396,16 @@ export const GlobalStyles = createGlobalStyle`
     
     body::before {
       background: 
-        radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+        radial-gradient(
+          circle at 20% 80%,
+          ${({ theme }) => theme.colors.primary}0d 0%,
+          transparent 50%
+        ),
+        radial-gradient(
+          circle at 80% 20%,
+          ${({ theme }) => theme.colors.secondary}0d 0%,
+          transparent 50%
+        );
     }
   }
 

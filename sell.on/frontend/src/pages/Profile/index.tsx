@@ -378,6 +378,16 @@ export const Profile: React.FC = () => {
                     label: 'Preto + azul neon',
                     preview: 'linear-gradient(135deg, #000000 0%, #000814 35%, #0080ff 65%, #00d4ff 100%)',
                   },
+                  {
+                    id: 'lightBlue',
+                    label: 'Claro branco e azul',
+                    preview: 'linear-gradient(180deg, #e8edf5 0%, #ffffff 50%, #dbeafe 100%)',
+                  },
+                  {
+                    id: 'cosplayViolet',
+                    label: 'Roxo profundo (violeta)',
+                    preview: 'linear-gradient(180deg, #010326 0%, #150140 45%, #4804D9 100%)',
+                  },
                 ] as const
               ).map((t) => (
                 <S.ThemeOption
