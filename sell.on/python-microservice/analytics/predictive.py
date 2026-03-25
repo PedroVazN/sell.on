@@ -178,21 +178,43 @@ def build_pipeline_deep_scores(
     if open_df.empty:
         return {"top20": [], "bottom10": [], "totalOpen": 0}
 
-    now = pd.Timestamp.utcnow()
+    # Usar agora tz-naive para evitar misturar com datetime tz-aware.
+    # A normalização (tz_convert(None)) das colunas vem abaixo.
+    now = pd.Timestamp.now()
     # Garantir que o pandas não mistura tz-aware/tz-naive.
     if "createdAt" in open_df.columns:
         if getattr(open_df["createdAt"].dt, "tz", None) is not None:
             open_df["createdAt"] = open_df["createdAt"].dt.tz_convert(None)
-    open_df["negotiationDays"] = (
-        (now - open_df["createdAt"]).dt.total_seconds() / 86400.0
-    ).replace([np.inf, -np.inf], np.nan)
+    # Calcular aging com cuidado de timezone.
+    try:
+        open_df["negotiationDays"] = ((now - open_df["createdAt"]).dt.total_seconds() / 86400.0).replace(
+            [np.inf, -np.inf], np.nan
+        )
+    except TypeError:
+        # Se ainda houver mistura tz-aware/tz-naive, garantimos tz-naive.
+        try:
+            open_df["createdAt"] = open_df["createdAt"].dt.tz_localize(None)
+        except Exception:
+            pass
+        open_df["negotiationDays"] = ((now - open_df["createdAt"]).dt.total_seconds() / 86400.0).replace(
+            [np.inf, -np.inf], np.nan
+        )
 
     if "updatedAt" in open_df.columns:
         if getattr(open_df["updatedAt"].dt, "tz", None) is not None:
             open_df["updatedAt"] = open_df["updatedAt"].dt.tz_convert(None)
-        open_df["daysSinceUpdate"] = (
-            (now - open_df["updatedAt"]).dt.total_seconds() / 86400.0
-        ).replace([np.inf, -np.inf], np.nan)
+        try:
+            open_df["daysSinceUpdate"] = ((now - open_df["updatedAt"]).dt.total_seconds() / 86400.0).replace(
+                [np.inf, -np.inf], np.nan
+            )
+        except TypeError:
+            try:
+                open_df["updatedAt"] = open_df["updatedAt"].dt.tz_localize(None)
+            except Exception:
+                pass
+            open_df["daysSinceUpdate"] = ((now - open_df["updatedAt"]).dt.total_seconds() / 86400.0).replace(
+                [np.inf, -np.inf], np.nan
+            )
     else:
         open_df["daysSinceUpdate"] = np.nan
 
