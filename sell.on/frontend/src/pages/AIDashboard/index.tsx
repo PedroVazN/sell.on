@@ -1793,11 +1793,9 @@ export const AIDashboard: React.FC = () => {
                     }
                     return [value.toFixed(2), 'Importância'];
                   }}
-                  labelFormatter={(value, payload) => {
-                    if (payload && payload[0] && payload[0].payload) {
-                      return payload[0].payload.fullName;
-                    }
-                    return value;
+                  labelFormatter={(value, payload: any[]) => {
+                    const item = payload?.[0]?.payload as { fullName?: string } | undefined;
+                    return item?.fullName ?? value;
                   }}
                 />
                 <Bar 

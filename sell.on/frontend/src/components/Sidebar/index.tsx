@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
       title: 'PRINCIPAL',
       items: [
         { icon: <BarChart3 size={20} />, label: 'Dashboard', path: '/', permission: 'dashboard' },
-        ...(hasPermission('admin') ? [
+        ...(hasPermission('analytics') ? [
           { icon: <Brain size={20} />, label: 'Dashboard IA', path: '/ai-dashboard', permission: 'admin' },
           { icon: <Activity size={20} />, label: 'Análise Data Science', path: '/analysis', permission: 'admin' },
         ] : []),
@@ -125,9 +125,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
           { icon: <FileBarChart size={20} />, label: 'Consulta de Clientes', path: '/consulta-clientes' },
         ] : []),
         { icon: <Filter size={20} />, label: 'Funil de Vendas', path: '/funnel', permission: 'funnel' },
-        ...(hasPermission('admin') ? [
+        ...(hasPermission('analytics') ? [
           { icon: <FileBarChart size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
           { icon: <Trophy size={20} />, label: 'Ranking', path: '/ranking', permission: 'admin' },
+          { icon: <BarChart3 size={20} />, label: 'Dashboard Vendedores', path: '/vendedor-dashboard', permission: 'admin' },
         ] : []),
       ]
     },
@@ -139,7 +140,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         { icon: <ListTodo size={20} />, label: 'Checklist', path: '/checklist', permission: 'admin' },
         { icon: <UserPlus size={20} />, label: 'Cadastrar Usuário', path: '/users/register', permission: 'admin' },
         { icon: <Target size={20} />, label: 'Metas', path: '/goals', permission: 'admin' },
-        { icon: <BarChart3 size={20} />, label: 'Dashboard Vendedores', path: '/vendedor-dashboard', permission: 'admin' },
       ]
     }] : []),
     {

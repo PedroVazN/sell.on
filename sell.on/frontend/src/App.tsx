@@ -73,18 +73,18 @@ function App() {
           <Route index element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="leads" element={<ProtectedRoute permission="admin"><Leads /></ProtectedRoute>} />
           <Route path="sales" element={<ProtectedRoute permission="admin"><Sales /></ProtectedRoute>} />
-          <Route path="reports" element={<ProtectedRoute permission="admin"><Reports /></ProtectedRoute>} />
-          <Route path="ranking" element={<ProtectedRoute permission="admin"><Ranking /></ProtectedRoute>} />
+          <Route path="reports" element={<ProtectedRoute permission="analytics"><Reports /></ProtectedRoute>} />
+          <Route path="ranking" element={<ProtectedRoute permission="analytics"><Ranking /></ProtectedRoute>} />
             <Route path="goals" element={<ProtectedRoute permission="admin"><Goals /></ProtectedRoute>} />
-            <Route path="vendedor-dashboard" element={<ProtectedRoute permission="admin"><VendedorDashboard /></ProtectedRoute>} />
+            <Route path="vendedor-dashboard" element={<ProtectedRoute permission="analytics"><VendedorDashboard /></ProtectedRoute>} />
             <Route path="users" element={<ProtectedRoute permission="admin"><Users /></ProtectedRoute>} />
             <Route path="checklist" element={<ProtectedRoute permission="admin"><Checklist /></ProtectedRoute>} />
             <Route path="users/register" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="users/create-seller" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="performance" element={<ProtectedRoute permission="admin"><Performance /></ProtectedRoute>} />
-          <Route path="analysis" element={<ProtectedRoute permission="admin"><Analysis /></ProtectedRoute>} />
-          <Route path="ai-dashboard" element={<ProtectedRoute permission="admin"><AIDashboard /></ProtectedRoute>} />
+          <Route path="analysis" element={<ProtectedRoute permission="analytics"><Analysis /></ProtectedRoute>} />
+          <Route path="ai-dashboard" element={<ProtectedRoute permission="analytics"><AIDashboard /></ProtectedRoute>} />
           <Route path="calendar" element={<ProtectedRoute permission="admin"><Calendar /></ProtectedRoute>} />
           <Route path="configurations" element={<ProtectedRoute permission="admin"><Configurations /></ProtectedRoute>} />
           <Route path="products" element={<ProtectedRoute permission="admin"><Products /></ProtectedRoute>} />

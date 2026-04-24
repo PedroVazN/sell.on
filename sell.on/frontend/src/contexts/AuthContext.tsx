@@ -133,6 +133,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return allowedPermissions.includes(permission);
     }
 
+    // Analista: perfil de visualização para análise de dados (dashboards e insights)
+    if (user.role === 'analista') {
+      const allowedPermissions = ['dashboard', 'notices', 'analytics'];
+      return allowedPermissions.includes(permission);
+    }
+
     return false;
   };
 

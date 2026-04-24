@@ -5,7 +5,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'vendedor' | 'cliente';
+  role: 'admin' | 'vendedor' | 'analista' | 'cliente';
   phone?: string;
   address?: {
     street?: string;  
@@ -639,7 +639,7 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
-  role?: 'admin' | 'vendedor' | 'cliente';
+  role?: 'admin' | 'vendedor' | 'analista' | 'cliente';
   phone?: string;
 }
 
@@ -1895,7 +1895,7 @@ class ApiService {
     name: string;
     email: string;
     password: string;
-    role?: 'admin' | 'vendedor' | 'cliente';
+    role?: 'admin' | 'vendedor' | 'analista' | 'cliente';
     phone?: string;
     address?: {
       street?: string;
@@ -1925,7 +1925,7 @@ class ApiService {
       country?: string;
     };
     isActive?: boolean;
-    role?: 'admin' | 'vendedor' | 'cliente';
+    role?: 'admin' | 'vendedor' | 'analista' | 'cliente';
   }): Promise<ApiResponse<User>> {
     const res = await this.request<User>(`/users/${id}`, {
       method: 'PUT',
@@ -1957,6 +1957,7 @@ class ApiService {
     byRole: {
       admin: number;
       vendedor: number;
+      analista: number;
       cliente: number;
     };
   }>> {

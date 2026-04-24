@@ -8,7 +8,7 @@ interface UserModalProps {
   onClose: () => void;
   onSave: () => void;
   user?: User | null;
-  defaultRole?: 'admin' | 'vendedor' | 'cliente';
+  defaultRole?: 'admin' | 'vendedor' | 'analista' | 'cliente';
 }
 
 export const UserModal: React.FC<UserModalProps> = ({
@@ -23,7 +23,7 @@ export const UserModal: React.FC<UserModalProps> = ({
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'vendedor' as 'admin' | 'vendedor' | 'cliente',
+    role: 'vendedor' as 'admin' | 'vendedor' | 'analista' | 'cliente',
     phone: '',
     address: {
       street: '',
@@ -235,6 +235,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                   onChange={(e) => handleInputChange('role', e.target.value)}
                 >
                   <option value="vendedor">Vendedor</option>
+                  <option value="analista">Analista</option>
                   <option value="admin">Administrador</option>
                   <option value="cliente">Cliente</option>
                 </S.Select>

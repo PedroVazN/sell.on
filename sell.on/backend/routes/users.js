@@ -34,6 +34,13 @@ router.post('/test-login', (req, res, next) => {
         password: '123456',
         role: 'vendedor',
         isActive: true
+      },
+      {
+        name: 'Teste Analista',
+        email: 'teste-analista@teste.com',
+        password: '123456',
+        role: 'analista',
+        isActive: true
       }
     ];
 
@@ -646,6 +653,7 @@ router.get('/stats/overview', async (req, res) => {
     const activeUsers = await User.countDocuments({ isActive: true });
     const adminUsers = await User.countDocuments({ role: 'admin' });
     const sellerUsers = await User.countDocuments({ role: 'vendedor' });
+    const analystUsers = await User.countDocuments({ role: 'analista' });
     const clientUsers = await User.countDocuments({ role: 'cliente' });
 
     res.json({
@@ -657,6 +665,7 @@ router.get('/stats/overview', async (req, res) => {
         byRole: {
           admin: adminUsers,
           vendedor: sellerUsers,
+          analista: analystUsers,
           cliente: clientUsers
         }
       }

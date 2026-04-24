@@ -50,8 +50,8 @@ const validateUser = [
 
   body('role')
     .optional()
-    .isIn(['admin', 'vendedor', 'cliente'])
-    .withMessage('Role deve ser: admin, vendedor ou cliente'),
+    .isIn(['admin', 'vendedor', 'analista', 'cliente'])
+    .withMessage('Role deve ser: admin, vendedor, analista ou cliente'),
 
   body('phone')
     .optional()

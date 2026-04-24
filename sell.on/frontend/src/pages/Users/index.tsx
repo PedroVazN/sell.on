@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Users as UsersIcon, Plus, Search, Filter, Edit, Trash2, Loader2, UserCheck, UserX, Shield, User } from 'lucide-react';
+import { Users as UsersIcon, Plus, Search, Filter, Edit, Trash2, Loader2, UserCheck, UserX, Shield, User, LineChart } from 'lucide-react';
 import { apiService, User as UserType } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -152,6 +152,8 @@ export const Users: React.FC = () => {
         return <Shield size={16} />;
       case 'vendedor':
         return <User size={16} />;
+      case 'analista':
+        return <LineChart size={16} />;
       default:
         return <UserCheck size={16} />;
     }
@@ -163,6 +165,8 @@ export const Users: React.FC = () => {
         return 'Administrador';
       case 'vendedor':
         return 'Vendedor';
+      case 'analista':
+        return 'Analista';
       case 'cliente':
         return 'Cliente';
       default:
@@ -176,6 +180,8 @@ export const Users: React.FC = () => {
         return '#ef4444';
       case 'vendedor':
         return '#3b82f6';
+      case 'analista':
+        return '#8b5cf6';
       case 'cliente':
         return '#10b981';
       default:
@@ -232,6 +238,12 @@ export const Users: React.FC = () => {
                 Vendedores
               </FilterOption>
               <FilterOption
+                onClick={() => handleFilterChange('role', 'analista')}
+                $active={filters.role === 'analista'}
+              >
+                Analistas
+              </FilterOption>
+              <FilterOption
                 onClick={() => handleFilterChange('role', 'cliente')}
                 $active={filters.role === 'cliente'}
               >
@@ -265,6 +277,10 @@ export const Users: React.FC = () => {
             <StatCard>
               <StatValue>{stats.byRole.admin}</StatValue>
               <StatLabel>Administradores</StatLabel>
+            </StatCard>
+            <StatCard>
+              <StatValue>{stats.byRole.analista || 0}</StatValue>
+              <StatLabel>Analistas</StatLabel>
             </StatCard>
           </StatsGrid>
         )}

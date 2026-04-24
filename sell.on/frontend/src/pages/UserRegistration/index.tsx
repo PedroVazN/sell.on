@@ -15,7 +15,7 @@ export const UserRegistration: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: (location.pathname === '/users/create-seller' ? 'vendedor' : 'vendedor') as 'admin' | 'vendedor' | 'cliente',
+    role: (location.pathname === '/users/create-seller' ? 'vendedor' : 'vendedor') as 'admin' | 'vendedor' | 'analista' | 'cliente',
     phone: '',
     address: {
       street: '',
@@ -197,6 +197,7 @@ export const UserRegistration: React.FC = () => {
                   required
                 >
                   <option value="vendedor">Vendedor</option>
+                  <option value="analista">Analista</option>
                   <option value="admin">Administrador</option>
                   <option value="cliente">Cliente</option>
                 </S.Select>
