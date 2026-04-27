@@ -77,8 +77,8 @@ function App() {
           <Route path="ranking" element={<ProtectedRoute permission="analytics"><Ranking /></ProtectedRoute>} />
             <Route path="goals" element={<ProtectedRoute permission="admin"><Goals /></ProtectedRoute>} />
             <Route path="vendedor-dashboard" element={<ProtectedRoute permission="analytics"><VendedorDashboard /></ProtectedRoute>} />
-            <Route path="users" element={<ProtectedRoute permission="admin"><Users /></ProtectedRoute>} />
-            <Route path="checklist" element={<ProtectedRoute permission="admin"><Checklist /></ProtectedRoute>} />
+            <Route path="users" element={<ProtectedRoute permission="users"><Users /></ProtectedRoute>} />
+            <Route path="checklist" element={<ProtectedRoute permission="checklist"><Checklist /></ProtectedRoute>} />
             <Route path="users/register" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="users/create-seller" element={<ProtectedRoute permission="admin"><UserRegistration /></ProtectedRoute>} />
             <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

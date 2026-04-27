@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         ] : []),
       ]
     },
-    ...(hasPermission('admin') ? [{
+    ...(user?.role === 'admin' ? [{
       title: 'SISTEMA',
       items: [
         { icon: <MessageCircle size={20} />, label: 'Mensagens', path: '/chats', permission: 'admin' },
