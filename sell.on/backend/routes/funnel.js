@@ -19,6 +19,11 @@ const canEditOpportunity = (req, opportunity) => {
   return opportunity.responsible_user && opportunity.responsible_user._id.toString() === req.user._id.toString();
 };
 
+const canViewOpportunity = (req, opportunity) => {
+  if (req.user.role === 'admin' || req.user.role === 'analista') return true;
+  return canEditOpportunity(req, opportunity);
+};
+
 const buildOpportunityQuery = (req) => {
   const q = { isDeleted: { $ne: true } };
   if (req.user.role === 'vendedor') {
@@ -30,7 +35,7 @@ const buildOpportunityQuery = (req) => {
 // --- Pipeline Stages ---
 
 // GET /api/funnel/stages (seed default stages if none exist)
-router.get('/stages', auth, authorize('admin', 'vendedor'), async (req, res) => {
+router.get('/stages', auth, authorize('admin', 'vendedor', 'analista'), async (req, res) => {
   try {
     let stages = await PipelineStage.find({ isDeleted: { $ne: true } }).sort({ order: 1 });
     if (stages.length === 0) {
@@ -136,7 +141,7 @@ router.patch('/stages/reorder', auth, authorize('admin'), [
 // --- Loss Reasons ---
 
 // GET /api/funnel/loss-reasons (seed defaults if none exist)
-router.get('/loss-reasons', auth, authorize('admin', 'vendedor'), async (req, res) => {
+router.get('/loss-reasons', auth, authorize('admin', 'vendedor', 'analista'), async (req, res) => {
   try {
     let list = await LossReason.find({ isDeleted: { $ne: true } }).sort({ order: 1 });
     if (list.length === 0) {
@@ -219,7 +224,7 @@ const opportunityPopulate = [
 ];
 
 // GET /api/funnel/opportunities
-router.get('/opportunities', auth, authorize('admin', 'vendedor'), async (req, res) => {
+router.get('/opportunities', auth, authorize('admin', 'vendedor', 'analista'), async (req, res) => {
   try {
     const { seller, stage, status, dateFrom, dateTo, search } = req.query;
     const query = buildOpportunityQuery(req);
@@ -252,12 +257,12 @@ router.get('/opportunities', auth, authorize('admin', 'vendedor'), async (req, r
 });
 
 // GET /api/funnel/opportunities/:id
-router.get('/opportunities/:id', auth, authorize('admin', 'vendedor'), [param('id').isMongoId()], async (req, res) => {
+router.get('/opportunities/:id', auth, authorize('admin', 'vendedor', 'analista'), [param('id').isMongoId()], async (req, res) => {
   try {
     const opp = await Opportunity.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate(opportunityPopulate);
     if (!opp) return res.status(404).json({ success: false, message: 'Oportunidade não encontrada' });
-    if (!canEditOpportunity(req, opp) && req.user.role !== 'admin') {
+    if (!canViewOpportunity(req, opp)) {
       return res.status(403).json({ success: false, message: 'Sem permissão' });
     }
     const activities = await OpportunityActivity.find({ opportunity: opp._id, isDeleted: { $ne: true } })
@@ -514,11 +519,11 @@ router.delete('/opportunities/:id', auth, authorize('admin'), [param('id').isMon
 // --- Activities ---
 
 // GET /api/funnel/opportunities/:id/activities
-router.get('/opportunities/:id/activities', auth, authorize('admin', 'vendedor'), [param('id').isMongoId()], async (req, res) => {
+router.get('/opportunities/:id/activities', auth, authorize('admin', 'vendedor', 'analista'), [param('id').isMongoId()], async (req, res) => {
   try {
     const opp = await Opportunity.findOne({ _id: req.params.id, isDeleted: { $ne: true } }).populate('responsible_user');
     if (!opp) return res.status(404).json({ success: false, message: 'Oportunidade não encontrada' });
-    if (!canEditOpportunity(req, opp)) return res.status(403).json({ success: false, message: 'Sem permissão' });
+    if (!canViewOpportunity(req, opp)) return res.status(403).json({ success: false, message: 'Sem permissão' });
     const activities = await OpportunityActivity.find({ opportunity: req.params.id, isDeleted: { $ne: true } })
       .populate('createdBy', 'name email')
       .sort({ due_at: 1, createdAt: -1 })
