@@ -38,23 +38,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (token && storedUser) {
           try {
-            // Tentar usar o usuário armazenado no localStorage
+            // Restaurar sessão com dados locais.
+            // Não validar com /users, pois essa rota é restrita a admin.
             const userData = JSON.parse(storedUser);
             console.log('🔍 Usuário armazenado encontrado:', userData);
-            
-            // Verificar se o token ainda é válido fazendo uma requisição simples
-            const response = await apiService.getUsers(1, 1);
-            if (response.success) {
-              setUser(userData);
-              setIsAuthenticated(true);
-              console.log('✅ Usuário restaurado do localStorage:', userData.email);
-            } else {
-              // Token inválido, limpar dados
-              localStorage.removeItem('token');
-              localStorage.removeItem('authToken');
-              localStorage.removeItem('currentUser');
-              console.log('❌ Token inválido, limpando dados');
-            }
+
+            setUser(userData);
+            setIsAuthenticated(true);
+            console.log('✅ Usuário restaurado do localStorage:', userData.email);
           } catch (parseError) {
             console.error('Erro ao parsear usuário armazenado:', parseError);
             localStorage.removeItem('currentUser');
