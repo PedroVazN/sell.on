@@ -28,7 +28,6 @@ import {
   ChevronRight,
   Briefcase,
   MessageCircle,
-  Trophy,
   ListTodo
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -127,7 +126,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         { icon: <Filter size={20} />, label: 'Funil de Vendas', path: '/funnel', permission: 'funnel' },
         ...(hasPermission('analytics') ? [
           { icon: <FileBarChart size={20} />, label: 'Relatórios', path: '/reports', permission: 'admin' },
-          { icon: <Trophy size={20} />, label: 'Ranking', path: '/ranking', permission: 'admin' },
           { icon: <BarChart3 size={20} />, label: 'Dashboard Vendedores', path: '/vendedor-dashboard', permission: 'admin' },
         ] : []),
       ]
