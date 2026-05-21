@@ -134,10 +134,11 @@ export const FollowUpTasks: React.FC = () => {
       ) : (
         <S.List>
           {tasks.map((task) => {
-            const overdue =
+            const overdue = !!(
               task.status === 'pending' &&
               task.dueAt &&
-              new Date(task.dueAt) < new Date();
+              new Date(task.dueAt) < new Date()
+            );
             return (
               <S.Card key={task._id} $overdue={overdue}>
                 <S.CardBody>
