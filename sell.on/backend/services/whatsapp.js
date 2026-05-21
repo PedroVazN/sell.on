@@ -154,28 +154,92 @@ async function normalizeTwilioFrom(fromNumber, accountSid, authToken) {
   // Extrair apenas números para validação
   const numberOnly = cleaned.replace(/whatsapp:|\+/g, '');
   
-  // Verificar se é um número sandbox (começa com 1415 - formato sandbox Twilio)
+  // Sandbox Twilio costuma começar com 1415; em produção o número aprovado pode ser outro
   const isSandbox = numberOnly.startsWith('1415') && numberOnly.length === 11;
-  
-  // Validar formato
   if (!isSandbox) {
-    console.error(`❌ ERRO: TWILIO_WHATSAPP_FROM (${fromNumber}) não é válido!`);
-    console.error('   📋 Números sandbox do Twilio:');
-    console.error('      - Devem começar com +1415');
-    console.error('      - Devem ter 11 dígitos (ex: +14155238886)');
-    console.error('      - Formato: whatsapp:+1415XXXXXXXX');
-    console.error('');
-    console.error('   🔍 Para descobrir o número EXATO da sua conta:');
-    console.error('   1. Acesse: https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn');
-    console.error('   2. Procure por "From" ou "Sandbox Number" na página');
-    console.error('   3. Copie o número EXATO (formato: +1 415 XXX XXXX)');
-    console.error('   4. Remova espaços e configure como: whatsapp:+1415XXXXXXXX');
-    console.error('');
-    console.error(`   ⚠️ Usando sandbox padrão (${DEFAULT_SANDBOX}) - pode não funcionar se sua conta usar outro número`);
-    return DEFAULT_SANDBOX;
+    console.warn(`⚠️ TWILIO_WHATSAPP_FROM (${fromNumber}) não parece sandbox (+1415). Usando como configurado (produção).`);
   }
-  
+
   return cleaned;
+}
+
+function formatCurrency(value) {
+  const n = Number(value) || 0;
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function getSellerName(proposal, sellerUser) {
+  return (
+    proposal?.seller?.name ||
+    sellerUser?.name ||
+    'Não informado'
+  );
+}
+
+function getDistributorName(proposal) {
+  const d = proposal?.distributor;
+  if (!d) return 'Não informado';
+  return d.apelido || d.razaoSocial || d.name || 'Não informado';
+}
+
+function getClientName(proposal) {
+  const c = proposal?.client;
+  if (!c) return 'Não informado';
+  return c.razaoSocial || c.company || c.name || 'Não informado';
+}
+
+/**
+ * Linhas de produtos: nome, quantidade e subtotal do item
+ */
+function formatProposalItemsLines(proposal) {
+  const items = Array.isArray(proposal?.items) ? proposal.items : [];
+  if (items.length === 0) {
+    return '• (nenhum item na proposta)';
+  }
+  return items
+    .map((item) => {
+      const name = item.product?.name || item.productName || 'Produto';
+      const qty = item.quantity ?? 0;
+      const lineTotal = item.total != null ? item.total : (item.unitPrice || 0) * qty;
+      return `• ${name} — ${qty} un. — ${formatCurrency(lineTotal)}`;
+    })
+    .join('\n');
+}
+
+/**
+ * Mensagem completa de venda fechada (proposta, itens, total, distribuidor, vendedor)
+ */
+function buildSaleClosedMessage(proposal, sellerUser, { includeSellerLine = true } = {}) {
+  const now = new Date();
+  const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const data = now.toLocaleDateString('pt-BR');
+  const closedAt = proposal.closedAt ? new Date(proposal.closedAt) : now;
+  const closedDateStr = closedAt.toLocaleDateString('pt-BR');
+  const closedTimeStr = closedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  const lines = [
+    '✅ *Venda fechada — Sell.On*',
+    '',
+    `📋 *Proposta:* ${proposal.proposalNumber || 'N/A'}`,
+  ];
+
+  if (includeSellerLine) {
+    lines.push(`👤 *Vendedor:* ${getSellerName(proposal, sellerUser)}`);
+  }
+
+  lines.push(
+    `🏢 *Distribuidor:* ${getDistributorName(proposal)}`,
+    `👥 *Cliente:* ${getClientName(proposal)}`,
+    '',
+    '📦 *Produtos:*',
+    formatProposalItemsLines(proposal),
+    '',
+    `💰 *Total:* ${formatCurrency(proposal.total)}`,
+    `🕐 *Fechada em:* ${closedDateStr} às ${closedTimeStr}`,
+    `📅 *Notificação:* ${data} às ${hora}`
+  );
+
+  return lines.join('\n');
 }
 
 /**
@@ -412,69 +476,31 @@ Status: ${getStatusEmoji(proposal.status)} ${proposal.status === 'negociacao' ? 
  * @param {object} proposal - Dados da proposta
  * @param {object} seller - Dados do vendedor
  */
+/**
+ * WhatsApp apenas na venda fechada — envia para ADMIN_WHATSAPP_PHONE
+ */
 async function notifyProposalClosed(proposal, seller) {
   try {
-    const promises = [];
-    
-    // Enviar para o vendedor (se tiver telefone)
-    const sellerPhone = seller.phone || seller.contato?.telefone;
-    if (sellerPhone) {
-      const sellerMessage = `🎊 *Venda Fechada!*
-
-📋 Proposta: ${proposal.proposalNumber || 'N/A'}
-👤 Cliente: ${proposal.client?.name || 'N/A'}
-💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
-
-Parabéns pela venda! 🎉`;
-      
-      promises.push(sendWhatsAppMessage(sellerPhone, sellerMessage));
-    }
-    
-    // Enviar para o admin/gerente (se configurado)
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
-    if (adminPhone) {
-      // Validar se o número do admin não é o mesmo que o From do Twilio
-      const formattedAdminPhone = formatPhoneNumber(adminPhone);
-      const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
-      const fromNumberOnly = twilioFrom.replace(/whatsapp:|\+|\s/g, '');
-      
-      if (formattedAdminPhone === fromNumberOnly) {
-        console.warn(`⚠️ ADMIN_WHATSAPP_PHONE (${adminPhone}) é o mesmo que TWILIO_WHATSAPP_FROM. Pulando envio para evitar erro.`);
-      } else {
-        const now = new Date();
-        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const data = now.toLocaleDateString('pt-BR');
-        
-        const adminMessage = `✅ *Venda Fechada!*
-
-👤 Vendedor: ${seller.name || 'N/A'}
-📋 Proposta: ${proposal.proposalNumber || 'N/A'}
-👥 Cliente: ${proposal.client?.name || 'N/A'}
-💰 Valor: R$ ${(proposal.total || 0).toLocaleString('pt-BR')}
-🕐 Fechada em: ${data} às ${hora}
-
-Parabéns ao vendedor! 🎉`;
-        
-        console.log(`📱 Enviando WhatsApp para admin: ${adminPhone} (formatado: ${formattedAdminPhone})`);
-        promises.push(sendWhatsAppMessage(adminPhone, adminMessage).catch(err => {
-          console.error(`❌ Erro ao enviar para admin ${adminPhone}:`, err.message);
-          throw err;
-        }));
-      }
-    } else {
-      console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - admin não receberá notificação');
+    if (!adminPhone) {
+      console.warn('⚠️ ADMIN_WHATSAPP_PHONE não configurado - alerta de venda fechada não será enviado');
+      return { success: false, error: 'ADMIN_WHATSAPP_PHONE não configurado' };
     }
-    
-    // Enviar todas as mensagens em paralelo
-    const results = await Promise.allSettled(promises);
-    
-    return {
-      success: true,
-      results: results.map((r, i) => ({
-        recipient: i === 0 ? 'vendedor' : 'admin',
-        success: r.status === 'fulfilled'
-      }))
-    };
+
+    const formattedAdminPhone = formatPhoneNumber(adminPhone);
+    const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+    const fromNumberOnly = twilioFrom.replace(/whatsapp:|\+|\s/g, '');
+
+    if (formattedAdminPhone === fromNumberOnly) {
+      console.warn(`⚠️ ADMIN_WHATSAPP_PHONE (${adminPhone}) é o mesmo que TWILIO_WHATSAPP_FROM. Envio cancelado.`);
+      return { success: false, error: 'From e To iguais' };
+    }
+
+    const message = buildSaleClosedMessage(proposal, seller, { includeSellerLine: true });
+    console.log(`📱 Enviando WhatsApp (somente venda fechada) para: ${adminPhone}`);
+
+    const result = await sendWhatsAppMessage(adminPhone, message);
+    return { success: true, recipient: 'admin', result };
   } catch (error) {
     console.error('Erro ao enviar notificação de venda fechada:', error);
     return { success: false, error: error.message };
@@ -598,6 +624,8 @@ module.exports = {
   notifyProposalCreated,
   notifyProposalClosed,
   notifyProposalLost,
-  formatPhoneNumber
+  formatPhoneNumber,
+  buildSaleClosedMessage,
+  formatProposalItemsLines
 };
 

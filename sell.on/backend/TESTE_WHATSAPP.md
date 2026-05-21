@@ -45,7 +45,45 @@ WHATSAPP_PROVIDER=twilio
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=seu_token_aqui
 TWILIO_WHATSAPP_FROM=whatsapp:+1415XXXXXXXX
-ADMIN_WHATSAPP_PHONE=5511962234936
+ADMIN_WHATSAPP_PHONE=5511999999999
+```
+
+Ao marcar proposta como **venda fechada**, o sistema envia WhatsApp com:
+- Número da proposta
+- Vendedor que fechou
+- Distribuidor
+- Lista de produtos (nome, quantidade, subtotal)
+- Total da proposta
+- Data/hora do fechamento
+
+Destinatário: apenas `ADMIN_WHATSAPP_PHONE` (seu WhatsApp). Não envia ao criar proposta nem em venda perdida.
+
+Exemplo de mensagem:
+
+```
+✅ *Venda fechada — Sell.On*
+
+📋 *Proposta:* PROP-2025-001
+👤 *Vendedor:* Maria Silva
+🏢 *Distribuidor:* Distribuidora ABC
+👥 *Cliente:* Cliente XYZ
+
+📦 *Produtos:*
+• Produto A — 10 un. — R$ 1.500,00
+• Produto B — 2 un. — R$ 800,00
+
+💰 *Total:* R$ 2.300,00
+🕐 *Fechada em:* 18/05/2026 às 14:30
+```
+
+Variáveis mínimas no Vercel (backend):
+
+```env
+WHATSAPP_PROVIDER=twilio
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=seu_token_aqui
+TWILIO_WHATSAPP_FROM=whatsapp:+1415XXXXXXXX
+ADMIN_WHATSAPP_PHONE=5511999999999
 ```
 
 **Substitua:**
