@@ -35,6 +35,7 @@ const PriceList = lazy(() => import('./pages/PriceList').then(m => ({ default: m
 const Proposals = lazy(() => import('./pages/Proposals').then(m => ({ default: m.Proposals })));
 const CreateProposal = lazy(() => import('./pages/CreateProposal').then(m => ({ default: m.CreateProposal })));
 const EditProposal = lazy(() => import('./pages/EditProposal').then(m => ({ default: m.EditProposal })));
+const FollowUpTasks = lazy(() => import('./pages/FollowUpTasks').then(m => ({ default: m.FollowUpTasks })));
 const CreateProduct = lazy(() => import('./pages/CreateProduct').then(m => ({ default: m.CreateProduct })));
 const CreatePriceList = lazy(() => import('./pages/CreatePriceList').then(m => ({ default: m.CreatePriceList })));
 const ClientRegistration = lazy(() => import('./pages/ClientRegistration').then(m => ({ default: m.ClientRegistration })));
@@ -100,6 +101,7 @@ function App() {
           <Route path="proposals" element={<ProtectedRoute permission="proposals"><Proposals /></ProtectedRoute>} />
           <Route path="proposals/create" element={<ProtectedRoute permission="proposals"><CreateProposal /></ProtectedRoute>} />
           <Route path="proposals/edit/:id" element={<ProtectedRoute permission="proposals"><EditProposal /></ProtectedRoute>} />
+          <Route path="follow-up" element={<ProtectedRoute permission="proposals"><FollowUpTasks /></ProtectedRoute>} />
           <Route path="price-list" element={<ProtectedRoute permission="admin"><PriceList /></ProtectedRoute>} />
           <Route path="price-list/create" element={<ProtectedRoute permission="admin"><CreatePriceList /></ProtectedRoute>} />
           <Route path="notices-admin" element={<ProtectedRoute permission="admin"><NoticesAdmin /></ProtectedRoute>} />

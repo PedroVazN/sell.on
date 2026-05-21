@@ -239,6 +239,12 @@ app.use('/api/video', videoRouter);
 const analysisRouter = require('./routes/analysis');
 app.use('/api/analysis', analysisRouter);
 
+const proposalTasksRouter = require('./routes/proposalTasks');
+app.use('/api/proposal-tasks', proposalTasksRouter);
+
+const cronRouter = require('./routes/cron');
+app.use('/api/cron', cronRouter);
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'API funcionando' });

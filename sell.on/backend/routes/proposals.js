@@ -14,6 +14,7 @@ const { validateProposal, validateMongoId, validatePagination } = require('../mi
 const { proposalLimiter } = require('../middleware/security');
 const { calculateProposalScore, calculateProposalScoreWithComparison } = require('../services/proposalScore');
 const { notifyProposalClosed } = require('../services/whatsapp');
+const { cancelPendingFollowUpTasks } = require('../services/proposalFollowUp');
 
 // GET /api/proposals - Listar todas as propostas do usuário
 router.get('/', async (req, res) => {
@@ -289,6 +290,14 @@ router.put('/:id', async (req, res) => {
     console.log('Status:', proposal.status);
     console.log('Loss Reason:', proposal.lossReason);
     console.log('Loss Description:', proposal.lossDescription);
+
+    if (status !== 'negociacao') {
+      try {
+        await cancelPendingFollowUpTasks(proposal._id);
+      } catch (cancelErr) {
+        console.warn('Follow-up: erro ao cancelar tarefas pendentes:', cancelErr.message);
+      }
+    }
 
     // Notificações para administradores: proposta ganha / perdida
     try {

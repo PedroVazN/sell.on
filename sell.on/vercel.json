@@ -45,5 +45,11 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/proposal-followup",
+      "schedule": "0 12 * * *"
+    }
+  ]
 }

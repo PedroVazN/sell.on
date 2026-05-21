@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X, Check, Trash2, Loader2, Sparkles, UserCheck, UserX } from 'lucide-react';
 import { apiService, Notification } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
@@ -12,6 +13,7 @@ const requestIdForNotification = (n: Notification) =>
   (n.data && (n.data as any).requestId) || n.relatedEntity || '';
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
+  const navigate = useNavigate();
   const { success: toastSuccess, error: toastError } = useToastContext();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -239,9 +241,25 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         return '💬';
       case 'client_access_request':
         return '👤';
+      case 'proposal_followup':
+        return '⏰';
       default:
         return '🔔';
     }
+  };
+
+  const handleOpenNotification = async (notification: Notification) => {
+    if (notification.type === 'proposal_followup') {
+      const proposalId =
+        notification.data?.proposalId || notification.relatedEntity;
+      if (proposalId) {
+        if (!notification.isRead) await markAsRead(notification);
+        setIsOpen(false);
+        navigate(`/proposals/edit/${proposalId}`);
+      }
+      return;
+    }
+    if (!notification.isRead) await markAsRead(notification);
   };
 
   const getPriorityColor = (priority: Notification['priority']) => {
@@ -314,6 +332,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
                   key={notification._id}
                   $isRead={notification.isRead}
                   $priority={notification.priority}
+                  onClick={() => handleOpenNotification(notification)}
+                  style={{
+                    cursor:
+                      notification.type === 'proposal_followup' ? 'pointer' : undefined,
+                  }}
                 >
                   <S.NotificationIcon>
                     {getNotificationIcon(notification.type)}
@@ -325,7 +348,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
                       {new Date(notification.createdAt).toLocaleString('pt-BR')}
                     </S.NotificationTime>
                   </S.NotificationContent>
-                  <S.NotificationActions>
+                  <S.NotificationActions onClick={(e) => e.stopPropagation()}>
                     {notification.type === 'client_access_request' && (
                       <>
                         <S.ListActionButton
