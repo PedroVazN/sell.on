@@ -471,6 +471,34 @@ export interface ProposalVideoRoom {
   roomUrl: string;
 }
 
+export type ProposalAttachmentCategory =
+  | 'nf'
+  | 'contrato'
+  | 'catalogo'
+  | 'planilha'
+  | 'imagem'
+  | 'outro';
+
+export interface ProposalAttachment {
+  _id: string;
+  proposal: string;
+  category: ProposalAttachmentCategory;
+  categoryLabel?: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  description?: string;
+  uploadedBy: User | { _id: string; name: string; email: string; role?: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProposalAttachmentsMeta {
+  canUpload: boolean;
+  canDeleteAny: boolean;
+}
+
 export interface Event {
   _id: string;
   title: string;
@@ -1163,6 +1191,53 @@ class ApiService {
 
   async deleteProposal(id: string): Promise<ApiResponse<void>> {
     return this.request<void>(`/proposals/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getProposalAttachments(
+    proposalId: string
+  ): Promise<
+    ApiResponse<ProposalAttachment[]> & { meta?: ProposalAttachmentsMeta }
+  > {
+    return this.request<ProposalAttachment[]>(`/proposals/${proposalId}/attachments`);
+  }
+
+  async uploadProposalAttachment(
+    proposalId: string,
+    file: File,
+    category: ProposalAttachmentCategory,
+    description?: string
+  ): Promise<ApiResponse<ProposalAttachment>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('category', category);
+    if (description?.trim()) formData.append('description', description.trim());
+
+    const token =
+      this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    const url = `${this.baseURL}/proposals/${proposalId}/attachments`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Erro ao enviar anexo');
+    }
+    return data;
+  }
+
+  async deleteProposalAttachment(
+    proposalId: string,
+    attachmentId: string
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/proposals/${proposalId}/attachments/${attachmentId}`, {
       method: 'DELETE',
     });
   }

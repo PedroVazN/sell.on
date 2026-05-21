@@ -303,6 +303,9 @@ app.use('/api/distributors', distributorsRouter);
 const salesRouter = require('../routes/sales');
 app.use('/api/sales', salesRouter);
 
+const proposalAttachmentsRouter = require('../routes/proposalAttachments');
+app.use('/api/proposals/:proposalId/attachments', proposalAttachmentsRouter);
+
 const proposalsRouter = require('../routes/proposals');
 app.use('/api/proposals', proposalsRouter);
 

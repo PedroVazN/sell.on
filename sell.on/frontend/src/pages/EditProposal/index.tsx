@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Plus, Trash2, Calculator, Download, Eye, Paperclip } from 'lucide-react';
+import { ProposalAttachments } from '../../components/ProposalAttachments';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiService, Product, Distributor, User as UserType, Proposal, PriceOption, PriceListItem as PriceListItemType } from '../../services/api';
 import { useToastContext } from '../../contexts/ToastContext';
@@ -855,6 +856,15 @@ export const EditProposal: React.FC = () => {
               rows={3}
             />
           </FormGroup>
+        </FormSection>
+
+        {/* Anexos (NF, contrato, catálogo, planilhas) */}
+        <FormSection>
+          <SectionTitle>
+            <Paperclip size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+            Anexos da proposta
+          </SectionTitle>
+          {id && <ProposalAttachments proposalId={id} />}
         </FormSection>
 
         {/* Totais */}
