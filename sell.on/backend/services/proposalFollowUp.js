@@ -1,11 +1,13 @@
 const Proposal = require('../models/Proposal');
 const ProposalTask = require('../models/ProposalTask');
 const Notification = require('../models/Notification');
+const { DEFAULT_FOLLOWUP_DAYS } = require('../config/followUp');
 
 function getFollowUpDaysThreshold() {
   const raw = process.env.PROPOSAL_FOLLOWUP_DAYS;
   const n = parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? n : 7;
+  if (Number.isFinite(n) && n > 0) return n;
+  return DEFAULT_FOLLOWUP_DAYS;
 }
 
 function getDaysInNegotiation(proposal) {

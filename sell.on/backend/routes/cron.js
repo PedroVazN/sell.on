@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const { runProposalFollowUpScan } = require('../services/proposalFollowUp');
+const { DEFAULT_CRON_SECRET } = require('../config/followUp');
+
+function getCronSecret() {
+  return process.env.CRON_SECRET || DEFAULT_CRON_SECRET;
+}
 
 function verifyCronSecret(req) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
+  // Vercel Cron envia este header automaticamente (não precisa CRON_SECRET na Vercel)
+  if (req.headers['x-vercel-cron'] === '1') return true;
+
+  const secret = getCronSecret();
   const header = req.headers['x-cron-secret'] || req.headers.authorization;
   if (!header) return false;
   const token = String(header).replace(/^Bearer\s+/i, '').trim();
