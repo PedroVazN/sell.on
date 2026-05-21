@@ -21,9 +21,9 @@ function configureCloudinary() {
 
 /**
  * @param {Buffer} buffer
- * @param {{ proposalId: string, originalName: string }} options
+ * @param {{ folder: string, originalName: string }} options
  */
-function uploadProposalAttachment(buffer, options) {
+function uploadBuffer(buffer, options) {
   if (!configureCloudinary()) {
     return Promise.reject(new Error('Cloudinary não configurado'));
   }
@@ -31,12 +31,11 @@ function uploadProposalAttachment(buffer, options) {
   const safeName = (options.originalName || 'arquivo')
     .replace(/[^\w.\-]+/g, '_')
     .slice(0, 80);
-  const folder = `sellon/proposals/${options.proposalId}`;
 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder,
+        folder: options.folder,
         resource_type: 'auto',
         use_filename: true,
         unique_filename: true,
@@ -51,6 +50,20 @@ function uploadProposalAttachment(buffer, options) {
   });
 }
 
+function uploadProposalAttachment(buffer, options) {
+  return uploadBuffer(buffer, {
+    folder: `sellon/proposals/${options.proposalId}`,
+    originalName: options.originalName,
+  });
+}
+
+function uploadCommissionAttachment(buffer, options) {
+  return uploadBuffer(buffer, {
+    folder: `sellon/commissions/${options.proposalId}`,
+    originalName: options.originalName,
+  });
+}
+
 async function deleteCloudinaryAsset(publicId, resourceType = 'raw') {
   if (!configureCloudinary()) {
     throw new Error('Cloudinary não configurado');
@@ -61,6 +74,8 @@ async function deleteCloudinaryAsset(publicId, resourceType = 'raw') {
 
 module.exports = {
   isCloudinaryConfigured,
+  uploadBuffer,
   uploadProposalAttachment,
+  uploadCommissionAttachment,
   deleteCloudinaryAsset,
 };

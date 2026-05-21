@@ -29,6 +29,7 @@ import {
   Briefcase,
   MessageCircle,
   AlarmClock,
+  Wallet,
   ListTodo
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -113,6 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
       items: [
         { icon: <FileSpreadsheet size={20} />, label: 'Propostas', path: '/proposals', permission: 'proposals' },
         { icon: <AlarmClock size={20} />, label: 'Follow-up', path: '/follow-up', permission: 'proposals' },
+        { icon: <Wallet size={20} />, label: 'Comissões', path: '/commissions', permission: 'proposals' },
         ...(hasPermission('admin') ? [
           { icon: <Package size={20} />, label: 'Produtos', path: '/products', permission: 'admin' },
           { icon: <UserCheck size={20} />, label: 'Clientes', path: '/clients', permission: 'admin' },

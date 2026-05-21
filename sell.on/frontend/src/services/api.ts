@@ -524,6 +524,55 @@ export interface FollowUpScanResult {
   errors: Array<{ proposalId?: string; message: string }>;
 }
 
+export type CommissionValidationStatus = 'em_analise' | 'aprovado' | 'reprovado';
+
+export interface CommissionAttachment {
+  _id: string;
+  fileName: string;
+  url: string;
+  cloudinaryPublicId: string;
+  mimeType?: string;
+  size?: number;
+  resourceType?: 'image' | 'raw' | 'video';
+  uploadedBy?: string | { _id: string; name?: string };
+  uploadedAt: string;
+}
+
+export interface CommissionRow {
+  proposalId: string;
+  proposalNumber: string;
+  closedAt: string;
+  total: number;
+  seller: { _id: string | null; name: string; email: string };
+  distributor: { name: string; raw?: any };
+  client: { name: string; raw?: any };
+  commission: {
+    _id?: string;
+    nfNumber: string;
+    attachments: CommissionAttachment[];
+    validationStatus: CommissionValidationStatus;
+    validationLabel: string;
+    validatedAt?: string | null;
+    validatedBy?: { _id: string; name?: string; email?: string } | null;
+    validationNotes?: string;
+    updatedAt?: string;
+  };
+  canEdit: boolean;
+}
+
+export interface CommissionMeta {
+  month: string;
+  isAdmin: boolean;
+  canValidate: boolean;
+  cloudinaryConfigured: boolean;
+  maxAttachments: number;
+  totals: {
+    value: number;
+    proposals: number;
+    byStatus: Partial<Record<CommissionValidationStatus, number>>;
+  };
+}
+
 export interface Event {
   _id: string;
   title: string;
@@ -1309,6 +1358,95 @@ class ApiService {
     return this.request<FollowUpScanResult>('/proposal-tasks/scan', {
       method: 'POST',
     });
+  }
+
+  /** Lista propostas ganhas + dados de comissão (NF + anexos + validação) do mês */
+  async getCommissions(
+    month?: string
+  ): Promise<ApiResponse<CommissionRow[]> & { meta?: CommissionMeta }> {
+    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+    return this.request<CommissionRow[]>(`/commissions${q}`);
+  }
+
+  async updateCommissionNf(
+    proposalId: string,
+    nfNumber: string
+  ): Promise<ApiResponse<CommissionRow>> {
+    return this.request<CommissionRow>(`/commissions/${proposalId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ nfNumber }),
+    });
+  }
+
+  async uploadCommissionAttachment(
+    proposalId: string,
+    file: File
+  ): Promise<ApiResponse<CommissionRow>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token =
+      this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    const url = `${this.baseURL}/commissions/${proposalId}/attachments`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Erro ao enviar anexo');
+    }
+    return data;
+  }
+
+  async deleteCommissionAttachment(
+    proposalId: string,
+    attachmentId: string
+  ): Promise<ApiResponse<CommissionRow>> {
+    return this.request<CommissionRow>(
+      `/commissions/${proposalId}/attachments/${attachmentId}`,
+      { method: 'DELETE' }
+    );
+  }
+
+  async validateCommission(
+    proposalId: string,
+    validationStatus: CommissionValidationStatus,
+    validationNotes?: string
+  ): Promise<ApiResponse<CommissionRow>> {
+    return this.request<CommissionRow>(`/commissions/${proposalId}/validate`, {
+      method: 'PATCH',
+      body: JSON.stringify({ validationStatus, validationNotes }),
+    });
+  }
+
+  /** URL do CSV de comissões do mês (admin) — abre em nova aba; envia token via fetch + blob */
+  async downloadCommissionsCsv(month?: string): Promise<void> {
+    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+    const token =
+      this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    const response = await fetch(`${this.baseURL}/commissions/export${q}`, {
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+    });
+    if (!response.ok) {
+      let msg = 'Erro ao exportar CSV';
+      try {
+        const data = await response.json();
+        msg = data.message || msg;
+      } catch (_) {
+        /* noop */
+      }
+      throw new Error(msg);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `comissoes-${month || 'mes'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 
   /** Ranking de vendedores: vendas fechadas, perdidas, valor no período */

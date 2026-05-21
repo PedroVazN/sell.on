@@ -358,6 +358,9 @@ app.use('/api/analysis', analysisRouter);
 const proposalTasksRouter = require('../routes/proposalTasks');
 app.use('/api/proposal-tasks', proposalTasksRouter);
 
+const commissionsRouter = require('../routes/commissions');
+app.use('/api/commissions', commissionsRouter);
+
 const cronRouter = require('../routes/cron');
 app.use('/api/cron', cronRouter);
 
