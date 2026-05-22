@@ -1,4 +1,5 @@
 const express = require('express');
+const ExcelJS = require('exceljs');
 const router = express.Router();
 const { auth, authorize } = require('../middleware/auth');
 const { proposalAttachmentUpload } = require('../middleware/upload');
@@ -306,6 +307,7 @@ router.post(
       const uploadResult = await uploadCommissionAttachment(req.file.buffer, {
         proposalId: String(req.proposal._id),
         originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
       });
 
       const resourceType =
@@ -458,7 +460,158 @@ function csvEscape(value) {
   return str;
 }
 
-// GET /api/commissions/export?month=YYYY-MM  (admin) — CSV (abre no Excel)
+async function loadCommissionRowsForExport(monthRange) {
+  const { start, end } = monthRange;
+  const proposals = await Proposal.find({
+    status: 'venda_fechada',
+    $or: [
+      { closedAt: { $gte: start, $lte: end } },
+      {
+        closedAt: { $exists: false },
+        updatedAt: { $gte: start, $lte: end },
+      },
+    ],
+  })
+    .populate('createdBy', 'name email')
+    .sort({ closedAt: -1, updatedAt: -1 })
+    .lean();
+
+  const commissions = await ProposalCommission.find({
+    proposal: { $in: proposals.map((p) => p._id) },
+  })
+    .populate('validatedBy', 'name email')
+    .lean();
+  const commissionMap = new Map(commissions.map((c) => [String(c.proposal), c]));
+
+  return proposals.map((p) => {
+    const c = commissionMap.get(String(p._id));
+    const seller = sellerInfo(p);
+    const attachments = c?.attachments || [];
+    const closed = p.closedAt || p.updatedAt;
+    return {
+      proposalNumber: p.proposalNumber || '',
+      closedAt: closed ? new Date(closed) : null,
+      sellerName: seller.name,
+      sellerEmail: seller.email,
+      distributor: distributorName(p),
+      client: clientName(p),
+      total: Number(p.total) || 0,
+      nfNumber: c?.nfNumber || '',
+      attachment1: attachments[0]?.url || '',
+      attachment1Name: attachments[0]?.fileName || '',
+      attachment2: attachments[1]?.url || '',
+      attachment2Name: attachments[1]?.fileName || '',
+      status: c?.validationStatus
+        ? VALIDATION_LABELS[c.validationStatus]
+        : VALIDATION_LABELS.em_analise,
+      validatedBy: c?.validatedBy?.name || '',
+      validatedAt: c?.validatedAt ? new Date(c.validatedAt) : null,
+      notes: c?.validationNotes || '',
+    };
+  });
+}
+
+// GET /api/commissions/export.xlsx?month=YYYY-MM  (admin) — Excel real (.xlsx)
+router.get('/export.xlsx', auth, authorize('admin'), async (req, res) => {
+  try {
+    const range = getMonthRange(req.query.month);
+    const rows = await loadCommissionRowsForExport(range);
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Sell.On';
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet('Comissões', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    ws.columns = [
+      { header: 'Proposta', key: 'proposalNumber', width: 14 },
+      { header: 'Fechada em', key: 'closedAt', width: 18 },
+      { header: 'Vendedor', key: 'sellerName', width: 26 },
+      { header: 'Email vendedor', key: 'sellerEmail', width: 30 },
+      { header: 'Distribuidor', key: 'distributor', width: 26 },
+      { header: 'Cliente', key: 'client', width: 32 },
+      { header: 'Valor (R$)', key: 'total', width: 14 },
+      { header: 'NF', key: 'nfNumber', width: 18 },
+      { header: 'Anexo 1', key: 'attachment1', width: 40 },
+      { header: 'Anexo 2', key: 'attachment2', width: 40 },
+      { header: 'Status validação', key: 'status', width: 18 },
+      { header: 'Validado por', key: 'validatedBy', width: 26 },
+      { header: 'Validado em', key: 'validatedAt', width: 18 },
+      { header: 'Observações', key: 'notes', width: 40 },
+    ];
+
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F2937' },
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'left' };
+    headerRow.height = 22;
+
+    rows.forEach((r) => {
+      const row = ws.addRow(r);
+
+      if (r.attachment1) {
+        row.getCell('attachment1').value = {
+          text: r.attachment1Name || 'Abrir anexo 1',
+          hyperlink: r.attachment1,
+          tooltip: r.attachment1,
+        };
+        row.getCell('attachment1').font = {
+          color: { argb: 'FF1D4ED8' },
+          underline: true,
+        };
+      }
+      if (r.attachment2) {
+        row.getCell('attachment2').value = {
+          text: r.attachment2Name || 'Abrir anexo 2',
+          hyperlink: r.attachment2,
+          tooltip: r.attachment2,
+        };
+        row.getCell('attachment2').font = {
+          color: { argb: 'FF1D4ED8' },
+          underline: true,
+        };
+      }
+    });
+
+    ws.getColumn('total').numFmt = '"R$" #,##0.00';
+    ws.getColumn('closedAt').numFmt = 'dd/mm/yyyy hh:mm';
+    ws.getColumn('validatedAt').numFmt = 'dd/mm/yyyy hh:mm';
+
+    // Total no rodapé
+    const lastRow = ws.rowCount + 1;
+    ws.getCell(`F${lastRow}`).value = 'Total:';
+    ws.getCell(`F${lastRow}`).font = { bold: true };
+    ws.getCell(`F${lastRow}`).alignment = { horizontal: 'right' };
+    ws.getCell(`G${lastRow}`).value = rows.reduce((acc, r) => acc + r.total, 0);
+    ws.getCell(`G${lastRow}`).numFmt = '"R$" #,##0.00';
+    ws.getCell(`G${lastRow}`).font = { bold: true };
+
+    ws.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: ws.columns.length },
+    };
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const filename = `comissoes-${range.year}-${String(range.month).padStart(2, '0')}.xlsx`;
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error('Erro ao exportar XLSX:', err);
+    res.status(500).json({ success: false, message: 'Erro ao exportar Excel' });
+  }
+});
+
+// GET /api/commissions/export?month=YYYY-MM  (admin) — CSV (fallback / Excel também abre)
 router.get('/export', auth, authorize('admin'), async (req, res) => {
   try {
     const { start, end, year, month } = getMonthRange(req.query.month);

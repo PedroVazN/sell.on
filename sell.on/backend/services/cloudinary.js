@@ -20,8 +20,20 @@ function configureCloudinary() {
 }
 
 /**
+ * Cloudinary trata PDF como recurso "image" por padrão — e contas grátis
+ * bloqueiam entrega de PDFs em /image/upload/*. Forçar "raw" para PDFs
+ * (e demais documentos) faz a URL ser /raw/upload/* — sempre acessível.
+ */
+function pickResourceType(mimeType) {
+  if (typeof mimeType !== 'string') return 'auto';
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  return 'raw';
+}
+
+/**
  * @param {Buffer} buffer
- * @param {{ folder: string, originalName: string }} options
+ * @param {{ folder: string, originalName: string, mimeType?: string }} options
  */
 function uploadBuffer(buffer, options) {
   if (!configureCloudinary()) {
@@ -32,11 +44,13 @@ function uploadBuffer(buffer, options) {
     .replace(/[^\w.\-]+/g, '_')
     .slice(0, 80);
 
+  const resourceType = options.resourceType || pickResourceType(options.mimeType);
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: options.folder,
-        resource_type: 'auto',
+        resource_type: resourceType,
         use_filename: true,
         unique_filename: true,
         filename_override: safeName,
@@ -54,6 +68,7 @@ function uploadProposalAttachment(buffer, options) {
   return uploadBuffer(buffer, {
     folder: `sellon/proposals/${options.proposalId}`,
     originalName: options.originalName,
+    mimeType: options.mimeType,
   });
 }
 
@@ -61,6 +76,7 @@ function uploadCommissionAttachment(buffer, options) {
   return uploadBuffer(buffer, {
     folder: `sellon/commissions/${options.proposalId}`,
     originalName: options.originalName,
+    mimeType: options.mimeType,
   });
 }
 
@@ -74,6 +90,7 @@ async function deleteCloudinaryAsset(publicId, resourceType = 'raw') {
 
 module.exports = {
   isCloudinaryConfigured,
+  pickResourceType,
   uploadBuffer,
   uploadProposalAttachment,
   uploadCommissionAttachment,

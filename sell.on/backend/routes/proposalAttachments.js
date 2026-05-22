@@ -111,6 +111,7 @@ router.post(
       const uploadResult = await uploadProposalAttachment(req.file.buffer, {
         proposalId: req.params.proposalId,
         originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
       });
 
       const resourceType =

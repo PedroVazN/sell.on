@@ -166,11 +166,11 @@ export const Commissions: React.FC = () => {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'xlsx' | 'csv' = 'xlsx') => {
     setExporting(true);
     try {
-      await apiService.downloadCommissionsCsv(month);
-      showSuccess('Comissões', 'Relatório CSV baixado');
+      await apiService.downloadCommissionsReport(month, format);
+      showSuccess('Comissões', `Relatório ${format.toUpperCase()} baixado`);
     } catch (err) {
       showError('Comissões', err instanceof Error ? err.message : 'Erro ao exportar');
     } finally {
@@ -213,10 +213,26 @@ export const Commissions: React.FC = () => {
             Atualizar
           </S.Button>
           {canExport && (
-            <S.Button type="button" $primary onClick={handleExport} disabled={exporting || rows.length === 0}>
-              {exporting ? <Loader2 size={16} /> : <Download size={16} />}
-              Exportar CSV
-            </S.Button>
+            <>
+              <S.Button
+                type="button"
+                $primary
+                onClick={() => handleExport('xlsx')}
+                disabled={exporting || rows.length === 0}
+              >
+                {exporting ? <Loader2 size={16} /> : <Download size={16} />}
+                Exportar Excel
+              </S.Button>
+              <S.Button
+                type="button"
+                onClick={() => handleExport('csv')}
+                disabled={exporting || rows.length === 0}
+                title="CSV (compatível com Excel/Google Sheets)"
+              >
+                <Download size={16} />
+                CSV
+              </S.Button>
+            </>
           )}
         </S.Toolbar>
       </S.Header>

@@ -1420,16 +1420,20 @@ class ApiService {
     });
   }
 
-  /** URL do CSV de comissões do mês (admin) — abre em nova aba; envia token via fetch + blob */
-  async downloadCommissionsCsv(month?: string): Promise<void> {
+  /** Baixa relatório de comissões em Excel (.xlsx) ou CSV — admin */
+  async downloadCommissionsReport(
+    month?: string,
+    format: 'xlsx' | 'csv' = 'xlsx'
+  ): Promise<void> {
     const q = month ? `?month=${encodeURIComponent(month)}` : '';
+    const path = format === 'xlsx' ? '/commissions/export.xlsx' : '/commissions/export';
     const token =
       this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
-    const response = await fetch(`${this.baseURL}/commissions/export${q}`, {
+    const response = await fetch(`${this.baseURL}${path}${q}`, {
       headers: { ...(token && { Authorization: `Bearer ${token}` }) },
     });
     if (!response.ok) {
-      let msg = 'Erro ao exportar CSV';
+      let msg = `Erro ao exportar ${format.toUpperCase()}`;
       try {
         const data = await response.json();
         msg = data.message || msg;
@@ -1442,11 +1446,16 @@ class ApiService {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `comissoes-${month || 'mes'}.csv`;
+    a.download = `comissoes-${month || 'mes'}.${format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  }
+
+  /** Compat: mantém método antigo (csv) — chama o novo */
+  async downloadCommissionsCsv(month?: string): Promise<void> {
+    return this.downloadCommissionsReport(month, 'csv');
   }
 
   /** Ranking de vendedores: vendas fechadas, perdidas, valor no período */
