@@ -308,33 +308,24 @@ export const EditProposal: React.FC = () => {
     if (!cnpj || cnpj.replace(/\D/g, '').length < 14) return;
     
     try {
-      const cleanCnpj = cnpj.replace(/\D/g, '');
-      // Buscar todos os clientes e filtrar no frontend
-      const response = await apiService.getClients(1, 500);
+      const response = await apiService.getClientByCnpj(cnpj);
       if (response.success && response.data) {
-        const existingClient = response.data.find((c: any) => 
-          c.cnpj?.replace(/\D/g, '') === cleanCnpj
-        );
-        
-        if (existingClient) {
-          console.log('Cliente encontrado:', existingClient);
-          setFormData(prev => ({
-            ...prev,
-            client: {
-              name: existingClient.contato?.nome || '',
-              email: existingClient.contato?.email || '',
-              phone: existingClient.contato?.telefone || '',
-              company: existingClient.nomeFantasia || '',
-              cnpj: existingClient.cnpj || '',
-              razaoSocial: existingClient.razaoSocial || ''
-            }
-          }));
-        } else {
-          console.log('Cliente não encontrado. Novo cliente será criado ao salvar.');
-        }
+        const existingClient = response.data;
+        console.log('Cliente encontrado:', existingClient);
+        setFormData(prev => ({
+          ...prev,
+          client: {
+            name: existingClient.contato?.nome || '',
+            email: existingClient.contato?.email || '',
+            phone: existingClient.contato?.telefone || '',
+            company: existingClient.nomeFantasia || '',
+            cnpj: existingClient.cnpj || '',
+            razaoSocial: existingClient.razaoSocial || ''
+          }
+        }));
       }
-    } catch (error) {
-      console.error('Erro ao buscar cliente:', error);
+    } catch {
+      console.log('Cliente não encontrado. Novo cliente será criado ao salvar.');
     }
   };
 

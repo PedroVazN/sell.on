@@ -1547,6 +1547,11 @@ class ApiService {
     return this.request<Client>(`/clients/${id}`);
   }
 
+  async getClientByCnpj(cnpj: string): Promise<ApiResponse<Client>> {
+    const clean = cnpj.replace(/\D/g, '');
+    return this.request<Client>(`/clients/by-cnpj/${clean}`);
+  }
+
   /** Consulta de clientes: lista com estatísticas (propostas, vendas, top produtos) */
   async getClientesConsulta(
     page = 1,

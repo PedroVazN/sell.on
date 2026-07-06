@@ -12,6 +12,12 @@ function normalizeCnpj(cnpj) {
   return String(cnpj).replace(/\D/g, '');
 }
 
+function formatCnpj(cnpj) {
+  const digits = normalizeCnpj(cnpj);
+  if (digits.length !== 14) return digits;
+  return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+}
+
 function buildProposalStatsMap(proposals) {
   const byCnpj = new Map();
   const byEmail = new Map();
@@ -483,6 +489,42 @@ router.get('/consulta/:id', auth, async (req, res) => {
   }
 });
 
+// GET /api/clients/by-cnpj/:cnpj - Buscar cliente pelo CNPJ (busca exata)
+router.get('/by-cnpj/:cnpj', auth, async (req, res) => {
+  try {
+    const clean = normalizeCnpj(req.params.cnpj);
+    if (clean.length !== 14) {
+      return res.status(400).json({
+        success: false,
+        message: 'CNPJ inválido'
+      });
+    }
+
+    const formatted = formatCnpj(clean);
+    const client = await Client.findOne({ cnpj: formatted })
+      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email');
+
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente não encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: client
+    });
+  } catch (error) {
+    console.error('Erro ao buscar cliente por CNPJ:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
 // GET /api/clients/:id - Buscar cliente específico (filtrado por vendedor se necessário)
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -572,9 +614,19 @@ router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ 
+      const existing = await Client.findOne({ cnpj: formatCnpj(cnpj) })
+        .populate('createdBy', 'name email')
+        .populate('assignedTo', 'name email');
+      if (existing) {
+        return res.json({
+          success: true,
+          data: existing,
+          reused: true
+        });
+      }
+      return res.status(400).json({
         success: false,
-        message: 'CNPJ já cadastrado' 
+        message: 'CNPJ já cadastrado'
       });
     }
     console.error('Erro ao criar cliente:', error);

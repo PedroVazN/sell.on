@@ -408,25 +408,18 @@ export const CreateProposal: React.FC = () => {
   };
 
   const searchClientByCnpj = async (cnpj: string) => {
-    if (!cnpj || cnpj.length < 14) return;
+    if (!cnpj || cnpj.replace(/\D/g, '').length < 14) return;
 
     try {
       console.log('🔍 Buscando cliente por CNPJ:', cnpj);
-      const cleanCnpj = cnpj.replace(/\D/g, ''); // Remove formatação
-      
-      // Buscar todos os clientes e filtrar no frontend
-      const response = await apiService.getClients(1, 500);
-      const existingClient = response.data?.find((client: any) => 
-        client.cnpj?.replace(/\D/g, '') === cleanCnpj
-      );
+      const response = await apiService.getClientByCnpj(cnpj);
 
-      if (existingClient) {
+      if (response.success && response.data) {
+        const existingClient = response.data;
         console.log('✅ Cliente encontrado:', existingClient);
-        // Preencher todos os dados do cliente
         const clientEmail = existingClient.contato?.email || '';
         const clientName = existingClient.contato?.nome || '';
         
-        // Validar se os dados essenciais estão presentes
         if (!clientEmail || !clientName) {
           warning('Dados incompletos', 'Cliente encontrado, mas faltam nome ou email. Preencha manualmente.');
         }
@@ -446,11 +439,9 @@ export const CreateProposal: React.FC = () => {
         if (clientEmail && clientName) {
           info('Cliente encontrado', 'Dados preenchidos automaticamente.');
         }
-      } else {
-        console.log('ℹ️ Cliente não encontrado. Novo cliente será criado.');
       }
     } catch (error) {
-      console.error('❌ Erro ao buscar cliente:', error);
+      console.log('ℹ️ Cliente não encontrado. Novo cliente será criado ao salvar.');
     }
   };
 
@@ -809,10 +800,16 @@ export const CreateProposal: React.FC = () => {
 
       // Verificar se cliente existe e criar se necessário
       const cleanCnpj = formData.client.cnpj.replace(/\D/g, '');
-      const clientsResponse = await apiService.getClients(1, 500);
-      let existingClient = clientsResponse.data?.find((client: any) => 
-        client.cnpj?.replace(/\D/g, '') === cleanCnpj
-      );
+      let existingClient: Awaited<ReturnType<typeof apiService.getClientByCnpj>>['data'] | null = null;
+
+      try {
+        const clientResponse = await apiService.getClientByCnpj(cleanCnpj);
+        if (clientResponse.success && clientResponse.data) {
+          existingClient = clientResponse.data;
+        }
+      } catch {
+        // Cliente ainda não cadastrado — será criado abaixo
+      }
 
       // Se cliente não existe, criar novo
       if (!existingClient) {
