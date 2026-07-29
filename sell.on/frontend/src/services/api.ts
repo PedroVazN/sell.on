@@ -1648,10 +1648,20 @@ class ApiService {
     inactiveDays: number;
     scanned: number;
     released: number;
+    releasedNoCarteira: number;
+    releasedInactive: number;
+    restored: number;
+    regularized: number;
     keptWithSale: number;
     keptActive: number;
     dryRun: boolean;
-    releasedClients: Array<{ _id: string; cnpj: string; razaoSocial: string; lastActivity: string | null }>;
+    releasedClients: Array<{
+      _id: string;
+      cnpj: string;
+      razaoSocial: string;
+      lastActivity: string | null;
+      reason?: string;
+    }>;
   }>> {
     return this.request('/clients/bolsao/run', {
       method: 'POST',

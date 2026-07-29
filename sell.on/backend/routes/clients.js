@@ -7,7 +7,12 @@ const Proposal = require('../models/Proposal');
 const ClientAccessRequest = require('../models/ClientAccessRequest');
 const Notification = require('../models/Notification');
 const { auth, authorize } = require('../middleware/auth');
-const { runCarteiraBolsaoUpdate, assignmentClearBolsaoFields } = require('../services/carteiraBolsao');
+const {
+  runCarteiraBolsaoUpdate,
+  assignmentClearBolsaoFields,
+  buildActivityIndex,
+  statsForClient,
+} = require('../services/carteiraBolsao');
 
 function normalizeCnpj(cnpj) {
   if (!cnpj) return '';
@@ -284,8 +289,10 @@ router.post('/transfer', auth, authorize('admin', 'vendedor'), async (req, res) 
     if (targetUserId === req.user.id) {
       return res.status(400).json({ success: false, message: 'Escolha outro vendedor (não você).' });
     }
-    const query = { _id: { $in: clientIds }, inBolsao: { $ne: true } };
+    // Admin pode transferir cliente que está no bolsão (tira do bolsão na transferência)
+    const query = { _id: { $in: clientIds } };
     if (req.user.role === 'vendedor') {
+      query.inBolsao = { $ne: true };
       query.$or = [
         { assignedTo: req.user.id },
         { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
@@ -377,32 +384,7 @@ router.get('/export.xlsx', auth, authorize('admin'), async (req, res) => {
       .sort({ razaoSocial: 1 })
       .lean();
 
-    const proposals = await Proposal.find({})
-      .select('client.cnpj status createdAt closedAt')
-      .lean();
-
-    const byCnpj = new Map();
-    for (const p of proposals) {
-      const cnpj = normalizeCnpj(p.client?.cnpj);
-      if (!cnpj || cnpj.length !== 14) continue;
-      if (!byCnpj.has(cnpj)) {
-        byCnpj.set(cnpj, {
-          hasSale: false,
-          lastProposalAt: null,
-          totalProposals: 0,
-        });
-      }
-      const entry = byCnpj.get(cnpj);
-      entry.totalProposals += 1;
-      if (p.status === 'venda_fechada') entry.hasSale = true;
-      const when = p.closedAt || p.createdAt;
-      if (when) {
-        const d = new Date(when);
-        if (!entry.lastProposalAt || d > entry.lastProposalAt) {
-          entry.lastProposalAt = d;
-        }
-      }
-    }
+    const activityIndex = await buildActivityIndex();
 
     const now = Date.now();
     const wb = new ExcelJS.Workbook();
@@ -447,9 +429,8 @@ router.get('/export.xlsx', auth, authorize('admin'), async (req, res) => {
     headerRow.height = 22;
 
     for (const c of clients) {
-      const cnpjNorm = normalizeCnpj(c.cnpj);
-      const stats = byCnpj.get(cnpjNorm);
-      const lastAt = stats?.lastProposalAt || null;
+      const stats = statsForClient(c, activityIndex);
+      const lastAt = stats.lastActivityAt || null;
       const daysWithout = lastAt
         ? Math.floor((now - lastAt.getTime()) / (1000 * 60 * 60 * 24))
         : (c.createdAt
@@ -462,6 +443,10 @@ router.get('/export.xlsx', auth, authorize('admin'), async (req, res) => {
 
       if (c.inBolsao) {
         statusCarteira = 'Bolsão';
+        // Mantém o último responsável para orientar a prospecção
+        const previous = c.assignedTo || c.createdBy;
+        carteiraVendedor = previous?.name || '';
+        carteiraEmail = previous?.email || '';
       } else if (c.assignedTo) {
         statusCarteira = 'Carteira';
         carteiraVendedor = c.assignedTo.name || '';
@@ -485,8 +470,8 @@ router.get('/export.xlsx', auth, authorize('admin'), async (req, res) => {
         carteiraVendedor,
         carteiraEmail,
         statusCarteira,
-        temVenda: stats?.hasSale ? 'Sim' : 'Não',
-        totalPropostas: stats?.totalProposals || 0,
+        temVenda: stats.hasSale ? 'Sim' : 'Não',
+        totalPropostas: stats.totalProposals || 0,
         ultimaProposta: lastAt || null,
         diasSemProposta: daysWithout,
         inativo90: daysWithout !== null && daysWithout >= 90 ? 'Sim' : 'Não',

@@ -96,7 +96,7 @@ export const GestaoCarteiras: React.FC = () => {
 
   const handleRunBolsao = async () => {
     const ok = window.confirm(
-      'Atualizar carteiras agora?\n\nRegra: 90 dias sem proposta → bolsão.\nClientes com venda fechada permanecem na carteira do vendedor.'
+      'Atualizar carteiras agora?\n\nRegras:\n· 90 dias sem proposta → bolsão\n· Sem vendedor responsável → bolsão\n· Venda fechada permanece na carteira do vendedor'
     );
     if (!ok) return;
 
@@ -107,7 +107,9 @@ export const GestaoCarteiras: React.FC = () => {
         const d = res.data;
         toastSuccess(
           'Bolsão atualizado',
-          `${d.released} liberado(s) · ${d.keptWithSale} mantido(s) com venda · ${d.keptActive} ativos · ${d.scanned} analisado(s)`
+          `${d.released} liberado(s) (${d.releasedInactive} inativos · ${d.releasedNoCarteira} sem carteira) · `
+          + `${d.restored} devolvido(s) à carteira · `
+          + `${d.keptWithSale} com venda · ${d.keptActive} ativos · ${d.scanned} analisado(s)`
         );
         await loadSummary();
       } else {
@@ -244,7 +246,7 @@ export const GestaoCarteiras: React.FC = () => {
         <div>
           <Title>Gestão de Carteiras</Title>
           <Subtitle>
-            Regra do bolsão: 90 dias sem proposta → liberado. Venda fechada mantém na carteira.
+            Bolsão: 90 dias sem proposta ou sem vendedor responsável. Venda fechada mantém na carteira.
           </Subtitle>
         </div>
         <HeaderActions>
@@ -359,7 +361,7 @@ export const GestaoCarteiras: React.FC = () => {
             </ModalHeader>
             <ModalBody>
               <p style={{ marginTop: 0, opacity: 0.75, fontSize: '0.85rem' }}>
-                Clientes liberados (90 dias sem proposta, sem venda fechada). Qualquer vendedor pode assumir ao criar proposta.
+                Clientes liberados (90 dias sem proposta ou sem vendedor responsável). Qualquer vendedor pode assumir ao criar proposta.
               </p>
               {loadingBolsaoList ? (
                 <LoadingState>
