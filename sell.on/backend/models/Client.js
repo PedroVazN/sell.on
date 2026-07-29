@@ -103,6 +103,20 @@ const clientSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
+  },
+  // Bolsão: cliente liberado da carteira (ex.: 90 dias sem proposta)
+  inBolsao: {
+    type: Boolean,
+    default: false
+  },
+  bolsaoAt: {
+    type: Date,
+    default: null
+  },
+  bolsaoReason: {
+    type: String,
+    trim: true,
+    default: null
   }
 }, {
   timestamps: true
@@ -116,6 +130,7 @@ clientSchema.index({ classificacao: 1 });
 clientSchema.index({ isActive: 1 });
 clientSchema.index({ createdBy: 1 });
 clientSchema.index({ assignedTo: 1 });
+clientSchema.index({ inBolsao: 1 });
 
 // Middleware para formatar CNPJ
 clientSchema.pre('save', function(next) {

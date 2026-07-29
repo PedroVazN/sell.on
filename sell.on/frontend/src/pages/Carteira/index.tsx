@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import { ClientModal } from '../../components/ClientModal';
 import { TableSkeleton } from '../../components/TableSkeleton';
+import { TransferClientDropdown } from '../../components/TransferClientDropdown';
 import {
   Container,
   Header,
@@ -317,9 +318,21 @@ export const Carteira: React.FC = () => {
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
-                      <ActionButton onClick={() => handleEditClient(client)} title="Editar">
-                        <Edit size={16} />
-                      </ActionButton>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <ActionButton onClick={() => handleEditClient(client)} title="Editar">
+                          <Edit size={16} />
+                        </ActionButton>
+                        <TransferClientDropdown
+                          compact
+                          clientIds={[client._id]}
+                          currentOwnerId={
+                            client.assignedTo && typeof client.assignedTo === 'object'
+                              ? client.assignedTo._id
+                              : null
+                          }
+                          onTransferred={() => { loadClients(); loadStats(); }}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

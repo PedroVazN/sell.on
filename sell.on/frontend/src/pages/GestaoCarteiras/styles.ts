@@ -29,6 +29,42 @@ export const Header = styled.div`
   gap: 0.75rem;
 `;
 
+export const HeaderActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+`;
+
+export const BolsaoButton = styled.button<{ $primary?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+  border-radius: ${theme.borderRadius.md};
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all ${theme.transitions.normal};
+  border: 1px solid ${({ $primary }) => ($primary ? 'transparent' : theme.colors.border.secondary)};
+  background: ${({ $primary }) => ($primary ? theme.colors.secondary : 'transparent')};
+  color: ${theme.colors.text.primary};
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+    background: ${({ $primary }) => ($primary ? theme.colors.secondary : theme.colors.background.glassHover)};
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
+
 export const Title = styled.h1`
   font-size: 1.5rem;
   font-weight: 700;

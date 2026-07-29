@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const ExcelJS = require('exceljs');
 const Client = require('../models/Client');
 const User = require('../models/User');
 const Proposal = require('../models/Proposal');
 const ClientAccessRequest = require('../models/ClientAccessRequest');
 const Notification = require('../models/Notification');
 const { auth, authorize } = require('../middleware/auth');
+const { runCarteiraBolsaoUpdate, assignmentClearBolsaoFields } = require('../services/carteiraBolsao');
 
 function normalizeCnpj(cnpj) {
   if (!cnpj) return '';
@@ -75,8 +77,9 @@ function buildProposalStatsMap(proposals) {
   return { byCnpj, byEmail };
 }
 
-// Dono do cliente: assignedTo ou createdBy
+// Dono do cliente: assignedTo ou createdBy (bolsão = sem dono)
 function getClientOwner(client) {
+  if (client?.inBolsao) return null;
   const ownerId = (client.assignedTo && client.assignedTo._id ? client.assignedTo._id : client.assignedTo) || client.createdBy;
   return ownerId ? ownerId.toString() : null;
 }
@@ -99,16 +102,19 @@ router.get('/', auth, async (req, res) => {
       });
     }
 
-    const { page = 1, limit = 10, search, uf, classificacao, isActive, carteira, assignedTo } = req.query;
+    const { page = 1, limit = 10, search, uf, classificacao, isActive, carteira, assignedTo, bolsao } = req.query;
     const skip = (page - 1) * limit;
 
     let query = {};
     const andConditions = [];
     
-    // Carteira: vendedor vê só clientes da sua carteira (assignedTo = eu, ou sem assignedTo e createdBy = eu)
-    // Admin pode filtrar por assignedTo=userId para ver carteira de um vendedor
-    if (carteira === 'me' && req.user.role === 'vendedor') {
+    // Carteira: vendedor vê só clientes da sua carteira (fora do bolsão)
+    // Admin pode filtrar por assignedTo=userId ou bolsao=true
+    if (bolsao === 'true' && (req.user.role === 'admin' || req.user.role === 'vendedor')) {
+      andConditions.push({ inBolsao: true });
+    } else if (carteira === 'me' && req.user.role === 'vendedor') {
       andConditions.push({
+        inBolsao: { $ne: true },
         $or: [
           { assignedTo: req.user.id },
           { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
@@ -116,6 +122,7 @@ router.get('/', auth, async (req, res) => {
       });
     } else if (assignedTo && req.user.role === 'admin') {
       query.assignedTo = assignedTo;
+      query.inBolsao = { $ne: true };
     }
     
     console.log(`👤 Usuário ${req.user.email} (${req.user.role}) buscando clientes`);
@@ -182,6 +189,7 @@ router.get('/', auth, async (req, res) => {
 router.get('/access-requests', auth, async (req, res) => {
   try {
     const clientsOwnedByMe = await Client.find({
+      inBolsao: { $ne: true },
       $or: [
         { assignedTo: req.user.id },
         { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
@@ -276,14 +284,19 @@ router.post('/transfer', auth, authorize('admin', 'vendedor'), async (req, res) 
     if (targetUserId === req.user.id) {
       return res.status(400).json({ success: false, message: 'Escolha outro vendedor (não você).' });
     }
-    const query = { _id: { $in: clientIds } };
+    const query = { _id: { $in: clientIds }, inBolsao: { $ne: true } };
     if (req.user.role === 'vendedor') {
       query.$or = [
         { assignedTo: req.user.id },
         { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
       ];
     }
-    const result = await Client.updateMany(query, { $set: { assignedTo: targetUserId } });
+    const result = await Client.updateMany(query, {
+      $set: {
+        assignedTo: targetUserId,
+        ...assignmentClearBolsaoFields(),
+      }
+    });
     if (result.matchedCount === 0) {
       return res.status(403).json({ success: false, message: 'Nenhum cliente da sua carteira foi encontrado com os IDs informados.' });
     }
@@ -309,25 +322,200 @@ router.get('/carteiras/summary', auth, authorize('admin'), async (req, res) => {
     const vendedores = await User.find({ role: 'vendedor', isActive: true }).select('_id name email').sort({ name: 1 }).lean();
     const list = await Promise.all(
       vendedores.map(async (v) => {
-        const totalClients = await Client.countDocuments({ assignedTo: v._id });
+        const totalClients = await Client.countDocuments({
+          assignedTo: v._id,
+          inBolsao: { $ne: true },
+        });
         return { _id: v._id, name: v.name, email: v.email, totalClients };
       })
     );
     const semCarteira = await Client.countDocuments({
       $or: [
+        { inBolsao: true },
         { assignedTo: { $in: [null, undefined] } },
-        { assignedTo: { $exists: false } }
-      ]
+        { assignedTo: { $exists: false } },
+      ],
     });
+    const noBolsao = await Client.countDocuments({ inBolsao: true });
     return res.json({
       success: true,
       data: list,
       semCarteira,
+      bolsao: noBolsao,
       message: 'Resumo das carteiras por vendedor.'
     });
   } catch (err) {
     console.error('Erro ao listar carteiras:', err);
     res.status(500).json({ success: false, message: 'Erro ao listar carteiras.' });
+  }
+});
+
+// POST /api/clients/bolsao/run - Admin: rodar atualização da regra de bolsão (90 dias)
+router.post('/bolsao/run', auth, authorize('admin'), async (req, res) => {
+  try {
+    const dryRun = req.body?.dryRun === true;
+    const result = await runCarteiraBolsaoUpdate({ dryRun });
+    return res.json({
+      success: true,
+      data: result,
+      message: dryRun
+        ? `Simulação: ${result.released} cliente(s) iriam para o bolsão.`
+        : `${result.released} cliente(s) movido(s) para o bolsão.`,
+    });
+  } catch (err) {
+    console.error('Erro ao rodar bolsão:', err);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar carteira (bolsão).' });
+  }
+});
+
+// GET /api/clients/export.xlsx - Admin: extrair base de clientes (prospecção)
+router.get('/export.xlsx', auth, authorize('admin'), async (req, res) => {
+  try {
+    const clients = await Client.find({})
+      .populate('assignedTo', 'name email')
+      .populate('createdBy', 'name email')
+      .sort({ razaoSocial: 1 })
+      .lean();
+
+    const proposals = await Proposal.find({})
+      .select('client.cnpj status createdAt closedAt')
+      .lean();
+
+    const byCnpj = new Map();
+    for (const p of proposals) {
+      const cnpj = normalizeCnpj(p.client?.cnpj);
+      if (!cnpj || cnpj.length !== 14) continue;
+      if (!byCnpj.has(cnpj)) {
+        byCnpj.set(cnpj, {
+          hasSale: false,
+          lastProposalAt: null,
+          totalProposals: 0,
+        });
+      }
+      const entry = byCnpj.get(cnpj);
+      entry.totalProposals += 1;
+      if (p.status === 'venda_fechada') entry.hasSale = true;
+      const when = p.closedAt || p.createdAt;
+      if (when) {
+        const d = new Date(when);
+        if (!entry.lastProposalAt || d > entry.lastProposalAt) {
+          entry.lastProposalAt = d;
+        }
+      }
+    }
+
+    const now = Date.now();
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Sell.On';
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet('Clientes', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    ws.columns = [
+      { header: 'CNPJ', key: 'cnpj', width: 20 },
+      { header: 'Nome contato', key: 'nome', width: 28 },
+      { header: 'E-mail', key: 'email', width: 32 },
+      { header: 'Telefone', key: 'telefone', width: 18 },
+      { header: 'Razão social', key: 'razaoSocial', width: 36 },
+      { header: 'Nome fantasia', key: 'nomeFantasia', width: 28 },
+      { header: 'UF', key: 'uf', width: 6 },
+      { header: 'Cidade', key: 'cidade', width: 20 },
+      { header: 'Classificação', key: 'classificacao', width: 14 },
+      { header: 'Carteira (vendedor)', key: 'carteiraVendedor', width: 26 },
+      { header: 'E-mail vendedor', key: 'carteiraEmail', width: 30 },
+      { header: 'Status carteira', key: 'statusCarteira', width: 16 },
+      { header: 'Tem venda fechada', key: 'temVenda', width: 16 },
+      { header: 'Total propostas', key: 'totalPropostas', width: 14 },
+      { header: 'Última proposta', key: 'ultimaProposta', width: 18 },
+      { header: 'Dias sem proposta', key: 'diasSemProposta', width: 16 },
+      { header: 'Inativo 90+ dias', key: 'inativo90', width: 14 },
+      { header: 'Ativo', key: 'ativo', width: 8 },
+      { header: 'Motivo bolsão', key: 'bolsaoReason', width: 24 },
+      { header: 'Cadastrado em', key: 'createdAt', width: 18 },
+    ];
+
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F2937' },
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'left' };
+    headerRow.height = 22;
+
+    for (const c of clients) {
+      const cnpjNorm = normalizeCnpj(c.cnpj);
+      const stats = byCnpj.get(cnpjNorm);
+      const lastAt = stats?.lastProposalAt || null;
+      const daysWithout = lastAt
+        ? Math.floor((now - lastAt.getTime()) / (1000 * 60 * 60 * 24))
+        : (c.createdAt
+          ? Math.floor((now - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : null);
+
+      let statusCarteira = 'Sem carteira';
+      let carteiraVendedor = '';
+      let carteiraEmail = '';
+
+      if (c.inBolsao) {
+        statusCarteira = 'Bolsão';
+      } else if (c.assignedTo) {
+        statusCarteira = 'Carteira';
+        carteiraVendedor = c.assignedTo.name || '';
+        carteiraEmail = c.assignedTo.email || '';
+      } else if (c.createdBy) {
+        statusCarteira = 'Sem assignedTo';
+        carteiraVendedor = c.createdBy.name || '';
+        carteiraEmail = c.createdBy.email || '';
+      }
+
+      ws.addRow({
+        cnpj: c.cnpj || '',
+        nome: c.contato?.nome || '',
+        email: c.contato?.email || '',
+        telefone: c.contato?.telefone || '',
+        razaoSocial: c.razaoSocial || '',
+        nomeFantasia: c.nomeFantasia || '',
+        uf: c.endereco?.uf || '',
+        cidade: c.endereco?.cidade || '',
+        classificacao: c.classificacao || '',
+        carteiraVendedor,
+        carteiraEmail,
+        statusCarteira,
+        temVenda: stats?.hasSale ? 'Sim' : 'Não',
+        totalPropostas: stats?.totalProposals || 0,
+        ultimaProposta: lastAt || null,
+        diasSemProposta: daysWithout,
+        inativo90: daysWithout !== null && daysWithout >= 90 ? 'Sim' : 'Não',
+        ativo: c.isActive === false ? 'Não' : 'Sim',
+        bolsaoReason: c.bolsaoReason || '',
+        createdAt: c.createdAt ? new Date(c.createdAt) : null,
+      });
+    }
+
+    ws.getColumn('ultimaProposta').numFmt = 'dd/mm/yyyy';
+    ws.getColumn('createdAt').numFmt = 'dd/mm/yyyy';
+
+    ws.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: ws.columns.length },
+    };
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = `base-clientes-${stamp}.xlsx`;
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error('Erro ao exportar base de clientes:', err);
+    res.status(500).json({ success: false, message: 'Erro ao exportar base de clientes.' });
   }
 });
 
@@ -361,6 +549,7 @@ router.get('/consulta', auth, async (req, res) => {
     if (classificacao) query.classificacao = classificacao;
     if (req.user.role === 'vendedor') {
       const sellerFilter = {
+        inBolsao: { $ne: true },
         $or: [
           { assignedTo: req.user.id },
           { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
@@ -595,11 +784,16 @@ router.post('/', auth, authorize('admin', 'vendedor'), async (req, res) => {
       endereco,
       classificacao: classificacao || 'OUTROS',
       observacoes,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      inBolsao: false,
+      bolsaoAt: null,
+      bolsaoReason: null,
     };
     if (assignedTo !== undefined) {
       if (req.user.role === 'admin') clientData.assignedTo = assignedTo || null;
       else if (req.user.role === 'vendedor' && assignedTo === req.user.id) clientData.assignedTo = req.user.id;
+    } else if (req.user.role === 'vendedor') {
+      clientData.assignedTo = req.user.id;
     }
     const client = new Client(clientData);
 
@@ -661,8 +855,14 @@ router.put('/:id', auth, authorize('admin', 'vendedor'), async (req, res) => {
       });
     }
 
-    // Vendedor só pode editar clientes da sua carteira (assignedTo = eu ou sem assignedTo e createdBy = eu)
+    // Vendedor só pode editar clientes da sua carteira (fora do bolsão)
     if (req.user.role === 'vendedor') {
+      if (client.inBolsao) {
+        return res.status(403).json({
+          success: false,
+          message: 'Cliente está no bolsão e não pertence mais à sua carteira'
+        });
+      }
       const inCarteira = (client.assignedTo && client.assignedTo.toString() === req.user.id) ||
         (!client.assignedTo && client.createdBy.toString() === req.user.id);
       if (!inCarteira) {
@@ -682,7 +882,12 @@ router.put('/:id', auth, authorize('admin', 'vendedor'), async (req, res) => {
     if (classificacao) client.classificacao = classificacao;
     if (isActive !== undefined) client.isActive = isActive;
     if (observacoes !== undefined) client.observacoes = observacoes;
-    if (req.user.role === 'admin' && assignedTo !== undefined) client.assignedTo = assignedTo || null;
+    if (req.user.role === 'admin' && assignedTo !== undefined) {
+      client.assignedTo = assignedTo || null;
+      if (assignedTo) {
+        Object.assign(client, assignmentClearBolsaoFields());
+      }
+    }
 
     await client.save();
     await client.populate('createdBy', 'name email').populate('assignedTo', 'name email');
@@ -750,12 +955,16 @@ router.get('/stats/summary', auth, async (req, res) => {
     
     // Carteira: vendedor pedindo stats da "minha carteira" (assignedTo = eu ou sem assignedTo e createdBy = eu)
     if (carteira === 'me' && req.user.role === 'vendedor') {
-      query.$or = [
-        { assignedTo: req.user.id },
-        { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
-      ];
+      query = {
+        inBolsao: { $ne: true },
+        $or: [
+          { assignedTo: req.user.id },
+          { assignedTo: { $in: [null, undefined] }, createdBy: req.user.id }
+        ]
+      };
     } else if (req.user.role === 'vendedor') {
       query.createdBy = req.user.id;
+      query.inBolsao = { $ne: true };
     }
     
     const totalClients = await Client.countDocuments(query);

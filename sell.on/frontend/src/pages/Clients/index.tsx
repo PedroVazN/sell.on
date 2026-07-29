@@ -7,6 +7,7 @@ import { useToastContext } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { ClientModal } from '../../components/ClientModal';
 import { TableSkeleton } from '../../components/TableSkeleton';
+import { TransferClientDropdown } from '../../components/TransferClientDropdown';
 import { 
   Container, 
   Header, 
@@ -49,11 +50,13 @@ const ClientRow = memo(function ClientRow({
   isSeller,
   onEdit,
   onDelete,
+  onTransferred,
 }: {
   client: Client;
   isSeller: boolean;
   onEdit: (c: Client) => void;
   onDelete: (c: Client) => void;
+  onTransferred: () => void;
 }) {
   return (
     <TableRow>
@@ -85,8 +88,20 @@ const ClientRow = memo(function ClientRow({
       </TableCell>
       {!isSeller && (
         <TableCell>
-          <ActionButton onClick={() => onEdit(client)}><Edit size={16} /></ActionButton>
-          <ActionButton onClick={() => onDelete(client)}><Trash2 size={16} /></ActionButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ActionButton onClick={() => onEdit(client)}><Edit size={16} /></ActionButton>
+            <ActionButton onClick={() => onDelete(client)}><Trash2 size={16} /></ActionButton>
+            <TransferClientDropdown
+              compact
+              clientIds={[client._id]}
+              currentOwnerId={
+                client.assignedTo && typeof client.assignedTo === 'object'
+                  ? client.assignedTo._id
+                  : null
+              }
+              onTransferred={onTransferred}
+            />
+          </div>
         </TableCell>
       )}
     </TableRow>
@@ -287,6 +302,7 @@ export const Clients: React.FC = () => {
                   isSeller={!!isSeller}
                   onEdit={handleEditClient}
                   onDelete={handleDeleteClient}
+                  onTransferred={loadClients}
                 />
               ))}
             </TableBody>

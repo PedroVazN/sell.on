@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { runProposalFollowUpScan } = require('../services/proposalFollowUp');
+const { runCarteiraBolsaoUpdate } = require('../services/carteiraBolsao');
 const { DEFAULT_CRON_SECRET } = require('../config/followUp');
 
 function getCronSecret() {
@@ -30,6 +31,22 @@ router.get('/proposal-followup', async (req, res) => {
     res.json({ success: true, data: result });
   } catch (err) {
     console.error('❌ Cron proposal-followup:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/cron/carteira-bolsao — libera clientes sem proposta há 90 dias (exceto com venda)
+router.get('/carteira-bolsao', async (req, res) => {
+  if (!verifyCronSecret(req)) {
+    return res.status(401).json({ success: false, message: 'Não autorizado' });
+  }
+
+  try {
+    const result = await runCarteiraBolsaoUpdate({ dryRun: false });
+    console.log('✅ Cron carteira-bolsao:', result);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('❌ Cron carteira-bolsao:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

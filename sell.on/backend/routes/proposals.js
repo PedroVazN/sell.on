@@ -550,52 +550,70 @@ router.post('/', auth, proposalLimiter, (req, res, next) => {
       const clientDocFound = allByCnpj.find((c) => (c.cnpj || '').replace(/\D/g, '') === cleanCnpj);
 
       if (clientDocFound) {
-        const ownerId = (clientDocFound.assignedTo && clientDocFound.assignedTo.toString()) || (clientDocFound.createdBy && clientDocFound.createdBy.toString()) || null;
         const sellerIdStr = (seller?._id || currentUserId || '').toString();
-        if (ownerId && ownerId !== sellerIdStr) {
-          const approved = await ClientAccessRequest.findOne({
-            client: clientDocFound._id,
-            requestedBy: sellerIdStr,
-            status: 'approved'
-          }).lean();
-          if (!approved) {
-            let accessRequest = await ClientAccessRequest.findOne({
+
+        // Cliente no bolsão: qualquer vendedor pode usar e assume a carteira
+        if (clientDocFound.inBolsao) {
+          await Client.updateOne(
+            { _id: clientDocFound._id },
+            {
+              $set: {
+                assignedTo: sellerIdStr || currentUserId,
+                inBolsao: false,
+                bolsaoAt: null,
+                bolsaoReason: null,
+              },
+            }
+          );
+        } else {
+          const ownerId = (clientDocFound.assignedTo && clientDocFound.assignedTo.toString())
+            || (clientDocFound.createdBy && clientDocFound.createdBy.toString())
+            || null;
+          if (ownerId && ownerId !== sellerIdStr) {
+            const approved = await ClientAccessRequest.findOne({
               client: clientDocFound._id,
               requestedBy: sellerIdStr,
-              status: 'pending'
-            });
-            if (!accessRequest) {
-              accessRequest = await ClientAccessRequest.create({
+              status: 'approved'
+            }).lean();
+            if (!approved) {
+              let accessRequest = await ClientAccessRequest.findOne({
                 client: clientDocFound._id,
                 requestedBy: sellerIdStr,
                 status: 'pending'
               });
-              await Notification.create({
-                title: 'Solicitação de uso de cliente',
-                message: `${req.user?.name || 'Um vendedor'} solicitou usar o cliente ${(clientDocFound.razaoSocial || clientDocFound.nomeFantasia || 'CNPJ ' + (clientDocFound.cnpj || '')).substring(0, 50)} para criar proposta. Aceite para liberar o uso.`,
-                type: 'client_access_request',
-                priority: 'high',
-                recipient: ownerId,
-                sender: sellerIdStr,
-                relatedEntity: accessRequest._id.toString(),
-                relatedEntityType: 'client_access_request',
-                data: {
-                  requestId: accessRequest._id.toString(),
-                  clientId: clientDocFound._id.toString(),
-                  clientRazao: clientDocFound.razaoSocial,
-                  requestedByName: req.user?.name,
-                  requestedByEmail: req.user?.email
-                }
+              if (!accessRequest) {
+                accessRequest = await ClientAccessRequest.create({
+                  client: clientDocFound._id,
+                  requestedBy: sellerIdStr,
+                  status: 'pending'
+                });
+                await Notification.create({
+                  title: 'Solicitação de uso de cliente',
+                  message: `${req.user?.name || 'Um vendedor'} solicitou usar o cliente ${(clientDocFound.razaoSocial || clientDocFound.nomeFantasia || 'CNPJ ' + (clientDocFound.cnpj || '')).substring(0, 50)} para criar proposta. Aceite para liberar o uso.`,
+                  type: 'client_access_request',
+                  priority: 'high',
+                  recipient: ownerId,
+                  sender: sellerIdStr,
+                  relatedEntity: accessRequest._id.toString(),
+                  relatedEntityType: 'client_access_request',
+                  data: {
+                    requestId: accessRequest._id.toString(),
+                    clientId: clientDocFound._id.toString(),
+                    clientRazao: clientDocFound.razaoSocial,
+                    requestedByName: req.user?.name,
+                    requestedByEmail: req.user?.email
+                  }
+                });
+              }
+              const owner = await User.findById(ownerId).select('name').lean();
+              return res.status(200).json({
+                success: false,
+                needsApproval: true,
+                requestId: accessRequest._id.toString(),
+                ownerName: owner?.name || 'Dono da carteira',
+                message: 'Este cliente pertence à carteira de outro vendedor. Foi enviada uma solicitação de uso. Você poderá criar a proposta após a aprovação.'
               });
             }
-            const owner = await User.findById(ownerId).select('name').lean();
-            return res.status(200).json({
-              success: false,
-              needsApproval: true,
-              requestId: accessRequest._id.toString(),
-              ownerName: owner?.name || 'Dono da carteira',
-              message: 'Este cliente pertence à carteira de outro vendedor. Foi enviada uma solicitação de uso. Você poderá criar a proposta após a aprovação.'
-            });
           }
         }
       }

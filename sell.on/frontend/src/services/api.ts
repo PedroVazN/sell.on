@@ -174,6 +174,10 @@ export interface Client {
   createdBy: User;
   /** Vendedor responsável pela carteira (gestão de carteira) */
   assignedTo?: User | null;
+  /** Cliente liberado no bolsão (ex.: 90 dias sem proposta) */
+  inBolsao?: boolean;
+  bolsaoAt?: string | null;
+  bolsaoReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1531,14 +1535,16 @@ class ApiService {
     uf?: string,
     classificacao?: string,
     isActive?: boolean,
-    carteira?: 'me' | string
+    carteira?: 'me' | string,
+    bolsao?: boolean
   ): Promise<ApiResponse<Client[]>> {
     let url = `/clients?page=${page}&limit=${limit}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (uf) url += `&uf=${uf}`;
     if (classificacao) url += `&classificacao=${classificacao}`;
     if (isActive !== undefined) url += `&isActive=${isActive}`;
-    if (carteira === 'me') url += '&carteira=me';
+    if (bolsao) url += '&bolsao=true';
+    else if (carteira === 'me') url += '&carteira=me';
     else if (carteira) url += `&assignedTo=${encodeURIComponent(carteira)}`;
     return this.request<Client[]>(url);
   }
@@ -1633,8 +1639,53 @@ class ApiService {
   }
 
   /** Admin: resumo das carteiras por vendedor (total de clientes em cada carteira) */
-  async getCarteirasSummary(): Promise<ApiResponse<{ _id: string; name: string; email: string; totalClients: number }[]>> {
+  async getCarteirasSummary(): Promise<ApiResponse<{ _id: string; name: string; email: string; totalClients: number }[]> & { semCarteira?: number; bolsao?: number }> {
     return this.request<{ _id: string; name: string; email: string; totalClients: number }[]>('/clients/carteiras/summary');
+  }
+
+  /** Admin: rodar atualização do bolsão (90 dias sem proposta; venda mantém carteira) */
+  async runCarteiraBolsao(dryRun = false): Promise<ApiResponse<{
+    inactiveDays: number;
+    scanned: number;
+    released: number;
+    keptWithSale: number;
+    keptActive: number;
+    dryRun: boolean;
+    releasedClients: Array<{ _id: string; cnpj: string; razaoSocial: string; lastActivity: string | null }>;
+  }>> {
+    return this.request('/clients/bolsao/run', {
+      method: 'POST',
+      body: JSON.stringify({ dryRun }),
+    });
+  }
+
+  /** Admin: extrair base de clientes em Excel (.xlsx) para prospecção */
+  async downloadClientsBaseExcel(): Promise<void> {
+    const token =
+      this.token || localStorage.getItem('authToken') || localStorage.getItem('token');
+    const response = await fetch(`${this.baseURL}/clients/export.xlsx`, {
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+    });
+    if (!response.ok) {
+      let msg = 'Erro ao exportar base de clientes';
+      try {
+        const data = await response.json();
+        msg = data.message || msg;
+      } catch (_) {
+        /* noop */
+      }
+      throw new Error(msg);
+    }
+    const blob = await response.blob();
+    const stamp = new Date().toISOString().slice(0, 10);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `base-clientes-${stamp}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 
   // Distribuidores (com cache 2 min)
