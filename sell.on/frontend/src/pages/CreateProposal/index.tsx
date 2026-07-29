@@ -535,8 +535,8 @@ export const CreateProposal: React.FC = () => {
         });
       });
 
-      const topProducts = Object.entries(productsMap)
-        .map(([name, qty]) => ({ name, qty }))
+      const topProducts = Object.keys(productsMap)
+        .map((name) => ({ name, qty: productsMap[name] }))
         .sort((a, b) => b.qty - a.qty)
         .slice(0, 5);
 
@@ -964,7 +964,7 @@ export const CreateProposal: React.FC = () => {
         // Se contém detalhes de validação, mostrar apenas a parte importante
         if (error.message.includes('Detalhes:')) {
           try {
-            const detailsMatch = error.message.match(/Detalhes: (.*)/s);
+            const detailsMatch = error.message.match(/Detalhes: ([\s\S]*)/);
             if (detailsMatch) {
               const details = JSON.parse(detailsMatch[1]);
               const fieldErrors = details.map((err: any) => `${err.field}: ${err.message}`).join('\n');
